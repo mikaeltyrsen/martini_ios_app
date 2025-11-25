@@ -7,17 +7,23 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		075456022EC9A6E200C45739 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075455FE2EC9A6E100C45739 /* AuthService.swift */; };
+		075456032EC9A6E200C45739 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075455FF2EC9A6E100C45739 /* LoginView.swift */; };
+		075456042EC9A6E200C45739 /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075456002EC9A6E100C45739 /* QRScannerView.swift */; };
+		075456082EC9AA2100C45739 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 075456072EC9AA2100C45739 /* Assets.xcassets */; };
 		07A6A6862EC9A272002C8EB9 /* MartiniApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07A6A6852EC9A272002C8EB9 /* MartiniApp.swift */; };
 		07A6A6882EC9A272002C8EB9 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07A6A6872EC9A272002C8EB9 /* ContentView.swift */; };
-		07A6A68A2EC9A272002C8EB9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 07A6A6892EC9A272002C8EB9 /* Assets.xcassets */; };
 		07A6A68D2EC9A272002C8EB9 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 07A6A68C2EC9A272002C8EB9 /* Preview Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		075455FE2EC9A6E100C45739 /* AuthService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		075455FF2EC9A6E100C45739 /* LoginView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		075456002EC9A6E100C45739 /* QRScannerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
+		075456072EC9AA2100C45739 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		07A6A6822EC9A272002C8EB9 /* Martini.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Martini.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		07A6A6852EC9A272002C8EB9 /* MartiniApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MartiniApp.swift; sourceTree = "<group>"; };
 		07A6A6872EC9A272002C8EB9 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		07A6A6892EC9A272002C8EB9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		07A6A68C2EC9A272002C8EB9 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -53,7 +59,10 @@
 			children = (
 				07A6A6852EC9A272002C8EB9 /* MartiniApp.swift */,
 				07A6A6872EC9A272002C8EB9 /* ContentView.swift */,
-				07A6A6892EC9A272002C8EB9 /* Assets.xcassets */,
+				075456072EC9AA2100C45739 /* Assets.xcassets */,
+				075455FE2EC9A6E100C45739 /* AuthService.swift */,
+				075455FF2EC9A6E100C45739 /* LoginView.swift */,
+				075456002EC9A6E100C45739 /* QRScannerView.swift */,
 				07A6A68B2EC9A272002C8EB9 /* Preview Content */,
 			);
 			path = Martini;
@@ -126,7 +135,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				07A6A68D2EC9A272002C8EB9 /* Preview Assets.xcassets in Resources */,
-				07A6A68A2EC9A272002C8EB9 /* Assets.xcassets in Resources */,
+				075456082EC9AA2100C45739 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -137,8 +146,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				075456022EC9A6E200C45739 /* AuthService.swift in Sources */,
 				07A6A6882EC9A272002C8EB9 /* ContentView.swift in Sources */,
+				075456032EC9A6E200C45739 /* LoginView.swift in Sources */,
 				07A6A6862EC9A272002C8EB9 /* MartiniApp.swift in Sources */,
+				075456042EC9A6E200C45739 /* QRScannerView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -275,11 +287,13 @@
 				DEVELOPMENT_TEAM = D6QVB66D66;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Martini needs access to your camera in order to scan QR codes to access Martini projects.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -304,11 +318,13 @@
 				DEVELOPMENT_TEAM = D6QVB66D66;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Martini needs access to your camera in order to scan QR codes to access Martini projects.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
