@@ -15,6 +15,8 @@ struct LoginView: View {
     @State private var scannedQRCode = ""
     @State private var showAccessCodeEntry = false
     @State private var scannedProjectId = ""
+    @State private var showProjectIdEntry = false
+    @State private var projectIdInput = ""
     
     var body: some View {
         ZStack {
@@ -83,6 +85,25 @@ struct LoginView: View {
                                 .cornerRadius(12)
                             }
                             .padding(.horizontal, 40)
+
+                            Button {
+                                showProjectIdEntry = true
+                                errorMessage = nil
+                            } label: {
+                                HStack {
+                                    Image(systemName: "key.fill")
+                                        .font(.title2)
+                                    Text("LOGIN WITH PROJECT ID")
+                                        .font(.headline)
+                                        .fontWeight(.semibold)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color(.systemGray6))
+                                .foregroundColor(.primary)
+                                .cornerRadius(12)
+                            }
+                            .padding(.horizontal, 40)
                         }
                         
                         // Error message
@@ -110,6 +131,14 @@ struct LoginView: View {
                 handleQRCode(qrCode)
             }
         }
+        .sheet(isPresented: $showProjectIdEntry) {
+            ProjectIdEntryView(projectId: $projectIdInput) { projectId in
+                handleManualProjectId(projectId)
+            } onCancel: {
+                showProjectIdEntry = false
+                projectIdInput = ""
+            }
+        }
     }
     
     private func handleQRCode(_ qrCode: String) {
@@ -120,7 +149,23 @@ struct LoginView: View {
         // Proceed directly to authentication
         checkAndProceedWithAuthentication()
     }
-    
+
+    private func handleManualProjectId(_ projectId: String) {
+        let trimmed = projectId.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !trimmed.isEmpty else {
+            errorMessage = "Please enter a valid project ID."
+            return
+        }
+
+        scannedQRCode = trimmed
+        isAuthenticating = true
+        errorMessage = nil
+        showProjectIdEntry = false
+
+        checkAndProceedWithAuthentication()
+    }
+
     private func checkAndProceedWithAuthentication() {
         // Check if we need to prompt for access code
         do {
@@ -149,6 +194,79 @@ struct LoginView: View {
                 await MainActor.run {
                     errorMessage = error.localizedDescription
                     isAuthenticating = false
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Project ID Entry View
+
+struct ProjectIdEntryView: View {
+    @Binding var projectId: String
+    let onSubmit: (String) -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 24) {
+                Image("martini-logo")
+                    .resizable()
+                    .renderingMode(.template)
+                    .foregroundColor(.white)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 160, height: 80)
+                    .padding(.top, 32)
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Enter Project ID")
+                        .font(.title2)
+                        .fontWeight(.bold)
+
+                    Text("Type the project ID to log in without scanning a code.")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+
+                    TextField("####-####-####-####", text: $projectId)
+                        .textInputAutocapitalization(.characters)
+                        .autocorrectionDisabled()
+                        .keyboardType(.asciiCapable)
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(10)
+                }
+                .padding(.horizontal, 24)
+
+                Spacer()
+
+                VStack(spacing: 12) {
+                    Button {
+                        onSubmit(projectId)
+                    } label: {
+                        Text("Continue")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.colorAccent)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                    }
+
+                    Button("Cancel") {
+                        onCancel()
+                    }
+                    .font(.headline)
+                    .foregroundColor(.secondary)
+                    .padding(.bottom, 24)
+                }
+                .padding(.horizontal, 24)
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") {
+                        onCancel()
+                    }
                 }
             }
         }
