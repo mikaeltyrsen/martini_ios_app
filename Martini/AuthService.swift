@@ -190,19 +190,11 @@ class AuthService: ObservableObject {
     func parseQRCode(_ qrCode: String) throws -> (accessCode: String?, projectId: String) {
         print("🔍 Parsing QR code: \(qrCode)")
         
-        // Validate that it's a Martini URL
-        guard let url = URL(string: qrCode),
-              let host = url.host,
-              host.contains("trymartini.com") else {
-            print("🔍 Invalid host or URL")
-            throw AuthError.invalidQRCode
-        }
-        
         // Try to match 5 segments first (####-####-####-####-####)
         let pattern5 = "([0-9a-zA-Z]{4})-([0-9a-zA-Z]{4})-([0-9a-zA-Z]{4})-([0-9a-zA-Z]{4})-([0-9a-zA-Z]{4})"
         let regex5 = try NSRegularExpression(pattern: pattern5)
         let nsString = qrCode as NSString
-        
+
         if let match = regex5.firstMatch(in: qrCode, range: NSRange(location: 0, length: nsString.length)) {
             // Extract all 5 segments
             var segments: [String] = []
