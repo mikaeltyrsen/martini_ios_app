@@ -11,44 +11,45 @@ import Foundation
 class AuthService: ObservableObject {
     @Published var isAuthenticated: Bool = false
     @Published var projectId: String?
-    @Published var accessCodeId: String?
+    @Published var accessCode: String?
+    @Published var tokenHash: String?
     @Published var debugInfo: DebugInfo?
     @Published var creatives: [Creative] = []
     @Published var isLoadingCreatives: Bool = false
     
-    private let liveTokenKey = "martini_live_token"
+    private let tokenHashKey = "martini_token_hash"
     private let projectIdKey = "martini_project_id"
-    private let accessCodeIdKey = "martini_access_code_id"
-    private let baseURL = "https://dev.staging.trymartini.com"
-    
-    private var liveToken: String?
-    
+    private let accessCodeKey = "martini_access_code"
+    private let baseURL = "https://trymartini.com"
+
     init() {
         loadAuthData()
     }
-    
+
     // Load auth data from UserDefaults
     func loadAuthData() {
         if let projectId = UserDefaults.standard.string(forKey: projectIdKey),
-           let accessCodeId = UserDefaults.standard.string(forKey: accessCodeIdKey),
-           let liveToken = UserDefaults.standard.string(forKey: liveTokenKey) {
+           let tokenHash = UserDefaults.standard.string(forKey: tokenHashKey) {
             self.projectId = projectId
-            self.accessCodeId = accessCodeId
-            self.liveToken = liveToken
+            self.accessCode = UserDefaults.standard.string(forKey: accessCodeKey)
+            self.tokenHash = tokenHash
             self.isAuthenticated = true
+
+            // Automatically refresh creatives when a token is already stored
+            Task {
+                try? await self.fetchCreatives()
+            }
         }
     }
-    
+
     // Save auth data to UserDefaults
-    private func saveAuthData(projectId: String, accessCodeId: String, liveToken: String? = nil) {
+    private func saveAuthData(projectId: String, accessCode: String, tokenHash: String) {
         UserDefaults.standard.set(projectId, forKey: projectIdKey)
-        UserDefaults.standard.set(accessCodeId, forKey: accessCodeIdKey)
-        if let liveToken = liveToken {
-            UserDefaults.standard.set(liveToken, forKey: liveTokenKey)
-            self.liveToken = liveToken
-        }
+        UserDefaults.standard.set(accessCode, forKey: accessCodeKey)
+        UserDefaults.standard.set(tokenHash, forKey: tokenHashKey)
         self.projectId = projectId
-        self.accessCodeId = accessCodeId
+        self.accessCode = accessCode
+        self.tokenHash = tokenHash
         self.isAuthenticated = true
     }
     
@@ -82,7 +83,7 @@ class AuthService: ObservableObject {
         }
         
         // Send authentication request to PHP endpoint
-        guard let url = URL(string: "\(baseURL)/scripts/live/auth.php") else {
+        guard let url = URL(string: "\(baseURL)/scripts/auth/live.php") else {
             throw AuthError.invalidURL
         }
         
@@ -91,8 +92,8 @@ class AuthService: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         let body: [String: String] = [
-            "access_code": accessCode,
-            "access_id": projectId
+            "projectId": projectId,
+            "accessCode": accessCode
         ]
         request.httpBody = try JSONEncoder().encode(body)
         
@@ -165,12 +166,14 @@ class AuthService: ObservableObject {
         }
         
         print("✅ Authentication successful!")
-        if let token = authResponse.liveToken {
-            print("🔑 Received live token: \(token.prefix(20))...")
+        guard let tokenHash = authResponse.tokenHash else {
+            throw AuthError.invalidResponse
         }
-        
-        // Save auth data (project ID, access code ID, and live token)
-        saveAuthData(projectId: projectId, accessCodeId: projectId, liveToken: authResponse.liveToken)
+
+        print("🔑 Received token hash: \(tokenHash.prefix(20))...")
+
+        // Save auth data (project ID, access code, and token hash)
+        saveAuthData(projectId: projectId, accessCode: accessCode, tokenHash: tokenHash)
         
         print("💾 Saved auth data - projectId: \(projectId)")
         print("🎬 About to fetch creatives...")
@@ -249,15 +252,20 @@ class AuthService: ObservableObject {
         guard let projectId = projectId else {
             throw AuthError.noAuth
         }
-        
+
+        guard let tokenHash = tokenHash else {
+            throw AuthError.noAuth
+        }
+
         guard let url = URL(string: "\(baseURL)\(endpoint)") else {
             throw AuthError.invalidURL
         }
-        
+
         var request = URLRequest(url: url)
         // The PHP backend uses cookies set by setLiveAuthCookie()
         // For iOS app, we may need to include project_id in requests
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(tokenHash)", forHTTPHeaderField: "Authorization")
         
         let (data, response) = try await URLSession.shared.data(for: request)
         
@@ -283,7 +291,11 @@ class AuthService: ObservableObject {
         guard let projectId = projectId else {
             throw AuthError.noAuth
         }
-        
+
+        guard let tokenHash = tokenHash else {
+            throw AuthError.noAuth
+        }
+
         isLoadingCreatives = true
         defer { isLoadingCreatives = false }
         
@@ -294,16 +306,12 @@ class AuthService: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(tokenHash)", forHTTPHeaderField: "Authorization")
         
         var body: [String: Any] = [
             "projectId": projectId,
             "pullAll": pullAll
         ]
-        
-        // Include live token if available
-        if let liveToken = liveToken {
-            body["martini_live_token"] = liveToken
-        }
         
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         
@@ -354,11 +362,11 @@ class AuthService: ObservableObject {
     // Logout and clear auth data
     func logout() {
         UserDefaults.standard.removeObject(forKey: projectIdKey)
-        UserDefaults.standard.removeObject(forKey: accessCodeIdKey)
-        UserDefaults.standard.removeObject(forKey: liveTokenKey)
+        UserDefaults.standard.removeObject(forKey: accessCodeKey)
+        UserDefaults.standard.removeObject(forKey: tokenHashKey)
         self.projectId = nil
-        self.accessCodeId = nil
-        self.liveToken = nil
+        self.accessCode = nil
+        self.tokenHash = nil
         self.isAuthenticated = false
         self.creatives = []
     }
@@ -370,13 +378,13 @@ struct AuthResponse: Codable {
     let success: Bool
     let message: String?
     let error: String?
-    let liveToken: String?
-    
+    let tokenHash: String?
+
     enum CodingKeys: String, CodingKey {
         case success
         case message
         case error
-        case liveToken = "live_token"
+        case tokenHash = "token_hash"
     }
 }
 
@@ -465,7 +473,7 @@ enum AuthError: LocalizedError {
         case .unauthorized:
             return "Authentication expired. Please login again."
         case .invalidQRCode:
-            return "Not a valid Martini QR code. Please scan a QR code with access_code and access_id parameters."
+            return "Not a valid Martini QR code. Please scan a QR code with projectId and accessCode parameters."
         case .missingAccessCode:
             return "Please enter the 4-digit access code."
         case .authenticationFailed(let code):
