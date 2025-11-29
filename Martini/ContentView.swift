@@ -28,6 +28,8 @@ struct MainView: View {
     @State private var viewMode: ViewMode = .list
     @State private var showViewOptions = false
     @State private var selectedFrameId: String?
+    @State private var framesError: String?
+    @State private var hasLoadedFrames = false
     
     enum ViewMode {
         case list
@@ -95,12 +97,43 @@ struct MainView: View {
     }
     
     // Use mock data for now (set to true to see design)
-    private let useMockData = true
-    
+    private let useMockData = false
+
     private var creativesToDisplay: [Creative] {
         useMockData ? mockCreatives : authService.creatives
     }
-    
+
+    private func frames(for creative: Creative) -> [Frame] {
+        let frames = useMockData ? mockFrames(for: creative) : authService.frames.filter { $0.creativeId == creative.id }
+        return frames.sorted { $0.frameNumber < $1.frameNumber }
+    }
+
+    private func mockFrames(for creative: Creative) -> [Frame] {
+        (1...creative.totalFrames).map { index in
+            let status: FrameStatus? = {
+                if index <= creative.completedFrames {
+                    return .done
+                } else if index == creative.completedFrames + 1 {
+                    return .inProgress
+                } else if index == creative.completedFrames + 2 {
+                    return .upNext
+                } else if index == creative.totalFrames {
+                    return .skip
+                }
+                return nil
+            }()
+
+            return Frame(
+                id: "\(creative.id)-\(index)",
+                creativeId: creative.id,
+                frameOrder: String(index),
+                status: status?.rawValue,
+                caption: "Frame #\(index)",
+                description: "Placeholder description for frame #\(index)"
+            )
+        }
+    }
+
     var body: some View {
         NavigationStack {
             Group {
@@ -150,6 +183,37 @@ struct MainView: View {
                     .foregroundColor(.red)
                 }
             }
+            .task {
+                await loadFramesIfNeeded()
+            }
+            .alert(
+                "Frame Load Error",
+                isPresented: Binding(
+                    get: { framesError != nil },
+                    set: { newValue in
+                        if !newValue {
+                            framesError = nil
+                        }
+                    }
+                )
+            ) {
+                Button("OK") {
+                    framesError = nil
+                }
+            } message: {
+                Text(framesError ?? "Unknown error")
+            }
+        }
+    }
+
+    private func loadFramesIfNeeded() async {
+        guard !useMockData, !hasLoadedFrames else { return }
+        do {
+            try await authService.fetchFrames()
+            hasLoadedFrames = true
+        } catch {
+            framesError = error.localizedDescription
+            print("❌ Failed to load frames: \(error)")
         }
     }
     
@@ -157,7 +221,7 @@ struct MainView: View {
         ScrollView {
             LazyVStack(spacing: 24, pinnedViews: [.sectionHeaders]) {
                 ForEach(creativesToDisplay) { creative in
-                    CreativeSection(creative: creative)
+                    CreativeSection(creative: creative, frames: frames(for: creative))
                         .id(creative.id)
                 }
             }
@@ -170,7 +234,7 @@ struct MainView: View {
         ScrollView {
             LazyVStack(spacing: 20, pinnedViews: [.sectionHeaders]) {
                 ForEach(creativesToDisplay) { creative in
-                    CreativeGridSection(creative: creative) { frameId in
+                    CreativeGridSection(creative: creative, frames: frames(for: creative)) { frameId in
                         // Switch to list view and scroll to frame
                         selectedFrameId = frameId
                         withAnimation {
@@ -247,27 +311,10 @@ struct MainView: View {
 
 struct CreativeGridSection: View {
     let creative: Creative
+    let frames: [Frame]
     let onFrameTap: (String) -> Void
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
-    
-    private var mockFrames: [MockFrame] {
-        (1...creative.totalFrames).map { index in
-            let status: FrameStatus? = {
-                if index <= creative.completedFrames {
-                    return .done
-                } else if index == creative.completedFrames + 1 {
-                    return .inProgress
-                } else if index == creative.completedFrames + 2 {
-                    return .upNext
-                } else if index == creative.totalFrames {
-                    return .skip
-                }
-                return nil
-            }()
-            return MockFrame(id: "\(creative.id)-\(index)", number: index, status: status)
-        }
-    }
-    
+
     private var columns: [GridItem] {
         let count = horizontalSizeClass == .compact ? 3 : 5
         return Array(repeating: GridItem(.flexible(), spacing: 8), count: count)
@@ -280,10 +327,10 @@ struct CreativeGridSection: View {
                 .font(.headline)
                 .fontWeight(.bold)
                 .padding(.horizontal)
-            
+
             // Grid of frames
             LazyVGrid(columns: columns, spacing: 8) {
-                ForEach(mockFrames) { frame in
+                ForEach(frames) { frame in
                     Button {
                         onFrameTap(frame.id)
                     } label: {
@@ -299,18 +346,41 @@ struct CreativeGridSection: View {
 // MARK: - Grid Frame Cell
 
 struct GridFrameCell: View {
-    let frame: MockFrame
+    let frame: Frame
     
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 4)
                 .fill(Color.gray.opacity(0.2))
                 .aspectRatio(16/9, contentMode: .fit)
-            
+                .overlay(
+                    Group {
+                        if let urlString = frame.boardThumb ?? frame.board, let url = URL(string: urlString) {
+                            AsyncImage(url: url) { phase in
+                                switch phase {
+                                case let .success(image):
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                case .empty:
+                                    ProgressView()
+                                case .failure:
+                                    placeholder
+                                @unknown default:
+                                    placeholder
+                                }
+                            }
+                        } else {
+                            placeholder
+                        }
+                    }
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 4))
+
             // Frame number
             VStack {
                 Spacer()
-                Text("\(frame.number)")
+                Text(frameNumberText)
                     .font(.caption2)
                     .foregroundColor(.white)
                     .padding(4)
@@ -318,18 +388,16 @@ struct GridFrameCell: View {
                     .cornerRadius(4)
                     .padding(4)
             }
-            
+
             // Status overlays
-            if let status = frame.status {
-                gridStatusOverlay(for: status)
-            }
+            gridStatusOverlay(for: frame.statusEnum)
         }
         .overlay(
             RoundedRectangle(cornerRadius: 4)
                 .strokeBorder(gridBorderColor, lineWidth: 2)
         )
     }
-    
+
     @ViewBuilder
     private func gridStatusOverlay(for status: FrameStatus) -> some View {
         switch status {
@@ -341,7 +409,7 @@ struct GridFrameCell: View {
                         path.addLine(to: CGPoint(x: geometry.size.width, y: geometry.size.height))
                     }
                     .stroke(Color.red, lineWidth: 2)
-                    
+
                     Path { path in
                         path.move(to: CGPoint(x: geometry.size.width, y: 0))
                         path.addLine(to: CGPoint(x: 0, y: geometry.size.height))
@@ -350,19 +418,19 @@ struct GridFrameCell: View {
                 }
             }
             .aspectRatio(16/9, contentMode: .fit)
-            
+
         case .skip:
             Color.red.opacity(0.3)
                 .cornerRadius(4)
-            
+
         case .inProgress, .upNext, .none:
             EmptyView()
         }
     }
-    
+
     private var gridBorderColor: Color {
-        guard let status = frame.status else { return .clear }
-        
+        let status = frame.statusEnum
+
         switch status {
         case .done:
             return .red
@@ -376,33 +444,25 @@ struct GridFrameCell: View {
             return .clear
         }
     }
+
+    private var frameNumberText: String {
+        frame.frameNumber > 0 ? "\(frame.frameNumber)" : "--"
+    }
+
+    private var placeholder: some View {
+        Image(systemName: "photo")
+            .resizable()
+            .scaledToFit()
+            .foregroundColor(.gray.opacity(0.6))
+            .padding(16)
+    }
 }
 
 // MARK: - Creative Section
 
 struct CreativeSection: View {
     let creative: Creative
-    
-    // Mock frames - replace with actual frames later
-    private var mockFrames: [MockFrame] {
-        (1...creative.totalFrames).map { index in
-            // Assign different statuses for demo purposes
-            let status: FrameStatus? = {
-                if index <= creative.completedFrames {
-                    return .done
-                } else if index == creative.completedFrames + 1 {
-                    return .inProgress
-                } else if index == creative.completedFrames + 2 {
-                    return .upNext
-                } else if index == creative.totalFrames {
-                    return .skip
-                }
-                return nil
-            }()
-            
-            return MockFrame(id: "\(creative.id)-\(index)", number: index, status: status)
-        }
-    }
+    let frames: [Frame]
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -433,10 +493,10 @@ struct CreativeSection: View {
                 }
                 .padding(.horizontal)
             }
-            
+
             // Frames list
             VStack(spacing: 16) {
-                ForEach(mockFrames) { frame in
+                ForEach(frames) { frame in
                     FrameRowView(frame: frame)
                 }
             }
@@ -460,20 +520,6 @@ struct CreativeSection: View {
     }
 }
 
-// MARK: - Mock Frame Model
-
-struct MockFrame: Identifiable {
-    let id: String
-    let number: Int
-    let status: FrameStatus?
-    
-    init(id: String, number: Int, status: FrameStatus? = nil) {
-        self.id = id
-        self.number = number
-        self.status = status
-    }
-}
-
 enum FrameStatus: String {
     case done = "done"
     case inProgress = "in-progress"
@@ -485,44 +531,117 @@ enum FrameStatus: String {
 // MARK: - Frame Row View
 
 struct FrameRowView: View {
-    let frame: MockFrame
-    
+    let frame: Frame
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // 16:9 placeholder image with status styling
+            // 16:9 frame image with status styling
             ZStack {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Color.gray.opacity(0.2))
                     .aspectRatio(16/9, contentMode: .fit)
                     .overlay(
-                        VStack {
-                            Image(systemName: "photo")
-                                .font(.system(size: 40))
-                                .foregroundColor(.gray.opacity(0.5))
-                            Text("Frame #\(frame.number)")
-                                .font(.caption)
-                                .foregroundColor(.gray)
+                        Group {
+                            if let urlString = frame.board ?? frame.boardThumb, let url = URL(string: urlString) {
+                                AsyncImage(url: url) { phase in
+                                    switch phase {
+                                    case let .success(image):
+                                        image
+                                            .resizable()
+                                            .scaledToFill()
+                                    case .empty:
+                                        ProgressView()
+                                    case .failure:
+                                        placeholder
+                                    @unknown default:
+                                        placeholder
+                                    }
+                                }
+                            } else {
+                                placeholder
+                            }
                         }
                     )
-                
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+
                 // Status overlays
-                if let status = frame.status {
-                    statusOverlay(for: status)
-                }
+                statusOverlay(for: frame.statusEnum)
             }
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
                     .strokeBorder(borderColor, lineWidth: borderWidth)
             )
-            
-            // Lorem ipsum text
-            Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
+
+            // Description text
+            Text(descriptionText)
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .lineLimit(2)
+
+            // Status indicator
+            HStack(spacing: 12) {
+                if let status = statusText {
+                    Text(status)
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(borderColor)
+                        .cornerRadius(4)
+                }
+
+                if let frameNumberLabel {
+                    Text(frameNumberLabel)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
         }
     }
-    
+
+    private var borderWidth: CGFloat {
+        frame.statusEnum != .none ? 3 : 1
+    }
+
+    private var borderColor: Color {
+        let status = frame.statusEnum
+
+        switch status {
+        case .done:
+            return .red
+        case .inProgress:
+            return .green
+        case .skip:
+            return .red
+        case .upNext:
+            return .orange
+        case .none:
+            return .gray.opacity(0.3)
+        }
+    }
+
+    private var statusText: String? {
+        let text = frame.status?.uppercased() ?? ""
+        return text.isEmpty ? nil : text
+    }
+
+    private var frameNumberLabel: String? {
+        frame.frameNumber > 0 ? "Frame #\(frame.frameNumber)" : nil
+    }
+
+    private var descriptionText: String {
+        if let caption = frame.caption, !caption.isEmpty {
+            return caption
+        }
+
+        if let description = frame.description, !description.isEmpty {
+            return description
+        }
+
+        return "No description available."
+    }
+
     @ViewBuilder
     private func statusOverlay(for status: FrameStatus) -> some View {
         switch status {
@@ -536,8 +655,8 @@ struct FrameRowView: View {
                         path.addLine(to: CGPoint(x: geometry.size.width, y: geometry.size.height))
                     }
                     .stroke(Color.red, lineWidth: 5)
-                    
-                    // Diagonal line from top-right to bottom-left  
+
+                    // Diagonal line from top-right to bottom-left
                     Path { path in
                         path.move(to: CGPoint(x: geometry.size.width, y: 0))
                         path.addLine(to: CGPoint(x: 0, y: geometry.size.height))
@@ -546,39 +665,28 @@ struct FrameRowView: View {
                 }
             }
             .aspectRatio(16/9, contentMode: .fit)
-            
+
         case .skip:
             // Red transparent layer
             Color.red.opacity(0.3)
                 .cornerRadius(8)
-            
-        case .inProgress, .upNext:
-            EmptyView()
-        
-        case .none:
+
+        case .inProgress, .upNext, .none:
             EmptyView()
         }
     }
-    
-    private var borderColor: Color {
-        guard let status = frame.status else { return .clear }
-        
-        switch status {
-        case .done:
-            return .red
-        case .inProgress:
-            return .green
-        case .skip:
-            return .red
-        case .upNext:
-            return .orange
-        case .none:
-            return .clear
+
+    private var placeholder: some View {
+        VStack {
+            Image(systemName: "photo")
+                .font(.system(size: 40))
+                .foregroundColor(.gray.opacity(0.5))
+            if let frameNumberLabel {
+                Text(frameNumberLabel)
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
         }
-    }
-    
-    private var borderWidth: CGFloat {
-        frame.status != nil ? 3 : 0
     }
 }
 
