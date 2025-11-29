@@ -28,8 +28,9 @@ struct MainView: View {
     @State private var viewMode: ViewMode = .list
     @State private var showViewOptions = false
     @State private var selectedFrameId: String?
-    @State private var framesError: String?
+    @State private var dataError: String?
     @State private var hasLoadedFrames = false
+    @State private var hasLoadedCreatives = false
     
     enum ViewMode {
         case list
@@ -184,25 +185,37 @@ struct MainView: View {
                 }
             }
             .task {
+                await loadCreativesIfNeeded()
                 await loadFramesIfNeeded()
             }
             .alert(
-                "Frame Load Error",
+                "Data Load Error",
                 isPresented: Binding(
-                    get: { framesError != nil },
+                    get: { dataError != nil },
                     set: { newValue in
                         if !newValue {
-                            framesError = nil
+                            dataError = nil
                         }
                     }
                 )
             ) {
                 Button("OK") {
-                    framesError = nil
+                    dataError = nil
                 }
             } message: {
-                Text(framesError ?? "Unknown error")
+                Text(dataError ?? "Unknown error")
             }
+        }
+    }
+
+    private func loadCreativesIfNeeded() async {
+        guard !useMockData, !hasLoadedCreatives else { return }
+        do {
+            try await authService.fetchCreatives()
+            hasLoadedCreatives = true
+        } catch {
+            dataError = error.localizedDescription
+            print("❌ Failed to load creatives: \(error)")
         }
     }
 
@@ -212,7 +225,7 @@ struct MainView: View {
             try await authService.fetchFrames()
             hasLoadedFrames = true
         } catch {
-            framesError = error.localizedDescription
+            dataError = error.localizedDescription
             print("❌ Failed to load frames: \(error)")
         }
     }
