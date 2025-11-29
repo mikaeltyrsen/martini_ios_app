@@ -367,6 +367,10 @@ class AuthService: ObservableObject {
             throw AuthError.noAuth
         }
 
+        guard let tokenHash = tokenHash else {
+            throw AuthError.noAuth
+        }
+
         isLoadingFrames = true
         defer { isLoadingFrames = false }
 
@@ -377,6 +381,7 @@ class AuthService: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(tokenHash)", forHTTPHeaderField: "Authorization")
 
         let body: [String: Any] = [
             "projectId": projectId,
