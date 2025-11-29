@@ -25,6 +25,7 @@
 		07A6A6852EC9A272002C8EB9 /* MartiniApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MartiniApp.swift; sourceTree = "<group>"; };
 		07A6A6872EC9A272002C8EB9 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		07A6A68C2EC9A272002C8EB9 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		07C904AE2EDA7A48004EDBFA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,6 +58,7 @@
 		07A6A6842EC9A272002C8EB9 /* Martini */ = {
 			isa = PBXGroup;
 			children = (
+				07C904AE2EDA7A48004EDBFA /* Info.plist */,
 				07A6A6852EC9A272002C8EB9 /* MartiniApp.swift */,
 				07A6A6872EC9A272002C8EB9 /* ContentView.swift */,
 				075456072EC9AA2100C45739 /* Assets.xcassets */,
@@ -287,6 +289,7 @@
 				DEVELOPMENT_TEAM = D6QVB66D66;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Martini/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Martini needs access to your camera in order to scan QR codes to access Martini projects.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -318,6 +321,7 @@
 				DEVELOPMENT_TEAM = D6QVB66D66;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Martini/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Martini needs access to your camera in order to scan QR codes to access Martini projects.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
