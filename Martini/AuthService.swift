@@ -16,6 +16,8 @@ class AuthService: ObservableObject {
     @Published var debugInfo: DebugInfo?
     @Published var creatives: [Creative] = []
     @Published var isLoadingCreatives: Bool = false
+    @Published var frames: [Frame] = []
+    @Published var isLoadingFrames: Bool = false
     
     private let tokenHashKey = "martini_token_hash"
     private let projectIdKey = "martini_project_id"
@@ -358,7 +360,68 @@ class AuthService: ObservableObject {
             print("  ... and \(creatives.count - 3) more")
         }
     }
-    
+
+    // Fetch frames for the current project
+    func fetchFrames() async throws {
+        guard let projectId = projectId else {
+            throw AuthError.noAuth
+        }
+
+        isLoadingFrames = true
+        defer { isLoadingFrames = false }
+
+        guard let url = URL(string: "https://dev.shoot.nucontext.com/scripts/frames/get.php") else {
+            throw AuthError.invalidURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body: [String: Any] = [
+            "projectId": projectId,
+        ]
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let requestJSON = String(data: request.httpBody ?? Data(), encoding: .utf8) ?? "Unable to encode"
+        print("📤 Fetching frames...")
+        print("🔗 URL: \(url.absoluteString)")
+        print("📝 Request body: \(requestJSON)")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw AuthError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let errorBody = String(data: data, encoding: .utf8) ?? "No response body"
+            print("❌ Failed to fetch frames - Status: \(httpResponse.statusCode)")
+            print("📝 Response: \(errorBody)")
+            if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
+                logout()
+                throw AuthError.unauthorized
+            }
+            throw AuthError.requestFailed(statusCode: httpResponse.statusCode)
+        }
+
+        let responseJSON = String(data: data, encoding: .utf8) ?? "Unable to decode"
+        print("📥 Frames response received (\(httpResponse.statusCode)):")
+        print(responseJSON)
+
+        let decoder = JSONDecoder()
+        let framesResponse = try decoder.decode(FramesResponse.self, from: data)
+
+        guard framesResponse.success else {
+            print("❌ Frames response failed: \(framesResponse.error ?? "Unknown error")")
+            throw AuthError.authenticationFailedWithMessage(framesResponse.error ?? "Failed to fetch frames")
+        }
+
+        self.frames = framesResponse.frames
+        print("✅ Successfully fetched \(frames.count) frames")
+    }
+
     // Logout and clear auth data
     func logout() {
         UserDefaults.standard.removeObject(forKey: projectIdKey)
@@ -369,6 +432,7 @@ class AuthService: ObservableObject {
         self.tokenHash = nil
         self.isAuthenticated = false
         self.creatives = []
+        self.frames = []
     }
 }
 
