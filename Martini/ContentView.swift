@@ -126,10 +126,10 @@ struct MainView: View {
             return Frame(
                 id: "\(creative.id)-\(index)",
                 creativeId: creative.id,
-                frameOrder: String(index),
-                status: status?.rawValue,
+                description: "Placeholder description for frame #\(index)",
                 caption: "Frame #\(index)",
-                description: "Placeholder description for frame #\(index)"
+                status: status?.rawValue,
+                frameOrder: String(index)
             )
         }
     }
