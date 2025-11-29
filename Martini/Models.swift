@@ -7,24 +7,95 @@
 
 import Foundation
 
+// MARK: - Decoding Helpers
+
+@propertyWrapper
+struct SafeInt: Codable {
+    var wrappedValue: Int
+
+    init(wrappedValue: Int = 0) {
+        self.wrappedValue = wrappedValue
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+
+        if let intValue = try? container.decode(Int.self) {
+            wrappedValue = intValue
+            return
+        }
+
+        if let stringValue = try? container.decode(String.self), let intValue = Int(stringValue) {
+            wrappedValue = intValue
+            return
+        }
+
+        wrappedValue = 0
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(wrappedValue)
+    }
+}
+
+@propertyWrapper
+struct SafeOptionalInt: Codable {
+    var wrappedValue: Int?
+
+    init(wrappedValue: Int? = nil) {
+        self.wrappedValue = wrappedValue
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+
+        if container.decodeNil() {
+            wrappedValue = nil
+            return
+        }
+
+        if let intValue = try? container.decode(Int.self) {
+            wrappedValue = intValue
+            return
+        }
+
+        if let stringValue = try? container.decode(String.self), let intValue = Int(stringValue) {
+            wrappedValue = intValue
+            return
+        }
+
+        wrappedValue = nil
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        if let value = wrappedValue {
+            try container.encode(value)
+        } else {
+            try container.encodeNil()
+        }
+    }
+}
+
 // MARK: - Creative Model
 
 struct Creative: Codable, Identifiable {
     let id: String
     let shootId: String
     let title: String
-    let order: Int
-    let isArchived: Int
-    let isLive: Int
-    let totalFrames: Int
-    let completedFrames: Int
-    let remainingFrames: Int
+    @SafeInt var order: Int
+    @SafeInt var isArchived: Int
+    @SafeInt var isLive: Int
+    @SafeInt var totalFrames: Int
+    @SafeInt var completedFrames: Int
+    @SafeInt var remainingFrames: Int
     let primaryFrameId: String?
     let frameFileName: String?
     let frameImage: String?
     let frameBoardType: String?
     let frameStatus: String?
-    let frameNumber: Int?
+    @SafeOptionalInt var frameNumber: Int?
     let image: String?
     
     enum CodingKeys: String, CodingKey {
