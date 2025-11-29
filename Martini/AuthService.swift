@@ -301,7 +301,7 @@ class AuthService: ObservableObject {
         isLoadingCreatives = true
         defer { isLoadingCreatives = false }
         
-        guard let url = URL(string: "https://trymartini.com/scripts/creatives/get_creatives.php") else {
+        guard let url = URL(string: "https://dev.shoot.nucontext.com/scripts/creatives/get_creatives.php") else {
             throw AuthError.invalidURL
         }
         
