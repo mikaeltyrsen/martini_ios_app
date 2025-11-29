@@ -13,6 +13,7 @@ class AuthService: ObservableObject {
     @Published var projectId: String?
     @Published var accessCode: String?
     @Published var tokenHash: String?
+    @Published var bearerTokenOverride: String?
     @Published var debugInfo: DebugInfo?
     @Published var creatives: [Creative] = []
     @Published var isLoadingCreatives: Bool = false
@@ -22,10 +23,50 @@ class AuthService: ObservableObject {
     private let tokenHashKey = "martini_token_hash"
     private let projectIdKey = "martini_project_id"
     private let accessCodeKey = "martini_access_code"
-    private let baseURL = "https://dev.shoot.nucontext.com"
+    private let baseScriptsURL = "https://dev.shoot.nucontext.com/scripts/"
 
     init() {
         loadAuthData()
+    }
+
+    private enum APIEndpoint: String {
+        case authLive = "auth/live.php"
+        case creatives = "creatives/get_creatives.php"
+        case frames = "frames/get.php"
+
+        var path: String { rawValue }
+    }
+
+    private func url(for endpoint: APIEndpoint) throws -> URL {
+        guard let url = URL(string: "\(baseScriptsURL)\(endpoint.path)") else {
+            throw AuthError.invalidURL
+        }
+        return url
+    }
+
+    private func currentBearerToken() -> String? {
+        if let override = bearerTokenOverride, !override.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return override
+        }
+        return tokenHash
+    }
+
+    private func authorizedRequest(for endpoint: APIEndpoint, method: String = "POST", body: [String: Any]? = nil) throws -> URLRequest {
+        guard let token = currentBearerToken() else {
+            throw AuthError.noAuth
+        }
+
+        let url = try url(for: endpoint)
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        if let body = body {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        }
+
+        return request
     }
 
     // Load auth data from UserDefaults
@@ -85,10 +126,8 @@ class AuthService: ObservableObject {
         }
         
         // Send authentication request to PHP endpoint
-        guard let url = URL(string: "\(baseURL)/scripts/auth/live.php") else {
-            throw AuthError.invalidURL
-        }
-        
+        let url = try url(for: .authLive)
+
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -250,41 +289,28 @@ class AuthService: ObservableObject {
     }
     
     // Make authenticated API call
-    func makeAuthenticatedRequest(to endpoint: String) async throws -> Data {
-        guard let projectId = projectId else {
+    func makeAuthenticatedRequest(to endpoint: APIEndpoint) async throws -> Data {
+        guard projectId != nil else {
             throw AuthError.noAuth
         }
 
-        guard let tokenHash = tokenHash else {
-            throw AuthError.noAuth
-        }
-
-        guard let url = URL(string: "\(baseURL)\(endpoint)") else {
-            throw AuthError.invalidURL
-        }
-
-        var request = URLRequest(url: url)
-        // The PHP backend uses cookies set by setLiveAuthCookie()
-        // For iOS app, we may need to include project_id in requests
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(tokenHash)", forHTTPHeaderField: "Authorization")
-        
+        let request = try authorizedRequest(for: endpoint, method: "GET")
         let (data, response) = try await URLSession.shared.data(for: request)
-        
+
         guard let httpResponse = response as? HTTPURLResponse else {
             throw AuthError.invalidResponse
         }
-        
+
         if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
             // Auth is invalid, logout
             logout()
             throw AuthError.unauthorized
         }
-        
+
         guard httpResponse.statusCode == 200 else {
             throw AuthError.requestFailed(statusCode: httpResponse.statusCode)
         }
-        
+
         return data
     }
     
@@ -294,32 +320,19 @@ class AuthService: ObservableObject {
             throw AuthError.noAuth
         }
 
-        guard let tokenHash = tokenHash else {
-            throw AuthError.noAuth
-        }
-
         isLoadingCreatives = true
         defer { isLoadingCreatives = false }
-        
-        guard let url = URL(string: "https://dev.shoot.nucontext.com/scripts/creatives/get_creatives.php") else {
-            throw AuthError.invalidURL
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(tokenHash)", forHTTPHeaderField: "Authorization")
-        
+
         var body: [String: Any] = [
             "projectId": projectId,
             "pullAll": pullAll
         ]
-        
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        
+
+        var request = try authorizedRequest(for: .creatives, body: body)
+
         let requestJSON = String(data: request.httpBody ?? Data(), encoding: .utf8) ?? "Unable to encode"
         print("📤 Fetching creatives...")
-        print("🔗 URL: \(url.absoluteString)")
+        print("🔗 URL: \(request.url?.absoluteString ?? "unknown")")
         print("📝 Request body: \(requestJSON)")
         
         let (data, response) = try await URLSession.shared.data(for: request)
@@ -367,31 +380,18 @@ class AuthService: ObservableObject {
             throw AuthError.noAuth
         }
 
-        guard let tokenHash = tokenHash else {
-            throw AuthError.noAuth
-        }
-
         isLoadingFrames = true
         defer { isLoadingFrames = false }
-
-        guard let url = URL(string: "https://dev.shoot.nucontext.com/scripts/frames/get.php") else {
-            throw AuthError.invalidURL
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(tokenHash)", forHTTPHeaderField: "Authorization")
 
         let body: [String: Any] = [
             "projectId": projectId,
         ]
 
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        var request = try authorizedRequest(for: .frames, body: body)
 
         let requestJSON = String(data: request.httpBody ?? Data(), encoding: .utf8) ?? "Unable to encode"
         print("📤 Fetching frames...")
-        print("🔗 URL: \(url.absoluteString)")
+        print("🔗 URL: \(request.url?.absoluteString ?? "unknown")")
         print("📝 Request body: \(requestJSON)")
 
         let (data, response) = try await URLSession.shared.data(for: request)
