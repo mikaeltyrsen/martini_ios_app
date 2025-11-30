@@ -438,132 +438,14 @@ struct CreativeGridSection: View {
 struct GridFrameCell: View {
     let frame: Frame
     var showDescription: Bool = false
-    
+
     var body: some View {
-        VStack(spacing: 6) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.gray.opacity(0.2))
-                    .aspectRatio(16/9, contentMode: .fit)
-                    .overlay(
-                        Group {
-                            if let urlString = frame.boardThumb ?? frame.board, let url = URL(string: urlString) {
-                                AsyncImage(url: url) { phase in
-                                    switch phase {
-                                    case let .success(image):
-                                        image
-                                            .resizable()
-                                            .scaledToFill()
-                                    case .empty:
-                                        ProgressView()
-                                    case .failure:
-                                        placeholder
-                                    @unknown default:
-                                        placeholder
-                                    }
-                                }
-                            } else {
-                                placeholder
-                            }
-                        }
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
-
-                // Frame number
-                VStack {
-                    Spacer()
-                    Text(frameNumberText)
-                        .font(.caption2)
-                        .foregroundColor(.white)
-                        .padding(4)
-                        .background(Color.black.opacity(0.6))
-                        .cornerRadius(4)
-                        .padding(4)
-                }
-
-                // Status overlays (red X for done)
-                gridStatusOverlay(for: frame.statusEnum)
-            }
-            .overlay(
-                RoundedRectangle(cornerRadius: 4)
-                    .strokeBorder(gridBorderColor, lineWidth: 2)
-            )
-
-            // Optional description under the image
-            if showDescription {
-                Text(descriptionText)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .lineLimit(2)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
-    }
-    
-    @ViewBuilder
-    private func gridStatusOverlay(for status: FrameStatus) -> some View {
-        switch status {
-        case .done:
-            GeometryReader { geometry in
-                ZStack {
-                    Path { path in
-                        path.move(to: .zero)
-                        path.addLine(to: CGPoint(x: geometry.size.width, y: geometry.size.height))
-                    }
-                    .stroke(Color.red, lineWidth: 2)
-
-                    Path { path in
-                        path.move(to: CGPoint(x: geometry.size.width, y: 0))
-                        path.addLine(to: CGPoint(x: 0, y: geometry.size.height))
-                    }
-                    .stroke(Color.red, lineWidth: 2)
-                }
-            }
-            .aspectRatio(16/9, contentMode: .fit)
-        case .skip:
-            Color.red.opacity(0.3)
-                .cornerRadius(4)
-        case .inProgress, .upNext, .none:
-            EmptyView()
-        }
-    }
-    
-    private var gridBorderColor: Color {
-        let status = frame.statusEnum
-        switch status {
-        case .done:
-            return .red
-        case .inProgress:
-            return .green
-        case .skip:
-            return .red
-        case .upNext:
-            return .orange
-        case .none:
-            return .gray.opacity(0.3)
-        }
-    }
-
-    private var frameNumberText: String {
-        frame.frameNumber > 0 ? "\(frame.frameNumber)" : "--"
-    }
-    
-    private var descriptionText: String {
-        if let caption = frame.caption, !caption.isEmpty {
-            return caption
-        }
-        if let description = frame.description, !description.isEmpty {
-            return description
-        }
-        return ""
-    }
-
-    private var placeholder: some View {
-        Image(systemName: "photo")
-            .resizable()
-            .scaledToFit()
-            .foregroundColor(.gray.opacity(0.6))
-            .padding(16)
+        FrameLayout(
+            frame: frame,
+            title: frame.caption,
+            subtitle: showDescription ? frame.description : nil,
+            cornerRadius: 6
+        )
     }
 }
 
