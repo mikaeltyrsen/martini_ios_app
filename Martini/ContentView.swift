@@ -26,11 +26,14 @@ struct ContentView: View {
 struct MainView: View {
     @EnvironmentObject var authService: AuthService
     @State private var viewMode: ViewMode = .list
-    @State private var showViewOptions = false
     @State private var selectedFrameId: String?
+    @State private var selectedFrame: Frame?
     @State private var dataError: String?
     @State private var hasLoadedFrames = false
     @State private var hasLoadedCreatives = false
+    @State private var showGridSizeSlider: Bool = false
+    @State private var showSizeControls: Bool = false
+    @State private var gridSizeStep: Int = 1 // 1..4, where 1 -> 4 columns, 4 -> 1 column
     
     enum ViewMode {
         case list
@@ -40,60 +43,60 @@ struct MainView: View {
     // MARK: - Mock Data (for design purposes)
     private var mockCreatives: [Creative] {
         [
-            Creative(
-                id: "1",
-                shootId: "test-123",
-                title: "Opening Scene",
-                order: 1,
-                isArchived: 0,
-                isLive: 1,
-                totalFrames: 8,
-                completedFrames: 3,
-                remainingFrames: 5,
-                primaryFrameId: "f1",
-                frameFileName: nil,
-                frameImage: nil,
-                frameBoardType: nil,
-                frameStatus: "in-progress",
-                frameNumber: 1,
-                image: nil
-            ),
-            Creative(
-                id: "2",
-                shootId: "test-123",
-                title: "Product Showcase",
-                order: 2,
-                isArchived: 0,
-                isLive: 1,
-                totalFrames: 12,
-                completedFrames: 8,
-                remainingFrames: 4,
-                primaryFrameId: "f2",
-                frameFileName: nil,
-                frameImage: nil,
-                frameBoardType: nil,
-                frameStatus: "up-next",
-                frameNumber: 9,
-                image: nil
-            ),
-            Creative(
-                id: "3",
-                shootId: "test-123",
-                title: "Closing Credits",
-                order: 3,
-                isArchived: 0,
-                isLive: 1,
-                totalFrames: 5,
-                completedFrames: 5,
-                remainingFrames: 0,
-                primaryFrameId: "f3",
-                frameFileName: nil,
-                frameImage: nil,
-                frameBoardType: nil,
-                frameStatus: "done",
-                frameNumber: 1,
-                image: nil
-            )
+//            Creative(
+//                id: "1",
+//                shootId: "test-123",
+//                title: "Opening Scene",
+//                order: 1,
+//                isArchived: 0,
+//                isLive: 1,
+//                totalFrames: 8,
+//                completedFrames: 3,
+//                remainingFrames: 5,
+//                primaryFrameId: "f1",
+//                frameFileName: nil,
+//                frameImage: nil,
+//                frameBoardType: nil,
+//                frameStatus: "in-progress",
+//                frameNumber: 1,
+//                image: nil
+//            ),
+//            Creative(
+//                id: "2",
+//                shootId: "test-123",
+//                title: "Product Showcase",
+//                order: 2,
+//                isArchived: 0,
+//                isLive: 1,
+//                totalFrames: 12,
+//                completedFrames: 8,
+//                remainingFrames: 4,
+//                primaryFrameId: "f2",
+//                frameFileName: nil,
+//                frameImage: nil,
+//                frameBoardType: nil,
+//                frameStatus: "up-next",
+//                frameNumber: 9,
+//                image: nil
+//            ),
+//            Creative(
+//                id: "3",
+//                shootId: "test-123",
+//                title: "Closing Credits",
+//                order: 3,
+//                isArchived: 0,
+//                isLive: 1,
+//                totalFrames: 5,
+//                completedFrames: 5,
+//                remainingFrames: 0,
+//                primaryFrameId: "f3",
+//                frameFileName: nil,
+//                frameImage: nil,
+//                frameBoardType: nil,
+//                frameStatus: "done",
+//                frameNumber: 1,
+//                image: nil
+//            )
         ]
     }
     
@@ -102,6 +105,16 @@ struct MainView: View {
 
     private var creativesToDisplay: [Creative] {
         useMockData ? mockCreatives : authService.creatives
+    }
+    
+    private var gridColumnCount: Int {
+        if viewMode == .grid { return 5 } // Overview fixed columns
+        switch gridSizeStep { // Grid View adjustable
+        case 1: return 4
+        case 2: return 3
+        case 3: return 2
+        default: return 1
+        }
     }
 
     private func frames(for creative: Creative) -> [Frame] {
@@ -162,16 +175,89 @@ struct MainView: View {
                     }
                 } else {
                     ZStack(alignment: .bottom) {
-                        if viewMode == .list {
-                            creativesListView
-                        } else {
+                        if viewMode == .list { // Grid View (adjustable grid)
+                            gridView
+                        } else { // Overview (fixed 5 columns)
                             gridView
                         }
                         
-                        // Floating toolbar
-                        floatingToolbar
-                            .padding(.horizontal, 16)
-                            .padding(.bottom, 16)
+                        // Top-left overlay: size control with popup
+                        ZStack(alignment: .topLeading) {
+                            if showSizeControls {
+                                VStack(spacing: 0) {
+                                    VStack(spacing: 8) {
+                                        Button(action: {
+                                            withAnimation(.spring(response: 0.2)) {
+                                                gridSizeStep = max(1, gridSizeStep - 1)
+                                            }
+                                        }) {
+                                            Image(systemName: "minus")
+                                                .font(.system(size: 16, weight: .bold))
+                                                .padding(8)
+                                        }
+                                        .accessibilityLabel("Decrease Grid Size")
+
+                                        Divider()
+                                            .frame(width: 28)
+
+                                        Button(action: {
+                                            withAnimation(.spring(response: 0.2)) {
+                                                gridSizeStep = min(4, gridSizeStep + 1)
+                                            }
+                                        }) {
+                                            Image(systemName: "plus")
+                                                .font(.system(size: 16, weight: .bold))
+                                                .padding(8)
+                                        }
+                                        .accessibilityLabel("Increase Grid Size")
+                                    }
+                                    .padding(8)
+                                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                    .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color.black.opacity(0.08), lineWidth: 0.5)
+                                    )
+
+                                    Triangle()
+                                        .fill(Color(uiColor: .systemBackground).opacity(0.7))
+                                        .frame(width: 14, height: 8)
+                                        .shadow(color: .black.opacity(0.1), radius: 1, x: 0, y: 1)
+                                        .offset(x: 16)
+                                }
+                                .transition(.move(edge: .top).combined(with: .opacity))
+                                .offset(x: 8, y: 44)
+                                .zIndex(2)
+                            }
+
+                            Button(action: {
+                                withAnimation(.spring(response: 0.3)) {
+                                    showSizeControls.toggle()
+                                }
+                            }) {
+                                Image(systemName: showSizeControls ? "xmark" : "rectangle.compress.vertical")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .padding(10)
+                                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            }
+                            .padding(.leading, 12)
+                            .padding(.top, 8)
+                            .accessibilityLabel(showSizeControls ? "Close Size Controls" : "Open Size Controls")
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                        
+                        // Tap-capturing overlay to dismiss size popup
+                        if showSizeControls {
+                            Color.black.opacity(0.001) // invisible but receives taps
+                                .ignoresSafeArea()
+                                .onTapGesture {
+                                    withAnimation(.spring(response: 0.25)) {
+                                        showSizeControls = false
+                                    }
+                                }
+                                .transition(.opacity)
+                                .zIndex(1)
+                        }
                     }
                 }
             }
@@ -182,6 +268,29 @@ struct MainView: View {
                         authService.logout()
                     }
                     .foregroundColor(.red)
+                }
+                
+                
+                // Bottom-left controls: overview toggle only
+                ToolbarItem(placement: .bottomBar) {
+                    HStack {
+                        Spacer()
+                        Button(action: {
+                            withAnimation {
+                                if viewMode == .grid {
+                                    viewMode = .list
+                                } else {
+                                    viewMode = .grid
+                                    showGridSizeSlider = false
+                                    showSizeControls = false
+                                }
+                            }
+                        }) {
+                            Image(systemName: viewMode == .grid ? "xmark" : "square.grid.2x2")
+                                .font(.system(size: 18, weight: .semibold))
+                        }
+                        .accessibilityLabel(viewMode == .grid ? "Close Overview" : "Open Overview")
+                    }
                 }
             }
             .task {
@@ -204,6 +313,12 @@ struct MainView: View {
                 }
             } message: {
                 Text(dataError ?? "Unknown error")
+            }
+            .fullScreenCover(item: $selectedFrame) { frame in
+                FrameView(frame: frame) {
+                    selectedFrame = nil
+                }
+                .interactiveDismissDisabled(false)
             }
         }
     }
@@ -239,7 +354,7 @@ struct MainView: View {
                 }
             }
             .padding(.vertical)
-            .padding(.bottom, 80) // Space for floating toolbar
+            .padding(.bottom, 0)
         }
     }
     
@@ -247,75 +362,20 @@ struct MainView: View {
         ScrollView {
             LazyVStack(spacing: 20, pinnedViews: [.sectionHeaders]) {
                 ForEach(creativesToDisplay) { creative in
-                    CreativeGridSection(creative: creative, frames: frames(for: creative)) { frameId in
-                        // Switch to list view and scroll to frame
+                    CreativeGridSection(creative: creative, frames: frames(for: creative), onFrameTap: { frameId in
                         selectedFrameId = frameId
+                        if let found = authService.frames.first(where: { $0.id == frameId }) {
+                            selectedFrame = found
+                        }
                         withAnimation {
+                            // Tap switches to Grid View (kept as-is)
                             viewMode = .list
                         }
-                    }
+                    }, columnCount: gridColumnCount, showDescriptions: viewMode == .list)
                 }
             }
             .padding(.vertical)
-            .padding(.bottom, 80) // Space for floating toolbar
-        }
-    }
-    
-    private var floatingToolbar: some View {
-        HStack(spacing: 20) {
-            Spacer()
-            
-            // View mode button
-            ZStack {
-                Button {
-                    withAnimation(.spring(response: 0.3)) {
-                        showViewOptions.toggle()
-                    }
-                } label: {
-                    Image(systemName: "viewfinder")
-                        .font(.system(size: 24))
-                        .foregroundColor(.white)
-                        .frame(width: 50, height: 50)
-                        .background(Color.colorAccent)
-                        .clipShape(Circle())
-                        .shadow(color: .black.opacity(0.3), radius: 5, x: 0, y: 2)
-                }
-                
-                // Popup options
-                if showViewOptions {
-                    VStack(spacing: 12) {
-                        viewModeButton(icon: "square.grid.3x3", label: "Grid", mode: .grid)
-                        viewModeButton(icon: "list.bullet", label: "List", mode: .list)
-                    }
-                    .padding(12)
-                    .background(Color(.systemBackground))
-                    .cornerRadius(12)
-                    .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 5)
-                    .offset(y: -120)
-                    .transition(.scale.combined(with: .opacity))
-                }
-            }
-            
-            Spacer()
-        }
-    }
-    
-    private func viewModeButton(icon: String, label: String, mode: ViewMode) -> some View {
-        Button {
-            withAnimation {
-                viewMode = mode
-                showViewOptions = false
-            }
-        } label: {
-            HStack {
-                Image(systemName: icon)
-                    .font(.system(size: 20))
-                Text(label)
-                    .font(.headline)
-            }
-            .foregroundColor(viewMode == mode ? .colorAccent : .primary)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
+            .padding(.bottom, 0)
         }
     }
 }
@@ -326,10 +386,12 @@ struct CreativeGridSection: View {
     let creative: Creative
     let frames: [Frame]
     let onFrameTap: (String) -> Void
+    let columnCount: Int
+    let showDescriptions: Bool
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
 
     private var columns: [GridItem] {
-        let count = horizontalSizeClass == .compact ? 3 : 5
+        let count = max(1, columnCount)
         return Array(repeating: GridItem(.flexible(), spacing: 8), count: count)
     }
     
@@ -347,7 +409,7 @@ struct CreativeGridSection: View {
                     Button {
                         onFrameTap(frame.id)
                     } label: {
-                        GridFrameCell(frame: frame)
+                        GridFrameCell(frame: frame, showDescription: showDescriptions)
                     }
                 }
             }
@@ -360,57 +422,69 @@ struct CreativeGridSection: View {
 
 struct GridFrameCell: View {
     let frame: Frame
+    var showDescription: Bool = false
     
     var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 4)
-                .fill(Color.gray.opacity(0.2))
-                .aspectRatio(16/9, contentMode: .fit)
-                .overlay(
-                    Group {
-                        if let urlString = frame.boardThumb ?? frame.board, let url = URL(string: urlString) {
-                            AsyncImage(url: url) { phase in
-                                switch phase {
-                                case let .success(image):
-                                    image
-                                        .resizable()
-                                        .scaledToFill()
-                                case .empty:
-                                    ProgressView()
-                                case .failure:
-                                    placeholder
-                                @unknown default:
-                                    placeholder
+        VStack(spacing: 6) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.gray.opacity(0.2))
+                    .aspectRatio(16/9, contentMode: .fit)
+                    .overlay(
+                        Group {
+                            if let urlString = frame.boardThumb ?? frame.board, let url = URL(string: urlString) {
+                                AsyncImage(url: url) { phase in
+                                    switch phase {
+                                    case let .success(image):
+                                        image
+                                            .resizable()
+                                            .scaledToFill()
+                                    case .empty:
+                                        ProgressView()
+                                    case .failure:
+                                        placeholder
+                                    @unknown default:
+                                        placeholder
+                                    }
                                 }
+                            } else {
+                                placeholder
                             }
-                        } else {
-                            placeholder
                         }
-                    }
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 4))
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
 
-            // Frame number
-            VStack {
-                Spacer()
-                Text(frameNumberText)
-                    .font(.caption2)
-                    .foregroundColor(.white)
-                    .padding(4)
-                    .background(Color.black.opacity(0.6))
-                    .cornerRadius(4)
-                    .padding(4)
+                // Frame number
+                VStack {
+                    Spacer()
+                    Text(frameNumberText)
+                        .font(.caption2)
+                        .foregroundColor(.white)
+                        .padding(4)
+                        .background(Color.black.opacity(0.6))
+                        .cornerRadius(4)
+                        .padding(4)
+                }
+
+                // Status overlays (red X for done)
+                gridStatusOverlay(for: frame.statusEnum)
             }
+            .overlay(
+                RoundedRectangle(cornerRadius: 4)
+                    .strokeBorder(gridBorderColor, lineWidth: 2)
+            )
 
-            // Status overlays
-            gridStatusOverlay(for: frame.statusEnum)
+            // Optional description under the image
+            if showDescription {
+                Text(descriptionText)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .lineLimit(2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
-        .overlay(
-            RoundedRectangle(cornerRadius: 4)
-                .strokeBorder(gridBorderColor, lineWidth: 2)
-        )
     }
-
+    
     @ViewBuilder
     private func gridStatusOverlay(for status: FrameStatus) -> some View {
         switch status {
@@ -431,19 +505,16 @@ struct GridFrameCell: View {
                 }
             }
             .aspectRatio(16/9, contentMode: .fit)
-
         case .skip:
             Color.red.opacity(0.3)
                 .cornerRadius(4)
-
         case .inProgress, .upNext, .none:
             EmptyView()
         }
     }
-
+    
     private var gridBorderColor: Color {
         let status = frame.statusEnum
-
         switch status {
         case .done:
             return .red
@@ -454,12 +525,22 @@ struct GridFrameCell: View {
         case .upNext:
             return .orange
         case .none:
-            return .clear
+            return .gray.opacity(0.3)
         }
     }
 
     private var frameNumberText: String {
         frame.frameNumber > 0 ? "\(frame.frameNumber)" : "--"
+    }
+    
+    private var descriptionText: String {
+        if let caption = frame.caption, !caption.isEmpty {
+            return caption
+        }
+        if let description = frame.description, !description.isEmpty {
+            return description
+        }
+        return ""
     }
 
     private var placeholder: some View {
@@ -703,7 +784,19 @@ struct FrameRowView: View {
     }
 }
 
+struct Triangle: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.midX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+        path.closeSubpath()
+        return path
+    }
+}
+
 #Preview {
     ContentView()
         .environmentObject(AuthService())
 }
+
