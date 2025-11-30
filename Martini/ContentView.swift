@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var authService: AuthService
+    @EnvironmentObject var realtimeService: RealtimeService
     
     var body: some View {
         Group {
@@ -18,6 +19,20 @@ struct ContentView: View {
                 LoginView()
             }
         }
+        .onAppear(perform: synchronizeRealtimeConnection)
+        .onChange(of: authService.isAuthenticated) { _ in
+            synchronizeRealtimeConnection()
+        }
+        .onChange(of: authService.projectId) { _ in
+            synchronizeRealtimeConnection()
+        }
+    }
+
+    private func synchronizeRealtimeConnection() {
+        realtimeService.updateConnection(
+            projectId: authService.projectId,
+            isAuthenticated: authService.isAuthenticated
+        )
     }
 }
 
