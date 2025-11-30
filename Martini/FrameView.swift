@@ -35,7 +35,7 @@ struct FrameView: View {
                         statusMenuButton(title: "Omit", status: .skip, systemImage: "minus.circle")
                         statusMenuButton(title: "Clear", status: .none, systemImage: "xmark.circle")
                     } label: {
-                        Label(statusMenuLabel, systemImage: "line.3.horizontal.decrease")
+                        Label(statusMenuLabel, systemImage: selectedStatus.systemImageName)
                     }
 
                     Spacer()
@@ -63,18 +63,18 @@ struct FrameView: View {
 
     @ViewBuilder
     private func statusMenuButton(title: String, status: FrameStatus, systemImage: String) -> some View {
+        let isSelected = (selectedStatus == status)
+
         Button {
             withAnimation(.spring(response: 0.2)) {
                 selectedStatus = status
             }
         } label: {
-            if selectedStatus == status {
-                Label(title, systemImage: systemImage)
-            } else {
-                Text(title)
-            }
+            Label(title, systemImage: systemImage)
+                .foregroundStyle(Color.primary)
         }
         .accessibilityLabel("Set status to \(title)")
+        .disabled(isSelected)
     }
 }
 
@@ -91,6 +91,21 @@ private extension FrameStatus {
             return "Next"
         case .none:
             return "Clear"
+        }
+    }
+
+    var systemImageName: String {
+        switch self {
+        case .done:
+            return "checkmark.circle"
+        case .inProgress:
+            return "figure.wave"
+        case .upNext:
+            return "arrow.turn.up.right"
+        case .skip:
+            return "minus.circle"
+        case .none:
+            return "xmark.circle"
         }
     }
 }

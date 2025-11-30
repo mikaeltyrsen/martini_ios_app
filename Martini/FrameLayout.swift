@@ -67,20 +67,25 @@ struct FrameLayout: View {
                 .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
 
             if showFrameNumberOverlay {
-                VStack {
-                    HStack {
-                        Spacer()
-                        ZStack {
-                            Circle()
-                                .fill(Color.black.opacity(0.8))
-                                .frame(width: 34, height: 34)
-                            Text(frameNumberText)
-                                .font(.system(size: 18, weight: .semibold))
-                                .foregroundColor(.white)
+                GeometryReader { geo in
+                    let diameter = max(18, geo.size.width * 0.08) // 8% of width with a minimum
+
+                    VStack {
+                        HStack {
+                            Spacer()
+                            ZStack {
+                                Circle()
+                                    .fill(Color.black.opacity(0.8))
+                                    .frame(width: diameter, height: diameter)
+                                Text(frameNumberText)
+                                    .font(.system(size: diameter * 0.53, weight: .semibold))
+                                    .foregroundColor(.white)
+                                    .minimumScaleFactor(0.5)
+                            }
                         }
+                        .padding(max(2, diameter * 0.25))
+                        Spacer()
                     }
-                    .padding(10)
-                    Spacer()
                 }
             }
 
@@ -108,15 +113,16 @@ struct FrameLayout: View {
             }
 
             if let resolvedSubtitle {
+                let subtitleSize = dynamicSubtitleFontSize(for: 200)
                 if let attributedSubtitle = attributedString(fromHTML: resolvedSubtitle, defaultColor: defaultDescriptionUIColor) {
                     Text(attributedSubtitle)
-                        .font(.system(size: 14, weight: .semibold))
-                        .lineLimit(2)
+                        .font(.system(size: subtitleSize, weight: .semibold))
+                        .foregroundColor(descriptionColor)
                 } else {
                     Text(resolvedSubtitle)
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(descriptionColor)
-                        .lineLimit(2)
+                        //.lineLimit(2)
                 }
             }
         }
@@ -205,37 +211,38 @@ struct FrameLayout: View {
     }
 
     private func attributedString(fromHTML html: String, defaultColor: UIColor? = nil) -> AttributedString? {
-        guard let data = html.data(using: .utf8) else { return nil }
+        // 1) Preserve line breaks by converting common HTML breaks/blocks to \n
+        var text = html
+            .replacingOccurrences(of: "<br>", with: "\n", options: .caseInsensitive)
+            .replacingOccurrences(of: "<br/>", with: "\n", options: .caseInsensitive)
+            .replacingOccurrences(of: "<br />", with: "\n", options: .caseInsensitive)
 
-        do {
-            let options: [NSAttributedString.DocumentReadingOptionKey: Any] = [
-                .documentType: NSAttributedString.DocumentType.html,
-                .characterEncoding: String.Encoding.utf8.rawValue
-            ]
-
-            let nsAttributedString = try NSMutableAttributedString(
-                data: data,
-                options: options,
-                documentAttributes: nil
-            )
-
-            let fullRange = NSRange(location: 0, length: nsAttributedString.length)
-
-            // Ensure the text always renders in the system font instead of the default
-            // serif font that comes from HTML parsing.
-            let systemFont = UIFont.preferredFont(forTextStyle: .body)
-            nsAttributedString.addAttribute(.font, value: systemFont, range: fullRange)
-
-            if let defaultColor = defaultColor {
-                // Force a consistent text color so descriptions remain readable even when
-                // HTML supplies its own (potentially dark) foreground colors.
-                nsAttributedString.addAttribute(.foregroundColor, value: defaultColor, range: fullRange)
-            }
-
-            return AttributedString(nsAttributedString)
-        } catch {
-            return nil
+        // Treat common block-level tags as line breaks
+        let blockTags = ["</p>", "</div>", "</li>", "</h1>", "</h2>", "</h3>", "</h4>", "</h5>", "</h6>"]
+        for tag in blockTags {
+            text = text.replacingOccurrences(of: tag, with: "\n", options: .caseInsensitive)
         }
+
+        // 2) Strip all remaining HTML tags
+        // This regex removes anything that looks like <...>
+        let regex = try? NSRegularExpression(pattern: "<[^>]+>", options: [])
+        let range = NSRange(location: 0, length: (text as NSString).length)
+        let stripped = regex?.stringByReplacingMatches(in: text, options: [], range: range, withTemplate: "") ?? text
+
+        // 3) Decode basic HTML entities
+        let decoded = stripped
+            .replacingOccurrences(of: "&nbsp;", with: " ")
+            .replacingOccurrences(of: "&amp;", with: "&")
+            .replacingOccurrences(of: "&lt;", with: "<")
+            .replacingOccurrences(of: "&gt;", with: ">")
+            .replacingOccurrences(of: "&quot;", with: "\"")
+            .replacingOccurrences(of: "&#39;", with: "'")
+
+        // 4) Collapse multiple consecutive newlines to a single newline
+        let collapsed = decoded.replacingOccurrences(of: "\n{3,}", with: "\n\n", options: .regularExpression)
+
+        // Return as a plain AttributedString (no styles), letting caller apply font/color
+        return AttributedString(collapsed)
     }
 
     private var descriptionColor: Color {
@@ -243,7 +250,7 @@ struct FrameLayout: View {
     }
 
     private var defaultDescriptionUIColor: UIColor {
-        colorScheme == .dark ? .white : .black
+        .white
     }
 
     private var aspectRatio: CGFloat {
@@ -272,4 +279,14 @@ struct FrameLayout: View {
 
         return CGFloat(width / height)
     }
+    
+    private func dynamicSubtitleFontSize(for width: CGFloat) -> CGFloat {
+        // Proportional scaling: ~5% of available width
+        let proportional = width * 0.05
+        // Clamp to sensible bounds
+        let minSize: CGFloat = 4
+        let maxSize: CGFloat = 20
+        return max(minSize, min(proportional, maxSize))
+    }
 }
+

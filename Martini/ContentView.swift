@@ -48,6 +48,10 @@ struct MainView: View {
     @State private var hasLoadedCreatives = false
     @State private var gridSizeStep: Int = 1 // 1..4, where 1 -> 4 columns, 4 -> 1 column
     @State private var frameSortMode: FrameSortMode = .story
+    @State private var isShowingSettings = false
+    
+    @State private var showDescriptions: Bool = true
+    @State private var gridFontStep: Int = 3 // 1..5
 
     enum ViewMode {
         case list
@@ -214,38 +218,20 @@ struct MainView: View {
                 }
 
                 ToolbarItemGroup(placement: .bottomBar) {
-                    Menu {
-                        sortMenuButton(title: "Story Order", mode: .story)
-                        sortMenuButton(title: "Shoot Order", mode: .shoot)
+                    Button {
+                        withAnimation(.spring(response: 0.25)) {
+                            frameSortMode = (frameSortMode == .story) ? .shoot : .story
+                        }
                     } label: {
-                        Label(sortMenuLabel, systemImage: "arrow.up.arrow.down")
+                        HStack(spacing: 4) {
+                            Image(systemName: "photo.stack")
+                            Text(frameSortMode == .story ? "Story" : "Shoot")
+                                .font(.system(size: 14, weight: .semibold))
+                        }
                     }
-                    
                     
                     Spacer()
                     
-                    Menu {
-                        Button("Small (3 columns)") {
-                            withAnimation(.spring(response: 0.2)) {
-                                gridSizeStep = 2 // maps to 3 columns
-                            }
-                        }
-                        Button("Medium (2 columns)") {
-                            withAnimation(.spring(response: 0.2)) {
-                                gridSizeStep = 3 // maps to 2 columns
-                            }
-                        }
-                        Button("Large (1 column)") {
-                            withAnimation(.spring(response: 0.2)) {
-                                gridSizeStep = 4 // maps to 1 column
-                            }
-                        }
-                    } label: {
-                        Label("Grid Size", systemImage: "rectangle.expand.vertical")
-                    }
-
-                    Spacer()
-
                     Button(action: {
                         withAnimation {
                             if viewMode == .grid {
@@ -260,6 +246,15 @@ struct MainView: View {
                             .font(.system(size: 17, weight: .semibold))
                     }
                     .accessibilityLabel(viewMode == .grid ? "Close Overview" : "Open Overview")
+                    
+                    Spacer()
+                    
+                    Button {
+                        isShowingSettings = true
+                    } label: {
+                        Label("Settings", systemImage: "switch.2")
+                    }
+                    .accessibilityLabel("Open Settings")
                 }
                 
 
@@ -289,6 +284,16 @@ struct MainView: View {
                 FrameView(frame: frame) {
                     selectedFrame = nil
                 }
+                .interactiveDismissDisabled(false)
+            }
+            .sheet(isPresented: $isShowingSettings) {
+                SettingsView(
+                    showDescriptions: $showDescriptions,
+                    gridSizeStep: $gridSizeStep,
+                    gridFontStep: $gridFontStep
+                )
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
                 .interactiveDismissDisabled(false)
             }
         }
@@ -367,11 +372,22 @@ struct MainView: View {
                             // Tap switches to Grid View (kept as-is)
                             viewMode = .list
                         }
-                    }, columnCount: gridColumnCount, showDescriptions: viewMode == .list)
+                    }, columnCount: gridColumnCount, showDescriptions: showDescriptions, fontScale: fontScale)
                 }
             }
             .padding(.vertical)
             .padding(.bottom, 0)
+        }
+    }
+    
+    private var fontScale: CGFloat {
+        switch gridFontStep {
+        case 1: return 0.85
+        case 2: return 1.0
+        case 3: return 1.15
+        case 4: return 1.3
+        case 5: return 1.45
+        default: return 1.0
         }
     }
 }
@@ -404,6 +420,24 @@ struct CreativeGridSection: View {
     let onFrameTap: (String) -> Void
     let columnCount: Int
     let showDescriptions: Bool
+    let fontScale: CGFloat
+
+    init(
+        creative: Creative,
+        frames: [Frame],
+        onFrameTap: @escaping (String) -> Void,
+        columnCount: Int,
+        showDescriptions: Bool,
+        fontScale: CGFloat
+    ) {
+        self.creative = creative
+        self.frames = frames
+        self.onFrameTap = onFrameTap
+        self.columnCount = columnCount
+        self.showDescriptions = showDescriptions
+        self.fontScale = fontScale
+    }
+
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
 
     private var columns: [GridItem] {
@@ -425,7 +459,11 @@ struct CreativeGridSection: View {
                     Button {
                         onFrameTap(frame.id)
                     } label: {
-                        GridFrameCell(frame: frame, showDescription: showDescriptions)
+                        GridFrameCell(
+                            frame: frame,
+                            showDescription: showDescriptions,
+                            fontScale: fontScale
+                        )
                     }
                 }
             }
@@ -439,14 +477,25 @@ struct CreativeGridSection: View {
 struct GridFrameCell: View {
     let frame: Frame
     var showDescription: Bool = false
+    var fontScale: CGFloat
 
     var body: some View {
-        FrameLayout(
-            frame: frame,
-            title: frame.caption,
-            subtitle: showDescription ? frame.description : nil,
-            cornerRadius: 6
-        )
+        VStack(alignment: .leading, spacing: 6) {
+            FrameLayout(
+                frame: frame,
+                title: frame.caption,
+                cornerRadius: 6
+            )
+            if showDescription, let desc = frame.description, !desc.isEmpty {
+                let clean = plainTextFromHTML(desc)
+                Text(clean)
+                    .font(.system(size: 12 * fontScale))
+                    .foregroundColor(.secondary)
+                    .lineLimit(3)
+            }
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -528,8 +577,7 @@ struct FrameRowView: View {
     var body: some View {
         FrameLayout(
             frame: frame,
-            title: frame.caption,
-            subtitle: descriptionText
+            title: frame.caption
         )
     }
 
@@ -553,7 +601,77 @@ struct Triangle: Shape {
     }
 }
 
+struct SettingsView: View {
+    @Binding var showDescriptions: Bool
+    @Binding var gridSizeStep: Int // 1..4 (4->1 col)
+    @Binding var gridFontStep: Int // 1..5
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Grid") {
+                    Toggle("Show Descriptions", isOn: $showDescriptions)
+
+                    // Grid size slider: 1->4 maps to 4/3/2/1 columns (already handled by gridColumnCount)
+                    VStack(alignment: .leading) {
+                        Text("Grid Size")
+                        HStack {
+                            Image(systemName: "square.grid.4x3.fill")
+                            Spacer()
+                            Slider(value: Binding(
+                                get: { Double(gridSizeStep) },
+                                set: { gridSizeStep = Int($0.rounded()) }
+                            ), in: 1...4, step: 1)
+                            Spacer()
+                            Image(systemName: "rectangle.fill")
+                        }
+                    }
+
+                    // Font size slider: 1..5 steps
+                    VStack(alignment: .leading) {
+                        Text("Font Size")
+                        HStack {
+                            Image(systemName: "textformat.size.smaller")
+                            Spacer()
+                            Slider(value: Binding(
+                                get: { Double(gridFontStep) },
+                                set: { gridFontStep = Int($0.rounded()) }
+                            ), in: 1...5, step: 1)
+                            Spacer()
+                            Image(systemName: "textformat.size.larger")
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+
+    private var gridSizeLabel: String {
+        switch gridSizeStep {
+        case 1: return "Small (4 cols)"
+        case 2: return "Small+ (3 cols)"
+        case 3: return "Medium (2 cols)"
+        case 4: return "Large (1 col)"
+        default: return "Custom"
+        }
+    }
+
+    private var fontSizeLabel: String {
+        switch gridFontStep {
+        case 1: return "XS"
+        case 2: return "S"
+        case 3: return "M"
+        case 4: return "L"
+        case 5: return "XL"
+        default: return "M"
+        }
+    }
+}
+
 #Preview {
     ContentView()
         .environmentObject(AuthService())
 }
+
