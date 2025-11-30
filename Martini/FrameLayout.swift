@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct FrameLayout: View {
     let frame: Frame
@@ -9,6 +10,7 @@ struct FrameLayout: View {
     var cornerRadius: CGFloat = 8
 
     @Environment(\.horizontalSizeClass) private var hSizeClass
+    @Environment(\.colorScheme) private var colorScheme
 
     private var resolvedTitle: String? {
         if let title, !title.isEmpty {
@@ -40,7 +42,6 @@ struct FrameLayout: View {
         ZStack {
             RoundedRectangle(cornerRadius: cornerRadius)
                 .fill(Color.gray.opacity(0.2))
-                .aspectRatio(16/9, contentMode: .fit)
                 .overlay(
                     Group {
                         if let urlString = frame.board ?? frame.boardThumb, let url = URL(string: urlString) {
@@ -87,6 +88,7 @@ struct FrameLayout: View {
                 statusOverlay(for: frame.statusEnum)
             }
         }
+        .aspectRatio(aspectRatio, contentMode: .fit)
         .overlay(
             RoundedRectangle(cornerRadius: cornerRadius)
                 .strokeBorder(borderColor, lineWidth: borderWidth)
@@ -106,14 +108,14 @@ struct FrameLayout: View {
             }
 
             if let resolvedSubtitle {
-                if let attributedSubtitle = attributedString(fromHTML: resolvedSubtitle) {
+                if let attributedSubtitle = attributedString(fromHTML: resolvedSubtitle, defaultColor: defaultDescriptionUIColor) {
                     Text(attributedSubtitle)
                         .font(.subheadline)
                         .lineLimit(2)
                 } else {
                     Text(resolvedSubtitle)
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(descriptionColor)
                         .lineLimit(2)
                 }
             }
@@ -159,22 +161,24 @@ struct FrameLayout: View {
         switch status {
         case .done:
             // Red X lines from corner to corner
-            ZStack {
-                // Diagonal line from top-left to bottom-right
-                Path { path in
-                    path.move(to: .zero)
-                    path.addLine(to: CGPoint(x: 1_000, y: 563)) // 16:9 ratio approximation
-                }
-                .stroke(Color.red, lineWidth: 5)
+            GeometryReader { geometry in
+                ZStack {
+                    // Diagonal line from top-left to bottom-right
+                    Path { path in
+                        path.move(to: .zero)
+                        path.addLine(to: CGPoint(x: geometry.size.width, y: geometry.size.height))
+                    }
+                    .stroke(Color.red, lineWidth: 5)
 
-                // Diagonal line from top-right to bottom-left
-                Path { path in
-                    path.move(to: CGPoint(x: 1_000, y: 0))
-                    path.addLine(to: CGPoint(x: 0, y: 563))
+                    // Diagonal line from top-right to bottom-left
+                    Path { path in
+                        path.move(to: CGPoint(x: geometry.size.width, y: 0))
+                        path.addLine(to: CGPoint(x: 0, y: geometry.size.height))
+                    }
+                    .stroke(Color.red, lineWidth: 5)
                 }
-                .stroke(Color.red, lineWidth: 5)
             }
-            .aspectRatio(16/9, contentMode: .fit)
+            .aspectRatio(aspectRatio, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
 
         case .skip:
@@ -200,7 +204,7 @@ struct FrameLayout: View {
         }
     }
 
-    private func attributedString(fromHTML html: String) -> AttributedString? {
+    private func attributedString(fromHTML html: String, defaultColor: UIColor? = nil) -> AttributedString? {
         guard let data = html.data(using: .utf8) else { return nil }
 
         do {
@@ -215,9 +219,53 @@ struct FrameLayout: View {
                 documentAttributes: nil
             )
 
+            if let defaultColor = defaultColor {
+                let fullRange = NSRange(location: 0, length: nsAttributedString.length)
+                nsAttributedString.enumerateAttributes(in: fullRange, options: []) { attributes, range, _ in
+                    if attributes[.foregroundColor] == nil {
+                        nsAttributedString.addAttribute(.foregroundColor, value: defaultColor, range: range)
+                    }
+                }
+            }
+
             return AttributedString(nsAttributedString)
         } catch {
             return nil
         }
+    }
+
+    private var descriptionColor: Color {
+        colorScheme == .dark ? .white : .black
+    }
+
+    private var defaultDescriptionUIColor: UIColor {
+        colorScheme == .dark ? .white : .black
+    }
+
+    private var aspectRatio: CGFloat {
+        guard let ratioString = frame.creativeAspectRatio,
+              let parsedRatio = FrameLayout.aspectRatio(from: ratioString) else {
+            return 16.0 / 9.0
+        }
+
+        return parsedRatio
+    }
+
+    private static func aspectRatio(from ratioString: String) -> CGFloat? {
+        let separators = CharacterSet(charactersIn: ":/xX").union(.whitespaces)
+        let components = ratioString
+            .split(whereSeparator: { separator in
+                separator.unicodeScalars.contains { separators.contains($0) }
+            })
+            .map(String.init)
+
+        guard components.count == 2,
+              let width = Double(components[0]),
+              let height = Double(components[1]),
+              height != 0 else {
+            return nil
+        }
+
+        return CGFloat(width / height)
     }
 }
