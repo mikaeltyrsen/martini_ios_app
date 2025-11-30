@@ -49,9 +49,11 @@ struct MainView: View {
     @State private var gridSizeStep: Int = 1 // 1..4, where 1 -> 4 columns, 4 -> 1 column
     @State private var frameSortMode: FrameSortMode = .story
     @State private var isShowingSettings = false
-    
+
     @State private var showDescriptions: Bool = true
     @State private var gridFontStep: Int = 3 // 1..5
+    @State private var visibleFrameIds: Set<String> = []
+    @State private var gridScrollProxy: ScrollViewProxy?
 
     enum ViewMode {
         case list
@@ -229,9 +231,16 @@ struct MainView: View {
                                 .font(.system(size: 14, weight: .semibold))
                         }
                     }
-                    
+
                     Spacer()
-                    
+
+                    if shouldShowInProgressShortcut {
+                        Button(action: scrollToInProgressFrame) {
+                            Label("Jump to In-Progress", systemImage: "eye")
+                        }
+                        .accessibilityLabel("Jump to in-progress frame")
+                    }
+
                     Button(action: {
                         withAnimation {
                             if viewMode == .grid {
@@ -360,23 +369,41 @@ struct MainView: View {
     }
     
     private var gridView: some View {
-        ScrollView {
-            LazyVStack(spacing: 20, pinnedViews: [.sectionHeaders]) {
-                ForEach(creativesToDisplay) { creative in
-                    CreativeGridSection(creative: creative, frames: frames(for: creative), onFrameTap: { frameId in
-                        selectedFrameId = frameId
-                        if let found = authService.frames.first(where: { $0.id == frameId }) {
-                            selectedFrame = found
+        ScrollViewReader { proxy in
+            GeometryReader { outerGeo in
+                ScrollView {
+                    LazyVStack(spacing: 20, pinnedViews: [.sectionHeaders]) {
+                        ForEach(creativesToDisplay) { creative in
+                            CreativeGridSection(
+                                creative: creative,
+                                frames: frames(for: creative),
+                                onFrameTap: { frameId in
+                                    selectedFrameId = frameId
+                                    if let found = authService.frames.first(where: { $0.id == frameId }) {
+                                        selectedFrame = found
+                                    }
+                                    withAnimation {
+                                        // Tap switches to Grid View (kept as-is)
+                                        viewMode = .list
+                                    }
+                                },
+                                columnCount: gridColumnCount,
+                                showDescriptions: showDescriptions,
+                                fontScale: fontScale,
+                                coordinateSpaceName: "gridScroll",
+                                viewportHeight: outerGeo.size.height
+                            )
                         }
-                        withAnimation {
-                            // Tap switches to Grid View (kept as-is)
-                            viewMode = .list
-                        }
-                    }, columnCount: gridColumnCount, showDescriptions: showDescriptions, fontScale: fontScale)
+                    }
+                    .padding(.vertical)
+                    .padding(.bottom, 0)
+                }
+                .coordinateSpace(name: "gridScroll")
+                .onAppear { gridScrollProxy = proxy }
+                .onPreferenceChange(VisibleFramePreferenceKey.self) { ids in
+                    visibleFrameIds = ids
                 }
             }
-            .padding(.vertical)
-            .padding(.bottom, 0)
         }
     }
     
@@ -410,6 +437,22 @@ private extension MainView {
         guard let value, let intValue = Int(value) else { return nil }
         return intValue
     }
+
+    var inProgressFrame: Frame? {
+        authService.frames.first { $0.statusEnum == .inProgress }
+    }
+
+    var shouldShowInProgressShortcut: Bool {
+        guard let id = inProgressFrame?.id else { return false }
+        return !visibleFrameIds.contains(id)
+    }
+
+    func scrollToInProgressFrame() {
+        guard let id = inProgressFrame?.id, let proxy = gridScrollProxy else { return }
+        withAnimation {
+            proxy.scrollTo(id, anchor: .center)
+        }
+    }
 }
 
 // MARK: - Creative Grid Section
@@ -421,6 +464,8 @@ struct CreativeGridSection: View {
     let columnCount: Int
     let showDescriptions: Bool
     let fontScale: CGFloat
+    let coordinateSpaceName: String
+    let viewportHeight: CGFloat
 
     init(
         creative: Creative,
@@ -428,7 +473,9 @@ struct CreativeGridSection: View {
         onFrameTap: @escaping (String) -> Void,
         columnCount: Int,
         showDescriptions: Bool,
-        fontScale: CGFloat
+        fontScale: CGFloat,
+        coordinateSpaceName: String,
+        viewportHeight: CGFloat
     ) {
         self.creative = creative
         self.frames = frames
@@ -436,6 +483,8 @@ struct CreativeGridSection: View {
         self.columnCount = columnCount
         self.showDescriptions = showDescriptions
         self.fontScale = fontScale
+        self.coordinateSpaceName = coordinateSpaceName
+        self.viewportHeight = viewportHeight
     }
 
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
@@ -453,6 +502,25 @@ struct CreativeGridSection: View {
                 .fontWeight(.bold)
                 .padding(.horizontal)
 
+            VStack(alignment: .leading, spacing: 6) {
+                ProgressView(value: Double(creative.completedFrames), total: Double(max(creative.totalFrames, 1)))
+                    .tint(.accentColor)
+                    .accessibilityLabel("\(creative.completedFrames) of \(creative.totalFrames) frames complete")
+
+                HStack {
+                    Text("\(creative.completedFrames) completed")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+
+                    Spacer()
+
+                    Text("\(creative.totalFrames) total")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .padding(.horizontal)
+
             // Grid of frames
             LazyVGrid(columns: columns, spacing: 8) {
                 ForEach(frames) { frame in
@@ -462,9 +530,12 @@ struct CreativeGridSection: View {
                         GridFrameCell(
                             frame: frame,
                             showDescription: showDescriptions,
-                            fontScale: fontScale
+                            fontScale: fontScale,
+                            coordinateSpaceName: coordinateSpaceName,
+                            viewportHeight: viewportHeight
                         )
                     }
+                    .id(frame.id)
                 }
             }
             .padding(.horizontal)
@@ -478,6 +549,8 @@ struct GridFrameCell: View {
     let frame: Frame
     var showDescription: Bool = false
     var fontScale: CGFloat
+    let coordinateSpaceName: String
+    let viewportHeight: CGFloat
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -496,6 +569,26 @@ struct GridFrameCell: View {
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            GeometryReader { geo in
+                Color.clear.preference(
+                    key: VisibleFramePreferenceKey.self,
+                    value: isVisible(geo.frame(in: .named(coordinateSpaceName))) ? [frame.id] : []
+                )
+            }
+        )
+    }
+
+    private func isVisible(_ rect: CGRect) -> Bool {
+        rect.maxY >= 0 && rect.minY <= viewportHeight
+    }
+}
+
+private struct VisibleFramePreferenceKey: PreferenceKey {
+    static var defaultValue: Set<String> = []
+
+    static func reduce(value: inout Set<String>, nextValue: () -> Set<String>) {
+        value.formUnion(nextValue())
     }
 }
 
