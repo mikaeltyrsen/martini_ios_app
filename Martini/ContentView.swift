@@ -46,8 +46,6 @@ struct MainView: View {
     @State private var dataError: String?
     @State private var hasLoadedFrames = false
     @State private var hasLoadedCreatives = false
-    @State private var showGridSizeSlider: Bool = false
-    @State private var showSizeControls: Bool = false
     @State private var gridSizeStep: Int = 1 // 1..4, where 1 -> 4 columns, 4 -> 1 column
     @State private var frameSortMode: FrameSortMode = .story
 
@@ -203,84 +201,6 @@ struct MainView: View {
                         } else { // Overview (fixed 5 columns)
                             gridView
                         }
-                        
-                        // Top-left overlay: size control with popup
-                        ZStack(alignment: .topLeading) {
-                            if showSizeControls {
-                                VStack(spacing: 0) {
-                                    VStack(spacing: 8) {
-                                        Button(action: {
-                                            withAnimation(.spring(response: 0.2)) {
-                                                gridSizeStep = max(1, gridSizeStep - 1)
-                                            }
-                                        }) {
-                                            Image(systemName: "minus")
-                                                .font(.system(size: 16, weight: .bold))
-                                                .padding(8)
-                                        }
-                                        .accessibilityLabel("Decrease Grid Size")
-
-                                        Divider()
-                                            .frame(width: 28)
-
-                                        Button(action: {
-                                            withAnimation(.spring(response: 0.2)) {
-                                                gridSizeStep = min(4, gridSizeStep + 1)
-                                            }
-                                        }) {
-                                            Image(systemName: "plus")
-                                                .font(.system(size: 16, weight: .bold))
-                                                .padding(8)
-                                        }
-                                        .accessibilityLabel("Increase Grid Size")
-                                    }
-                                    .padding(8)
-                                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                    .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(Color.black.opacity(0.08), lineWidth: 0.5)
-                                    )
-
-                                    Triangle()
-                                        .fill(Color(uiColor: .systemBackground).opacity(0.7))
-                                        .frame(width: 14, height: 8)
-                                        .shadow(color: .black.opacity(0.1), radius: 1, x: 0, y: 1)
-                                        .offset(x: 16)
-                                }
-                                .transition(.move(edge: .top).combined(with: .opacity))
-                                .offset(x: 8, y: 44)
-                                .zIndex(2)
-                            }
-
-                            Button(action: {
-                                withAnimation(.spring(response: 0.3)) {
-                                    showSizeControls.toggle()
-                                }
-                            }) {
-                                Image(systemName: showSizeControls ? "xmark" : "rectangle.compress.vertical")
-                                    .font(.system(size: 18, weight: .semibold))
-                                    .padding(10)
-                                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            }
-                            .padding(.leading, 12)
-                            .padding(.top, 8)
-                            .accessibilityLabel(showSizeControls ? "Close Size Controls" : "Open Size Controls")
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                        
-                        // Tap-capturing overlay to dismiss size popup
-                        if showSizeControls {
-                            Color.black.opacity(0.001) // invisible but receives taps
-                                .ignoresSafeArea()
-                                .onTapGesture {
-                                    withAnimation(.spring(response: 0.25)) {
-                                        showSizeControls = false
-                                    }
-                                }
-                                .transition(.opacity)
-                                .zIndex(1)
-                        }
                     }
                 }
             }
@@ -293,36 +213,56 @@ struct MainView: View {
                     .foregroundColor(.red)
                 }
 
-                ToolbarItem(placement: .bottomBar) {
-                    HStack(spacing: 12) {
-                        Menu {
-                            sortMenuButton(title: "Story Order", mode: .story)
-                            sortMenuButton(title: "Shoot Order", mode: .shoot)
-                        } label: {
-                            Label(sortMenuLabel, systemImage: "arrow.up.arrow.down")
-                        }
-
-                        Spacer()
-
-                        Button(action: {
-                            withAnimation {
-                                if viewMode == .grid {
-                                    viewMode = .list
-                                } else {
-                                    viewMode = .grid
-                                    showGridSizeSlider = false
-                                    showSizeControls = false
-                                }
-                            }
-                        }) {
-                            Label(viewMode == .grid ? "Close Overview" : "Open Overview", systemImage: viewMode == .grid ? "xmark" : "square.grid.2x2")
-                                .labelStyle(.titleAndIcon)
-                                .font(.system(size: 17, weight: .semibold))
-                        }
-                        .accessibilityLabel(viewMode == .grid ? "Close Overview" : "Open Overview")
+                ToolbarItemGroup(placement: .bottomBar) {
+                    Menu {
+                        sortMenuButton(title: "Story Order", mode: .story)
+                        sortMenuButton(title: "Shoot Order", mode: .shoot)
+                    } label: {
+                        Label(sortMenuLabel, systemImage: "arrow.up.arrow.down")
                     }
-                    .padding(.horizontal)
+                    
+                    
+                    Spacer()
+                    
+                    Menu {
+                        Button("Small (3 columns)") {
+                            withAnimation(.spring(response: 0.2)) {
+                                gridSizeStep = 2 // maps to 3 columns
+                            }
+                        }
+                        Button("Medium (2 columns)") {
+                            withAnimation(.spring(response: 0.2)) {
+                                gridSizeStep = 3 // maps to 2 columns
+                            }
+                        }
+                        Button("Large (1 column)") {
+                            withAnimation(.spring(response: 0.2)) {
+                                gridSizeStep = 4 // maps to 1 column
+                            }
+                        }
+                    } label: {
+                        Label("Grid Size", systemImage: "rectangle.expand.vertical")
+                    }
+
+                    Spacer()
+
+                    Button(action: {
+                        withAnimation {
+                            if viewMode == .grid {
+                                viewMode = .list
+                            } else {
+                                viewMode = .grid
+                            }
+                        }
+                    }) {
+                        Label(viewMode == .grid ? "Close Overview" : "Open Overview", systemImage: viewMode == .grid ? "xmark" : "square.grid.2x2")
+                            .labelStyle(.titleAndIcon)
+                            .font(.system(size: 17, weight: .semibold))
+                    }
+                    .accessibilityLabel(viewMode == .grid ? "Close Overview" : "Open Overview")
                 }
+                
+
             }
             .task {
                 await loadCreativesIfNeeded()
@@ -617,4 +557,3 @@ struct Triangle: Shape {
     ContentView()
         .environmentObject(AuthService())
 }
-

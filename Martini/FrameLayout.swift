@@ -100,21 +100,21 @@ struct FrameLayout: View {
             if let resolvedTitle {
                 if let attributedTitle = attributedString(fromHTML: resolvedTitle) {
                     Text(attributedTitle)
-                        .font(.headline)
+                        .font(.system(size: 14, weight: .semibold))
                 } else {
                     Text(resolvedTitle)
-                        .font(.headline)
+                        .font(.system(size: 14, weight: .semibold))
                 }
             }
 
             if let resolvedSubtitle {
                 if let attributedSubtitle = attributedString(fromHTML: resolvedSubtitle, defaultColor: defaultDescriptionUIColor) {
                     Text(attributedSubtitle)
-                        .font(.subheadline)
+                        .font(.system(size: 14, weight: .semibold))
                         .lineLimit(2)
                 } else {
                     Text(resolvedSubtitle)
-                        .font(.subheadline)
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(descriptionColor)
                         .lineLimit(2)
                 }
