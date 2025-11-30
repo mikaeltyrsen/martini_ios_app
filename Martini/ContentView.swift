@@ -295,7 +295,12 @@ struct MainView: View {
 
                 ToolbarItem(placement: .bottomBar) {
                     HStack(spacing: 12) {
-                        FrameOrderTabBar(selectedMode: $frameSortMode)
+                        Menu {
+                            sortMenuButton(title: "Story Order", mode: .story)
+                            sortMenuButton(title: "Shoot Order", mode: .shoot)
+                        } label: {
+                            Label(sortMenuLabel, systemImage: "arrow.up.arrow.down")
+                        }
 
                         Spacer()
 
@@ -310,8 +315,9 @@ struct MainView: View {
                                 }
                             }
                         }) {
-                            Image(systemName: viewMode == .grid ? "xmark" : "square.grid.2x2")
-                                .font(.system(size: 18, weight: .semibold))
+                            Label(viewMode == .grid ? "Close Overview" : "Open Overview", systemImage: viewMode == .grid ? "xmark" : "square.grid.2x2")
+                                .labelStyle(.titleAndIcon)
+                                .font(.system(size: 17, weight: .semibold))
                         }
                         .accessibilityLabel(viewMode == .grid ? "Close Overview" : "Open Overview")
                     }
@@ -357,6 +363,31 @@ struct MainView: View {
             dataError = error.localizedDescription
             print("❌ Failed to load creatives: \(error)")
         }
+    }
+
+    private var sortMenuLabel: String {
+        switch frameSortMode {
+        case .story:
+            return "Sort: Story"
+        case .shoot:
+            return "Sort: Shoot"
+        }
+    }
+
+    @ViewBuilder
+    private func sortMenuButton(title: String, mode: FrameSortMode) -> some View {
+        Button(action: {
+            withAnimation(.spring(response: 0.25)) {
+                frameSortMode = mode
+            }
+        }) {
+            if frameSortMode == mode {
+                Label(title, systemImage: "checkmark")
+            } else {
+                Text(title)
+            }
+        }
+        .accessibilityLabel("Sort by \(title.lowercased())")
     }
 
     private func loadFramesIfNeeded() async {
@@ -422,54 +453,6 @@ private extension MainView {
     func intValue(from value: String?) -> Int? {
         guard let value, let intValue = Int(value) else { return nil }
         return intValue
-    }
-}
-
-// MARK: - Frame Order Toggle
-
-struct FrameOrderTabBar: View {
-    @Binding var selectedMode: MainView.FrameSortMode
-
-    var body: some View {
-        HStack(spacing: 8) {
-            orderButton(title: "STORY", mode: .story)
-            orderButton(title: "SHOOT", mode: .shoot)
-        }
-        .padding(6)
-        .background(.ultraThinMaterial, in: Capsule())
-        .overlay(
-            Capsule()
-                .stroke(Color.primary.opacity(0.1), lineWidth: 0.5)
-        )
-    }
-
-    @ViewBuilder
-    private func orderButton(title: String, mode: MainView.FrameSortMode) -> some View {
-        Button {
-            withAnimation(.spring(response: 0.25)) {
-                selectedMode = mode
-            }
-        } label: {
-            Text(title)
-                .font(.footnote)
-                .fontWeight(.semibold)
-                .padding(.vertical, 8)
-                .padding(.horizontal, 16)
-                .frame(maxWidth: .infinity)
-                .background(selectionBackground(for: mode))
-                .foregroundColor(selectionForeground(for: mode))
-                .clipShape(Capsule())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Sort by \(title.lowercased()) order")
-    }
-
-    private func selectionBackground(for mode: MainView.FrameSortMode) -> Color {
-        selectedMode == mode ? Color.accentColor.opacity(0.15) : Color.clear
-    }
-
-    private func selectionForeground(for mode: MainView.FrameSortMode) -> Color {
-        selectedMode == mode ? .accentColor : .primary
     }
 }
 
