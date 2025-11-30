@@ -27,19 +27,19 @@ struct FrameView: View {
             .navigationTitle("Frame \(frame.frameNumber > 0 ? String(frame.frameNumber) : "")")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .bottomBar) {
-                    Picker("Status", selection: $selectedStatus) {
-                        Text("Done").tag(FrameStatus.done)
-                        Text("Here").tag(FrameStatus.inProgress)
-                        Text("Next").tag(FrameStatus.upNext)
-                        Text("Omit").tag(FrameStatus.skip)
-                        Text("Clear").tag(FrameStatus.none)
+                ToolbarItemGroup(placement: .bottomBar) {
+                    Menu {
+                        statusMenuButton(title: "Done", status: .done, systemImage: "checkmark.circle")
+                        statusMenuButton(title: "Here", status: .inProgress, systemImage: "figure.wave")
+                        statusMenuButton(title: "Next", status: .upNext, systemImage: "arrow.turn.up.right")
+                        statusMenuButton(title: "Omit", status: .skip, systemImage: "minus.circle")
+                        statusMenuButton(title: "Clear", status: .none, systemImage: "xmark.circle")
+                    } label: {
+                        Label(statusMenuLabel, systemImage: "line.3.horizontal.decrease")
                     }
-                    .pickerStyle(.segmented)
-                    .frame(maxWidth: .infinity)
-                }
 
-                ToolbarItem(placement: .cancellationAction) {
+                    Spacer()
+
                     Button("Close") { onClose() }
                 }
             }
@@ -57,9 +57,52 @@ struct FrameView: View {
         return nil
     }
 
+    private var statusMenuLabel: String {
+        "Status: \(selectedStatus.displayName)"
+    }
+
+    @ViewBuilder
+    private func statusMenuButton(title: String, status: FrameStatus, systemImage: String) -> some View {
+        Button {
+            withAnimation(.spring(response: 0.2)) {
+                selectedStatus = status
+            }
+        } label: {
+            if selectedStatus == status {
+                Label(title, systemImage: systemImage)
+            } else {
+                Text(title)
+            }
+        }
+        .accessibilityLabel("Set status to \(title)")
+    }
+}
+
+private extension FrameStatus {
+    var displayName: String {
+        switch self {
+        case .done:
+            return "Done"
+        case .inProgress:
+            return "Here"
+        case .skip:
+            return "Omit"
+        case .upNext:
+            return "Next"
+        case .none:
+            return "Clear"
+        }
+    }
 }
 
 #Preview {
-    let sample = Frame(id: "1", creativeId: "c1", description: "A sample description.", caption: "Sample Caption", status: FrameStatus.inProgress.rawValue, frameOrder: "1")
+    let sample = Frame(
+        id: "1",
+        creativeId: "c1",
+        description: "A sample description.",
+        caption: "Sample Caption",
+        status: FrameStatus.inProgress.rawValue,
+        frameOrder: "1"
+    )
     FrameView(frame: sample) {}
 }
