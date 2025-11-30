@@ -9,12 +9,20 @@ import SwiftUI
 
 @main
 struct MartiniApp: App {
-    @StateObject private var authService = AuthService()
+    @StateObject private var authService: AuthService
+    @StateObject private var realtimeService: RealtimeService
+
+    init() {
+        let authService = AuthService()
+        _authService = StateObject(wrappedValue: authService)
+        _realtimeService = StateObject(wrappedValue: RealtimeService(authService: authService))
+    }
     
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(authService)
+                .environmentObject(realtimeService)
         }
     }
 }
