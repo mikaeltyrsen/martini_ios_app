@@ -96,15 +96,26 @@ struct FrameLayout: View {
     private var textBlock: some View {
         VStack(alignment: .leading, spacing: 8) {
             if let resolvedTitle {
-                Text(resolvedTitle)
-                    .font(.headline)
+                if let attributedTitle = attributedString(fromHTML: resolvedTitle) {
+                    Text(attributedTitle)
+                        .font(.headline)
+                } else {
+                    Text(resolvedTitle)
+                        .font(.headline)
+                }
             }
 
             if let resolvedSubtitle {
-                Text(resolvedSubtitle)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .lineLimit(2)
+                if let attributedSubtitle = attributedString(fromHTML: resolvedSubtitle) {
+                    Text(attributedSubtitle)
+                        .font(.subheadline)
+                        .lineLimit(2)
+                } else {
+                    Text(resolvedSubtitle)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .lineLimit(2)
+                }
             }
         }
     }
@@ -186,6 +197,27 @@ struct FrameLayout: View {
                     .font(.caption)
                     .foregroundColor(.gray)
             }
+        }
+    }
+
+    private func attributedString(fromHTML html: String) -> AttributedString? {
+        guard let data = html.data(using: .utf8) else { return nil }
+
+        do {
+            let options: [NSAttributedString.DocumentReadingOptionKey: Any] = [
+                .documentType: NSAttributedString.DocumentType.html,
+                .characterEncoding: String.Encoding.utf8.rawValue
+            ]
+
+            let nsAttributedString = try NSMutableAttributedString(
+                data: data,
+                options: options,
+                documentAttributes: nil
+            )
+
+            return AttributedString(nsAttributedString)
+        } catch {
+            return nil
         }
     }
 }
