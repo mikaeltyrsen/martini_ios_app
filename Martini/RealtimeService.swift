@@ -104,6 +104,9 @@ final class RealtimeService: NSObject, ObservableObject {
 
         var request = URLRequest(url: url)
         request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+        if let token = authService.currentBearerToken() {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
 
         let dataTask = session.dataTask(with: request)
         task = dataTask

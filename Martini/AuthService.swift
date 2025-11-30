@@ -44,7 +44,7 @@ class AuthService: ObservableObject {
         return url
     }
 
-    private func currentBearerToken() -> String? {
+    func currentBearerToken() -> String? {
         if let override = bearerTokenOverride, !override.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             print("Overriding Bearer Token: \(override)")
             return override
