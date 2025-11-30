@@ -8,6 +8,8 @@ struct FrameLayout: View {
     var showFrameNumberOverlay: Bool = true
     var cornerRadius: CGFloat = 8
 
+    @Environment(\.horizontalSizeClass) private var hSizeClass
+
     private var resolvedTitle: String? {
         if let title, !title.isEmpty {
             return title
@@ -24,57 +26,75 @@ struct FrameLayout: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ZStack {
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .fill(Color.gray.opacity(0.2))
-                    .aspectRatio(16/9, contentMode: .fit)
-                    .overlay(
-                        Group {
-                            if let urlString = frame.board ?? frame.boardThumb, let url = URL(string: urlString) {
-                                AsyncImage(url: url) { phase in
-                                    switch phase {
-                                    case let .success(image):
-                                        image
-                                            .resizable()
-                                            .scaledToFill()
-                                    case .empty:
-                                        ProgressView()
-                                    case .failure:
-                                        placeholder
-                                    @unknown default:
-                                        placeholder
-                                    }
+        let layout: AnyLayout = (hSizeClass == .regular)
+        ? AnyLayout(HStackLayout(alignment: .top, spacing: 12))
+        : AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+
+        layout {
+            imageCard
+            textBlock
+        }
+    }
+
+    private var imageCard: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .fill(Color.gray.opacity(0.2))
+                .aspectRatio(16/9, contentMode: .fit)
+                .overlay(
+                    Group {
+                        if let urlString = frame.board ?? frame.boardThumb, let url = URL(string: urlString) {
+                            AsyncImage(url: url) { phase in
+                                switch phase {
+                                case let .success(image):
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                case .empty:
+                                    ProgressView()
+                                case .failure:
+                                    placeholder
+                                @unknown default:
+                                    placeholder
                                 }
-                            } else {
-                                placeholder
                             }
+                        } else {
+                            placeholder
                         }
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-
-                if showFrameNumberOverlay {
-                    VStack {
-                        Spacer()
-                        Text(frameNumberText)
-                            .font(.caption2)
-                            .foregroundColor(.white)
-                            .padding(4)
-                            .background(Color.black.opacity(0.6))
-                            .cornerRadius(4)
-                            .padding(4)
                     }
-                }
+                )
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
 
-                if showStatusBadge {
-                    statusOverlay(for: frame.statusEnum)
+            if showFrameNumberOverlay {
+                VStack {
+                    HStack {
+                        Spacer()
+                        ZStack {
+                            Circle()
+                                .fill(Color.black.opacity(0.8))
+                                .frame(width: 34, height: 34)
+                            Text(frameNumberText)
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.white)
+                        }
+                    }
+                    .padding(10)
+                    Spacer()
                 }
             }
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .strokeBorder(borderColor, lineWidth: borderWidth)
-            )
 
+            if showStatusBadge {
+                statusOverlay(for: frame.statusEnum)
+            }
+        }
+        .overlay(
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .strokeBorder(borderColor, lineWidth: borderWidth)
+        )
+    }
+
+    private var textBlock: some View {
+        VStack(alignment: .leading, spacing: 8) {
             if let resolvedTitle {
                 Text(resolvedTitle)
                     .font(.headline)
@@ -85,27 +105,6 @@ struct FrameLayout: View {
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .lineLimit(2)
-            }
-
-            if showStatusBadge || showFrameNumberOverlay {
-                HStack(spacing: 12) {
-                    if showStatusBadge, let status = statusText {
-                        Text(status)
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(borderColor)
-                            .cornerRadius(4)
-                    }
-
-                    if showFrameNumberOverlay, let frameNumberLabel {
-                        Text(frameNumberLabel)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
             }
         }
     }
@@ -149,24 +148,23 @@ struct FrameLayout: View {
         switch status {
         case .done:
             // Red X lines from corner to corner
-            GeometryReader { geometry in
-                ZStack {
-                    // Diagonal line from top-left to bottom-right
-                    Path { path in
-                        path.move(to: .zero)
-                        path.addLine(to: CGPoint(x: geometry.size.width, y: geometry.size.height))
-                    }
-                    .stroke(Color.red, lineWidth: 5)
-
-                    // Diagonal line from top-right to bottom-left
-                    Path { path in
-                        path.move(to: CGPoint(x: geometry.size.width, y: 0))
-                        path.addLine(to: CGPoint(x: 0, y: geometry.size.height))
-                    }
-                    .stroke(Color.red, lineWidth: 5)
+            ZStack {
+                // Diagonal line from top-left to bottom-right
+                Path { path in
+                    path.move(to: .zero)
+                    path.addLine(to: CGPoint(x: 1_000, y: 563)) // 16:9 ratio approximation
                 }
+                .stroke(Color.red, lineWidth: 5)
+
+                // Diagonal line from top-right to bottom-left
+                Path { path in
+                    path.move(to: CGPoint(x: 1_000, y: 0))
+                    path.addLine(to: CGPoint(x: 0, y: 563))
+                }
+                .stroke(Color.red, lineWidth: 5)
             }
             .aspectRatio(16/9, contentMode: .fit)
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
 
         case .skip:
             // Red transparent layer

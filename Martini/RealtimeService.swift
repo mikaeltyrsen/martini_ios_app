@@ -12,6 +12,7 @@ final class RealtimeService: NSObject, ObservableObject {
     private var buffer = Data()
     private var reconnectWorkItem: DispatchWorkItem?
     private var currentProjectId: String?
+    private var cachedToken: String?
 
     private let reconnectDelay: TimeInterval = 2.0
     private let eventQueue = DispatchQueue(label: "com.martini.realtime")
@@ -53,6 +54,7 @@ final class RealtimeService: NSObject, ObservableObject {
     /// Synchronize the connection state with the current authentication status.
     func updateConnection(projectId: String?, isAuthenticated: Bool) {
         DispatchQueue.main.async {
+            self.cachedToken = self.authService.currentBearerToken()
             if !isAuthenticated {
                 self.disconnect()
                 return
@@ -104,7 +106,7 @@ final class RealtimeService: NSObject, ObservableObject {
 
         var request = URLRequest(url: url)
         request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
-        if let token = authService.currentBearerToken() {
+        if let token = cachedToken {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
 
