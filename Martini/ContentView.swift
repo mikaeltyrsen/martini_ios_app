@@ -49,10 +49,16 @@ struct MainView: View {
     @State private var showGridSizeSlider: Bool = false
     @State private var showSizeControls: Bool = false
     @State private var gridSizeStep: Int = 1 // 1..4, where 1 -> 4 columns, 4 -> 1 column
-    
+    @State private var frameSortMode: FrameSortMode = .story
+
     enum ViewMode {
         case list
         case grid
+    }
+
+    enum FrameSortMode {
+        case story
+        case shoot
     }
     
     // MARK: - Mock Data (for design purposes)
@@ -134,7 +140,9 @@ struct MainView: View {
 
     private func frames(for creative: Creative) -> [Frame] {
         let frames = useMockData ? mockFrames(for: creative) : authService.frames.filter { $0.creativeId == creative.id }
-        return frames.sorted { $0.frameNumber < $1.frameNumber }
+        return frames.sorted { lhs, rhs in
+            sortingTuple(for: lhs, mode: frameSortMode) < sortingTuple(for: rhs, mode: frameSortMode)
+        }
     }
 
     private func mockFrames(for creative: Creative) -> [Frame] {
@@ -284,12 +292,13 @@ struct MainView: View {
                     }
                     .foregroundColor(.red)
                 }
-                
-                
-                // Bottom-left controls: overview toggle only
+
                 ToolbarItem(placement: .bottomBar) {
-                    HStack {
+                    HStack(spacing: 12) {
+                        FrameOrderTabBar(selectedMode: $frameSortMode)
+
                         Spacer()
+
                         Button(action: {
                             withAnimation {
                                 if viewMode == .grid {
@@ -306,6 +315,7 @@ struct MainView: View {
                         }
                         .accessibilityLabel(viewMode == .grid ? "Close Overview" : "Open Overview")
                     }
+                    .padding(.horizontal)
                 }
             }
             .task {
@@ -392,6 +402,74 @@ struct MainView: View {
             .padding(.vertical)
             .padding(.bottom, 0)
         }
+    }
+}
+
+private extension MainView {
+    func sortingTuple(for frame: Frame, mode: FrameSortMode) -> (Int, Int) {
+        let storyOrder = intValue(from: frame.frameOrder)
+        let shootOrder = intValue(from: frame.frameShootOrder)
+
+        switch mode {
+        case .story:
+            return (storyOrder ?? Int.max, shootOrder ?? Int.max)
+        case .shoot:
+            // Frames without a shoot order are sent to the end
+            return (shootOrder ?? Int.max, storyOrder ?? Int.max)
+        }
+    }
+
+    func intValue(from value: String?) -> Int? {
+        guard let value, let intValue = Int(value) else { return nil }
+        return intValue
+    }
+}
+
+// MARK: - Frame Order Toggle
+
+struct FrameOrderTabBar: View {
+    @Binding var selectedMode: MainView.FrameSortMode
+
+    var body: some View {
+        HStack(spacing: 8) {
+            orderButton(title: "STORY", mode: .story)
+            orderButton(title: "SHOOT", mode: .shoot)
+        }
+        .padding(6)
+        .background(.ultraThinMaterial, in: Capsule())
+        .overlay(
+            Capsule()
+                .stroke(Color.primary.opacity(0.1), lineWidth: 0.5)
+        )
+    }
+
+    @ViewBuilder
+    private func orderButton(title: String, mode: MainView.FrameSortMode) -> some View {
+        Button {
+            withAnimation(.spring(response: 0.25)) {
+                selectedMode = mode
+            }
+        } label: {
+            Text(title)
+                .font(.footnote)
+                .fontWeight(.semibold)
+                .padding(.vertical, 8)
+                .padding(.horizontal, 16)
+                .frame(maxWidth: .infinity)
+                .background(selectionBackground(for: mode))
+                .foregroundColor(selectionForeground(for: mode))
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Sort by \(title.lowercased()) order")
+    }
+
+    private func selectionBackground(for mode: MainView.FrameSortMode) -> Color {
+        selectedMode == mode ? Color.accentColor.opacity(0.15) : Color.clear
+    }
+
+    private func selectionForeground(for mode: MainView.FrameSortMode) -> Color {
+        selectedMode == mode ? .accentColor : .primary
     }
 }
 
