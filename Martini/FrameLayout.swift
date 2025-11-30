@@ -221,11 +221,9 @@ struct FrameLayout: View {
 
             if let defaultColor = defaultColor {
                 let fullRange = NSRange(location: 0, length: nsAttributedString.length)
-                nsAttributedString.enumerateAttributes(in: fullRange, options: []) { attributes, range, _ in
-                    if attributes[.foregroundColor] == nil {
-                        nsAttributedString.addAttribute(.foregroundColor, value: defaultColor, range: range)
-                    }
-                }
+                // Force a consistent text color so descriptions remain readable even when
+                // HTML supplies its own (potentially dark) foreground colors.
+                nsAttributedString.addAttribute(.foregroundColor, value: defaultColor, range: fullRange)
             }
 
             return AttributedString(nsAttributedString)
