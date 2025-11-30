@@ -219,8 +219,14 @@ struct FrameLayout: View {
                 documentAttributes: nil
             )
 
+            let fullRange = NSRange(location: 0, length: nsAttributedString.length)
+
+            // Ensure the text always renders in the system font instead of the default
+            // serif font that comes from HTML parsing.
+            let systemFont = UIFont.preferredFont(forTextStyle: .body)
+            nsAttributedString.addAttribute(.font, value: systemFont, range: fullRange)
+
             if let defaultColor = defaultColor {
-                let fullRange = NSRange(location: 0, length: nsAttributedString.length)
                 // Force a consistent text color so descriptions remain readable even when
                 // HTML supplies its own (potentially dark) foreground colors.
                 nsAttributedString.addAttribute(.foregroundColor, value: defaultColor, range: fullRange)
