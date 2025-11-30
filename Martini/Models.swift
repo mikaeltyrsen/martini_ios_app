@@ -78,6 +78,41 @@ struct SafeOptionalInt: Codable {
     }
 }
 
+@propertyWrapper
+struct SafeTags: Codable {
+    var wrappedValue: [FrameTag]?
+
+    init(wrappedValue: [FrameTag]? = nil) {
+        self.wrappedValue = wrappedValue
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+
+        if container.decodeNil() {
+            wrappedValue = nil
+            return
+        }
+
+        if let tagObjects = try? container.decode([FrameTag].self) {
+            wrappedValue = tagObjects
+            return
+        }
+
+        if let tagStrings = try? container.decode([String].self) {
+            wrappedValue = tagStrings.map { FrameTag(id: nil, name: $0) }
+            return
+        }
+
+        wrappedValue = nil
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(wrappedValue)
+    }
+}
+
 // MARK: - Creative Model
 
 struct Creative: Codable, Identifiable {
@@ -132,6 +167,13 @@ struct CreativesResponse: Codable {
     let error: String?
 }
 
+// MARK: - Tag Model
+
+struct FrameTag: Codable, Identifiable {
+    let id: String?
+    let name: String
+}
+
 // MARK: - Frame Model
 
 struct Frame: Codable, Identifiable {
@@ -175,7 +217,7 @@ struct Frame: Codable, Identifiable {
     let lastUpdated: String?
     let frameOrder: String?
     let frameShootOrder: String?
-    let tags: [String]?
+    @SafeTags var tags: [FrameTag]?
 
     init(
         id: String,
@@ -218,7 +260,7 @@ struct Frame: Codable, Identifiable {
         lastUpdated: String? = nil,
         frameOrder: String? = nil,
         frameShootOrder: String? = nil,
-        tags: [String]? = []
+        tags: [FrameTag]? = []
     ) {
         self.id = id
         self.creativeId = creativeId
