@@ -1,6 +1,89 @@
 import SwiftUI
 import UIKit
 import AVFoundation
+import CryptoKit
+
+final class VideoCacheManager {
+    static let shared = VideoCacheManager()
+
+    private let fileManager = FileManager.default
+    private let ioQueue = DispatchQueue(label: "VideoCacheManager.io")
+    private let cacheDirectory: URL
+    private var inFlightDownloads: [URL: [(URL?) -> Void]] = [:]
+
+    private init() {
+        let cachesDirectory = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first
+        cacheDirectory = cachesDirectory?.appendingPathComponent("VideoCache", isDirectory: true) ?? URL(fileURLWithPath: NSTemporaryDirectory())
+    }
+
+    func existingCachedFile(for url: URL) -> URL? {
+        let destination = cachedFileURL(for: url)
+        return fileManager.fileExists(atPath: destination.path) ? destination : nil
+    }
+
+    func fetchCachedURL(for url: URL, completion: @escaping (URL?) -> Void) {
+        if let cached = existingCachedFile(for: url) {
+            completion(cached)
+            return
+        }
+
+        ioQueue.async { [weak self] in
+            guard let self else { return }
+
+            if let cached = self.existingCachedFile(for: url) {
+                DispatchQueue.main.async {
+                    completion(cached)
+                }
+                return
+            }
+
+            self.inFlightDownloads[url, default: []].append(completion)
+            if self.inFlightDownloads[url]?.count ?? 0 > 1 {
+                return
+            }
+
+            let task = URLSession.shared.downloadTask(with: url) { tempURL, _, _ in
+                var finalURL: URL?
+
+                if let tempURL {
+                    do {
+                        try self.fileManager.createDirectory(at: self.cacheDirectory, withIntermediateDirectories: true)
+                        let destination = self.cachedFileURL(for: url)
+                        if self.fileManager.fileExists(atPath: destination.path) {
+                            try self.fileManager.removeItem(at: destination)
+                        }
+                        try self.fileManager.moveItem(at: tempURL, to: destination)
+                        finalURL = destination
+                    } catch {
+                        finalURL = nil
+                    }
+                }
+
+                self.ioQueue.async {
+                    let completions = self.inFlightDownloads.removeValue(forKey: url) ?? []
+                    DispatchQueue.main.async {
+                        completions.forEach { completion in
+                            completion(finalURL)
+                        }
+                    }
+                }
+            }
+
+            task.resume()
+        }
+    }
+
+    private func cachedFileURL(for url: URL) -> URL {
+        cacheDirectory.appendingPathComponent(filename(for: url))
+    }
+
+    private func filename(for url: URL) -> String {
+        let data = Data(url.absoluteString.utf8)
+        let hash = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+        let fileExtension = url.pathExtension.isEmpty ? "mp4" : url.pathExtension
+        return "\(hash).\(fileExtension)"
+    }
+}
 
 struct FrameLayout: View {
     let frame: Frame
@@ -349,6 +432,7 @@ final class LoopingPlayerView: UIView {
     private var playerLooper: AVPlayerLooper?
     private var queuePlayer: AVQueuePlayer?
     private var currentURL: URL?
+    private var resolvedPlaybackURL: URL?
 
     init(url: URL) {
         super.init(frame: .zero)
@@ -365,6 +449,34 @@ final class LoopingPlayerView: UIView {
         guard url != currentURL else { return }
         currentURL = url
 
+        if let cached = VideoCacheManager.shared.existingCachedFile(for: url) {
+            configurePlayer(with: cached)
+            return
+        }
+
+        configurePlayer(with: url)
+
+        VideoCacheManager.shared.fetchCachedURL(for: url) { [weak self] cachedURL in
+            guard let self, let cachedURL, self.currentURL == url else { return }
+            if cachedURL != self.resolvedPlaybackURL {
+                self.configurePlayer(with: cachedURL)
+            }
+        }
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        playerLayer.frame = bounds
+    }
+
+    private func setupPlayerLayer() {
+        playerLayer.videoGravity = .resizeAspectFill
+        layer.addSublayer(playerLayer)
+    }
+
+    private func configurePlayer(with url: URL) {
+        resolvedPlaybackURL = url
+
         let item = AVPlayerItem(url: url)
         let queuePlayer = AVQueuePlayer()
         queuePlayer.isMuted = true
@@ -377,16 +489,6 @@ final class LoopingPlayerView: UIView {
 
         self.queuePlayer = queuePlayer
         playerLooper = looper
-    }
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        playerLayer.frame = bounds
-    }
-
-    private func setupPlayerLayer() {
-        playerLayer.videoGravity = .resizeAspectFill
-        layer.addSublayer(playerLayer)
     }
 }
 
