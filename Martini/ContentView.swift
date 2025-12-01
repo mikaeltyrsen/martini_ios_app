@@ -54,6 +54,7 @@ struct MainView: View {
     @State private var frameSortMode: FrameSortMode = .story
     @State private var isShowingSettings = false
     @State private var frameAssetOrders: [String: [FrameAssetKind]] = [:]
+    @State private var gridAssetPriority: FrameAssetKind = .board
 
     @State private var showDescriptions: Bool = true
     @State private var gridFontStep: Int = 3 // 1..5
@@ -344,7 +345,8 @@ struct MainView: View {
                 SettingsView(
                     showDescriptions: $showDescriptions,
                     gridSizeStep: $gridSizeStep,
-                    gridFontStep: $gridFontStep
+                    gridFontStep: $gridFontStep,
+                    gridPriority: $gridAssetPriority
                 )
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
@@ -438,9 +440,8 @@ struct MainView: View {
                                 coordinateSpaceName: "gridScroll",
                                 viewportHeight: outerGeo.size.height,
                                 primaryAsset: { primaryAsset(for: $0) },
-                                availableAssets: { $0.availableAssets },
-                                onAssetSelected: { frame, kind in
-                                    promoteAsset(kind, for: frame)
+                                onStatusSelected: { frame, status in
+                                    updateFrameStatus(frame, to: status)
                                 }
                             )
                         }
@@ -518,7 +519,7 @@ private extension MainView {
 
     func primaryAsset(for frame: Frame) -> FrameAssetItem? {
         let available = frame.availableAssets
-        let order = assetOrder(for: frame)
+        let order = prioritizedAssetOrder(for: frame)
 
         for kind in order {
             if let match = available.first(where: { $0.kind == kind }) {
@@ -544,6 +545,41 @@ private extension MainView {
             set: { frameAssetOrders[frame.id] = $0 }
         )
     }
+
+    private func prioritizedAssetOrder(for frame: Frame) -> [FrameAssetKind] {
+        let baseOrder = assetOrder(for: frame)
+
+        switch gridAssetPriority {
+        case .board:
+            return baseOrder
+        case .photoboard:
+            return prioritize(order: baseOrder, primary: .photoboard)
+        case .preview:
+            return prioritize(order: baseOrder, primary: .preview)
+        }
+    }
+
+    private func prioritize(order: [FrameAssetKind], primary: FrameAssetKind) -> [FrameAssetKind] {
+        var remaining = order
+        var prioritized: [FrameAssetKind] = []
+
+        if let index = remaining.firstIndex(of: primary) {
+            prioritized.append(primary)
+            remaining.remove(at: index)
+        }
+
+        if let index = remaining.firstIndex(of: .board) {
+            prioritized.append(.board)
+            remaining.remove(at: index)
+        }
+
+        prioritized.append(contentsOf: remaining)
+        return prioritized
+    }
+
+    private func updateFrameStatus(_ frame: Frame, to status: FrameStatus) {
+        authService.updateFrameStatus(id: frame.id, to: status)
+    }
 }
 
 // MARK: - Creative Grid Section
@@ -558,8 +594,7 @@ struct CreativeGridSection: View {
     let coordinateSpaceName: String
     let viewportHeight: CGFloat
     let primaryAsset: (Frame) -> FrameAssetItem?
-    let availableAssets: (Frame) -> [FrameAssetItem]
-    let onAssetSelected: (Frame, FrameAssetKind) -> Void
+    let onStatusSelected: (Frame, FrameStatus) -> Void
 
     init(
         creative: Creative,
@@ -571,8 +606,7 @@ struct CreativeGridSection: View {
         coordinateSpaceName: String,
         viewportHeight: CGFloat,
         primaryAsset: @escaping (Frame) -> FrameAssetItem?,
-        availableAssets: @escaping (Frame) -> [FrameAssetItem],
-        onAssetSelected: @escaping (Frame, FrameAssetKind) -> Void
+        onStatusSelected: @escaping (Frame, FrameStatus) -> Void
     ) {
         self.creative = creative
         self.frames = frames
@@ -583,8 +617,7 @@ struct CreativeGridSection: View {
         self.coordinateSpaceName = coordinateSpaceName
         self.viewportHeight = viewportHeight
         self.primaryAsset = primaryAsset
-        self.availableAssets = availableAssets
-        self.onAssetSelected = onAssetSelected
+        self.onStatusSelected = onStatusSelected
     }
 
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
@@ -630,14 +663,13 @@ struct CreativeGridSection: View {
                         GridFrameCell(
                             frame: frame,
                             primaryAsset: primaryAsset(frame),
-                            availableAssets: availableAssets(frame),
-                            onAssetSelected: { asset in
-                                onAssetSelected(frame, asset)
-                            },
                             showDescription: showDescriptions,
                             fontScale: fontScale,
                             coordinateSpaceName: coordinateSpaceName,
-                            viewportHeight: viewportHeight
+                            viewportHeight: viewportHeight,
+                            onStatusSelected: { status in
+                                onStatusSelected(frame, status)
+                            }
                         )
                     }
                     .id(frame.id)
@@ -653,12 +685,11 @@ struct CreativeGridSection: View {
 struct GridFrameCell: View {
     let frame: Frame
     var primaryAsset: FrameAssetItem?
-    var availableAssets: [FrameAssetItem]
-    var onAssetSelected: (FrameAssetKind) -> Void
     var showDescription: Bool = false
     var fontScale: CGFloat
     let coordinateSpaceName: String
     let viewportHeight: CGFloat
+    var onStatusSelected: (FrameStatus) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -668,6 +699,9 @@ struct GridFrameCell: View {
                 title: frame.caption,
                 cornerRadius: 6
             )
+            .contextMenu {
+                statusMenu
+            }
             if showDescription, let desc = frame.description, !desc.isEmpty {
                 let clean = plainTextFromHTML(desc)
                 Text(clean)
@@ -686,21 +720,20 @@ struct GridFrameCell: View {
                 )
             }
         )
-        .contextMenu {
-            if !availableAssets.isEmpty {
-                ForEach(availableAssets) { asset in
-                    Button {
-                        onAssetSelected(asset.kind)
-                    } label: {
-                        Label(asset.label, systemImage: asset.iconName)
-                    }
-                }
-            }
-        }
     }
 
     private func isVisible(_ rect: CGRect) -> Bool {
         rect.maxY >= 0 && rect.minY <= viewportHeight
+    }
+
+    private var statusMenu: some View {
+        ForEach([FrameStatus.done, .inProgress, .upNext, .skip, .none], id: \.self) { status in
+            Button {
+                onStatusSelected(status)
+            } label: {
+                Label(status.displayName, systemImage: status.systemImageName)
+            }
+        }
     }
 }
 
@@ -820,12 +853,20 @@ struct SettingsView: View {
     @Binding var showDescriptions: Bool
     @Binding var gridSizeStep: Int // 1..4 (4->1 col)
     @Binding var gridFontStep: Int // 1..5
+    @Binding var gridPriority: FrameAssetKind
 
     var body: some View {
         NavigationStack {
             Form {
                 Section("Grid") {
                     Toggle("Show Descriptions", isOn: $showDescriptions)
+
+                    Picker("Prioritize", selection: $gridPriority) {
+                        Text("Boards").tag(FrameAssetKind.board)
+                        Text("Photo").tag(FrameAssetKind.photoboard)
+                        Text("Preview").tag(FrameAssetKind.preview)
+                    }
+                    .pickerStyle(.segmented)
 
                     // Grid size slider: 1->4 maps to 4/3/2/1 columns (already handled by gridColumnCount)
                     VStack(alignment: .leading) {
