@@ -135,7 +135,21 @@ final class RealtimeService: NSObject, ObservableObject {
 
         if frameEvents.contains(name) {
             Task { [weak self] in
-                try? await self?.authService.fetchFrames()
+                guard let self else { return }
+
+                try? await self.authService.fetchFrames()
+
+                if name == "frame-status-updated" {
+                    try? await self.authService.fetchCreatives()
+                }
+
+                #if canImport(ActivityKit)
+                    if #available(iOS 16.1, *) {
+                        await MainActor.run {
+                            LiveActivityManager.shared.sync(using: self.authService)
+                        }
+                    }
+                #endif
             }
         }
 
