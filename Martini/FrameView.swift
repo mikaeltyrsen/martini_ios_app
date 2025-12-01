@@ -291,11 +291,12 @@ private struct AssetDropDelegate: DropDelegate {
 //        board: "https://example.com/board.jpg",
 //        frameOrder: "1",
 //        photoboard: "https://example.com/photoboard.jpg",
-//        captureClipThumbnail: "https://example.com/capture.jpg",
+//        preview: "https://example.com/preview.mp4",
+//        previewThumb: "https://example.com/preview_thumb.jpg",
 //        description: "A sample description.",
 //        caption: "Sample Caption",
 //        status: FrameStatus.inProgress.rawValue
 //    )
-//    FrameView(frame: sample, assetOrder: .constant([.board, .photoboard, .captureClip])) {}
+//    FrameView(frame: sample, assetOrder: .constant([.board, .photoboard, .preview])) {}
 //}
 

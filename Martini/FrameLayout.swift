@@ -254,7 +254,16 @@ struct FrameLayout: View {
             return primaryURL
         }
 
-        let urlCandidates = [frame.board, frame.boardThumb, frame.photoboard, frame.photoboardThumb, frame.captureClipThumbnail, frame.captureClip]
+        let urlCandidates = [
+            frame.board,
+            frame.boardThumb,
+            frame.photoboard,
+            frame.photoboardThumb,
+            frame.preview,
+            frame.previewThumb,
+            frame.captureClip,
+            frame.captureClipThumbnail
+        ]
         for candidate in urlCandidates {
             if let candidate, let url = URL(string: candidate) {
                 return url
