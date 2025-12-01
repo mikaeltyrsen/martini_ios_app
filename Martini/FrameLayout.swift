@@ -3,6 +3,7 @@ import UIKit
 
 struct FrameLayout: View {
     let frame: Frame
+    var primaryAsset: FrameAssetItem? = nil
     var title: String?
     var subtitle: String?
     var showStatusBadge: Bool = true
@@ -44,7 +45,7 @@ struct FrameLayout: View {
                 .fill(Color.gray.opacity(0.2))
                 .overlay(
                     Group {
-                        if let urlString = frame.board ?? frame.boardThumb, let url = URL(string: urlString) {
+                        if let url = resolvedImageURL {
                             CachedAsyncImage(url: url) { phase in
                                 switch phase {
                                 case let .success(image):
@@ -154,6 +155,21 @@ struct FrameLayout: View {
     private var statusText: String? {
         let text = frame.status?.uppercased() ?? ""
         return text.isEmpty ? nil : text
+    }
+
+    private var resolvedImageURL: URL? {
+        if let primaryURL = primaryAsset?.url {
+            return primaryURL
+        }
+
+        let urlCandidates = [frame.board, frame.boardThumb, frame.photoboard, frame.photoboardThumb, frame.captureClipThumbnail, frame.captureClip]
+        for candidate in urlCandidates {
+            if let candidate, let url = URL(string: candidate) {
+                return url
+            }
+        }
+
+        return nil
     }
 
     private var frameNumberLabel: String? {

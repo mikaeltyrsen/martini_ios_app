@@ -73,6 +73,7 @@ struct MainView: View {
     @State private var gridSizeStep: Int = 1 // 1..4, where 1 -> 4 columns, 4 -> 1 column
     @State private var frameSortMode: FrameSortMode = .story
     @State private var isShowingSettings = false
+    @State private var frameAssetOrders: [String: [FrameAssetKind]] = [:]
 
     @State private var showDescriptions: Bool = true
     @State private var gridFontStep: Int = 3 // 1..5
@@ -354,7 +355,7 @@ struct MainView: View {
                 Text(dataError ?? "Unknown error")
             }
             .fullScreenCover(item: $selectedFrame) { frame in
-                FrameView(frame: frame) {
+                FrameView(frame: frame, assetOrder: assetOrderBinding(for: frame)) {
                     selectedFrame = nil
                 }
                 .interactiveDismissDisabled(false)
@@ -455,7 +456,12 @@ struct MainView: View {
                                 showDescriptions: showDescriptions,
                                 fontScale: fontScale,
                                 coordinateSpaceName: "gridScroll",
-                                viewportHeight: outerGeo.size.height
+                                viewportHeight: outerGeo.size.height,
+                                primaryAsset: { primaryAsset(for: $0) },
+                                availableAssets: { $0.availableAssets },
+                                onAssetSelected: { frame, kind in
+                                    promoteAsset(kind, for: frame)
+                                }
                             )
                         }
                     }
@@ -517,6 +523,47 @@ private extension MainView {
             proxy.scrollTo(id, anchor: .center)
         }
     }
+
+    func assetOrder(for frame: Frame) -> [FrameAssetKind] {
+        let availableKinds = frame.availableAssets.map(\.kind)
+        var stored = frameAssetOrders[frame.id]?.filter { availableKinds.contains($0) } ?? []
+
+        for kind in availableKinds where !stored.contains(kind) {
+            stored.append(kind)
+        }
+
+        frameAssetOrders[frame.id] = stored
+        return stored
+    }
+
+    func primaryAsset(for frame: Frame) -> FrameAssetItem? {
+        let available = frame.availableAssets
+        let order = assetOrder(for: frame)
+
+        for kind in order {
+            if let match = available.first(where: { $0.kind == kind }) {
+                return match
+            }
+        }
+
+        return available.first
+    }
+
+    func promoteAsset(_ kind: FrameAssetKind, for frame: Frame) {
+        var order = assetOrder(for: frame)
+        if let index = order.firstIndex(of: kind) {
+            order.remove(at: index)
+        }
+        order.insert(kind, at: 0)
+        frameAssetOrders[frame.id] = order
+    }
+
+    func assetOrderBinding(for frame: Frame) -> Binding<[FrameAssetKind]> {
+        Binding(
+            get: { assetOrder(for: frame) },
+            set: { frameAssetOrders[frame.id] = $0 }
+        )
+    }
 }
 
 // MARK: - Creative Grid Section
@@ -530,6 +577,9 @@ struct CreativeGridSection: View {
     let fontScale: CGFloat
     let coordinateSpaceName: String
     let viewportHeight: CGFloat
+    let primaryAsset: (Frame) -> FrameAssetItem?
+    let availableAssets: (Frame) -> [FrameAssetItem]
+    let onAssetSelected: (Frame, FrameAssetKind) -> Void
 
     init(
         creative: Creative,
@@ -539,7 +589,10 @@ struct CreativeGridSection: View {
         showDescriptions: Bool,
         fontScale: CGFloat,
         coordinateSpaceName: String,
-        viewportHeight: CGFloat
+        viewportHeight: CGFloat,
+        primaryAsset: @escaping (Frame) -> FrameAssetItem?,
+        availableAssets: @escaping (Frame) -> [FrameAssetItem],
+        onAssetSelected: @escaping (Frame, FrameAssetKind) -> Void
     ) {
         self.creative = creative
         self.frames = frames
@@ -549,6 +602,9 @@ struct CreativeGridSection: View {
         self.fontScale = fontScale
         self.coordinateSpaceName = coordinateSpaceName
         self.viewportHeight = viewportHeight
+        self.primaryAsset = primaryAsset
+        self.availableAssets = availableAssets
+        self.onAssetSelected = onAssetSelected
     }
 
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
@@ -593,6 +649,11 @@ struct CreativeGridSection: View {
                     } label: {
                         GridFrameCell(
                             frame: frame,
+                            primaryAsset: primaryAsset(frame),
+                            availableAssets: availableAssets(frame),
+                            onAssetSelected: { asset in
+                                onAssetSelected(frame, asset)
+                            },
                             showDescription: showDescriptions,
                             fontScale: fontScale,
                             coordinateSpaceName: coordinateSpaceName,
@@ -611,6 +672,9 @@ struct CreativeGridSection: View {
 
 struct GridFrameCell: View {
     let frame: Frame
+    var primaryAsset: FrameAssetItem?
+    var availableAssets: [FrameAssetItem]
+    var onAssetSelected: (FrameAssetKind) -> Void
     var showDescription: Bool = false
     var fontScale: CGFloat
     let coordinateSpaceName: String
@@ -620,6 +684,7 @@ struct GridFrameCell: View {
         VStack(alignment: .leading, spacing: 6) {
             FrameLayout(
                 frame: frame,
+                primaryAsset: primaryAsset,
                 title: frame.caption,
                 cornerRadius: 6
             )
@@ -641,6 +706,17 @@ struct GridFrameCell: View {
                 )
             }
         )
+        .contextMenu {
+            if !availableAssets.isEmpty {
+                ForEach(availableAssets) { asset in
+                    Button {
+                        onAssetSelected(asset.kind)
+                    } label: {
+                        Label(asset.label, systemImage: asset.iconName)
+                    }
+                }
+            }
+        }
     }
 
     private func isVisible(_ rect: CGRect) -> Bool {
@@ -730,10 +806,12 @@ enum FrameStatus: String {
 
 struct FrameRowView: View {
     let frame: Frame
+    var primaryAsset: FrameAssetItem? = nil
 
     var body: some View {
         FrameLayout(
             frame: frame,
+            primaryAsset: primaryAsset,
             title: frame.caption
         )
     }

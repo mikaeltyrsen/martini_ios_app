@@ -363,10 +363,81 @@ struct Frame: Codable, Identifiable {
         guard let status else { return .none }
         return FrameStatus(rawValue: status.lowercased()) ?? .none
     }
+
+    /// Returns the available assets for this frame in the order they should be shown by default.
+    var availableAssets: [FrameAssetItem] {
+        var items: [FrameAssetItem] = []
+
+        if board != nil || boardThumb != nil {
+            items.append(FrameAssetItem(kind: .board, primary: board, fallback: boardThumb))
+        }
+
+        if photoboard != nil || photoboardThumb != nil {
+            items.append(FrameAssetItem(kind: .photoboard, primary: photoboard, fallback: photoboardThumb))
+        }
+
+        if captureClipThumbnail != nil || captureClip != nil {
+            items.append(FrameAssetItem(kind: .captureClip, primary: captureClipThumbnail, fallback: captureClip))
+        }
+
+        return items
+    }
 }
 
 struct FramesResponse: Codable {
     let success: Bool
     let frames: [Frame]
     let error: String?
+}
+
+// MARK: - Frame Assets
+
+enum FrameAssetKind: String, CaseIterable, Hashable {
+    case board
+    case photoboard
+    case captureClip
+
+    var displayName: String {
+        switch self {
+        case .board:
+            return "Board"
+        case .photoboard:
+            return "Photoboard"
+        case .captureClip:
+            return "Capture Clip"
+        }
+    }
+
+    var systemImageName: String {
+        switch self {
+        case .board:
+            return "square.on.square"
+        case .photoboard:
+            return "photo.on.rectangle"
+        case .captureClip:
+            return "video"
+        }
+    }
+}
+
+struct FrameAssetItem: Identifiable, Hashable {
+    let id = UUID()
+    let kind: FrameAssetKind
+    private let primary: String?
+    private let fallback: String?
+
+    init(kind: FrameAssetKind, primary: String?, fallback: String?) {
+        self.kind = kind
+        self.primary = primary
+        self.fallback = fallback
+    }
+
+    var url: URL? {
+        if let primary, let url = URL(string: primary) { return url }
+        if let fallback, let url = URL(string: fallback) { return url }
+        return nil
+    }
+
+    var label: String { kind.displayName }
+    var iconName: String { kind.systemImageName }
 }
