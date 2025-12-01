@@ -26,12 +26,6 @@ struct ContentView: View {
         .onChange(of: authService.projectId) { _ in
             synchronizeRealtimeConnection()
         }
-        .onChange(of: authService.frames.map { $0.id }) { _ in
-            synchronizeLiveActivity()
-        }
-        .onChange(of: authService.creatives.map { $0.id }) { _ in
-            synchronizeLiveActivity()
-        }
     }
 
     private func synchronizeRealtimeConnection() {
@@ -41,22 +35,8 @@ struct ContentView: View {
         )
     }
 
-    private func synchronizeLiveActivity() {
-        guard authService.isAuthenticated else {
-            if #available(iOS 16.1, *) {
-                LiveActivityManager.shared.endIfNeeded()
-            }
-            return
-        }
-
-        if #available(iOS 16.1, *) {
-            LiveActivityManager.shared.sync(using: authService)
-        }
-    }
-
     private func synchronizeAppState() {
         synchronizeRealtimeConnection()
-        synchronizeLiveActivity()
     }
 }
 

@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import AVFoundation
 
 struct FrameLayout: View {
     let frame: Frame
@@ -45,21 +46,25 @@ struct FrameLayout: View {
                 .fill(Color.gray.opacity(0.2))
                 .overlay(
                     Group {
-                        if let url = resolvedImageURL {
-                            CachedAsyncImage(url: url) { phase in
-                                switch phase {
-                                case let .success(image):
-                                    AnyView(
-                                        image
-                                            .resizable()
-                                            .scaledToFill()
-                                    )
-                                case .empty:
-                                    AnyView(ProgressView())
-                                case .failure:
-                                    AnyView(placeholder)
-                                @unknown default:
-                                    AnyView(placeholder)
+                        if let url = resolvedMediaURL {
+                            if isVideoURL(url) {
+                                LoopingVideoView(url: url)
+                            } else {
+                                CachedAsyncImage(url: url) { phase in
+                                    switch phase {
+                                    case let .success(image):
+                                        AnyView(
+                                            image
+                                                .resizable()
+                                                .scaledToFill()
+                                        )
+                                    case .empty:
+                                        AnyView(ProgressView())
+                                    case .failure:
+                                        AnyView(placeholder)
+                                    @unknown default:
+                                        AnyView(placeholder)
+                                    }
                                 }
                             }
                         } else {
@@ -157,7 +162,7 @@ struct FrameLayout: View {
         return text.isEmpty ? nil : text
     }
 
-    private var resolvedImageURL: URL? {
+    private var resolvedMediaURL: URL? {
         if let primaryURL = primaryAsset?.url {
             return primaryURL
         }
@@ -170,6 +175,15 @@ struct FrameLayout: View {
         }
 
         return nil
+    }
+
+    private func isVideoURL(_ url: URL) -> Bool {
+        let lowercasedExtension = url.pathExtension.lowercased()
+        let knownVideoExtensions: Set<String> = ["mp4", "mov", "m4v", "webm", "mkv"]
+        if knownVideoExtensions.contains(lowercasedExtension) { return true }
+
+        // Allow common streaming URL hints (e.g. HLS)
+        return url.absoluteString.lowercased().contains(".m3u8")
     }
 
     private var frameNumberLabel: String? {
@@ -305,6 +319,64 @@ struct FrameLayout: View {
         let minSize: CGFloat = 4
         let maxSize: CGFloat = 20
         return max(minSize, min(proportional, maxSize))
+    }
+}
+
+private struct LoopingVideoView: UIViewRepresentable {
+    let url: URL
+
+    func makeUIView(context _: Context) -> LoopingPlayerView {
+        LoopingPlayerView(url: url)
+    }
+
+    func updateUIView(_ uiView: LoopingPlayerView, context _: Context) {
+        uiView.update(with: url)
+    }
+}
+
+private final class LoopingPlayerView: UIView {
+    private let playerLayer = AVPlayerLayer()
+    private var playerLooper: AVPlayerLooper?
+    private var queuePlayer: AVQueuePlayer?
+    private var currentURL: URL?
+
+    init(url: URL) {
+        super.init(frame: .zero)
+        setupPlayerLayer()
+        update(with: url)
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setupPlayerLayer()
+    }
+
+    func update(with url: URL) {
+        guard url != currentURL else { return }
+        currentURL = url
+
+        let item = AVPlayerItem(url: url)
+        let queuePlayer = AVQueuePlayer()
+        queuePlayer.isMuted = true
+        queuePlayer.actionAtItemEnd = .none
+
+        let looper = AVPlayerLooper(player: queuePlayer, templateItem: item)
+        queuePlayer.play()
+
+        playerLayer.player = queuePlayer
+
+        self.queuePlayer = queuePlayer
+        playerLooper = looper
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        playerLayer.frame = bounds
+    }
+
+    private func setupPlayerLayer() {
+        playerLayer.videoGravity = .resizeAspectFill
+        layer.addSublayer(playerLayer)
     }
 }
 
