@@ -161,21 +161,29 @@ private struct FrameImageView: View {
     }
 }
 
-#if DEBUG
-struct FrameActivityWidget_Previews: PreviewProvider {
-    static let attributes = FrameActivityAttributes(projectName: "Project Neon")
-    static let state = FrameActivityAttributes.ContentState(
-        currentFrameNumber: 12,
-        currentFrameImageURL: URL(string: "https://images.unsplash.com/photo-1582719478151-1b22902d3d29?w=200"),
-        completedFrames: 8,
-        totalFrames: 16,
-        upNextFrameNumber: 13,
-        upNextImageURL: URL(string: "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=200")
-    )
-
-    static var previews: some View {
-        FrameActivityLiveView(context: .init(activityAttributes: attributes, contentState: state))
-            .previewContext(WidgetPreviewContext(family: .systemMedium))
-    }
-}
-#endif
+//#if DEBUG
+//#Preview {
+//    let attributes = FrameActivityAttributes(projectName: "Project Neon")
+//    let state = FrameActivityAttributes.ContentState(
+//        currentFrameNumber: 12,
+//        currentFrameImageURL: URL(string: "https://images.unsplash.com/photo-1582719478151-1b22902d3d29?w=200"),
+//        completedFrames: 8,
+//        totalFrames: 16,
+//        upNextFrameNumber: 13,
+//        upNextImageURL: URL(string: "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=200")
+//    )
+//
+//    // Minimal stand-in for ActivityViewContext to drive the view in previews
+//    struct PreviewContext: ActivityViewContext<FrameActivityAttributes> {
+//        var attributes: FrameActivityAttributes
+//        var state: FrameActivityAttributes.ContentState
+//        var contentState: FrameActivityAttributes.ContentState { state }
+//        var activityID: String { "preview" }
+//        var pushToken: Data? { nil }
+//    }
+//
+//    let previewContext = PreviewContext(attributes: attributes, state: state)
+//    FrameActivityLiveView(context: previewContext)
+//        .previewContext(WidgetPreviewContext(family: .systemMedium))
+//}
+//#endif

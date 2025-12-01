@@ -26,10 +26,10 @@ struct ContentView: View {
         .onChange(of: authService.projectId) { _ in
             synchronizeRealtimeConnection()
         }
-        .onChange(of: authService.frames) { _ in
+        .onChange(of: authService.frames.map { $0.id }) { _ in
             synchronizeLiveActivity()
         }
-        .onChange(of: authService.creatives) { _ in
+        .onChange(of: authService.creatives.map { $0.id }) { _ in
             synchronizeLiveActivity()
         }
     }
