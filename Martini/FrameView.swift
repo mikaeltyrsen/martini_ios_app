@@ -202,15 +202,17 @@ private struct AssetCard: View {
                                 CachedAsyncImage(url: url) { phase in
                                     switch phase {
                                     case let .success(image):
-                                        image
-                                            .resizable()
-                                            .scaledToFill()
+                                        AnyView(
+                                            image
+                                                .resizable()
+                                                .scaledToFill()
+                                        )
                                     case .empty:
-                                        ProgressView()
+                                        AnyView(ProgressView())
                                     case .failure:
-                                        placeholder
+                                        AnyView(placeholder)
                                     @unknown default:
-                                        placeholder
+                                        AnyView(placeholder)
                                     }
                                 }
                             } else {
@@ -277,18 +279,19 @@ private struct AssetDropDelegate: DropDelegate {
         DropProposal(operation: .move)
     }
 }
+//
+//#Preview {
+//    let sample = Frame(
+//        id: "1",
+//        creativeId: "c1",
+//        board: "https://example.com/board.jpg",
+//        frameOrder: "1",
+//        photoboard: "https://example.com/photoboard.jpg",
+//        captureClipThumbnail: "https://example.com/capture.jpg",
+//        description: "A sample description.",
+//        caption: "Sample Caption",
+//        status: FrameStatus.inProgress.rawValue
+//    )
+//    FrameView(frame: sample, assetOrder: .constant([.board, .photoboard, .captureClip])) {}
+//}
 
-#Preview {
-    let sample = Frame(
-        id: "1",
-        creativeId: "c1",
-        description: "A sample description.",
-        caption: "Sample Caption",
-        status: FrameStatus.inProgress.rawValue,
-        frameOrder: "1",
-        board: "https://example.com/board.jpg",
-        photoboard: "https://example.com/photoboard.jpg",
-        captureClipThumbnail: "https://example.com/capture.jpg"
-    )
-    FrameView(frame: sample, assetOrder: .constant([.board, .photoboard, .captureClip])) {}
-}
