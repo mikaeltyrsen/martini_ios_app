@@ -207,6 +207,24 @@ struct MainView: View {
                         } else { // Overview (fixed 5 columns)
                             gridView
                         }
+                        
+                        // Floating “Jump to In-Progress” button
+                        if shouldShowInProgressShortcut {
+                            Button(action: scrollToInProgressFrame) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "eye")
+                                    Text("Jump to In-Progress")
+                                        .font(.system(size: 15, weight: .semibold))
+                                }
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 10)
+                                .background(.ultraThickMaterial, in: Capsule())
+                            }
+                            .buttonStyle(.plain)
+                            .shadow(radius: 3, y: 2)
+                            .padding(.bottom, 12)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                        }
                     }
                 }
             }
@@ -233,13 +251,6 @@ struct MainView: View {
                     }
 
                     Spacer()
-
-                    if shouldShowInProgressShortcut {
-                        Button(action: scrollToInProgressFrame) {
-                            Label("Jump to In-Progress", systemImage: "eye")
-                        }
-                        .accessibilityLabel("Jump to in-progress frame")
-                    }
 
                     Button(action: {
                         withAnimation {
@@ -767,4 +778,3 @@ struct SettingsView: View {
     ContentView()
         .environmentObject(AuthService())
 }
-
