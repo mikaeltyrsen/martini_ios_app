@@ -449,15 +449,20 @@ final class LoopingPlayerView: UIView {
         guard url != currentURL else { return }
         currentURL = url
 
+        print("[LoopingPlayerView] Loading video URL: \(url.absoluteString)")
+
         if let cached = VideoCacheManager.shared.existingCachedFile(for: url) {
+            print("[LoopingPlayerView] Using cached video URL: \(cached.absoluteString)")
             configurePlayer(with: cached)
             return
         }
 
+        print("[LoopingPlayerView] Using remote video URL: \(url.absoluteString)")
         configurePlayer(with: url)
 
         VideoCacheManager.shared.fetchCachedURL(for: url) { [weak self] cachedURL in
             guard let self, let cachedURL, self.currentURL == url else { return }
+            print("[LoopingPlayerView] Updated to cached video URL: \(cachedURL.absoluteString)")
             if cachedURL != self.resolvedPlaybackURL {
                 self.configurePlayer(with: cachedURL)
             }
