@@ -412,6 +412,52 @@ struct Frame: Codable, Identifiable {
 
         return items
     }
+
+    func updatingStatus(_ status: FrameStatus) -> Frame {
+        Frame(
+            id: id,
+            creativeId: creativeId,
+            creativeTitle: creativeTitle,
+            creativeColor: creativeColor,
+            creativeAspectRatio: creativeAspectRatio,
+            board: board,
+            boardThumb: boardThumb,
+            boardFileName: boardFileName,
+            boardFileType: boardFileType,
+            boardFileSize: boardFileSize,
+            photoboard: photoboard,
+            photoboardThumb: photoboardThumb,
+            photoboardFileName: photoboardFileName,
+            photoboardFileType: photoboardFileType,
+            photoboardFileSize: photoboardFileSize,
+            photoboardCrop: photoboardCrop,
+            preview: preview,
+            previewThumb: previewThumb,
+            previewFileName: previewFileName,
+            previewFileType: previewFileType,
+            previewFileSize: previewFileSize,
+            previewCrop: previewCrop,
+            captureClipId: captureClipId,
+            captureClip: captureClip,
+            captureClipThumbnail: captureClipThumbnail,
+            captureClipFileName: captureClipFileName,
+            captureClipFileType: captureClipFileType,
+            captureClipFileSize: captureClipFileSize,
+            captureClipCrop: captureClipCrop,
+            description: description,
+            caption: caption,
+            notes: notes,
+            crop: crop,
+            status: status == .none ? nil : status.rawValue,
+            statusUpdated: statusUpdated,
+            isArchived: isArchived,
+            createdAt: createdAt,
+            lastUpdated: lastUpdated,
+            frameOrder: frameOrder,
+            frameShootOrder: frameShootOrder,
+            tags: tags
+        )
+    }
 }
 
 struct FramesResponse: Codable {

@@ -153,7 +153,7 @@ struct FrameView: View {
     }
 }
 
-private extension FrameStatus {
+extension FrameStatus {
     var displayName: String {
         switch self {
         case .done:

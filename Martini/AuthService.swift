@@ -438,6 +438,13 @@ class AuthService: ObservableObject {
         print("✅ Successfully fetched \(frames.count) frames")
     }
 
+    func updateFrameStatus(id: String, to status: FrameStatus) {
+        guard let index = frames.firstIndex(where: { $0.id == id }) else { return }
+
+        let updated = frames[index].updatingStatus(status)
+        frames[index] = updated
+    }
+
     // Logout and clear auth data
     func logout() {
         UserDefaults.standard.removeObject(forKey: projectIdKey)
