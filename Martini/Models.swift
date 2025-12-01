@@ -390,12 +390,21 @@ struct Frame: Codable, Identifiable {
             )
         }
 
-        if captureClipThumbnail != nil || captureClip != nil {
+        if preview != nil || previewThumb != nil {
             items.append(
                 FrameAssetItem(
-                    kind: .captureClip,
-                    primary: captureClipThumbnail,
-                    fallback: captureClip,
+                    kind: .preview,
+                    primary: preview,
+                    fallback: previewThumb,
+                    fileType: previewFileType
+                )
+            )
+        } else if captureClipThumbnail != nil || captureClip != nil {
+            items.append(
+                FrameAssetItem(
+                    kind: .preview,
+                    primary: captureClip,
+                    fallback: captureClipThumbnail,
                     fileType: captureClipFileType
                 )
             )
@@ -416,7 +425,7 @@ struct FramesResponse: Codable {
 enum FrameAssetKind: String, CaseIterable, Hashable {
     case board
     case photoboard
-    case captureClip
+    case preview
 
     var displayName: String {
         switch self {
@@ -424,8 +433,8 @@ enum FrameAssetKind: String, CaseIterable, Hashable {
             return "Board"
         case .photoboard:
             return "Photoboard"
-        case .captureClip:
-            return "Capture Clip"
+        case .preview:
+            return "Preview"
         }
     }
 
@@ -435,7 +444,7 @@ enum FrameAssetKind: String, CaseIterable, Hashable {
             return "square.on.square"
         case .photoboard:
             return "photo.on.rectangle"
-        case .captureClip:
+        case .preview:
             return "video"
         }
     }
