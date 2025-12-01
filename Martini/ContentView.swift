@@ -19,12 +19,18 @@ struct ContentView: View {
                 LoginView()
             }
         }
-        .onAppear(perform: synchronizeRealtimeConnection)
+        .onAppear(perform: synchronizeAppState)
         .onChange(of: authService.isAuthenticated) { _ in
-            synchronizeRealtimeConnection()
+            synchronizeAppState()
         }
         .onChange(of: authService.projectId) { _ in
             synchronizeRealtimeConnection()
+        }
+        .onChange(of: authService.frames) { _ in
+            synchronizeLiveActivity()
+        }
+        .onChange(of: authService.creatives) { _ in
+            synchronizeLiveActivity()
         }
     }
 
@@ -33,6 +39,24 @@ struct ContentView: View {
             projectId: authService.projectId,
             isAuthenticated: authService.isAuthenticated
         )
+    }
+
+    private func synchronizeLiveActivity() {
+        guard authService.isAuthenticated else {
+            if #available(iOS 16.1, *) {
+                LiveActivityManager.shared.endIfNeeded()
+            }
+            return
+        }
+
+        if #available(iOS 16.1, *) {
+            LiveActivityManager.shared.sync(using: authService)
+        }
+    }
+
+    private func synchronizeAppState() {
+        synchronizeRealtimeConnection()
+        synchronizeLiveActivity()
     }
 }
 
