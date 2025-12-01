@@ -72,7 +72,15 @@ final class LiveActivityManager {
 
     private func thumbnailURL(for frame: Frame?) -> URL? {
         guard let frame else { return nil }
-        let urlString = frame.previewThumb ?? frame.photoboardThumb ?? frame.preview ?? frame.photoboard
+        let urlString =
+            frame.previewThumb ??
+            frame.captureClipThumbnail ??
+            frame.photoboardThumb ??
+            frame.preview ??
+            frame.captureClip ??
+            frame.photoboard ??
+            frame.boardThumb ??
+            frame.board
         guard let urlString, let url = URL(string: urlString) else { return nil }
         return url
     }
