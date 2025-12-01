@@ -369,15 +369,36 @@ struct Frame: Codable, Identifiable {
         var items: [FrameAssetItem] = []
 
         if board != nil || boardThumb != nil {
-            items.append(FrameAssetItem(kind: .board, primary: board, fallback: boardThumb))
+            items.append(
+                FrameAssetItem(
+                    kind: .board,
+                    primary: board,
+                    fallback: boardThumb,
+                    fileType: boardFileType
+                )
+            )
         }
 
         if photoboard != nil || photoboardThumb != nil {
-            items.append(FrameAssetItem(kind: .photoboard, primary: photoboard, fallback: photoboardThumb))
+            items.append(
+                FrameAssetItem(
+                    kind: .photoboard,
+                    primary: photoboard,
+                    fallback: photoboardThumb,
+                    fileType: photoboardFileType
+                )
+            )
         }
 
         if captureClipThumbnail != nil || captureClip != nil {
-            items.append(FrameAssetItem(kind: .captureClip, primary: captureClipThumbnail, fallback: captureClip))
+            items.append(
+                FrameAssetItem(
+                    kind: .captureClip,
+                    primary: captureClipThumbnail,
+                    fallback: captureClip,
+                    fileType: captureClipFileType
+                )
+            )
         }
 
         return items
@@ -425,11 +446,13 @@ struct FrameAssetItem: Identifiable, Hashable {
     let kind: FrameAssetKind
     private let primary: String?
     private let fallback: String?
+    private let fileType: String?
 
-    init(kind: FrameAssetKind, primary: String?, fallback: String?) {
+    init(kind: FrameAssetKind, primary: String?, fallback: String?, fileType: String? = nil) {
         self.kind = kind
         self.primary = primary
         self.fallback = fallback
+        self.fileType = fileType
     }
 
     var url: URL? {
@@ -438,6 +461,14 @@ struct FrameAssetItem: Identifiable, Hashable {
         return nil
     }
 
+    var isVideo: Bool {
+        if let fileType, fileType.lowercased().contains("video") { return true }
+        guard let url else { return false }
+        return Self.videoExtensions.contains(url.pathExtension.lowercased()) || url.absoluteString.lowercased().contains(".m3u8")
+    }
+
     var label: String { kind.displayName }
     var iconName: String { kind.systemImageName }
+
+    private static let videoExtensions: Set<String> = ["mp4", "mov", "m4v", "webm", "mkv"]
 }

@@ -47,7 +47,7 @@ struct FrameLayout: View {
                 .overlay(
                     Group {
                         if let url = resolvedMediaURL {
-                            if isVideoURL(url) {
+                            if shouldPlayAsVideo {
                                 LoopingVideoView(url: url)
                             } else {
                                 CachedAsyncImage(url: url) { phase in
@@ -162,8 +162,12 @@ struct FrameLayout: View {
         return text.isEmpty ? nil : text
     }
 
+    private var resolvedAsset: FrameAssetItem? {
+        primaryAsset ?? frame.availableAssets.first
+    }
+
     private var resolvedMediaURL: URL? {
-        if let primaryURL = primaryAsset?.url {
+        if let primaryURL = resolvedAsset?.url {
             return primaryURL
         }
 
@@ -177,7 +181,13 @@ struct FrameLayout: View {
         return nil
     }
 
-    private func isVideoURL(_ url: URL) -> Bool {
+    private var shouldPlayAsVideo: Bool {
+        guard let url = resolvedMediaURL else { return false }
+
+        if let asset = resolvedAsset, asset.isVideo {
+            return true
+        }
+
         let lowercasedExtension = url.pathExtension.lowercased()
         let knownVideoExtensions: Set<String> = ["mp4", "mov", "m4v", "webm", "mkv"]
         if knownVideoExtensions.contains(lowercasedExtension) { return true }
@@ -322,7 +332,7 @@ struct FrameLayout: View {
     }
 }
 
-private struct LoopingVideoView: UIViewRepresentable {
+struct LoopingVideoView: UIViewRepresentable {
     let url: URL
 
     func makeUIView(context _: Context) -> LoopingPlayerView {
@@ -334,7 +344,7 @@ private struct LoopingVideoView: UIViewRepresentable {
     }
 }
 
-private final class LoopingPlayerView: UIView {
+final class LoopingPlayerView: UIView {
     private let playerLayer = AVPlayerLayer()
     private var playerLooper: AVPlayerLooper?
     private var queuePlayer: AVQueuePlayer?

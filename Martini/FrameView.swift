@@ -199,20 +199,24 @@ private struct AssetCard: View {
                     .overlay(
                         Group {
                             if let url = asset.url {
-                                CachedAsyncImage(url: url) { phase in
-                                    switch phase {
-                                    case let .success(image):
-                                        AnyView(
-                                            image
-                                                .resizable()
-                                                .scaledToFill()
-                                        )
-                                    case .empty:
-                                        AnyView(ProgressView())
-                                    case .failure:
-                                        AnyView(placeholder)
-                                    @unknown default:
-                                        AnyView(placeholder)
+                                if asset.isVideo {
+                                    LoopingVideoView(url: url)
+                                } else {
+                                    CachedAsyncImage(url: url) { phase in
+                                        switch phase {
+                                        case let .success(image):
+                                            AnyView(
+                                                image
+                                                    .resizable()
+                                                    .scaledToFill()
+                                            )
+                                        case .empty:
+                                            AnyView(ProgressView())
+                                        case .failure:
+                                            AnyView(placeholder)
+                                        @unknown default:
+                                            AnyView(placeholder)
+                                        }
                                     }
                                 }
                             } else {
