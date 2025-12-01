@@ -1,5 +1,4 @@
 import SwiftUI
-import UniformTypeIdentifiers
 
 struct FrameView: View {
     let frame: Frame
@@ -7,34 +6,34 @@ struct FrameView: View {
     let onClose: () -> Void
     @State private var selectedStatus: FrameStatus
     @State private var assetStack: [FrameAssetItem]
-    @State private var draggingAsset: FrameAssetItem?
+    @State private var visibleAssetID: FrameAssetItem.ID?
 
     init(frame: Frame, assetOrder: Binding<[FrameAssetKind]>, onClose: @escaping () -> Void) {
         self.frame = frame
         _assetOrder = assetOrder
         self.onClose = onClose
         _selectedStatus = State(initialValue: frame.statusEnum)
-        _assetStack = State(initialValue: FrameView.orderedAssets(for: frame, order: assetOrder.wrappedValue))
+
+        let initialStack = FrameView.orderedAssets(for: frame, order: assetOrder.wrappedValue)
+        _assetStack = State(initialValue: initialStack)
+        _visibleAssetID = State(initialValue: initialStack.first?.id)
     }
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                ScrollView {
-                    VStack(spacing: 16) {
-                        if !assetStack.isEmpty {
-                            assetStackView
-                        }
-
-                        FrameLayout(
-                            frame: frame,
-                            primaryAsset: primaryAsset,
-                            title: primaryText,
-                            subtitle: secondaryText,
-                            cornerRadius: 12
-                        )
+                if assetStack.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "square.on.square")
+                            .font(.system(size: 40))
+                            .foregroundStyle(.tertiary)
+                        Text("No assets available")
+                            .font(.headline)
+                            .foregroundStyle(.secondary)
                     }
-                    .padding()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    stackedAssetScroller
                 }
             }
             .navigationTitle("Frame \(frame.frameNumber > 0 ? String(frame.frameNumber) : "")")
@@ -58,15 +57,18 @@ struct FrameView: View {
             }
             .tint(.accentColor)
             .onChange(of: assetOrder) { newOrder in
-                assetStack = FrameView.orderedAssets(for: frame, order: newOrder)
+                let newStack = FrameView.orderedAssets(for: frame, order: newOrder)
+                assetStack = newStack
+                visibleAssetID = visibleAssetID ?? newStack.first?.id
             }
             .onChange(of: assetStack) { newStack in
                 assetOrder = newStack.map(\.kind)
+                if visibleAssetID == nil, let first = newStack.first?.id {
+                    visibleAssetID = first
+                }
             }
         }
     }
-
-    private var primaryAsset: FrameAssetItem? { assetStack.first }
 
     private var primaryText: String? {
         if let caption = frame.caption, !caption.isEmpty { return caption }
@@ -98,50 +100,43 @@ struct FrameView: View {
         .disabled(isSelected)
     }
 
-    private var assetStackView: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Assets")
-                .font(.headline)
+    private var stackedAssetScroller: some View {
+        GeometryReader { proxy in
+            let cardWidth = proxy.size.width * 0.82
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: -30) {
+            ScrollView(.horizontal) {
+                LazyHStack(spacing: 0) {
                     ForEach(assetStack) { asset in
-                        AssetCard(
-                            asset: asset,
-                            isPrimary: asset == primaryAsset,
-                            onPromote: { promote(asset) }
+                        FrameLayout(
+                            frame: frame,
+                            primaryAsset: asset,
+                            title: primaryText,
+                            subtitle: secondaryText,
+                            cornerRadius: 16
                         )
-                        .zIndex(Double(assetStack.count - (assetStack.firstIndex(of: asset) ?? 0)))
-                        .onDrag {
-                            draggingAsset = asset
-                            return NSItemProvider(object: NSString(string: asset.kind.rawValue))
+                        .frame(width: cardWidth)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 24)
+                        .scrollTransition(.interactive, axis: .horizontal) { view, phase in
+                            let slideInOffset = max(0, phase.value) * 160
+                            let stackedOffset = min(0, phase.value) * 28
+                            let scale = phase.isIdentity ? 1 : (phase.value < 0 ? 0.94 : 1.02)
+
+                            view
+                                .offset(x: phase.isIdentity ? 0 : slideInOffset + stackedOffset)
+                                .scaleEffect(scale)
+                                .shadow(radius: phase.isIdentity ? 12 : 8, y: 10)
                         }
-                        .onDrop(
-                            of: [UTType.plainText],
-                            delegate: AssetDropDelegate(
-                                item: asset,
-                                assets: $assetStack,
-                                draggingAsset: $draggingAsset
-                            )
-                        )
+                        .id(asset.id)
                     }
                 }
-                .padding(.vertical, 4)
+                .scrollTargetLayout()
             }
-
-            Text("Drag to reorder or tap to set the default asset shown on top.")
-                .font(.caption)
-                .foregroundColor(.secondary)
-        }
-    }
-
-    private func promote(_ asset: FrameAssetItem) {
-        guard let index = assetStack.firstIndex(of: asset) else { return }
-        withAnimation(.spring(response: 0.3)) {
-            var updated = assetStack
-            updated.remove(at: index)
-            updated.insert(asset, at: 0)
-            assetStack = updated
+            .scrollIndicators(.hidden)
+            .scrollTargetBehavior(.paging)
+            .scrollPosition(id: $visibleAssetID)
+            .contentMargins(.horizontal, 16, for: .scrollContent)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
@@ -182,105 +177,6 @@ extension FrameStatus {
         case .none:
             return "xmark.circle"
         }
-    }
-}
-
-private struct AssetCard: View {
-    let asset: FrameAssetItem
-    let isPrimary: Bool
-    let onPromote: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            ZStack(alignment: .topLeading) {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(.ultraThickMaterial)
-                    .frame(width: 180, height: 110)
-                    .overlay(
-                        Group {
-                            if let url = asset.url {
-                                if asset.isVideo {
-                                    LoopingVideoView(url: url)
-                                } else {
-                                    CachedAsyncImage(url: url) { phase in
-                                        switch phase {
-                                        case let .success(image):
-                                            AnyView(
-                                                image
-                                                    .resizable()
-                                                    .scaledToFill()
-                                            )
-                                        case .empty:
-                                            AnyView(ProgressView())
-                                        case .failure:
-                                            AnyView(placeholder)
-                                        @unknown default:
-                                            AnyView(placeholder)
-                                        }
-                                    }
-                                }
-                            } else {
-                                placeholder
-                            }
-                        }
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .shadow(radius: isPrimary ? 6 : 2, y: 4)
-
-                Label(asset.label, systemImage: asset.iconName)
-                    .font(.caption.bold())
-                    .padding(8)
-                    .background(.thinMaterial, in: Capsule())
-                    .padding(8)
-            }
-
-            Button(action: onPromote) {
-                HStack(spacing: 6) {
-                    Image(systemName: isPrimary ? "star.fill" : "arrow.up")
-                    Text(isPrimary ? "Default" : "Move to Top")
-                }
-                .font(.caption.weight(.semibold))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(isPrimary ? Color.accentColor.opacity(0.12) : Color.gray.opacity(0.12), in: Capsule())
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.leading, 30)
-    }
-
-    private var placeholder: some View {
-        ZStack {
-            Color.gray.opacity(0.15)
-            Image(systemName: "photo")
-                .font(.system(size: 28))
-                .foregroundColor(.gray)
-        }
-    }
-}
-
-private struct AssetDropDelegate: DropDelegate {
-    let item: FrameAssetItem
-    @Binding var assets: [FrameAssetItem]
-    @Binding var draggingAsset: FrameAssetItem?
-
-    func performDrop(info: DropInfo) -> Bool {
-        draggingAsset = nil
-        return true
-    }
-
-    func dropEntered(info: DropInfo) {
-        guard let draggingAsset, draggingAsset != item,
-              let fromIndex = assets.firstIndex(of: draggingAsset),
-              let toIndex = assets.firstIndex(of: item) else { return }
-
-        withAnimation(.spring(response: 0.25)) {
-            assets.move(fromOffsets: IndexSet(integer: fromIndex), toOffset: toIndex > fromIndex ? toIndex + 1 : toIndex)
-        }
-    }
-
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        DropProposal(operation: .move)
     }
 }
 //
