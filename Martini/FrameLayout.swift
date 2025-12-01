@@ -45,7 +45,7 @@ struct FrameLayout: View {
                 .overlay(
                     Group {
                         if let urlString = frame.board ?? frame.boardThumb, let url = URL(string: urlString) {
-                            AsyncImage(url: url) { phase in
+                            CachedAsyncImage(url: url) { phase in
                                 switch phase {
                                 case let .success(image):
                                     image

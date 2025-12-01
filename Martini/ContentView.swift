@@ -131,7 +131,22 @@ struct MainView: View {
     private var creativesToDisplay: [Creative] {
         useMockData ? mockCreatives : authService.creatives
     }
-    
+
+    private var projectDisplayTitle: String {
+        if let title = authService.projectTitle, !title.isEmpty {
+            return title
+        }
+        return authService.projectId ?? "Martini"
+    }
+
+    private var overallCompletedFrames: Int {
+        creativesToDisplay.reduce(0) { $0 + $1.completedFrames }
+    }
+
+    private var overallTotalFrames: Int {
+        creativesToDisplay.reduce(0) { $0 + $1.totalFrames }
+    }
+
     private var gridColumnCount: Int {
         if viewMode == .grid { return 5 } // Overview fixed columns
         switch gridSizeStep { // Grid View adjustable
@@ -228,8 +243,22 @@ struct MainView: View {
                     }
                 }
             }
-            .navigationTitle(authService.projectId ?? "Martini")
+            .navigationTitle(projectDisplayTitle)
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    VStack(spacing: 6) {
+                        Text(projectDisplayTitle)
+                            .font(.headline)
+                            .fontWeight(.semibold)
+
+                        if overallTotalFrames > 0 {
+                            ProgressView(value: Double(overallCompletedFrames), total: Double(overallTotalFrames))
+                                .progressViewStyle(.linear)
+                                .frame(width: 180)
+                        }
+                    }
+                }
+
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Logout") {
                         authService.logout()

@@ -11,6 +11,7 @@ import Foundation
 class AuthService: ObservableObject {
     @Published var isAuthenticated: Bool = false
     @Published var projectId: String?
+    @Published var projectTitle: String?
     @Published var accessCode: String?
     @Published var tokenHash: String?
     @Published var bearerTokenOverride: String? = "d9c4dafc0eaa40b5d0025ef0a622a5bff35ebd2ccf06a4f66d99d62602405ed2853732f5b2acc2350f447f8083178c58105b2b79a1c559a67b1bfaa5c7c7d04d"
@@ -22,6 +23,7 @@ class AuthService: ObservableObject {
     
     private let tokenHashKey = "martini_token_hash"
     private let projectIdKey = "martini_project_id"
+    private let projectTitleKey = "martini_project_title"
     private let accessCodeKey = "martini_access_code"
     private let baseScriptsURL = "https://dev.shoot.nucontext.com/scripts/"
 
@@ -76,6 +78,7 @@ class AuthService: ObservableObject {
            let tokenHash = UserDefaults.standard.string(forKey: tokenHashKey) {
             self.projectId = projectId
             self.accessCode = UserDefaults.standard.string(forKey: accessCodeKey)
+            self.projectTitle = UserDefaults.standard.string(forKey: projectTitleKey)
             self.tokenHash = tokenHash
             self.isAuthenticated = true
 
@@ -87,11 +90,13 @@ class AuthService: ObservableObject {
     }
 
     // Save auth data to UserDefaults
-    private func saveAuthData(projectId: String, accessCode: String, tokenHash: String) {
+    private func saveAuthData(projectId: String, projectTitle: String?, accessCode: String, tokenHash: String) {
         UserDefaults.standard.set(projectId, forKey: projectIdKey)
+        UserDefaults.standard.set(projectTitle, forKey: projectTitleKey)
         UserDefaults.standard.set(accessCode, forKey: accessCodeKey)
         UserDefaults.standard.set(tokenHash, forKey: tokenHashKey)
         self.projectId = projectId
+        self.projectTitle = projectTitle
         self.accessCode = accessCode
         self.tokenHash = tokenHash
         self.isAuthenticated = true
@@ -214,8 +219,13 @@ class AuthService: ObservableObject {
 
         print("🔑 Received token hash: \(tokenHash.prefix(20))...")
 
-        // Save auth data (project ID, access code, and token hash)
-        saveAuthData(projectId: projectId, accessCode: accessCode, tokenHash: tokenHash)
+        // Save auth data (project ID, access code, project title, and token hash)
+        saveAuthData(
+            projectId: projectId,
+            projectTitle: authResponse.projectTitle,
+            accessCode: accessCode,
+            tokenHash: tokenHash
+        )
         
         print("💾 Saved auth data - projectId: \(projectId)")
         print("🎬 About to fetch creatives...")
@@ -431,9 +441,11 @@ class AuthService: ObservableObject {
     // Logout and clear auth data
     func logout() {
         UserDefaults.standard.removeObject(forKey: projectIdKey)
+        UserDefaults.standard.removeObject(forKey: projectTitleKey)
         UserDefaults.standard.removeObject(forKey: accessCodeKey)
         UserDefaults.standard.removeObject(forKey: tokenHashKey)
         self.projectId = nil
+        self.projectTitle = nil
         self.accessCode = nil
         self.tokenHash = nil
         self.isAuthenticated = false
@@ -449,12 +461,14 @@ struct AuthResponse: Codable {
     let message: String?
     let error: String?
     let tokenHash: String?
+    let projectTitle: String?
 
     enum CodingKeys: String, CodingKey {
         case success
         case message
         case error
         case tokenHash = "token_hash"
+        case projectTitle = "project_title"
     }
 }
 
