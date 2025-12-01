@@ -48,15 +48,17 @@ struct FrameLayout: View {
                             CachedAsyncImage(url: url) { phase in
                                 switch phase {
                                 case let .success(image):
-                                    image
-                                        .resizable()
-                                        .scaledToFill()
+                                    AnyView(
+                                        image
+                                            .resizable()
+                                            .scaledToFill()
+                                    )
                                 case .empty:
-                                    ProgressView()
+                                    AnyView(ProgressView())
                                 case .failure:
-                                    placeholder
+                                    AnyView(placeholder)
                                 @unknown default:
-                                    placeholder
+                                    AnyView(placeholder)
                                 }
                             }
                         } else {

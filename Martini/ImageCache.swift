@@ -76,7 +76,7 @@ struct CachedAsyncImage<Content: View>: View {
 
     private func loadImage() async {
         guard let url else {
-            await MainActor.run { phase = .failure(nil) }
+            await MainActor.run { phase = .failure(ImageCacheError.invalidURL) }
             return
         }
 
@@ -85,7 +85,12 @@ struct CachedAsyncImage<Content: View>: View {
         if let image = await ImageCache.shared.image(for: url) {
             await MainActor.run { phase = .success(Image(uiImage: image)) }
         } else {
-            await MainActor.run { phase = .failure(nil) }
+            await MainActor.run { phase = .failure(ImageCacheError.decodingFailed) }
         }
     }
+}
+
+private enum ImageCacheError: Error {
+    case invalidURL
+    case decodingFailed
 }
