@@ -60,6 +60,7 @@ struct MainView: View {
     @State private var gridFontStep: Int = 3 // 1..5
     @State private var visibleFrameIds: Set<String> = []
     @State private var gridScrollProxy: ScrollViewProxy?
+    @State private var currentHeaderTitle: String? = nil
 
     enum ViewMode {
         case list
@@ -273,20 +274,7 @@ struct MainView: View {
                 }
 
                 ToolbarItemGroup(placement: .bottomBar) {
-                    Button {
-                        withAnimation(.spring(response: 0.25)) {
-                            frameSortMode = (frameSortMode == .story) ? .shoot : .story
-                        }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "photo.stack")
-                            Text(frameSortMode == .story ? "Story" : "Shoot")
-                                .font(.system(size: 14, weight: .semibold))
-                        }
-                    }
-
-                    Spacer()
-
+                    
                     Button(action: {
                         withAnimation {
                             if viewMode == .grid {
@@ -302,6 +290,20 @@ struct MainView: View {
                     }
                     .accessibilityLabel(viewMode == .grid ? "Close Overview" : "Open Overview")
                     
+                    Spacer()
+                    
+                    Button {
+                        withAnimation(.spring(response: 0.25)) {
+                            frameSortMode = (frameSortMode == .story) ? .shoot : .story
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "photo.stack")
+                            Text(frameSortMode == .story ? "Story" : "Shoot")
+                                .font(.system(size: 14, weight: .semibold))
+                        }
+                    }
+
                     Spacer()
                     
                     Button {
@@ -418,41 +420,66 @@ struct MainView: View {
     private var gridView: some View {
         ScrollViewReader { proxy in
             GeometryReader { outerGeo in
-                ScrollView {
-                    LazyVStack(spacing: 20, pinnedViews: [.sectionHeaders]) {
-                        ForEach(creativesToDisplay) { creative in
-                            CreativeGridSection(
-                                creative: creative,
-                                frames: frames(for: creative),
-                                onFrameTap: { frameId in
-                                    selectedFrameId = frameId
-                                    if let found = authService.frames.first(where: { $0.id == frameId }) {
-                                        selectedFrame = found
-                                    }
-                                    withAnimation {
-                                        // Tap switches to Grid View (kept as-is)
-                                        viewMode = .list
-                                    }
-                                },
-                                columnCount: gridColumnCount,
-                                showDescriptions: showDescriptions,
-                                fontScale: fontScale,
-                                coordinateSpaceName: "gridScroll",
-                                viewportHeight: outerGeo.size.height,
-                                primaryAsset: { primaryAsset(for: $0) },
-                                onStatusSelected: { frame, status in
-                                    updateFrameStatus(frame, to: status)
+                ZStack(alignment: .top) {
+                    ScrollView {
+                        LazyVStack(spacing: 20) {
+                            ForEach(creativesToDisplay) { creative in
+                                VStack(alignment: .leading, spacing: 12) {
+                                    CreativeGridSection(
+                                        creative: creative,
+                                        frames: frames(for: creative),
+                                        onFrameTap: { frameId in
+                                            selectedFrameId = frameId
+                                            if let found = authService.frames.first(where: { $0.id == frameId }) {
+                                                selectedFrame = found
+                                            }
+                                            withAnimation {
+                                                viewMode = .list
+                                            }
+                                        },
+                                        columnCount: gridColumnCount,
+                                        showDescriptions: showDescriptions,
+                                        fontScale: fontScale,
+                                        coordinateSpaceName: "gridScroll",
+                                        viewportHeight: outerGeo.size.height,
+                                        primaryAsset: { primaryAsset(for: $0) },
+                                        onStatusSelected: { frame, status in
+                                            updateFrameStatus(frame, to: status)
+                                        }
+                                    )
                                 }
-                            )
+                                .id(creative.id)
+                            }
+                        }
+                        .padding(.vertical)
+                        .padding(.bottom, 0)
+                    }
+                    .coordinateSpace(name: "gridScroll")
+                    .onAppear { gridScrollProxy = proxy }
+                    .onPreferenceChange(SectionHeaderAnchorKey.self) { positions in
+                        let threshold: CGFloat = 44
+                        let visible = positions
+                            .filter { $0.value <= threshold }
+                            .sorted(by: { $0.value > $1.value })
+                            .first?.key
+                        if let id = visible, let creative = creativesToDisplay.first(where: { $0.id == id }) {
+                            currentHeaderTitle = creative.title
+                        } else {
+                            currentHeaderTitle = nil
                         }
                     }
-                    .padding(.vertical)
-                    .padding(.bottom, 0)
-                }
-                .coordinateSpace(name: "gridScroll")
-                .onAppear { gridScrollProxy = proxy }
-                .onPreferenceChange(VisibleFramePreferenceKey.self) { ids in
-                    visibleFrameIds = ids
+
+                    if let title = currentHeaderTitle {
+                        HStack {
+                            Text(title)
+                                .font(.headline)
+                                .fontWeight(.bold)
+                            Spacer()
+                        }
+                        .padding(.horizontal)
+                        .padding(.vertical, 8)
+                        .background(.thinMaterial)
+                    }
                 }
             }
         }
@@ -629,30 +656,27 @@ struct CreativeGridSection: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Creative header
-            Text(creative.title)
-                .font(.headline)
-                .fontWeight(.bold)
-                .padding(.horizontal)
-
-            VStack(alignment: .leading, spacing: 6) {
-                ProgressView(value: Double(creative.completedFrames), total: Double(max(creative.totalFrames, 1)))
-                    .tint(.accentColor)
-                    .accessibilityLabel("\(creative.completedFrames) of \(creative.totalFrames) frames complete")
-
-                HStack {
-                    Text("\(creative.completedFrames) completed")
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-
-                    Spacer()
-
-                    Text("\(creative.totalFrames) total")
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
+            HStack(){
+                TrackableHeader(id: creative.id, title: creative.title, coordSpace: coordinateSpaceName)
+                VStack(alignment: .leading, spacing: 6) {
+                    ProgressView(value: Double(creative.completedFrames), total: Double(max(creative.totalFrames, 1)))
+                        .tint(.accentColor)
+                        .accessibilityLabel("\(creative.completedFrames) of \(creative.totalFrames) frames complete")
+                    
+                    HStack {
+                        Text("\(creative.completedFrames) completed")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                        
+                        Spacer()
+                        
+                        Text("\(creative.totalFrames) total")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                    }
                 }
+                .padding(.horizontal)
             }
-            .padding(.horizontal)
 
             // Grid of frames
             LazyVGrid(columns: columns, spacing: 8) {
@@ -742,6 +766,33 @@ private struct VisibleFramePreferenceKey: PreferenceKey {
 
     static func reduce(value: inout Set<String>, nextValue: () -> Set<String>) {
         value.formUnion(nextValue())
+    }
+}
+
+private struct SectionHeaderAnchorKey: PreferenceKey {
+    static var defaultValue: [String: CGFloat] = [:]
+    static func reduce(value: inout [String: CGFloat], nextValue: () -> [String: CGFloat]) {
+        value.merge(nextValue(), uniquingKeysWith: { $1 })
+    }
+}
+
+private struct TrackableHeader: View {
+    let id: String
+    let title: String
+    let coordSpace: String
+    var body: some View {
+        Text(title)
+            .font(.headline)
+            .fontWeight(.bold)
+            .padding(.horizontal)
+            .background(
+                GeometryReader { geo in
+                    Color.clear.preference(
+                        key: SectionHeaderAnchorKey.self,
+                        value: [id: geo.frame(in: .named(coordSpace)).minY]
+                    )
+                }
+            )
     }
 }
 
@@ -930,3 +981,4 @@ struct SettingsView: View {
     ContentView()
         .environmentObject(AuthService())
 }
+
