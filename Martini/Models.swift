@@ -310,6 +310,9 @@ struct Frame: Codable, Identifiable {
     let lastUpdated: String?
     let frameOrder: String?
     let frameShootOrder: String?
+    let schedule: String?
+    let frameStartTime: String?
+    @SafeOptionalBool var frameHide: Bool?
     @SafeTags var tags: [FrameTag]?
 
     init(
@@ -353,6 +356,9 @@ struct Frame: Codable, Identifiable {
         lastUpdated: String? = nil,
         frameOrder: String? = nil,
         frameShootOrder: String? = nil,
+        schedule: String? = nil,
+        frameStartTime: String? = nil,
+        frameHide: Bool? = nil,
         tags: [FrameTag]? = []
     ) {
         self.id = id
@@ -395,6 +401,9 @@ struct Frame: Codable, Identifiable {
         self.lastUpdated = lastUpdated
         self.frameOrder = frameOrder
         self.frameShootOrder = frameShootOrder
+        self.schedule = schedule
+        self.frameStartTime = frameStartTime
+        self.frameHide = frameHide
         self.tags = tags
     }
 
@@ -439,6 +448,9 @@ struct Frame: Codable, Identifiable {
         case lastUpdated = "last_updated"
         case frameOrder = "frame_order"
         case frameShootOrder = "frame_shoot_order"
+        case schedule
+        case frameStartTime = "frame_start_time"
+        case frameHide = "frame_hide"
         case tags
     }
 
@@ -506,6 +518,18 @@ struct Frame: Codable, Identifiable {
         return items
     }
 
+    var isHidden: Bool { frameHide ?? false }
+
+    var formattedStartTime: String? {
+        guard let frameStartTime, !frameStartTime.isEmpty else { return nil }
+        if let date = Frame.startTimeParser.date(from: frameStartTime) {
+            return Frame.startTimeFormatter.string(from: date)
+        }
+        return frameStartTime
+    }
+
+    var hasScheduledTime: Bool { formattedStartTime != nil }
+
     func updatingStatus(_ status: FrameStatus) -> Frame {
         Frame(
             id: id,
@@ -548,9 +572,26 @@ struct Frame: Codable, Identifiable {
             lastUpdated: lastUpdated,
             frameOrder: frameOrder,
             frameShootOrder: frameShootOrder,
+            schedule: schedule,
+            frameStartTime: frameStartTime,
+            frameHide: frameHide,
             tags: tags
         )
     }
+
+    private static let startTimeParser: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "HH:mm"
+        return formatter
+    }()
+
+    private static let startTimeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "h:mm a"
+        return formatter
+    }()
 }
 
 struct FramesResponse: Codable {

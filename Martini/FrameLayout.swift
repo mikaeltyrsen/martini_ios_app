@@ -180,6 +180,21 @@ struct FrameLayout: View {
                 }
             }
 
+            if showFrameTimeOverlay {
+                GeometryReader { geo in
+                    let height = max(18, geo.size.height * 0.08)
+
+                    VStack {
+                        Spacer()
+                        HStack {
+                            timeBadge(height: height)
+                            Spacer()
+                        }
+                        .padding(max(2, height * 0.25))
+                    }
+                }
+            }
+
             if showStatusBadge {
                 statusOverlay(for: frame.statusEnum)
             }
@@ -294,6 +309,26 @@ struct FrameLayout: View {
 
     private var frameNumberText: String {
         frame.frameNumber > 0 ? "\(frame.frameNumber)" : "--"
+    }
+
+    private var frameStartTimeText: String? { frame.formattedStartTime }
+
+    private var showFrameTimeOverlay: Bool { frameStartTimeText != nil }
+
+    @ViewBuilder
+    private func timeBadge(height: CGFloat) -> some View {
+        if let frameStartTimeText {
+            HStack(spacing: 6) {
+                Image(systemName: "clock")
+                Text(frameStartTimeText)
+            }
+            .font(.system(size: height * 0.4, weight: .semibold))
+            .padding(.horizontal, height * 0.35)
+            .padding(.vertical, height * 0.25)
+            .background(Color.black.opacity(0.8))
+            .foregroundColor(.white)
+            .clipShape(Capsule())
+        }
     }
 
     @ViewBuilder

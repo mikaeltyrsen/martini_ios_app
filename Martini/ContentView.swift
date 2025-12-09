@@ -190,7 +190,14 @@ struct MainView: View {
     }
 
     private func frames(for creative: Creative) -> [Frame] {
-        let frames = useMockData ? mockFrames(for: creative) : authService.frames.filter { $0.creativeId == creative.id }
+        var frames = useMockData ? mockFrames(for: creative) : authService.frames.filter { $0.creativeId == creative.id }
+
+        frames = frames.filter { !$0.isHidden }
+
+        if authService.isScheduleActive, frameSortMode == .shoot {
+            frames = frames.filter { $0.hasScheduledTime }
+        }
+
         return frames.sorted { lhs, rhs in
             sortingTuple(for: lhs, mode: frameSortMode) < sortingTuple(for: rhs, mode: frameSortMode)
         }
