@@ -240,59 +240,27 @@ class AuthService: ObservableObject {
     }
     
     // Parse QR code URL and extract project ID, and optionally access code
-    // Format: https://trymartini.com/*/####-####-####-#### (needs manual code entry)
-    //     or: https://trymartini.com/*/####-####-####-####-#### (code included)
+    // Format: https://trymartini.com/*/<uuid7> (needs manual code entry)
+    //     or: https://trymartini.com/*/<uuid7>-<code> (code included)
     func parseQRCode(_ qrCode: String) throws -> (accessCode: String?, projectId: String) {
         print("🔍 Parsing QR code: \(qrCode)")
-        
-        // Try to match 5 segments first (####-####-####-####-####)
-        let pattern5 = "([0-9a-zA-Z]{4})-([0-9a-zA-Z]{4})-([0-9a-zA-Z]{4})-([0-9a-zA-Z]{4})-([0-9a-zA-Z]{4})"
-        let regex5 = try NSRegularExpression(pattern: pattern5)
+        let pattern = "([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(?:-([0-9a-zA-Z]{4}))?"
+        let regex = try NSRegularExpression(pattern: pattern)
         let nsString = qrCode as NSString
 
-        if let match = regex5.firstMatch(in: qrCode, range: NSRange(location: 0, length: nsString.length)) {
-            // Extract all 5 segments
-            var segments: [String] = []
-            for i in 1...5 {
-                let range = match.range(at: i)
-                if range.location != NSNotFound {
-                    segments.append(nsString.substring(with: range))
-                }
+        if let match = regex.firstMatch(in: qrCode, range: NSRange(location: 0, length: nsString.length)) {
+            let projectIdRange = match.range(at: 1)
+            let accessCodeRange = match.range(at: 2)
+
+            guard projectIdRange.location != NSNotFound else {
+                throw AuthError.invalidQRCode
             }
-            
-            print("🔍 Found 5 segments: \(segments)")
-            
-            if segments.count == 5 {
-                // First 4 segments form the project ID, last segment is access code
-                let projectId = segments[0..<4].joined(separator: "-")
-                let accessCode = segments[4]
-                print("🔍 Extracted - projectId: \(projectId), accessCode: \(accessCode)")
-                return (accessCode, projectId)
-            }
-        }
-        
-        // Try to match 4 segments (####-####-####-####)
-        let pattern4 = "([0-9a-zA-Z]{4})-([0-9a-zA-Z]{4})-([0-9a-zA-Z]{4})-([0-9a-zA-Z]{4})"
-        let regex4 = try NSRegularExpression(pattern: pattern4)
-        
-        if let match = regex4.firstMatch(in: qrCode, range: NSRange(location: 0, length: nsString.length)) {
-            // Extract all 4 segments
-            var segments: [String] = []
-            for i in 1...4 {
-                let range = match.range(at: i)
-                if range.location != NSNotFound {
-                    segments.append(nsString.substring(with: range))
-                }
-            }
-            
-            print("🔍 Found 4 segments: \(segments)")
-            
-            if segments.count == 4 {
-                // All 4 segments form the project ID, no access code
-                let projectId = segments.joined(separator: "-")
-                print("🔍 Extracted - projectId: \(projectId), accessCode: (needs manual entry)")
-                return (nil, projectId)
-            }
+
+            let projectId = nsString.substring(with: projectIdRange)
+            let accessCode = accessCodeRange.location != NSNotFound ? nsString.substring(with: accessCodeRange) : nil
+
+            print("🔍 Extracted - projectId: \(projectId), accessCode: \(accessCode ?? "(needs manual entry)")")
+            return (accessCode, projectId)
         }
         
         print("🔍 Could not find valid code pattern")
