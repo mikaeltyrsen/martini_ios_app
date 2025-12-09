@@ -168,9 +168,9 @@ struct MainView: View {
     }
 
     private var gridAssetPriorityBinding: Binding<FrameAssetKind> {
-        Binding(
-            get: { gridAssetPriority },
-            set: { gridAssetPriority = $0 }
+        Binding<FrameAssetKind>(
+            get: { FrameAssetKind(rawValue: gridAssetPriorityRawValue) ?? .board },
+            set: { gridAssetPriorityRawValue = $0.rawValue }
         )
     }
 
@@ -370,10 +370,10 @@ struct MainView: View {
             .sheet(isPresented: $isShowingSettings) {
                 SettingsView(
                     showDescriptions: $showDescriptions,
+                    showFullDescriptions: $showFullDescriptions,
                     gridSizeStep: $gridSizeStep,
                     gridFontStep: $gridFontStep,
-                    gridPriority: gridAssetPriorityBinding,
-                    showFullDescriptions: $showFullDescriptions
+                    gridPriority: gridAssetPriorityBinding
                 )
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
