@@ -14,7 +14,8 @@ class AuthService: ObservableObject {
     @Published var projectTitle: String?
     @Published var accessCode: String?
     @Published var token: String?
-    @Published var bearerTokenOverride: String? = "d9c4dafc0eaa40b5d0025ef0a622a5bff35ebd2ccf06a4f66d99d62602405ed2853732f5b2acc2350f447f8083178c58105b2b79a1c559a67b1bfaa5c7c7d04d"
+    //@Published var bearerTokenOverride: String? = "d9c4dafc0eaa40b5d0025ef0a622a5bff35ebd2ccf06a4f66d99d62602405ed2853732f5b2acc2350f447f8083178c58105b2b79a1c559a67b1bfaa5c7c7d04d"
+    @Published var bearerTokenOverride: String?
     @Published var debugInfo: DebugInfo?
     @Published var creatives: [Creative] = []
     @Published var isLoadingCreatives: Bool = false
