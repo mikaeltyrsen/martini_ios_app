@@ -487,7 +487,10 @@ struct MainView: View {
                     .coordinateSpace(name: "gridScroll")
                     .onAppear { gridScrollProxy = proxy }
                     .onPreferenceChange(VisibleFramePreferenceKey.self) { ids in
-                        visibleFrameIds = ids
+                        // Defer state updates to avoid mutating view state during the render pass while scrolling
+                        DispatchQueue.main.async {
+                            visibleFrameIds = ids
+                        }
                     }
                     .onPreferenceChange(SectionHeaderAnchorKey.self) { positions in
                         // Track the nearest section header above the fold so the selector stays in sync
