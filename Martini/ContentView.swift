@@ -68,7 +68,7 @@ struct MainView: View {
     @AppStorage("gridFontStep") private var gridFontStep: Int = 3 // 1..5
     @State private var visibleFrameIds: Set<String> = []
     @State private var gridScrollProxy: ScrollViewProxy?
-    @State private var currentHeaderTitle: String? = nil
+    @State private var currentCreativeId: String? = nil
 
     enum ViewMode {
         case list
@@ -379,6 +379,10 @@ struct MainView: View {
                 .presentationDragIndicator(.visible)
                 .interactiveDismissDisabled(false)
             }
+            .onAppear(perform: synchronizeCreativeSelection)
+            .onChange(of: creativesToDisplay.count) { _ in
+                synchronizeCreativeSelection()
+            }
         }
     }
 
@@ -486,33 +490,116 @@ struct MainView: View {
                         visibleFrameIds = ids
                     }
                     .onPreferenceChange(SectionHeaderAnchorKey.self) { positions in
-                        // Only show the sticky header once the section title has scrolled past the top
+                        // Track the nearest section header above the fold so the selector stays in sync
                         DispatchQueue.main.async {
-                            let visible = positions
+                            let visibleId = positions
                                 .filter { $0.value <= 0 }
                                 .sorted(by: { $0.value > $1.value })
                                 .first?.key
-                            if let id = visible, let creative = creativesToDisplay.first(where: { $0.id == id }) {
-                                currentHeaderTitle = creative.title
+
+                            if let id = visibleId, creativesToDisplay.contains(where: { $0.id == id }) {
+                                currentCreativeId = id
                             } else {
-                                currentHeaderTitle = nil
+                                synchronizeCreativeSelection()
                             }
                         }
                     }
-
-                    if let title = currentHeaderTitle {
-                        HStack {
-                            Text(title)
-                                .font(.headline)
-                                .fontWeight(.bold)
-                            Spacer()
-                        }
-                        .padding(.horizontal)
-                        .padding(.vertical, 8)
-                        .background(.thinMaterial)
-                    }
+                }
+                .overlay(alignment: .top) {
+                    creativeSelectorButton
+                        .padding(.top, outerGeo.safeAreaInsets.top + 8)
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var creativeSelectorButton: some View {
+        if creativesToDisplay.isEmpty {
+            EmptyView()
+        } else {
+            let hasMultipleCreatives = creativesToDisplay.count > 1
+            let label = creativeSelectorLabel(hasMultipleCreatives: hasMultipleCreatives)
+
+            if hasMultipleCreatives {
+                Menu {
+                    ForEach(creativesToDisplay) { creative in
+                        Button {
+                            selectCreative(creative.id)
+                        } label: {
+                            if creative.id == (currentCreativeId ?? creativesToDisplay.first?.id) {
+                                Label(creative.title, systemImage: "checkmark")
+                            } else {
+                                Text(creative.title)
+                            }
+                        }
+                    }
+                } label: {
+                    label
+                }
+                .menuStyle(.button)
+            } else {
+                Button {
+                    if let id = creativesToDisplay.first?.id {
+                        selectCreative(id)
+                    }
+                } label: {
+                    label
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private func creativeSelectorLabel(hasMultipleCreatives: Bool) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "sparkles")
+            Text(currentCreativeTitle)
+                .lineLimit(1)
+                .font(.system(size: 15, weight: .semibold))
+
+            if hasMultipleCreatives {
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.footnote)
+                    .fontWeight(.bold)
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(.ultraThinMaterial, in: Capsule())
+        .shadow(color: .black.opacity(0.12), radius: 12, y: 6)
+    }
+
+    private var currentCreativeTitle: String {
+        if let id = currentCreativeId, let creative = creativesToDisplay.first(where: { $0.id == id }) {
+            return creative.title
+        }
+        return creativesToDisplay.first?.title ?? "Creatives"
+    }
+
+    private func selectCreative(_ id: String) {
+        currentCreativeId = id
+        scrollToCreative(withId: id)
+    }
+
+    private func synchronizeCreativeSelection() {
+        guard let firstId = creativesToDisplay.first?.id else {
+            currentCreativeId = nil
+            return
+        }
+
+        if let currentCreativeId, creativesToDisplay.contains(where: { $0.id == currentCreativeId }) {
+            return
+        }
+
+        currentCreativeId = firstId
+    }
+
+    private func scrollToCreative(withId id: String) {
+        guard let proxy = gridScrollProxy else { return }
+
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
+            proxy.scrollTo(id, anchor: .top)
         }
     }
     
