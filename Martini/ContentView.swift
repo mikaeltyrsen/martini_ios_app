@@ -482,6 +482,9 @@ struct MainView: View {
                     }
                     .coordinateSpace(name: "gridScroll")
                     .onAppear { gridScrollProxy = proxy }
+                    .onPreferenceChange(VisibleFramePreferenceKey.self) { ids in
+                        visibleFrameIds = ids
+                    }
                     .onPreferenceChange(SectionHeaderAnchorKey.self) { positions in
                         // Only show the sticky header once the section title has scrolled past the top
                         DispatchQueue.main.async {
