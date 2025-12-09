@@ -227,7 +227,7 @@ struct ProjectIdEntryView: View {
                         .font(.subheadline)
                         .foregroundColor(.secondary)
 
-                    TextField("####-####-####-####", text: $projectId)
+                    TextField("019b000a-02e9-7abe-911d-e83787fa9d2c", text: $projectId)
                         .textInputAutocapitalization(.characters)
                         .autocorrectionDisabled()
                         .keyboardType(.asciiCapable)
