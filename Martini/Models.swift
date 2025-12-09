@@ -210,11 +210,11 @@ struct SafeTags: Codable {
 
 struct Creative: Codable, Identifiable {
     let id: String
-    let shootId: String
+    let shootId: String?
     let title: String
     @SafeInt var order: Int
     @SafeBool var isArchived: Bool
-    @SafeInt var isLive: Int
+    @SafeBool var isLive: Bool
     @SafeInt var totalFrames: Int
     @SafeInt var completedFrames: Int
     @SafeInt var remainingFrames: Int
