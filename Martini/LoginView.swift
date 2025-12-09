@@ -139,6 +139,12 @@ struct LoginView: View {
                 projectIdInput = ""
             }
         }
+        .onAppear {
+            processPendingDeepLinkIfNeeded()
+        }
+        .onChange(of: authService.pendingDeepLink) { _ in
+            processPendingDeepLinkIfNeeded()
+        }
     }
     
     private func handleQRCode(_ qrCode: String) {
@@ -166,6 +172,13 @@ struct LoginView: View {
         checkAndProceedWithAuthentication()
     }
 
+    private func processPendingDeepLinkIfNeeded() {
+        guard let pendingLink = authService.pendingDeepLink else { return }
+
+        authService.pendingDeepLink = nil
+        startAuthenticationFlow(with: pendingLink)
+    }
+
     private func checkAndProceedWithAuthentication() {
         // Check if we need to prompt for access code
         do {
@@ -184,7 +197,16 @@ struct LoginView: View {
             isAuthenticating = false
         }
     }
-    
+
+    private func startAuthenticationFlow(with link: String) {
+        scannedQRCode = link
+        isAuthenticating = true
+        errorMessage = nil
+        showAccessCodeEntry = false
+        showProjectIdEntry = false
+        checkAndProceedWithAuthentication()
+    }
+
     private func proceedWithAuthentication(accessCode: String?) {
         Task {
             do {

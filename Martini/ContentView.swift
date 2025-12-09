@@ -26,6 +26,9 @@ struct ContentView: View {
         .onChange(of: authService.projectId) { _ in
             synchronizeRealtimeConnection()
         }
+        .onOpenURL { url in
+            handleIncomingURL(url)
+        }
     }
 
     private func synchronizeRealtimeConnection() {
@@ -37,6 +40,10 @@ struct ContentView: View {
 
     private func synchronizeAppState() {
         synchronizeRealtimeConnection()
+    }
+
+    private func handleIncomingURL(_ url: URL) {
+        authService.handleDeepLink(url)
     }
 }
 
