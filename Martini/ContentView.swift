@@ -69,6 +69,7 @@ struct MainView: View {
     @State private var visibleFrameIds: Set<String> = []
     @State private var gridScrollProxy: ScrollViewProxy?
     @State private var currentCreativeId: String? = nil
+    @State private var isScrolledToTop: Bool = true
 
     enum ViewMode {
         case list
@@ -274,11 +275,15 @@ struct MainView: View {
                     }
                 }
             }
-            .navigationTitle(projectDisplayTitle)
+            .navigationTitle(displayedNavigationTitle)
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    creativeMenuButton
+                }
+
                 ToolbarItem(placement: .principal) {
                     VStack(spacing: 6) {
-                        Text(projectDisplayTitle)
+                        Text(displayedNavigationTitle)
                             .font(.headline)
                             .fontWeight(.semibold)
 
@@ -291,10 +296,13 @@ struct MainView: View {
                 }
 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Logout") {
+                    Button {
                         authService.logout()
+                    } label: {
+                        Image(systemName: "rectangle.portrait.and.arrow.right")
                     }
                     .foregroundColor(.red)
+                    .accessibilityLabel("Logout")
                 }
 
                 ToolbarItemGroup(placement: .bottomBar) {
@@ -495,6 +503,9 @@ struct MainView: View {
                     .onPreferenceChange(SectionHeaderAnchorKey.self) { positions in
                         // Track the nearest section header above the fold so the selector stays in sync
                         DispatchQueue.main.async {
+                            let topOffset = positions.values.min() ?? .infinity
+                            isScrolledToTop = topOffset > 0
+
                             let visibleId = positions
                                 .filter { $0.value <= 0 }
                                 .sorted(by: { $0.value > $1.value })
@@ -502,75 +513,14 @@ struct MainView: View {
 
                             if let id = visibleId, creativesToDisplay.contains(where: { $0.id == id }) {
                                 currentCreativeId = id
-                            } else {
+                            } else if currentCreativeId == nil {
                                 synchronizeCreativeSelection()
                             }
                         }
                     }
                 }
-                .overlay(alignment: .top) {
-                    creativeSelectorButton
-                        .padding(.top, outerGeo.safeAreaInsets.top + 8)
-                }
             }
         }
-    }
-
-    @ViewBuilder
-    private var creativeSelectorButton: some View {
-        if creativesToDisplay.isEmpty {
-            EmptyView()
-        } else {
-            let hasMultipleCreatives = creativesToDisplay.count > 1
-            let label = creativeSelectorLabel(hasMultipleCreatives: hasMultipleCreatives)
-
-            if hasMultipleCreatives {
-                Menu {
-                    ForEach(creativesToDisplay) { creative in
-                        Button {
-                            selectCreative(creative.id)
-                        } label: {
-                            if creative.id == (currentCreativeId ?? creativesToDisplay.first?.id) {
-                                Label(creative.title, systemImage: "checkmark")
-                            } else {
-                                Text(creative.title)
-                            }
-                        }
-                    }
-                } label: {
-                    label
-                }
-                .menuStyle(.button)
-            } else {
-                Button {
-                    if let id = creativesToDisplay.first?.id {
-                        selectCreative(id)
-                    }
-                } label: {
-                    label
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
-
-    private func creativeSelectorLabel(hasMultipleCreatives: Bool) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: "sparkles")
-            Text(currentCreativeTitle)
-                .lineLimit(1)
-                .font(.system(size: 15, weight: .semibold))
-
-            if hasMultipleCreatives {
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(.footnote)
-                    .fontWeight(.bold)
-            }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(.ultraThinMaterial, in: Capsule())
-        .shadow(color: .black.opacity(0.12), radius: 12, y: 6)
     }
 
     private var currentCreativeTitle: String {
@@ -604,6 +554,31 @@ struct MainView: View {
         withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
             proxy.scrollTo(id, anchor: .top)
         }
+    }
+
+    private var displayedNavigationTitle: String {
+        isScrolledToTop ? projectDisplayTitle : currentCreativeTitle
+    }
+
+    private var creativeMenuButton: some View {
+        Menu {
+            ForEach(creativesToDisplay) { creative in
+                Button {
+                    selectCreative(creative.id)
+                } label: {
+                    if creative.id == (currentCreativeId ?? creativesToDisplay.first?.id) {
+                        Label(creative.title, systemImage: "checkmark")
+                    } else {
+                        Text(creative.title)
+                    }
+                }
+            }
+        } label: {
+            Image(systemName: "ellipsis.circle")
+                .imageScale(.large)
+        }
+        .accessibilityLabel("More creatives")
+        .disabled(creativesToDisplay.isEmpty)
     }
     
     private var fontScale: CGFloat {
