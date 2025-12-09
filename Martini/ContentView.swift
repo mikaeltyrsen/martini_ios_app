@@ -464,9 +464,9 @@ struct MainView: View {
                     .coordinateSpace(name: "gridScroll")
                     .onAppear { gridScrollProxy = proxy }
                     .onPreferenceChange(SectionHeaderAnchorKey.self) { positions in
-                        let threshold: CGFloat = 44
+                        // Only show the sticky header once the section title has scrolled past the top
                         let visible = positions
-                            .filter { $0.value <= threshold }
+                            .filter { $0.value <= 0 }
                             .sorted(by: { $0.value > $1.value })
                             .first?.key
                         if let id = visible, let creative = creativesToDisplay.first(where: { $0.id == id }) {
