@@ -279,25 +279,25 @@ struct Frame: Codable, Identifiable {
     let boardThumb: String?
     let boardFileName: String?
     let boardFileType: String?
-    let boardFileSize: Int?
+    @SafeOptionalInt var boardFileSize: Int?
     let photoboard: String?
     let photoboardThumb: String?
     let photoboardFileName: String?
     let photoboardFileType: String?
-    let photoboardFileSize: Int?
+    @SafeOptionalInt var photoboardFileSize: Int?
     let photoboardCrop: String?
     let preview: String?
     let previewThumb: String?
     let previewFileName: String?
     let previewFileType: String?
-    let previewFileSize: Int?
+    @SafeOptionalInt var previewFileSize: Int?
     let previewCrop: String?
     let captureClipId: String?
     let captureClip: String?
     let captureClipThumbnail: String?
     let captureClipFileName: String?
     let captureClipFileType: String?
-    let captureClipFileSize: Int?
+    @SafeOptionalInt var captureClipFileSize: Int?
     let captureClipCrop: String?
     let description: String?
     let caption: String?
