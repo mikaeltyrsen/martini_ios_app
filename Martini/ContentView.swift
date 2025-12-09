@@ -192,12 +192,11 @@ struct MainView: View {
     private func frames(for creative: Creative) -> [Frame] {
         var frames = useMockData ? mockFrames(for: creative) : authService.frames.filter { $0.creativeId == creative.id }
 
-        frames = frames.filter { !$0.isHidden }
-
         switch frameSortMode {
         case .story:
             break // Always show every board in story order, even when a schedule exists
         case .shoot:
+            frames = frames.filter { !$0.isHidden }
             if authService.isScheduleActive {
                 frames = frames.filter { $0.hasScheduledTime }
             }
