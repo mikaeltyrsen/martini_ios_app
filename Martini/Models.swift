@@ -255,7 +255,7 @@ struct Creative: Codable, Identifiable {
 // MARK: - API Response Models
 
 struct CreativesResponse: Codable {
-    let success: Bool
+    @SafeBool var success: Bool
     let creatives: [Creative]
     let error: String?
 }
@@ -554,7 +554,7 @@ struct Frame: Codable, Identifiable {
 }
 
 struct FramesResponse: Codable {
-    let success: Bool
+    @SafeBool var success: Bool
     let frames: [Frame]
     let error: String?
 }

@@ -459,7 +459,7 @@ class AuthService: ObservableObject {
 // MARK: - Models
 
 struct AuthResponse: Codable {
-    let success: Bool
+    @SafeBool var success: Bool
     let message: String?
     let error: String?
     let token: String?
@@ -475,7 +475,7 @@ struct AuthResponse: Codable {
 }
 
 struct AuthErrorResponse: Codable {
-    let success: Bool
+    @SafeBool var success: Bool
     let error: String
 }
 
