@@ -194,8 +194,13 @@ struct MainView: View {
 
         frames = frames.filter { !$0.isHidden }
 
-        if authService.isScheduleActive, frameSortMode == .shoot {
-            frames = frames.filter { $0.hasScheduledTime }
+        switch frameSortMode {
+        case .story:
+            break // Always show every board in story order, even when a schedule exists
+        case .shoot:
+            if authService.isScheduleActive {
+                frames = frames.filter { $0.hasScheduledTime }
+            }
         }
 
         return frames.sorted { lhs, rhs in
