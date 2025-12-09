@@ -661,7 +661,6 @@ private extension MainView {
             stored.append(kind)
         }
 
-        frameAssetOrders[frame.id] = stored
         return stored
     }
 
