@@ -57,14 +57,15 @@ struct MainView: View {
     @State private var dataError: String?
     @State private var hasLoadedFrames = false
     @State private var hasLoadedCreatives = false
-    @State private var gridSizeStep: Int = 1 // 1..4, where 1 -> 4 columns, 4 -> 1 column
+    @AppStorage("gridSizeStep") private var gridSizeStep: Int = 1 // 1..4, where 1 -> 4 columns, 4 -> 1 column
     @State private var frameSortMode: FrameSortMode = .story
     @State private var isShowingSettings = false
     @State private var frameAssetOrders: [String: [FrameAssetKind]] = [:]
-    @State private var gridAssetPriority: FrameAssetKind = .board
+    @AppStorage("gridAssetPriority") private var gridAssetPriorityRawValue: String = FrameAssetKind.board.rawValue
 
-    @State private var showDescriptions: Bool = true
-    @State private var gridFontStep: Int = 3 // 1..5
+    @AppStorage("showDescriptions") private var showDescriptions: Bool = true
+    @AppStorage("showFullDescriptions") private var showFullDescriptions: Bool = false
+    @AppStorage("gridFontStep") private var gridFontStep: Int = 3 // 1..5
     @State private var visibleFrameIds: Set<String> = []
     @State private var gridScrollProxy: ScrollViewProxy?
     @State private var currentHeaderTitle: String? = nil
@@ -160,6 +161,22 @@ struct MainView: View {
     private var overallTotalFrames: Int {
         creativesToDisplay.reduce(0) { $0 + $1.totalFrames }
     }
+
+    private var gridAssetPriority: FrameAssetKind {
+        get { FrameAssetKind(rawValue: gridAssetPriorityRawValue) ?? .board }
+        set { gridAssetPriorityRawValue = newValue.rawValue }
+    }
+
+    private var gridAssetPriorityBinding: Binding<FrameAssetKind> {
+        Binding(
+            get: { gridAssetPriority },
+            set: { gridAssetPriority = $0 }
+        )
+    }
+
+    private var effectiveShowDescriptions: Bool { viewMode == .grid ? false : showDescriptions }
+
+    private var effectiveShowFullDescriptions: Bool { effectiveShowDescriptions && showFullDescriptions }
 
     private var gridColumnCount: Int {
         if viewMode == .grid { return 5 } // Overview fixed columns
@@ -355,7 +372,8 @@ struct MainView: View {
                     showDescriptions: $showDescriptions,
                     gridSizeStep: $gridSizeStep,
                     gridFontStep: $gridFontStep,
-                    gridPriority: $gridAssetPriority
+                    gridPriority: gridAssetPriorityBinding,
+                    showFullDescriptions: $showFullDescriptions
                 )
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
@@ -445,7 +463,8 @@ struct MainView: View {
                                             }
                                         },
                                         columnCount: gridColumnCount,
-                                        showDescriptions: showDescriptions,
+                                        showDescriptions: effectiveShowDescriptions,
+                                        showFullDescriptions: effectiveShowFullDescriptions,
                                         fontScale: fontScale,
                                         coordinateSpaceName: "gridScroll",
                                         viewportHeight: outerGeo.size.height,
@@ -624,6 +643,7 @@ struct CreativeGridSection: View {
     let onFrameTap: (String) -> Void
     let columnCount: Int
     let showDescriptions: Bool
+    let showFullDescriptions: Bool
     let fontScale: CGFloat
     let coordinateSpaceName: String
     let viewportHeight: CGFloat
@@ -636,6 +656,7 @@ struct CreativeGridSection: View {
         onFrameTap: @escaping (String) -> Void,
         columnCount: Int,
         showDescriptions: Bool,
+        showFullDescriptions: Bool,
         fontScale: CGFloat,
         coordinateSpaceName: String,
         viewportHeight: CGFloat,
@@ -647,6 +668,7 @@ struct CreativeGridSection: View {
         self.onFrameTap = onFrameTap
         self.columnCount = columnCount
         self.showDescriptions = showDescriptions
+        self.showFullDescriptions = showFullDescriptions
         self.fontScale = fontScale
         self.coordinateSpaceName = coordinateSpaceName
         self.viewportHeight = viewportHeight
@@ -695,6 +717,7 @@ struct CreativeGridSection: View {
                             frame: frame,
                             primaryAsset: primaryAsset(frame),
                             showDescription: showDescriptions,
+                            showFullDescription: showFullDescriptions,
                             fontScale: fontScale,
                             coordinateSpaceName: coordinateSpaceName,
                             viewportHeight: viewportHeight,
@@ -717,6 +740,7 @@ struct GridFrameCell: View {
     let frame: Frame
     var primaryAsset: FrameAssetItem?
     var showDescription: Bool = false
+    var showFullDescription: Bool = false
     var fontScale: CGFloat
     let coordinateSpaceName: String
     let viewportHeight: CGFloat
@@ -738,7 +762,7 @@ struct GridFrameCell: View {
                 Text(clean)
                     .font(.system(size: 12 * fontScale))
                     .foregroundColor(.secondary)
-                    .lineLimit(3)
+                    .lineLimit(showFullDescription ? nil : 3)
             }
             Spacer(minLength: 0)
         }
@@ -909,6 +933,7 @@ struct Triangle: Shape {
 
 struct SettingsView: View {
     @Binding var showDescriptions: Bool
+    @Binding var showFullDescriptions: Bool
     @Binding var gridSizeStep: Int // 1..4 (4->1 col)
     @Binding var gridFontStep: Int // 1..5
     @Binding var gridPriority: FrameAssetKind
@@ -918,6 +943,9 @@ struct SettingsView: View {
             Form {
                 Section("Grid") {
                     Toggle("Show Descriptions", isOn: $showDescriptions)
+
+                    Toggle("Show Full Descriptions", isOn: $showFullDescriptions)
+                        .disabled(!showDescriptions)
 
                     Picker("Prioritize", selection: $gridPriority) {
                         Text("Boards").tag(FrameAssetKind.board)
