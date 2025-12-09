@@ -20,6 +20,7 @@ class AuthService: ObservableObject {
     @Published var isLoadingCreatives: Bool = false
     @Published var frames: [Frame] = []
     @Published var isLoadingFrames: Bool = false
+    @Published var pendingDeepLink: String?
     
     private let tokenHashKey = "martini_token_hash"
     private let projectIdKey = "martini_project_id"
@@ -52,6 +53,32 @@ class AuthService: ObservableObject {
             return override
         }
         return tokenHash
+    }
+
+    func handleDeepLink(_ url: URL) {
+        let qrString = url.absoluteString
+        print("🌐 Received deeplink: \(qrString)")
+
+        do {
+            let (accessCode, _) = try parseQRCode(qrString)
+
+            if let accessCode {
+                Task {
+                    do {
+                        try await self.authenticate(withQRCode: qrString, manualAccessCode: accessCode)
+                    } catch {
+                        print("❌ Failed to authenticate from deeplink: \(error.localizedDescription)")
+                    }
+                }
+            } else {
+                if isAuthenticated {
+                    logout()
+                }
+                pendingDeepLink = qrString
+            }
+        } catch {
+            print("❌ Failed to parse deeplink: \(error.localizedDescription)")
+        }
     }
 
     private func authorizedRequest(for endpoint: APIEndpoint, method: String = "POST", body: [String: Any]? = nil) throws -> URLRequest {
