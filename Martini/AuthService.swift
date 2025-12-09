@@ -13,7 +13,7 @@ class AuthService: ObservableObject {
     @Published var projectId: String?
     @Published var projectTitle: String?
     @Published var accessCode: String?
-    @Published var tokenHash: String?
+    @Published var token: String?
     @Published var bearerTokenOverride: String? = "d9c4dafc0eaa40b5d0025ef0a622a5bff35ebd2ccf06a4f66d99d62602405ed2853732f5b2acc2350f447f8083178c58105b2b79a1c559a67b1bfaa5c7c7d04d"
     @Published var debugInfo: DebugInfo?
     @Published var creatives: [Creative] = []
@@ -52,7 +52,7 @@ class AuthService: ObservableObject {
             print("Overriding Bearer Token: \(override)")
             return override
         }
-        return tokenHash
+        return token
     }
 
     func handleDeepLink(_ url: URL) {
@@ -102,11 +102,11 @@ class AuthService: ObservableObject {
     // Load auth data from UserDefaults
     func loadAuthData() {
         if let projectId = UserDefaults.standard.string(forKey: projectIdKey),
-           let tokenHash = UserDefaults.standard.string(forKey: tokenHashKey) {
+           let token = UserDefaults.standard.string(forKey: tokenHashKey) {
             self.projectId = projectId
             self.accessCode = UserDefaults.standard.string(forKey: accessCodeKey)
             self.projectTitle = UserDefaults.standard.string(forKey: projectTitleKey)
-            self.tokenHash = tokenHash
+            self.token = token
             self.isAuthenticated = true
 
             // Automatically refresh creatives when a token is already stored
@@ -117,15 +117,15 @@ class AuthService: ObservableObject {
     }
 
     // Save auth data to UserDefaults
-    private func saveAuthData(projectId: String, projectTitle: String?, accessCode: String, tokenHash: String) {
+    private func saveAuthData(projectId: String, projectTitle: String?, accessCode: String, token: String) {
         UserDefaults.standard.set(projectId, forKey: projectIdKey)
         UserDefaults.standard.set(projectTitle, forKey: projectTitleKey)
         UserDefaults.standard.set(accessCode, forKey: accessCodeKey)
-        UserDefaults.standard.set(tokenHash, forKey: tokenHashKey)
+        UserDefaults.standard.set(token, forKey: tokenHashKey)
         self.projectId = projectId
         self.projectTitle = projectTitle
         self.accessCode = accessCode
-        self.tokenHash = tokenHash
+        self.token = token
         self.isAuthenticated = true
     }
     
@@ -240,18 +240,18 @@ class AuthService: ObservableObject {
         }
         
         print("✅ Authentication successful!")
-        guard let tokenHash = authResponse.tokenHash else {
+        guard let token = authResponse.token else {
             throw AuthError.invalidResponse
         }
 
-        print("🔑 Received token hash: \(tokenHash.prefix(20))...")
+        print("🔑 Received token: \(token.prefix(20))...")
 
-        // Save auth data (project ID, access code, project title, and token hash)
+        // Save auth data (project ID, access code, project title, and token)
         saveAuthData(
             projectId: projectId,
             projectTitle: authResponse.projectTitle,
             accessCode: accessCode,
-            tokenHash: tokenHash
+            token: token
         )
         
         print("💾 Saved auth data - projectId: \(projectId)")
@@ -449,7 +449,7 @@ class AuthService: ObservableObject {
         self.projectId = nil
         self.projectTitle = nil
         self.accessCode = nil
-        self.tokenHash = nil
+        self.token = nil
         self.isAuthenticated = false
         self.creatives = []
         self.frames = []
@@ -462,14 +462,14 @@ struct AuthResponse: Codable {
     let success: Bool
     let message: String?
     let error: String?
-    let tokenHash: String?
+    let token: String?
     let projectTitle: String?
 
     enum CodingKeys: String, CodingKey {
         case success
         case message
         case error
-        case tokenHash = "token_hash"
+        case token = "token"
         case projectTitle = "project_title"
     }
 }
