@@ -21,6 +21,7 @@ class AuthService: ObservableObject {
     @Published var isLoadingCreatives: Bool = false
     @Published var frames: [Frame] = []
     @Published var isLoadingFrames: Bool = false
+    @Published var isScheduleActive: Bool = false
     @Published var pendingDeepLink: String?
     
     private let tokenHashKey = "martini_token_hash"
@@ -431,6 +432,10 @@ class AuthService: ObservableObject {
         }
 
         self.frames = framesResponse.frames
+        self.isScheduleActive = framesResponse.frames.contains { frame in
+            if let schedule = frame.schedule, !schedule.isEmpty { return true }
+            return false
+        }
         print("✅ Successfully fetched \(frames.count) frames")
     }
 
