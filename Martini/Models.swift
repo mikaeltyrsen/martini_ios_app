@@ -79,6 +79,99 @@ struct SafeOptionalInt: Codable {
 }
 
 @propertyWrapper
+struct SafeBool: Codable {
+    var wrappedValue: Bool
+
+    init(wrappedValue: Bool = false) {
+        self.wrappedValue = wrappedValue
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+
+        if let boolValue = try? container.decode(Bool.self) {
+            wrappedValue = boolValue
+            return
+        }
+
+        if let intValue = try? container.decode(Int.self) {
+            wrappedValue = intValue != 0
+            return
+        }
+
+        if let stringValue = try? container.decode(String.self) {
+            let lowercased = stringValue.lowercased()
+            if ["true", "1", "yes"].contains(lowercased) {
+                wrappedValue = true
+                return
+            }
+            if ["false", "0", "no"].contains(lowercased) {
+                wrappedValue = false
+                return
+            }
+        }
+
+        wrappedValue = false
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(wrappedValue)
+    }
+}
+
+@propertyWrapper
+struct SafeOptionalBool: Codable {
+    var wrappedValue: Bool?
+
+    init(wrappedValue: Bool? = nil) {
+        self.wrappedValue = wrappedValue
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+
+        if container.decodeNil() {
+            wrappedValue = nil
+            return
+        }
+
+        if let boolValue = try? container.decode(Bool.self) {
+            wrappedValue = boolValue
+            return
+        }
+
+        if let intValue = try? container.decode(Int.self) {
+            wrappedValue = intValue != 0
+            return
+        }
+
+        if let stringValue = try? container.decode(String.self) {
+            let lowercased = stringValue.lowercased()
+            if ["true", "1", "yes"].contains(lowercased) {
+                wrappedValue = true
+                return
+            }
+            if ["false", "0", "no"].contains(lowercased) {
+                wrappedValue = false
+                return
+            }
+        }
+
+        wrappedValue = nil
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        if let value = wrappedValue {
+            try container.encode(value)
+        } else {
+            try container.encodeNil()
+        }
+    }
+}
+
+@propertyWrapper
 struct SafeTags: Codable {
     var wrappedValue: [FrameTag]?
 
@@ -120,7 +213,7 @@ struct Creative: Codable, Identifiable {
     let shootId: String
     let title: String
     @SafeInt var order: Int
-    @SafeInt var isArchived: Int
+    @SafeBool var isArchived: Bool
     @SafeInt var isLive: Int
     @SafeInt var totalFrames: Int
     @SafeInt var completedFrames: Int
@@ -212,7 +305,7 @@ struct Frame: Codable, Identifiable {
     let crop: String?
     let status: String?
     let statusUpdated: String?
-    let isArchived: Int?
+    @SafeOptionalBool var isArchived: Bool?
     let createdAt: String?
     let lastUpdated: String?
     let frameOrder: String?
@@ -255,7 +348,7 @@ struct Frame: Codable, Identifiable {
         crop: String? = nil,
         status: String? = nil,
         statusUpdated: String? = nil,
-        isArchived: Int? = nil,
+        isArchived: Bool? = nil,
         createdAt: String? = nil,
         lastUpdated: String? = nil,
         frameOrder: String? = nil,
