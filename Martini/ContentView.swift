@@ -148,6 +148,14 @@ struct MainView: View {
         useMockData ? mockCreatives : authService.creatives
     }
 
+    private var activeScheduleEntries: [ProjectScheduleItem] {
+        authService.projectDetails?.activeSchedule?.schedules ?? []
+    }
+
+    private var activeScheduleTitle: String {
+        authService.projectDetails?.activeSchedule?.name ?? "Schedule"
+    }
+
     private var projectDisplayTitle: String {
         if let title = authService.projectTitle, !title.isEmpty {
             return title
@@ -573,14 +581,26 @@ struct MainView: View {
 
     private var creativeMenuButton: some View {
         Menu {
-            ForEach(creativesToDisplay) { creative in
-                Button {
-                    selectCreative(creative.id)
-                } label: {
-                    if creative.id == (currentCreativeId ?? creativesToDisplay.first?.id) {
-                        Label(creative.title, systemImage: "checkmark")
-                    } else {
-                        Text(creative.title)
+            if !creativesToDisplay.isEmpty {
+                Section("Creatives") {
+                    ForEach(creativesToDisplay) { creative in
+                        Button {
+                            selectCreative(creative.id)
+                        } label: {
+                            if creative.id == (currentCreativeId ?? creativesToDisplay.first?.id) {
+                                Label(creative.title, systemImage: "checkmark")
+                            } else {
+                                Text(creative.title)
+                            }
+                        }
+                    }
+                }
+            }
+
+            if !activeScheduleEntries.isEmpty {
+                Section(activeScheduleTitle) {
+                    ForEach(activeScheduleEntries, id: \.listIdentifier) { entry in
+                        Text(entry.title)
                     }
                 }
             }

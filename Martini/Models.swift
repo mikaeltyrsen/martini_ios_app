@@ -260,6 +260,55 @@ struct CreativesResponse: Codable {
     let error: String?
 }
 
+// MARK: - Project Model
+
+struct ProjectDetails: Codable {
+    @SafeBool var success: Bool
+    let id: String
+    let name: String
+    let publishedCreatives: [ProjectCreative]?
+    let activeSchedule: ProjectSchedule?
+
+    enum CodingKeys: String, CodingKey {
+        case success
+        case id
+        case name
+        case publishedCreatives = "published_creatives"
+        case activeSchedule = "active_schedule"
+    }
+}
+
+struct ProjectCreative: Codable, Identifiable {
+    let id: String
+    let name: String
+}
+
+struct ProjectSchedule: Codable, Identifiable {
+    let id: String
+    let name: String
+    let schedules: [ProjectScheduleItem]?
+}
+
+struct ProjectScheduleItem: Codable {
+    let id: String?
+    let title: String
+    let date: String?
+    let lastUpdated: String?
+    let startTime: String?
+    @SafeOptionalInt var duration: Int?
+
+    var listIdentifier: String { id ?? title }
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case date
+        case lastUpdated = "last_updated"
+        case startTime = "start_time"
+        case duration
+    }
+}
+
 // MARK: - Tag Model
 
 struct FrameTag: Codable, Identifiable {
