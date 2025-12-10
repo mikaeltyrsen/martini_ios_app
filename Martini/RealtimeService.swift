@@ -41,6 +41,11 @@ final class RealtimeService: NSObject, ObservableObject {
         "reload"
     ]
 
+    private let scheduleEvents: Set<String> = [
+        "activate-schedule",
+        "update-schedule"
+    ]
+
     init(authService: AuthService) {
         self.authService = authService
         super.init()
@@ -148,6 +153,12 @@ final class RealtimeService: NSObject, ObservableObject {
         if creativeEvents.contains(name) {
             Task { [weak self] in
                 try? await self?.authService.fetchCreatives()
+            }
+        }
+
+        if scheduleEvents.contains(name) {
+            Task { [weak self] in
+                try? await self?.authService.fetchProjectDetails()
             }
         }
     }

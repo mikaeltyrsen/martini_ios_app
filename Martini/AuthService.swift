@@ -19,6 +19,7 @@ class AuthService: ObservableObject {
     @Published var debugInfo: DebugInfo?
     @Published var creatives: [Creative] = []
     @Published var isLoadingCreatives: Bool = false
+    @Published var projectDetails: ProjectDetails?
     @Published var frames: [Frame] = []
     @Published var isLoadingFrames: Bool = false
     @Published var isScheduleActive: Bool = false
@@ -36,6 +37,7 @@ class AuthService: ObservableObject {
 
     private enum APIEndpoint: String {
         case authLive = "auth/live.php"
+        case project = "projects/get_project.php"
         case creatives = "creatives/get_creatives.php"
         case frames = "frames/get.php"
 
@@ -114,6 +116,7 @@ class AuthService: ObservableObject {
             // Automatically refresh creatives when a token is already stored
             Task {
                 try? await self.fetchCreatives()
+                try? await self.fetchProjectDetails()
             }
         }
     }
@@ -258,10 +261,11 @@ class AuthService: ObservableObject {
         
         print("💾 Saved auth data - projectId: \(projectId)")
         print("🎬 About to fetch creatives...")
-        
+
         // Fetch creatives after successful authentication
         do {
             try await fetchCreatives()
+            try await fetchProjectDetails()
         } catch {
             print("❌ Failed to fetch creatives: \(error)")
             throw error
@@ -439,6 +443,60 @@ class AuthService: ObservableObject {
         print("✅ Successfully fetched \(frames.count) frames")
     }
 
+    func fetchProjectDetails() async throws {
+        guard let projectId = projectId else {
+            throw AuthError.noAuth
+        }
+
+        let body: [String: Any] = [
+            "projectId": projectId
+        ]
+
+        var request = try authorizedRequest(for: .project, body: body)
+
+        let requestJSON = String(data: request.httpBody ?? Data(), encoding: .utf8) ?? "Unable to encode"
+        print("📤 Fetching project details...")
+        print("🔗 URL: \(request.url?.absoluteString ?? "unknown")")
+        print("📝 Request body: \(requestJSON)")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw AuthError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let errorBody = String(data: data, encoding: .utf8) ?? "No response body"
+            print("❌ Failed to fetch project details - Status: \(httpResponse.statusCode)")
+            print("📝 Response: \(errorBody)")
+            if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
+                logout()
+                throw AuthError.unauthorized
+            }
+            throw AuthError.requestFailed(statusCode: httpResponse.statusCode)
+        }
+
+        let responseJSON = String(data: data, encoding: .utf8) ?? "Unable to decode"
+        print("📥 Project response received (\(httpResponse.statusCode)):")
+        print(responseJSON)
+
+        let decoder = JSONDecoder()
+        let projectResponse = try decoder.decode(ProjectDetails.self, from: data)
+
+        guard projectResponse.success else {
+            print("❌ Project response failed")
+            throw AuthError.authenticationFailedWithMessage("Failed to fetch project details")
+        }
+
+        self.projectDetails = projectResponse
+        self.isScheduleActive = projectResponse.activeSchedule != nil || frames.contains { frame in
+            if let schedule = frame.schedule, !schedule.isEmpty { return true }
+            return false
+        }
+
+        print("✅ Successfully fetched project details for \(projectResponse.name)")
+    }
+
     func updateFrameStatus(id: String, to status: FrameStatus) {
         guard let index = frames.firstIndex(where: { $0.id == id }) else { return }
 
@@ -458,7 +516,9 @@ class AuthService: ObservableObject {
         self.token = nil
         self.isAuthenticated = false
         self.creatives = []
+        self.projectDetails = nil
         self.frames = []
+        self.isScheduleActive = false
     }
 }
 
