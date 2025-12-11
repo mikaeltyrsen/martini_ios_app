@@ -419,11 +419,11 @@ struct MainView: View {
             .navigationDestination(for: ScheduleRoute.self) { route in
                 switch route {
                 case .list(let schedule):
-                    ScheduleListView(schedule: schedule) { item in
+                    SchedulesView(schedule: schedule) { item in
                         navigationPath.append(.detail(schedule, item))
                     }
                 case .detail(let schedule, let item):
-                    ScheduleDetailView(schedule: schedule, item: item)
+                    ScheduleView(schedule: schedule, item: item)
                 }
             }
         }
@@ -1068,110 +1068,6 @@ struct Triangle: Shape {
         path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
         path.closeSubpath()
         return path
-    }
-}
-
-struct ScheduleListView: View {
-    let schedule: ProjectSchedule
-    let onSelect: (ProjectScheduleItem) -> Void
-
-    var body: some View {
-        List {
-            Section(schedule.name) {
-                ForEach(schedule.schedules ?? [], id: \.listIdentifier) { entry in
-                    Button {
-                        onSelect(entry)
-                    } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(entry.title)
-                                .font(.headline)
-
-                            if let date = entry.date {
-                                Text(date)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            }
-
-                            if let startTime = entry.startTime {
-                                Text(startTime)
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                }
-            }
-        }
-        .navigationTitle("Schedules")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-struct ScheduleDetailView: View {
-    let schedule: ProjectSchedule
-    let item: ProjectScheduleItem
-
-    private var jsonString: String {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-
-        if let data = try? encoder.encode(item),
-           let string = String(data: data, encoding: .utf8) {
-            return string
-        }
-
-        return "Unable to load schedule JSON."
-    }
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(schedule.name)
-                        .font(.headline)
-                    Text(item.title)
-                        .font(.title2.bold())
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-
-                if let date = item.date {
-                    Label(date, systemImage: "calendar")
-                        .foregroundStyle(.secondary)
-                }
-
-                if let startTime = item.startTime {
-                    Label(startTime, systemImage: "clock")
-                        .foregroundStyle(.secondary)
-                }
-
-                if let lastUpdated = item.lastUpdated {
-                    Label("Updated: \(lastUpdated)", systemImage: "arrow.clockwise")
-                        .foregroundStyle(.secondary)
-                }
-
-                if let duration = item.duration {
-                    Label("Duration: \(duration) min", systemImage: "timer")
-                        .foregroundStyle(.secondary)
-                }
-
-                Divider()
-
-                Text("Schedule JSON")
-                    .font(.headline)
-
-                ScrollView(.horizontal) {
-                    Text(jsonString)
-                        .font(.system(.body, design: .monospaced))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.vertical, 8)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .padding()
-        }
-        .navigationTitle("Schedule")
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

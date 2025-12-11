@@ -22,6 +22,8 @@
                 07C904B82EDC888C004EDBFA /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C904B72EDC888C004EDBFA /* Helpers.swift */; };
                 07D1C1032FF0BBBB00000001 /* ImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07D1C1022FF0BBBB00000001 /* ImageCache.swift */; };
                 07F4E0022FF0AAAA00000001 /* RealtimeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07F4E0012FF0AAAA00000001 /* RealtimeService.swift */; };
+                57E214BA1EC84898ABC8A8A6 /* SchedulesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 477F863DD3304428A7C610C5 /* SchedulesView.swift */; };
+                F501C2E32028424CABAFBC56 /* ScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60C91863CD124D159734FD1B /* ScheduleView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -43,6 +45,8 @@
                 07C904B82FE2B5E9004EDBFA /* FrameLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameLayout.swift; sourceTree = "<group>"; };
                 07D1C1022FF0BBBB00000001 /* ImageCache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ImageCache.swift; sourceTree = "<group>"; };
                 07F4E0012FF0AAAA00000001 /* RealtimeService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RealtimeService.swift; sourceTree = "<group>"; };
+                477F863DD3304428A7C610C5 /* SchedulesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchedulesView.swift; sourceTree = "<group>"; };
+                60C91863CD124D159734FD1B /* ScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,25 +81,27 @@ isa = PBXGroup;
 children = (
 07ACD0013127F1D000000001 /* Martini.entitlements */,
 07C904B12EDB92D8004EDBFA /* playground.swift */,
-07C904B32EDB9F3D004EDBFA /* Uiplayground.swift */,
-07C904AF2EDA8665004EDBFA /* Models.swift */,
-07C904AE2EDA7A48004EDBFA /* Info.plist */,
-07A6A6852EC9A272002C8EB9 /* MartiniApp.swift */,
-07A6A6872EC9A272002C8EB9 /* ContentView.swift */,
-075456072EC9AA2100C45739 /* Assets.xcassets */,
-075455FE2EC9A6E100C45739 /* AuthService.swift */,
-075455FF2EC9A6E100C45739 /* LoginView.swift */,
-075456002EC9A6E100C45739 /* QRScannerView.swift */,
-07F4E0012FF0AAAA00000001 /* RealtimeService.swift */,
-07A6A68B2EC9A272002C8EB9 /* Preview Content */,
-07C904B52EDBAE73004EDBFA /* FrameView.swift */,
-07C904B82FE2B5E9004EDBFA /* FrameLayout.swift */,
-07C904B72EDC888C004EDBFA /* Helpers.swift */,
-07D1C1022FF0BBBB00000001 /* ImageCache.swift */,
-);
-path = Martini;
-sourceTree = "<group>";
-};
+                07C904B32EDB9F3D004EDBFA /* Uiplayground.swift */, 
+                07C904AF2EDA8665004EDBFA /* Models.swift */, 
+                07C904AE2EDA7A48004EDBFA /* Info.plist */, 
+                07A6A6852EC9A272002C8EB9 /* MartiniApp.swift */, 
+                07A6A6872EC9A272002C8EB9 /* ContentView.swift */, 
+                075456072EC9AA2100C45739 /* Assets.xcassets */, 
+                075455FE2EC9A6E100C45739 /* AuthService.swift */, 
+                075455FF2EC9A6E100C45739 /* LoginView.swift */, 
+                075456002EC9A6E100C45739 /* QRScannerView.swift */, 
+                07F4E0012FF0AAAA00000001 /* RealtimeService.swift */, 
+                07A6A68B2EC9A272002C8EB9 /* Preview Content */, 
+                07C904B52EDBAE73004EDBFA /* FrameView.swift */, 
+                07C904B82FE2B5E9004EDBFA /* FrameLayout.swift */, 
+                07C904B72EDC888C004EDBFA /* Helpers.swift */, 
+                07D1C1022FF0BBBB00000001 /* ImageCache.swift */,
+                477F863DD3304428A7C610C5 /* SchedulesView.swift */,
+                60C91863CD124D159734FD1B /* ScheduleView.swift */,
+            ); 
+            path = Martini; 
+            sourceTree = "<group>"; 
+        }; 
 		07A6A68B2EC9A272002C8EB9 /* Preview Content */ = {
 			isa = PBXGroup;
 			children = (
@@ -182,9 +188,11 @@ files = (
                                 07D1C1032FF0BBBB00000001 /* ImageCache.swift in Sources */,
 07A6A6882EC9A272002C8EB9 /* ContentView.swift in Sources */,
 07F4E0022FF0AAAA00000001 /* RealtimeService.swift in Sources */,
-07C904B82EDC888C004EDBFA /* Helpers.swift in Sources */,
-075456032EC9A6E200C45739 /* LoginView.swift in Sources */,
-07C904B02EDA8665004EDBFA /* Models.swift in Sources */,
+                                07C904B82EDC888C004EDBFA /* Helpers.swift in Sources */,
+                                075456032EC9A6E200C45739 /* LoginView.swift in Sources */,
+                                57E214BA1EC84898ABC8A8A6 /* SchedulesView.swift in Sources */,
+                                F501C2E32028424CABAFBC56 /* ScheduleView.swift in Sources */,
+                                07C904B02EDA8665004EDBFA /* Models.swift in Sources */,
 07A6A6862EC9A272002C8EB9 /* MartiniApp.swift in Sources */,
 075456042EC9A6E200C45739 /* QRScannerView.swift in Sources */,
 );
