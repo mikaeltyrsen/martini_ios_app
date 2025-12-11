@@ -253,179 +253,186 @@ struct MainView: View {
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            Group {
-                if authService.isLoadingCreatives && !useMockData {
-                    VStack {
-                        ProgressView()
-                        Text("Loading creatives...")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                            .padding(.top)
-                    }
-                } else if creativesToDisplay.isEmpty {
-                    VStack(spacing: 20) {
-                        Image(systemName: "photo.on.rectangle.angled")
-                            .font(.system(size: 60))
-                            .foregroundColor(.secondary)
-                        
-                        Text("No Creatives")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                        
-                        Text("No creatives found for this project.")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    }
-                } else {
-                    ZStack(alignment: .bottom) {
-                        if viewMode == .list { // Grid View (adjustable grid)
-                            gridView
-                        } else { // Overview (fixed 5 columns)
-                            gridView
-                        }
-                        
-                        // Floating “Jump to In-Progress” button
-                        if shouldShowInProgressShortcut {
-                            Button(action: scrollToInProgressFrame) {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "eye")
-                                    Text("Jump to In-Progress")
-                                        .font(.system(size: 15, weight: .semibold))
-                                }
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 10)
-                                .background(.ultraThickMaterial, in: Capsule())
-                            }
-                            .buttonStyle(.plain)
-                            .shadow(radius: 3, y: 2)
-                            .padding(.bottom, 12)
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                        }
-                    }
+            mainContent
+                .navigationTitle(displayedNavigationTitle)
+                .toolbar { toolbarContent }
+                .task {
+                    await loadCreativesIfNeeded()
+                    await loadFramesIfNeeded()
                 }
-            }
-            .navigationTitle(displayedNavigationTitle)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    creativeMenuButton
-                }
-
-                ToolbarItem(placement: .principal) {
-                    VStack(spacing: 6) {
-                        Text(displayedNavigationTitle)
-                            .font(.headline)
-                            .fontWeight(.semibold)
-
-                        if overallTotalFrames > 0 {
-                            ProgressView(value: Double(overallCompletedFrames), total: Double(overallTotalFrames))
-                                .progressViewStyle(.linear)
-                                .frame(width: 180)
-                        }
-                    }
-                }
-
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    if shouldShowScheduleButton {
-                        scheduleButton
-                    }
-                }
-
-                ToolbarItemGroup(placement: .bottomBar) {
-                    
-                    Button(action: {
-                        withAnimation {
-                            if viewMode == .grid {
-                                viewMode = .list
-                            } else {
-                                viewMode = .grid
+                .alert(
+                    "Data Load Error",
+                    isPresented: Binding(
+                        get: { dataError != nil },
+                        set: { newValue in
+                            if !newValue {
+                                dataError = nil
                             }
                         }
-                    }) {
-                        Label(viewMode == .grid ? "Close Overview" : "Open Overview", systemImage: viewMode == .grid ? "xmark" : "square.grid.2x2")
-                            .labelStyle(.titleAndIcon)
-                            .font(.system(size: 17, weight: .semibold))
+                    )
+                ) {
+                    Button("OK") {
+                        dataError = nil
                     }
-                    .accessibilityLabel(viewMode == .grid ? "Close Overview" : "Open Overview")
-                    
-                    Spacer()
-                    
-                    Button {
-                        withAnimation(.spring(response: 0.25)) {
-                            frameSortMode = (frameSortMode == .story) ? .shoot : .story
-                        }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "photo.stack")
-                            Text(frameSortMode == .story ? "Story" : "Shoot")
-                                .font(.system(size: 14, weight: .semibold))
-                        }
+                } message: {
+                    Text(dataError ?? "Unknown error")
+                }
+                .fullScreenCover(item: $selectedFrame) { frame in
+                    FrameView(frame: frame, assetOrder: assetOrderBinding(for: frame)) {
+                        selectedFrame = nil
                     }
+                    .interactiveDismissDisabled(false)
+                }
+                .sheet(isPresented: $isShowingSettings) {
+                    SettingsView(
+                        showDescriptions: $showDescriptions,
+                        showFullDescriptions: $showFullDescriptions,
+                        gridSizeStep: $gridSizeStep,
+                        gridFontStep: $gridFontStep,
+                        gridPriority: gridAssetPriorityBinding
+                    )
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+                    .interactiveDismissDisabled(false)
+                }
+                .onAppear(perform: synchronizeCreativeSelection)
+                .onChange(of: creativesToDisplay.count) { _ in
+                    synchronizeCreativeSelection()
+                }
+                .navigationDestination(for: ScheduleRoute.self) { route in
+                    switch route {
+                    case .list(let schedule):
+                        SchedulesView(schedule: schedule) { item in
+                            navigationPath.append(ScheduleRoute.detail(schedule, item))
+                        }
+                    case .detail(let schedule, let item):
+                        ScheduleView(schedule: schedule, item: item)
+                    }
+                }
+        }
+    }
 
-                    Spacer()
-                    
-                    Button {
-                        isShowingSettings = true
-                    } label: {
-                        Label("Settings", systemImage: "switch.2")
-                    }
-                    .accessibilityLabel("Open Settings")
-                }
-                
+    private var mainContent: some View {
+        Group {
+            if authService.isLoadingCreatives && !useMockData {
+                loadingView
+            } else if creativesToDisplay.isEmpty {
+                emptyStateView
+            } else {
+                contentStack
+            }
+        }
+    }
 
-            }
-            .task {
-                await loadCreativesIfNeeded()
-                await loadFramesIfNeeded()
-            }
-            .alert(
-                "Data Load Error",
-                isPresented: Binding(
-                    get: { dataError != nil },
-                    set: { newValue in
-                        if !newValue {
-                            dataError = nil
-                        }
+    private var loadingView: some View {
+        VStack {
+            ProgressView()
+            Text("Loading creatives...")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .padding(.top)
+        }
+    }
+
+    private var emptyStateView: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "photo.on.rectangle.angled")
+                .font(.system(size: 60))
+                .foregroundColor(.secondary)
+
+            Text("No Creatives")
+                .font(.title2)
+                .fontWeight(.bold)
+
+            Text("No creatives found for this project.")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+        }
+    }
+
+    private var contentStack: some View {
+        ZStack(alignment: .bottom) {
+            gridView
+
+            if shouldShowInProgressShortcut {
+                Button(action: scrollToInProgressFrame) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "eye")
+                        Text("Jump to In-Progress")
+                            .font(.system(size: 15, weight: .semibold))
                     }
-                )
-            ) {
-                Button("OK") {
-                    dataError = nil
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(.ultraThickMaterial, in: Capsule())
                 }
-            } message: {
-                Text(dataError ?? "Unknown error")
+                .buttonStyle(.plain)
+                .shadow(radius: 3, y: 2)
+                .padding(.bottom, 12)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
-            .fullScreenCover(item: $selectedFrame) { frame in
-                FrameView(frame: frame, assetOrder: assetOrderBinding(for: frame)) {
-                    selectedFrame = nil
-                }
-                .interactiveDismissDisabled(false)
-            }
-            .sheet(isPresented: $isShowingSettings) {
-                SettingsView(
-                    showDescriptions: $showDescriptions,
-                    showFullDescriptions: $showFullDescriptions,
-                    gridSizeStep: $gridSizeStep,
-                    gridFontStep: $gridFontStep,
-                    gridPriority: gridAssetPriorityBinding
-                )
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
-                .interactiveDismissDisabled(false)
-            }
-            .onAppear(perform: synchronizeCreativeSelection)
-            .onChange(of: creativesToDisplay.count) { _ in
-                synchronizeCreativeSelection()
-            }
-            .navigationDestination(for: ScheduleRoute.self) { route in
-                switch route {
-                case .list(let schedule):
-                    SchedulesView(schedule: schedule) { item in
-                        navigationPath.append(.detail(schedule, item))
-                    }
-                case .detail(let schedule, let item):
-                    ScheduleView(schedule: schedule, item: item)
+        }
+    }
+
+    private var toolbarContent: some ToolbarContent {
+        ToolbarItemGroup(placement: .navigationBarLeading) {
+            creativeMenuButton
+        }
+
+        ToolbarItemGroup(placement: .principal) {
+            VStack(spacing: 6) {
+                Text(displayedNavigationTitle)
+                    .font(.headline)
+                    .fontWeight(.semibold)
+
+                if overallTotalFrames > 0 {
+                    ProgressView(value: Double(overallCompletedFrames), total: Double(overallTotalFrames))
+                        .progressViewStyle(.linear)
+                        .frame(width: 180)
                 }
             }
+        }
+
+        ToolbarItemGroup(placement: .navigationBarTrailing) {
+            if shouldShowScheduleButton {
+                scheduleButton
+            }
+        }
+
+        ToolbarItemGroup(placement: .bottomBar) {
+
+            Button(action: {
+                withAnimation {
+                    viewMode = (viewMode == .grid) ? .list : .grid
+                }
+            }) {
+                Label(viewMode == .grid ? "Close Overview" : "Open Overview", systemImage: viewMode == .grid ? "xmark" : "square.grid.2x2")
+                    .labelStyle(.titleAndIcon)
+                    .font(.system(size: 17, weight: .semibold))
+            }
+            .accessibilityLabel(viewMode == .grid ? "Close Overview" : "Open Overview")
+
+            Spacer()
+
+            Button {
+                withAnimation(.spring(response: 0.25)) {
+                    frameSortMode = (frameSortMode == .story) ? .shoot : .story
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "photo.stack")
+                    Text(frameSortMode == .story ? "Story" : "Shoot")
+                        .font(.system(size: 14, weight: .semibold))
+                }
+            }
+
+            Spacer()
+
+            Button {
+                isShowingSettings = true
+            } label: {
+                Label("Settings", systemImage: "switch.2")
+            }
+            .accessibilityLabel("Open Settings")
         }
     }
 
@@ -433,9 +440,9 @@ struct MainView: View {
         guard let schedule = activeSchedule, let entries = schedule.schedules, !entries.isEmpty else { return }
 
         if entries.count == 1, let first = entries.first {
-            navigationPath.append(.detail(schedule, first))
+            navigationPath.append(ScheduleRoute.detail(schedule, first))
         } else {
-            navigationPath.append(.list(schedule))
+            navigationPath.append(ScheduleRoute.list(schedule))
         }
     }
 
