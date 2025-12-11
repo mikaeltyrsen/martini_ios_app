@@ -289,6 +289,12 @@ struct ProjectSchedule: Codable, Identifiable, Hashable {
     let schedules: [ProjectScheduleItem]?
 }
 
+struct ScheduleFetchResponse: Codable {
+    @SafeBool var success: Bool
+    let schedule: ProjectSchedule?
+    let error: String?
+}
+
 struct ProjectScheduleItem: Codable, Hashable {
     let id: String?
     let title: String

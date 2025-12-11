@@ -20,6 +20,7 @@ class AuthService: ObservableObject {
     @Published var creatives: [Creative] = []
     @Published var isLoadingCreatives: Bool = false
     @Published var projectDetails: ProjectDetails?
+    @Published var cachedSchedule: ProjectSchedule?
     @Published var frames: [Frame] = []
     @Published var isLoadingFrames: Bool = false
     @Published var isScheduleActive: Bool = false
@@ -30,6 +31,7 @@ class AuthService: ObservableObject {
     private let projectTitleKey = "martini_project_title"
     private let accessCodeKey = "martini_access_code"
     private let baseScriptsURL = "https://dev.shoot.nucontext.com/scripts/"
+    private let scheduleCache = ScheduleCache.shared
 
     init() {
         loadAuthData()
@@ -40,6 +42,7 @@ class AuthService: ObservableObject {
         case project = "projects/get_project.php"
         case creatives = "creatives/get_creatives.php"
         case frames = "frames/get.php"
+        case schedule = "schedules/fetch.php"
 
         var path: String { rawValue }
     }
@@ -519,6 +522,79 @@ class AuthService: ObservableObject {
         self.projectDetails = nil
         self.frames = []
         self.isScheduleActive = false
+        self.cachedSchedule = nil
+    }
+
+    // MARK: - Schedule Fetching
+
+    func cachedSchedule(for scheduleId: String) -> ProjectSchedule? {
+        if let cachedSchedule, cachedSchedule.id == scheduleId {
+            return cachedSchedule
+        }
+
+        if let stored = scheduleCache.cachedSchedule(withId: scheduleId) {
+            cachedSchedule = stored
+            return stored
+        }
+
+        return nil
+    }
+
+    func clearCachedSchedules(keeping scheduleId: String?) {
+        if cachedSchedule?.id != scheduleId {
+            cachedSchedule = nil
+        }
+
+        scheduleCache.clear(exceptId: scheduleId)
+    }
+
+    func fetchSchedule(for scheduleId: String) async throws -> ProjectSchedule {
+        let body: [String: Any] = [
+            "scheduleId": scheduleId
+        ]
+
+        var request = try authorizedRequest(for: .schedule, body: body)
+
+        let requestJSON = String(data: request.httpBody ?? Data(), encoding: .utf8) ?? "Unable to encode"
+        print("📤 Fetching schedule...")
+        print("🔗 URL: \(request.url?.absoluteString ?? "unknown")")
+        print("📝 Request body: \(requestJSON)")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw AuthError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let errorBody = String(data: data, encoding: .utf8) ?? "No response body"
+            print("❌ Failed to fetch schedule - Status: \(httpResponse.statusCode)")
+            print("📝 Response: \(errorBody)")
+            if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
+                logout()
+                throw AuthError.unauthorized
+            }
+            throw AuthError.requestFailed(statusCode: httpResponse.statusCode)
+        }
+
+        let responseJSON = String(data: data, encoding: .utf8) ?? "Unable to decode"
+        print("📥 Schedule response received (\(httpResponse.statusCode)):")
+        print(responseJSON)
+
+        let decoder = JSONDecoder()
+        let scheduleResponse = try decoder.decode(ScheduleFetchResponse.self, from: data)
+
+        guard scheduleResponse.success, let schedule = scheduleResponse.schedule else {
+            let message = scheduleResponse.error ?? "Failed to fetch schedule"
+            print("❌ Schedule response failed: \(message)")
+            throw AuthError.authenticationFailedWithMessage(message)
+        }
+
+        cachedSchedule = schedule
+        scheduleCache.store(schedule: schedule)
+
+        print("✅ Successfully fetched schedule \(schedule.id)")
+        return schedule
     }
 }
 
