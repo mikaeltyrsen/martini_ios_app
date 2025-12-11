@@ -283,13 +283,13 @@ struct ProjectCreative: Codable, Identifiable {
     let name: String
 }
 
-struct ProjectSchedule: Codable, Identifiable {
+struct ProjectSchedule: Codable, Identifiable, Hashable {
     let id: String
     let name: String
     let schedules: [ProjectScheduleItem]?
 }
 
-struct ProjectScheduleItem: Codable {
+struct ProjectScheduleItem: Codable, Hashable {
     let id: String?
     let title: String
     let date: String?

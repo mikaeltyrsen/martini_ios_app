@@ -70,6 +70,7 @@ struct MainView: View {
     @State private var gridScrollProxy: ScrollViewProxy?
     @State private var currentCreativeId: String? = nil
     @State private var isScrolledToTop: Bool = true
+    @State private var navigationPath = NavigationPath()
 
     enum ViewMode {
         case list
@@ -79,6 +80,11 @@ struct MainView: View {
     enum FrameSortMode {
         case story
         case shoot
+    }
+
+    enum ScheduleRoute: Hashable {
+        case list(ProjectSchedule)
+        case detail(ProjectSchedule, ProjectScheduleItem)
     }
     
     // MARK: - Mock Data (for design purposes)
@@ -146,6 +152,10 @@ struct MainView: View {
 
     private var creativesToDisplay: [Creative] {
         useMockData ? mockCreatives : authService.creatives
+    }
+
+    private var activeSchedule: ProjectSchedule? {
+        authService.projectDetails?.activeSchedule
     }
 
     private var activeScheduleEntries: [ProjectScheduleItem] {
@@ -242,7 +252,7 @@ struct MainView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             Group {
                 if authService.isLoadingCreatives && !useMockData {
                     VStack {
@@ -315,13 +325,9 @@ struct MainView: View {
                 }
 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        authService.logout()
-                    } label: {
-                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                    if shouldShowScheduleButton {
+                        scheduleButton
                     }
-                    .foregroundColor(.red)
-                    .accessibilityLabel("Logout")
                 }
 
                 ToolbarItemGroup(placement: .bottomBar) {
@@ -410,6 +416,26 @@ struct MainView: View {
             .onChange(of: creativesToDisplay.count) { _ in
                 synchronizeCreativeSelection()
             }
+            .navigationDestination(for: ScheduleRoute.self) { route in
+                switch route {
+                case .list(let schedule):
+                    ScheduleListView(schedule: schedule) { item in
+                        navigationPath.append(.detail(schedule, item))
+                    }
+                case .detail(let schedule, let item):
+                    ScheduleDetailView(schedule: schedule, item: item)
+                }
+            }
+        }
+    }
+
+    private func openSchedule() {
+        guard let schedule = activeSchedule, let entries = schedule.schedules, !entries.isEmpty else { return }
+
+        if entries.count == 1, let first = entries.first {
+            navigationPath.append(.detail(schedule, first))
+        } else {
+            navigationPath.append(.list(schedule))
         }
     }
 
@@ -577,6 +603,20 @@ struct MainView: View {
 
     private var displayedNavigationTitle: String {
         isScrolledToTop ? projectDisplayTitle : currentCreativeTitle
+    }
+
+    private var shouldShowScheduleButton: Bool {
+        guard authService.isScheduleActive else { return false }
+        guard let entries = activeSchedule?.schedules else { return false }
+        return !entries.isEmpty
+    }
+
+    private var scheduleButton: some View {
+        Button(action: openSchedule) {
+            Image(systemName: "calendar")
+                .imageScale(.large)
+        }
+        .accessibilityLabel("Open Schedule")
     }
 
     private var creativeMenuButton: some View {
@@ -1031,7 +1071,113 @@ struct Triangle: Shape {
     }
 }
 
+struct ScheduleListView: View {
+    let schedule: ProjectSchedule
+    let onSelect: (ProjectScheduleItem) -> Void
+
+    var body: some View {
+        List {
+            Section(schedule.name) {
+                ForEach(schedule.schedules ?? [], id: \.listIdentifier) { entry in
+                    Button {
+                        onSelect(entry)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(entry.title)
+                                .font(.headline)
+
+                            if let date = entry.date {
+                                Text(date)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            if let startTime = entry.startTime {
+                                Text(startTime)
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+            }
+        }
+        .navigationTitle("Schedules")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+struct ScheduleDetailView: View {
+    let schedule: ProjectSchedule
+    let item: ProjectScheduleItem
+
+    private var jsonString: String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+
+        if let data = try? encoder.encode(item),
+           let string = String(data: data, encoding: .utf8) {
+            return string
+        }
+
+        return "Unable to load schedule JSON."
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(schedule.name)
+                        .font(.headline)
+                    Text(item.title)
+                        .font(.title2.bold())
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                if let date = item.date {
+                    Label(date, systemImage: "calendar")
+                        .foregroundStyle(.secondary)
+                }
+
+                if let startTime = item.startTime {
+                    Label(startTime, systemImage: "clock")
+                        .foregroundStyle(.secondary)
+                }
+
+                if let lastUpdated = item.lastUpdated {
+                    Label("Updated: \(lastUpdated)", systemImage: "arrow.clockwise")
+                        .foregroundStyle(.secondary)
+                }
+
+                if let duration = item.duration {
+                    Label("Duration: \(duration) min", systemImage: "timer")
+                        .foregroundStyle(.secondary)
+                }
+
+                Divider()
+
+                Text("Schedule JSON")
+                    .font(.headline)
+
+                ScrollView(.horizontal) {
+                    Text(jsonString)
+                        .font(.system(.body, design: .monospaced))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.vertical, 8)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding()
+        }
+        .navigationTitle("Schedule")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
 struct SettingsView: View {
+    @EnvironmentObject var authService: AuthService
+    @Environment(\.dismiss) private var dismiss
     @Binding var showDescriptions: Bool
     @Binding var showFullDescriptions: Bool
     @Binding var gridSizeStep: Int // 1..4 (4->1 col)
@@ -1082,6 +1228,15 @@ struct SettingsView: View {
                             Spacer()
                             Image(systemName: "textformat.size.larger")
                         }
+                    }
+                }
+
+                Section("Account") {
+                    Button(role: .destructive) {
+                        authService.logout()
+                        dismiss()
+                    } label: {
+                        Label("Logout", systemImage: "rectangle.portrait.and.arrow.right")
                     }
                 }
             }
