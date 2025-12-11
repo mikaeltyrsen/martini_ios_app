@@ -483,7 +483,8 @@ struct MainView: View {
     }
 
     private var navigationPathContainsScheduleRoute: Bool {
-        for element in navigationPath {
+        for index in 0..<navigationPath.count {
+            let element = navigationPath[index]
             if element is ScheduleRoute { return true }
         }
         return false
@@ -492,7 +493,8 @@ struct MainView: View {
     private func updatedNavigationPath(with schedule: ProjectSchedule) -> NavigationPath {
         var newPath = NavigationPath()
 
-        for element in navigationPath {
+        for index in 0..<navigationPath.count {
+            let element = navigationPath[index]
             if let route = element as? ScheduleRoute {
                 switch route {
                 case .list:
