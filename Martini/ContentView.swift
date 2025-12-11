@@ -373,6 +373,7 @@ struct MainView: View {
         }
     }
 
+    @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItemGroup(placement: .navigationBarLeading) {
             creativeMenuButton
