@@ -74,7 +74,7 @@ struct MainView: View {
     @State private var gridScrollProxy: ScrollViewProxy?
     @State private var currentCreativeId: String? = nil
     @State private var isScrolledToTop: Bool = true
-    @State private var navigationPath = NavigationPath()
+    @State private var navigationPath: [ScheduleRoute] = []
 
     enum ViewMode {
         case list
@@ -482,26 +482,17 @@ struct MainView: View {
         }
     }
 
-    private var navigationPathContainsScheduleRoute: Bool {
-        for element in navigationPath {
-            if element is ScheduleRoute { return true }
-        }
-        return false
-    }
+    private var navigationPathContainsScheduleRoute: Bool { !navigationPath.isEmpty }
 
-    private func updatedNavigationPath(with schedule: ProjectSchedule) -> NavigationPath {
-        var newPath = NavigationPath()
+    private func updatedNavigationPath(with schedule: ProjectSchedule) -> [ScheduleRoute] {
+        var newPath: [ScheduleRoute] = []
 
-        for element in navigationPath {
-            if let route = element as? ScheduleRoute {
-                switch route {
-                case .list:
-                    newPath.append(ScheduleRoute.list(schedule))
-                case .detail(_, let item):
-                    newPath.append(ScheduleRoute.detail(schedule, item))
-                }
-            } else {
-                newPath.append(element)
+        for route in navigationPath {
+            switch route {
+            case .list:
+                newPath.append(.list(schedule))
+            case .detail(_, let item):
+                newPath.append(.detail(schedule, item))
             }
         }
 
