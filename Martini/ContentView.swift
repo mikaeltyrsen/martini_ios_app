@@ -26,6 +26,9 @@ struct ContentView: View {
         .onChange(of: authService.projectId) { _ in
             synchronizeRealtimeConnection()
         }
+        .onChange(of: authService.projectDetails?.activeSchedule?.id) { newId in
+            authService.clearCachedSchedules(keeping: newId)
+        }
         .onOpenURL { url in
             handleIncomingURL(url)
         }
@@ -62,6 +65,7 @@ struct MainView: View {
     @State private var isShowingSettings = false
     @State private var frameAssetOrders: [String: [FrameAssetKind]] = [:]
     @AppStorage("gridAssetPriority") private var gridAssetPriorityRawValue: String = FrameAssetKind.board.rawValue
+    @State private var isLoadingSchedule = false
 
     @AppStorage("showDescriptions") private var showDescriptions: Bool = true
     @AppStorage("showFullDescriptions") private var showFullDescriptions: Bool = false
@@ -155,15 +159,16 @@ struct MainView: View {
     }
 
     private var activeSchedule: ProjectSchedule? {
-        authService.projectDetails?.activeSchedule
+        guard let schedule = authService.projectDetails?.activeSchedule else { return nil }
+        return authService.cachedSchedule(for: schedule.id) ?? schedule
     }
 
     private var activeScheduleEntries: [ProjectScheduleItem] {
-        authService.projectDetails?.activeSchedule?.schedules ?? []
+        activeSchedule?.schedules ?? []
     }
 
     private var activeScheduleTitle: String {
-        authService.projectDetails?.activeSchedule?.name ?? "Schedule"
+        activeSchedule?.name ?? "Schedule"
     }
 
     private var projectDisplayTitle: String {
@@ -438,13 +443,69 @@ struct MainView: View {
     }
 
     private func openSchedule() {
-        guard let schedule = activeSchedule, let entries = schedule.schedules, !entries.isEmpty else { return }
+        guard let schedule = activeSchedule else { return }
+
+        Task {
+            await loadSchedule(schedule)
+        }
+    }
+
+    @MainActor
+    private func loadSchedule(_ schedule: ProjectSchedule) async {
+        let cached = authService.cachedSchedule(for: schedule.id) ?? schedule
+        showSchedule(cached)
+
+        isLoadingSchedule = true
+        defer { isLoadingSchedule = false }
+
+        do {
+            let latest = try await authService.fetchSchedule(for: schedule.id)
+            showSchedule(latest, replaceExistingRoutes: true)
+        } catch {
+            dataError = error.localizedDescription
+            showSchedule(cached, replaceExistingRoutes: true)
+        }
+    }
+
+    private func showSchedule(_ schedule: ProjectSchedule, replaceExistingRoutes: Bool = false) {
+        guard let entries = schedule.schedules, !entries.isEmpty else { return }
+
+        if replaceExistingRoutes, navigationPathContainsScheduleRoute {
+            navigationPath = updatedNavigationPath(with: schedule)
+            return
+        }
 
         if entries.count == 1, let first = entries.first {
             navigationPath.append(ScheduleRoute.detail(schedule, first))
         } else {
             navigationPath.append(ScheduleRoute.list(schedule))
         }
+    }
+
+    private var navigationPathContainsScheduleRoute: Bool {
+        for element in navigationPath {
+            if element is ScheduleRoute { return true }
+        }
+        return false
+    }
+
+    private func updatedNavigationPath(with schedule: ProjectSchedule) -> NavigationPath {
+        var newPath = NavigationPath()
+
+        for element in navigationPath {
+            if let route = element as? ScheduleRoute {
+                switch route {
+                case .list:
+                    newPath.append(ScheduleRoute.list(schedule))
+                case .detail(_, let item):
+                    newPath.append(ScheduleRoute.detail(schedule, item))
+                }
+            } else {
+                newPath.append(element)
+            }
+        }
+
+        return newPath
     }
 
     private func loadCreativesIfNeeded() async {
@@ -621,8 +682,13 @@ struct MainView: View {
 
     private var scheduleButton: some View {
         Button(action: openSchedule) {
-            Image(systemName: "calendar")
-                .imageScale(.large)
+            if isLoadingSchedule {
+                ProgressView()
+                    .progressViewStyle(.circular)
+            } else {
+                Image(systemName: "calendar")
+                    .imageScale(.large)
+            }
         }
         .accessibilityLabel("Open Schedule")
     }
