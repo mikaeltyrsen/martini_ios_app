@@ -10,7 +10,7 @@ import Foundation
 // MARK: - Decoding Helpers
 
 @propertyWrapper
-struct SafeInt: Codable {
+struct SafeInt: Codable, Equatable, Hashable {
     var wrappedValue: Int
 
     init(wrappedValue: Int = 0) {
@@ -40,7 +40,7 @@ struct SafeInt: Codable {
 }
 
 @propertyWrapper
-struct SafeOptionalInt: Codable {
+struct SafeOptionalInt: Codable, Equatable, Hashable {
     var wrappedValue: Int?
 
     init(wrappedValue: Int? = nil) {
@@ -79,7 +79,7 @@ struct SafeOptionalInt: Codable {
 }
 
 @propertyWrapper
-struct SafeBool: Codable {
+struct SafeBool: Codable, Equatable, Hashable {
     var wrappedValue: Bool
 
     init(wrappedValue: Bool = false) {
