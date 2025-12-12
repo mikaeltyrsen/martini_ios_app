@@ -287,11 +287,73 @@ struct ProjectSchedule: Codable, Identifiable, Hashable {
     let id: String
     let name: String
     let schedules: [ProjectScheduleItem]?
+    let date: String?
+    let title: String?
+    let startTime: String?
+    let durationMinutes: Int?
+    let location: String?
+    let lat: Double?
+    let lng: Double?
+    let groups: [ScheduleGroup]?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case schedules
+        case date
+        case title
+        case startTime
+        case start_time
+        case durationMinutes
+        case duration_minutes
+        case location
+        case lat
+        case lng
+        case groups
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        id = try container.decode(String.self, forKey: .id)
+
+        let resolvedName = try container.decodeIfPresent(String.self, forKey: .name)
+        let resolvedTitle = try container.decodeIfPresent(String.self, forKey: .title)
+        name = resolvedName ?? resolvedTitle ?? "Schedule"
+        title = resolvedTitle ?? resolvedName
+
+        schedules = try container.decodeIfPresent([ProjectScheduleItem].self, forKey: .schedules)
+        date = try container.decodeIfPresent(String.self, forKey: .date)
+        startTime = try container.decodeIfPresent(String.self, forKey: .startTime)
+            ?? container.decodeIfPresent(String.self, forKey: .start_time)
+        durationMinutes = try container.decodeIfPresent(Int.self, forKey: .durationMinutes)
+            ?? container.decodeIfPresent(Int.self, forKey: .duration_minutes)
+        location = try container.decodeIfPresent(String.self, forKey: .location)
+        lat = try container.decodeIfPresent(Double.self, forKey: .lat)
+        lng = try container.decodeIfPresent(Double.self, forKey: .lng)
+        groups = try container.decodeIfPresent([ScheduleGroup].self, forKey: .groups)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encodeIfPresent(schedules, forKey: .schedules)
+        try container.encodeIfPresent(date, forKey: .date)
+        try container.encodeIfPresent(title, forKey: .title)
+        try container.encodeIfPresent(startTime, forKey: .startTime)
+        try container.encodeIfPresent(durationMinutes, forKey: .durationMinutes)
+        try container.encodeIfPresent(location, forKey: .location)
+        try container.encodeIfPresent(lat, forKey: .lat)
+        try container.encodeIfPresent(lng, forKey: .lng)
+        try container.encodeIfPresent(groups, forKey: .groups)
+    }
 }
 
 struct ScheduleFetchResponse: Codable {
     @SafeBool var success: Bool
     let schedule: ProjectSchedule?
+    let schedules: [ProjectSchedule]?
     let error: String?
 }
 
@@ -302,6 +364,7 @@ struct ProjectScheduleItem: Codable, Hashable {
     let lastUpdated: String?
     let startTime: String?
     @SafeOptionalInt var duration: Int?
+    @SafeOptionalInt var durationMinutes: Int?
 
     var listIdentifier: String { id ?? title }
 
@@ -311,7 +374,88 @@ struct ProjectScheduleItem: Codable, Hashable {
         case date
         case lastUpdated = "last_updated"
         case startTime = "start_time"
+        case startTimeCamel = "startTime"
         case duration
+        case durationMinutes
+        case durationMinutesSnake = "duration_minutes"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(String.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        date = try container.decodeIfPresent(String.self, forKey: .date)
+        lastUpdated = try container.decodeIfPresent(String.self, forKey: .lastUpdated)
+        startTime = try container.decodeIfPresent(String.self, forKey: .startTime)
+            ?? container.decodeIfPresent(String.self, forKey: .startTimeCamel)
+        duration = try container.decodeIfPresent(Int.self, forKey: .duration)
+        durationMinutes = try container.decodeIfPresent(Int.self, forKey: .durationMinutes)
+            ?? container.decodeIfPresent(Int.self, forKey: .durationMinutesSnake)
+    }
+}
+
+struct ScheduleGroup: Codable, Hashable, Identifiable {
+    let id: String
+    let title: String
+    let blocks: [ScheduleBlock]
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case blocks
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        id = try container.decode(String.self, forKey: .id)
+        title = try container.decodeIfPresent(String.self, forKey: .title) ?? ""
+        blocks = try container.decodeIfPresent([ScheduleBlock].self, forKey: .blocks) ?? []
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(title, forKey: .title)
+        try container.encode(blocks, forKey: .blocks)
+    }
+}
+
+struct ScheduleBlock: Codable, Hashable, Identifiable {
+    enum BlockType: String, Codable {
+        case title
+        case shot
+        case unknown
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            let rawValue = try container.decode(String.self)
+            self = BlockType(rawValue: rawValue) ?? .unknown
+        }
+    }
+
+    let id: String
+    let type: BlockType
+    let duration: Int?
+    let description: String?
+    let color: String?
+    let ignoreTime: Bool?
+    let title: String?
+    let calculatedStart: String?
+    let lockedStartTime: String?
+    let storyboards: [String]?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case type
+        case duration
+        case description
+        case color
+        case ignoreTime
+        case title
+        case calculatedStart
+        case lockedStartTime
+        case storyboards
     }
 }
 
