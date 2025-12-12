@@ -21,6 +21,7 @@ class AuthService: ObservableObject {
     @Published var isLoadingCreatives: Bool = false
     @Published var projectDetails: ProjectDetails?
     @Published var cachedSchedule: ProjectSchedule?
+    @Published var fetchedSchedules: [ProjectSchedule] = []
     @Published var frames: [Frame] = []
     @Published var isLoadingFrames: Bool = false
     @Published var isScheduleActive: Bool = false
@@ -523,17 +524,23 @@ class AuthService: ObservableObject {
         self.frames = []
         self.isScheduleActive = false
         self.cachedSchedule = nil
+        self.fetchedSchedules = []
     }
 
     // MARK: - Schedule Fetching
 
     func cachedSchedule(for scheduleId: String) -> ProjectSchedule? {
+        if let inMemory = fetchedSchedules.first(where: { $0.id == scheduleId }) {
+            return inMemory
+        }
+
         if let cachedSchedule, cachedSchedule.id == scheduleId {
             return cachedSchedule
         }
 
         if let stored = scheduleCache.cachedSchedule(withId: scheduleId) {
             cachedSchedule = stored
+            fetchedSchedules.append(stored)
             return stored
         }
 
@@ -545,6 +552,7 @@ class AuthService: ObservableObject {
             cachedSchedule = nil
         }
 
+        fetchedSchedules.removeAll { $0.id != scheduleId }
         scheduleCache.clear(exceptId: scheduleId)
     }
 
@@ -592,12 +600,19 @@ class AuthService: ObservableObject {
             throw AuthError.authenticationFailedWithMessage(message)
         }
 
-        let resolvedSchedule: ProjectSchedule?
+        let availableSchedules: [ProjectSchedule]
         if let schedules = scheduleResponse.schedules {
-            resolvedSchedule = schedules.first { $0.id == scheduleId }
+            availableSchedules = schedules
+        } else if let schedule = scheduleResponse.schedule {
+            availableSchedules = [schedule]
         } else {
-            resolvedSchedule = scheduleResponse.schedule
+            availableSchedules = []
         }
+
+        fetchedSchedules = availableSchedules
+
+        let resolvedSchedule = availableSchedules.first { $0.id == scheduleId }
+            ?? availableSchedules.first
 
         guard let schedule = resolvedSchedule else {
             let message = scheduleResponse.error ?? "Failed to fetch schedule"
