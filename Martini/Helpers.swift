@@ -78,3 +78,19 @@ public func plainTextFromHTML(_ html: String) -> String {
     let collapsed = components.filter { !$0.isEmpty }.joined(separator: " ")
     return collapsed.trimmingCharacters(in: .whitespacesAndNewlines)
 }
+
+/// Formats a duration in minutes into a combination of hours and minutes.
+/// - Parameter minutes: The duration in minutes.
+/// - Returns: A human-readable string such as "45min" or "1h 30min".
+public func formattedDuration(fromMinutes minutes: Int) -> String {
+    let hours = minutes / 60
+    let remainingMinutes = minutes % 60
+
+    if hours > 0 && remainingMinutes > 0 {
+        return "\(hours)h \(remainingMinutes)min"
+    } else if hours > 0 {
+        return "\(hours)h"
+    } else {
+        return "\(minutes)min"
+    }
+}
