@@ -593,7 +593,7 @@ class AuthService: ObservableObject {
         let scheduleResponse = try decoder.decode(ScheduleFetchResponse.self, from: data)
 
         if scheduleResponse.success == false,
-           scheduleResponse.schedule == nil,
+           (scheduleResponse.schedule?.isEmpty ?? true),
            (scheduleResponse.schedules?.isEmpty ?? true) {
             let message = scheduleResponse.error ?? "Failed to fetch schedule"
             print("❌ Schedule response failed: \(message)")
@@ -601,10 +601,10 @@ class AuthService: ObservableObject {
         }
 
         let availableSchedules: [ProjectSchedule]
-        if let schedules = scheduleResponse.schedules {
+        if let schedules = scheduleResponse.schedules, !schedules.isEmpty {
             availableSchedules = schedules
-        } else if let schedule = scheduleResponse.schedule {
-            availableSchedules = [schedule]
+        } else if let schedule = scheduleResponse.schedule, !schedule.isEmpty {
+            availableSchedules = schedule
         } else {
             availableSchedules = []
         }
