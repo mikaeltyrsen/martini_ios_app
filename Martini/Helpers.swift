@@ -1,5 +1,49 @@
 import Foundation
 
+/// Formats a date string from `yyyy-MM-dd` into a user-friendly style.
+/// - Parameters:
+///   - dateString: The input date string, expected in `yyyy-MM-dd` format.
+///   - includeYear: When `true`, the returned value will include the year (e.g., "Dec 11, 2025").
+/// - Returns: A formatted date string, or the original input if parsing fails.
+public func formattedScheduleDate(from dateString: String, includeYear: Bool = true) -> String {
+    let inputFormatter = DateFormatter()
+    inputFormatter.locale = Locale(identifier: "en_US_POSIX")
+    inputFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+    inputFormatter.dateFormat = "yyyy-MM-dd"
+
+    guard let date = inputFormatter.date(from: dateString) else {
+        return dateString
+    }
+
+    let outputFormatter = DateFormatter()
+    outputFormatter.locale = .current
+    outputFormatter.timeZone = .current
+    outputFormatter.dateFormat = includeYear ? "MMM d, yyyy" : "MMM d"
+
+    return outputFormatter.string(from: date)
+}
+
+/// Converts a 24-hour time string (e.g., "18:30") to a 12-hour clock (e.g., "6:30 PM").
+/// - Parameter timeString: The input time string, expected in `HH:mm` format.
+/// - Returns: A formatted time string, or the original input if parsing fails.
+public func formattedTimeFrom24Hour(_ timeString: String) -> String {
+    let inputFormatter = DateFormatter()
+    inputFormatter.locale = Locale(identifier: "en_US_POSIX")
+    inputFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+    inputFormatter.dateFormat = "HH:mm"
+
+    guard let date = inputFormatter.date(from: timeString) else {
+        return timeString
+    }
+
+    let outputFormatter = DateFormatter()
+    outputFormatter.locale = .current
+    outputFormatter.timeZone = .current
+    outputFormatter.dateFormat = "h:mm a"
+
+    return outputFormatter.string(from: date)
+}
+
 /// Converts a simple HTML string to plain text by removing tags,
 /// translating common line breaks to newlines, decoding common entities,
 /// and collapsing excessive whitespace.
