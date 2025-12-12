@@ -7,7 +7,7 @@ struct ScheduleView: View {
     @EnvironmentObject private var authService: AuthService
     private var scheduleGroups: [ScheduleGroup] { item.groups ?? schedule.groups ?? [] }
 
-    private var scheduleTitle: String { schedule.title ?? item.title }
+    private var scheduleTitle: String { item.title.isEmpty ? (schedule.title ?? schedule.name) : item.title }
     private var scheduleDate: String? { schedule.date ?? item.date }
     private var scheduleStartTime: String? { schedule.startTime ?? item.startTime }
     private var scheduleDuration: Int? { schedule.durationMinutes ?? item.durationMinutes ?? item.duration }
@@ -62,7 +62,7 @@ struct ScheduleView: View {
             }
 
             if let duration = scheduleDuration {
-                Label("Duration: \(duration) min", systemImage: "timer")
+                Label("Duration: \(formattedDuration(fromMinutes: duration))", systemImage: "timer")
                     .foregroundStyle(.secondary)
             }
         }
@@ -72,11 +72,6 @@ struct ScheduleView: View {
         VStack(alignment: .leading, spacing: 16) {
             ForEach(scheduleGroups) { group in
                 VStack(alignment: .leading, spacing: 10) {
-                    if !group.title.isEmpty {
-                        Text(group.title)
-                            .font(.headline)
-                    }
-
                     VStack(alignment: .leading, spacing: 12) {
                         ForEach(group.blocks) { block in
                             blockView(for: block)
@@ -118,7 +113,7 @@ struct ScheduleView: View {
                     }
 
                     if let duration = block.duration {
-                        Label("\(duration) min", systemImage: "timer")
+                        Label(formattedDuration(fromMinutes: duration), systemImage: "timer")
                             .font(.footnote.weight(.semibold))
                             .foregroundStyle(.secondary)
                     }
@@ -145,10 +140,10 @@ struct ScheduleView: View {
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         } else {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 180), spacing: 12)], spacing: 12) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 12)], spacing: 12) {
                 ForEach(frames) { frame in
                     FrameLayout(frame: frame, showStatusBadge: false)
-                        .frame(maxWidth: .infinity)
+                        .frame(maxWidth: 200)
                 }
             }
         }
