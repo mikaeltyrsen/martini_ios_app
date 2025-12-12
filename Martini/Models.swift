@@ -300,6 +300,7 @@ struct ProjectSchedule: Codable, Identifiable, Hashable {
         case id
         case name
         case schedules
+        case schedule
         case date
         case title
         case startTime
@@ -322,7 +323,15 @@ struct ProjectSchedule: Codable, Identifiable, Hashable {
         name = resolvedName ?? resolvedTitle ?? "Schedule"
         title = resolvedTitle ?? resolvedName
 
-        schedules = try container.decodeIfPresent([ProjectScheduleItem].self, forKey: .schedules)
+        if let directSchedules = try container.decodeIfPresent([ProjectScheduleItem].self, forKey: .schedules) {
+            schedules = directSchedules
+        } else if let scheduleString = try container.decodeIfPresent(String.self, forKey: .schedule),
+                  let data = scheduleString.data(using: .utf8) {
+            let decoded = try? JSONDecoder().decode(EmbeddedScheduleResponse.self, from: data)
+            schedules = decoded?.schedules
+        } else {
+            schedules = nil
+        }
         date = try container.decodeIfPresent(String.self, forKey: .date)
         startTime = try container.decodeIfPresent(String.self, forKey: .startTime)
             ?? container.decodeIfPresent(String.self, forKey: .start_time)
@@ -350,6 +359,10 @@ struct ProjectSchedule: Codable, Identifiable, Hashable {
     }
 }
 
+private struct EmbeddedScheduleResponse: Codable {
+    let schedules: [ProjectScheduleItem]?
+}
+
 struct ScheduleFetchResponse: Codable {
     @SafeBool var success: Bool
     let schedule: ProjectSchedule?
@@ -365,6 +378,7 @@ struct ProjectScheduleItem: Codable, Hashable {
     let startTime: String?
     @SafeOptionalInt var duration: Int?
     @SafeOptionalInt var durationMinutes: Int?
+    let groups: [ScheduleGroup]?
 
     var listIdentifier: String { id ?? title }
 
@@ -378,6 +392,7 @@ struct ProjectScheduleItem: Codable, Hashable {
         case duration
         case durationMinutes
         case durationMinutesSnake = "duration_minutes"
+        case groups
     }
 
     init(from decoder: Decoder) throws {
@@ -391,6 +406,7 @@ struct ProjectScheduleItem: Codable, Hashable {
         duration = try container.decodeIfPresent(Int.self, forKey: .duration)
         durationMinutes = try container.decodeIfPresent(Int.self, forKey: .durationMinutes)
             ?? container.decodeIfPresent(Int.self, forKey: .durationMinutesSnake)
+        groups = try container.decodeIfPresent([ScheduleGroup].self, forKey: .groups)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -403,6 +419,7 @@ struct ProjectScheduleItem: Codable, Hashable {
         try container.encodeIfPresent(startTime, forKey: .startTime)
         try container.encodeIfPresent(duration, forKey: .duration)
         try container.encodeIfPresent(durationMinutes, forKey: .durationMinutes)
+        try container.encodeIfPresent(groups, forKey: .groups)
     }
 }
 

@@ -5,7 +5,7 @@ struct ScheduleView: View {
     let item: ProjectScheduleItem
 
     @EnvironmentObject private var authService: AuthService
-    private var scheduleGroups: [ScheduleGroup] { schedule.groups ?? [] }
+    private var scheduleGroups: [ScheduleGroup] { item.groups ?? schedule.groups ?? [] }
 
     private var scheduleTitle: String { schedule.title ?? item.title }
     private var scheduleDate: String? { schedule.date ?? item.date }
