@@ -6,7 +6,7 @@ struct ScheduleView: View {
 
     @EnvironmentObject private var authService: AuthService
     @State private var fetchedSchedule: ProjectSchedule?
-    @State private var isLoading = true
+    @State private var isLoading = false
     @State private var dataError: String?
 
     private var resolvedSchedule: ProjectSchedule { fetchedSchedule ?? schedule }
@@ -186,16 +186,15 @@ struct ScheduleView: View {
 
     @MainActor
     private func loadSchedule() async {
-        isLoading = true
-        dataError = nil
-
         let selectedId = item.id ?? schedule.id
 
-        if let cached = authService.cachedSchedule(for: selectedId) {
-            fetchedSchedule = cached
-            isLoading = false
+        if let existing = resolvedSchedule(for: selectedId) {
+            fetchedSchedule = existing
             return
         }
+
+        isLoading = true
+        dataError = nil
 
         do {
             let fetched = try await authService.fetchSchedule(for: selectedId)
@@ -209,5 +208,13 @@ struct ScheduleView: View {
         }
 
         isLoading = false
+    }
+
+    private func resolvedSchedule(for id: String) -> ProjectSchedule? {
+        if schedule.id == id, schedule.groups != nil {
+            return schedule
+        }
+
+        return authService.cachedSchedule(for: id)
     }
 }
