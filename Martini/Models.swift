@@ -392,6 +392,18 @@ struct ProjectScheduleItem: Codable, Hashable {
         durationMinutes = try container.decodeIfPresent(Int.self, forKey: .durationMinutes)
             ?? container.decodeIfPresent(Int.self, forKey: .durationMinutesSnake)
     }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encodeIfPresent(id, forKey: .id)
+        try container.encode(title, forKey: .title)
+        try container.encodeIfPresent(date, forKey: .date)
+        try container.encodeIfPresent(lastUpdated, forKey: .lastUpdated)
+        try container.encodeIfPresent(startTime, forKey: .startTime)
+        try container.encodeIfPresent(duration, forKey: .duration)
+        try container.encodeIfPresent(durationMinutes, forKey: .durationMinutes)
+    }
 }
 
 struct ScheduleGroup: Codable, Hashable, Identifiable {
