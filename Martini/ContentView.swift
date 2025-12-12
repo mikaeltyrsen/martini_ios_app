@@ -701,14 +701,6 @@ struct MainView: View {
                     }
                 }
             }
-
-            if !activeScheduleEntries.isEmpty {
-                Section(activeScheduleTitle) {
-                    ForEach(activeScheduleEntries, id: \.listIdentifier) { entry in
-                        Text(entry.title)
-                    }
-                }
-            }
         } label: {
             Image(systemName: "ellipsis.circle")
                 .imageScale(.large)

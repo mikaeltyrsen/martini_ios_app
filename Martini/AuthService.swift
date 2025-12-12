@@ -584,9 +584,24 @@ class AuthService: ObservableObject {
         let decoder = JSONDecoder()
         let scheduleResponse = try decoder.decode(ScheduleFetchResponse.self, from: data)
 
-        guard scheduleResponse.success, let schedule = scheduleResponse.schedule else {
+        if scheduleResponse.success == false,
+           scheduleResponse.schedule == nil,
+           (scheduleResponse.schedules?.isEmpty ?? true) {
             let message = scheduleResponse.error ?? "Failed to fetch schedule"
             print("❌ Schedule response failed: \(message)")
+            throw AuthError.authenticationFailedWithMessage(message)
+        }
+
+        let resolvedSchedule: ProjectSchedule?
+        if let schedules = scheduleResponse.schedules {
+            resolvedSchedule = schedules.first { $0.id == scheduleId }
+        } else {
+            resolvedSchedule = scheduleResponse.schedule
+        }
+
+        guard let schedule = resolvedSchedule else {
+            let message = scheduleResponse.error ?? "Failed to fetch schedule"
+            print("❌ Schedule response missing schedule: \(message)")
             throw AuthError.authenticationFailedWithMessage(message)
         }
 
