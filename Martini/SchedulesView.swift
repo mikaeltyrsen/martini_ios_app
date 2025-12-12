@@ -16,13 +16,13 @@ struct SchedulesView: View {
                                 .font(.headline)
 
                             if let date = entry.date {
-                                Text(date)
+                                Text(formattedScheduleDate(from: date, includeYear: true))
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                             }
 
                             if let startTime = entry.startTime {
-                                Text(startTime)
+                                Text(formattedTimeFrom24Hour(startTime))
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                             }

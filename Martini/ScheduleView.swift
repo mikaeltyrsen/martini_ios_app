@@ -12,6 +12,14 @@ struct ScheduleView: View {
     private var scheduleStartTime: String? { schedule.startTime ?? item.startTime }
     private var scheduleDuration: Int? { schedule.durationMinutes ?? item.durationMinutes ?? item.duration }
 
+    private var formattedDate: String? {
+        scheduleDate.map { formattedScheduleDate(from: $0, includeYear: true) }
+    }
+
+    private var formattedStartTime: String? {
+        scheduleStartTime.map { formattedTimeFrom24Hour($0) }
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -38,12 +46,12 @@ struct ScheduleView: View {
                 .font(.title2.bold())
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            if let date = scheduleDate {
+            if let date = formattedDate {
                 Label(date, systemImage: "calendar")
                     .foregroundStyle(.secondary)
             }
 
-            if let startTime = scheduleStartTime {
+            if let startTime = formattedStartTime {
                 Label(startTime, systemImage: "clock")
                     .foregroundStyle(.secondary)
             }
@@ -88,7 +96,7 @@ struct ScheduleView: View {
         case .title:
             HStack(alignment: .center, spacing: 8) {
                 if let time = block.calculatedStart {
-                    Text(time)
+                    Text(formattedTimeFrom24Hour(time))
                         .font(.footnote.weight(.semibold))
                         .foregroundStyle(.secondary)
                 }
@@ -104,7 +112,7 @@ struct ScheduleView: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 8) {
                     if let time = block.calculatedStart {
-                        Label(time, systemImage: "clock")
+                        Label(formattedTimeFrom24Hour(time), systemImage: "clock")
                             .font(.footnote.weight(.semibold))
                             .foregroundStyle(.secondary)
                     }
