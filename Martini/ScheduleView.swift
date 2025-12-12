@@ -197,10 +197,15 @@ struct ScheduleView: View {
             return
         }
 
-        if schedule.id == selectedId {
-            fetchedSchedule = schedule
-        } else {
-            dataError = "Schedule not found."
+        do {
+            let fetched = try await authService.fetchSchedule(for: selectedId)
+            fetchedSchedule = fetched
+        } catch {
+            if schedule.id == selectedId {
+                fetchedSchedule = schedule
+            } else {
+                dataError = "Schedule not found."
+            }
         }
 
         isLoading = false
