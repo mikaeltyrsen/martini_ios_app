@@ -5,35 +5,19 @@ struct ScheduleView: View {
     let item: ProjectScheduleItem
 
     @EnvironmentObject private var authService: AuthService
-    @State private var fetchedSchedule: ProjectSchedule?
-    @State private var isLoading = false
-    @State private var dataError: String?
+    private var scheduleGroups: [ScheduleGroup] { schedule.groups ?? [] }
 
-    private var resolvedSchedule: ProjectSchedule { fetchedSchedule ?? schedule }
-    private var scheduleGroups: [ScheduleGroup] { resolvedSchedule.groups ?? [] }
-
-    private var scheduleTitle: String { resolvedSchedule.title ?? item.title }
-    private var scheduleDate: String? { resolvedSchedule.date ?? item.date }
-    private var scheduleStartTime: String? { resolvedSchedule.startTime ?? item.startTime }
-    private var scheduleDuration: Int? { resolvedSchedule.durationMinutes ?? item.durationMinutes ?? item.duration }
+    private var scheduleTitle: String { schedule.title ?? item.title }
+    private var scheduleDate: String? { schedule.date ?? item.date }
+    private var scheduleStartTime: String? { schedule.startTime ?? item.startTime }
+    private var scheduleDuration: Int? { schedule.durationMinutes ?? item.durationMinutes ?? item.duration }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 header
-
-                if let error = dataError {
-                    Label(error, systemImage: "exclamationmark.triangle")
-                        .foregroundStyle(.red)
-                }
-
-                if isLoading {
-                    HStack {
-                        ProgressView()
-                        Text("Loading schedule…")
-                            .foregroundStyle(.secondary)
-                    }
-                } else if scheduleGroups.isEmpty {
+                
+                if scheduleGroups.isEmpty {
                     Text("No schedule blocks available.")
                         .foregroundStyle(.secondary)
                 } else {
@@ -44,9 +28,6 @@ struct ScheduleView: View {
         }
         .navigationTitle("Schedule")
         .navigationBarTitleDisplayMode(.inline)
-        .task {
-            await loadSchedule()
-        }
     }
 
     private var header: some View {
@@ -182,39 +163,5 @@ struct ScheduleView: View {
         case "orange": return .orange.opacity(0.2)
         default: return Color.gray.opacity(0.12)
         }
-    }
-
-    @MainActor
-    private func loadSchedule() async {
-        let selectedId = item.id ?? schedule.id
-
-        if let existing = resolvedSchedule(for: selectedId) {
-            fetchedSchedule = existing
-            return
-        }
-
-        isLoading = true
-        dataError = nil
-
-        do {
-            let fetched = try await authService.fetchSchedule(for: selectedId)
-            fetchedSchedule = fetched
-        } catch {
-            if schedule.id == selectedId {
-                fetchedSchedule = schedule
-            } else {
-                dataError = "Schedule not found."
-            }
-        }
-
-        isLoading = false
-    }
-
-    private func resolvedSchedule(for id: String) -> ProjectSchedule? {
-        if schedule.id == id, schedule.groups != nil {
-            return schedule
-        }
-
-        return authService.cachedSchedule(for: id)
     }
 }
