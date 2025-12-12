@@ -189,8 +189,16 @@ struct ScheduleView: View {
         isLoading = true
         dataError = nil
 
+        let selectedId = item.id ?? schedule.id
+
+        if let cached = authService.cachedSchedule(for: selectedId) {
+            fetchedSchedule = cached
+            isLoading = false
+            return
+        }
+
         do {
-            let latest = try await authService.fetchSchedule(for: item.id ?? schedule.id)
+            let latest = try await authService.fetchSchedule(for: selectedId)
             fetchedSchedule = latest
         } catch {
             dataError = error.localizedDescription
