@@ -386,9 +386,33 @@ private struct EmbeddedScheduleResponse: Codable {
 
 struct ScheduleFetchResponse: Codable {
     @SafeBool var success: Bool
-    let schedule: ProjectSchedule?
+    let schedule: [ProjectSchedule]?
     let schedules: [ProjectSchedule]?
     let error: String?
+
+    enum CodingKeys: String, CodingKey {
+        case success
+        case schedule
+        case schedules
+        case error
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        _success = try container.decode(SafeBool.self, forKey: .success)
+        error = try container.decodeIfPresent(String.self, forKey: .error)
+
+        if let decodedArray = try container.decodeIfPresent([ProjectSchedule].self, forKey: .schedule) {
+            schedule = decodedArray
+        } else if let decodedSingle = try container.decodeIfPresent(ProjectSchedule.self, forKey: .schedule) {
+            schedule = [decodedSingle]
+        } else {
+            schedule = nil
+        }
+
+        schedules = try container.decodeIfPresent([ProjectSchedule].self, forKey: .schedules)
+    }
 }
 
 struct ProjectScheduleItem: Codable, Hashable {
