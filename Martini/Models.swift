@@ -325,10 +325,8 @@ struct ProjectSchedule: Codable, Identifiable, Hashable {
 
         if let directSchedules = try container.decodeIfPresent([ProjectScheduleItem].self, forKey: .schedules) {
             schedules = directSchedules
-        } else if let scheduleString = try container.decodeIfPresent(String.self, forKey: .schedule),
-                  let data = scheduleString.data(using: .utf8) {
-            let decoded = try? JSONDecoder().decode(EmbeddedScheduleResponse.self, from: data)
-            schedules = decoded?.schedules
+        } else if let scheduleString = try container.decodeIfPresent(String.self, forKey: .schedule) {
+            schedules = ProjectSchedule.decodeEmbeddedSchedules(from: scheduleString)
         } else {
             schedules = nil
         }
@@ -356,6 +354,29 @@ struct ProjectSchedule: Codable, Identifiable, Hashable {
         try container.encodeIfPresent(lat, forKey: .lat)
         try container.encodeIfPresent(lng, forKey: .lng)
         try container.encodeIfPresent(groups, forKey: .groups)
+    }
+}
+
+extension ProjectSchedule {
+    /// Some responses return the `schedule` column as a JSON string which may be double-encoded.
+    /// This helper first attempts to decode the raw string and then retries by unwrapping any
+    /// nested JSON string if needed.
+    fileprivate static func decodeEmbeddedSchedules(from scheduleString: String) -> [ProjectScheduleItem]? {
+        guard let directData = scheduleString.data(using: .utf8) else { return nil }
+
+        let decoder = JSONDecoder()
+
+        if let decoded = try? decoder.decode(EmbeddedScheduleResponse.self, from: directData) {
+            return decoded.schedules
+        }
+
+        if let unwrappedString = try? decoder.decode(String.self, from: directData),
+           let nestedData = unwrappedString.data(using: .utf8),
+           let decoded = try? decoder.decode(EmbeddedScheduleResponse.self, from: nestedData) {
+            return decoded.schedules
+        }
+
+        return nil
     }
 }
 
