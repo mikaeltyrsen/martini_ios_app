@@ -492,7 +492,11 @@ struct MainView: View {
             case .list:
                 newPath.append(.list(schedule))
             case .detail(_, let item):
-                newPath.append(.detail(schedule, item))
+                if let updatedItem = schedule.schedules?.first(where: { $0.id == item.id || $0.title == item.title }) {
+                    newPath.append(.detail(schedule, updatedItem))
+                } else {
+                    newPath.append(.detail(schedule, item))
+                }
             }
         }
 
