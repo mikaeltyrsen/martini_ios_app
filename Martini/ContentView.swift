@@ -212,6 +212,36 @@ struct MainView: View {
         }
     }
 
+    private var gridSections: [GridSectionData] {
+        switch frameSortMode {
+        case .story:
+            return creativesToDisplay.map { creative in
+                GridSectionData(
+                    id: creative.id,
+                    title: creative.title,
+                    frames: frames(for: creative),
+                    completedFrames: creative.completedFrames,
+                    totalFrames: creative.totalFrames,
+                    showHeader: showCreativeHeaders
+                )
+            }
+        case .shoot:
+            let mergedFrames = creativesToDisplay.flatMap { frames(for: $0) }
+            let sortedFrames = mergedFrames.sorted { lhs, rhs in
+                sortingTuple(for: lhs, mode: .shoot) < sortingTuple(for: rhs, mode: .shoot)
+            }
+
+            return [GridSectionData(
+                id: "shoot-order",
+                title: "Shoot Order",
+                frames: sortedFrames,
+                completedFrames: nil,
+                totalFrames: nil,
+                showHeader: false
+            )]
+        }
+    }
+
     private func frames(for creative: Creative) -> [Frame] {
         var frames = useMockData ? mockFrames(for: creative) : authService.frames.filter { $0.creativeId == creative.id }
 
@@ -575,12 +605,10 @@ struct MainView: View {
                 ZStack(alignment: .top) {
                     ScrollView {
                         LazyVStack(spacing: 20) {
-                            ForEach(creativesToDisplay) { creative in
+                            ForEach(gridSections) { section in
                                 VStack(alignment: .leading, spacing: 12) {
                                     CreativeGridSection(
-                                        creative: creative,
-                                        frames: frames(for: creative),
-                                        showHeader: showCreativeHeaders,
+                                        section: section,
                                         onFrameTap: { frameId in
                                             selectedFrameId = frameId
                                             if let found = authService.frames.first(where: { $0.id == frameId }) {
@@ -602,7 +630,7 @@ struct MainView: View {
                                         }
                                     )
                                 }
-                                .id(creative.id)
+                                .id(section.id)
                             }
                         }
                         .padding(.vertical)
@@ -622,12 +650,14 @@ struct MainView: View {
                             let topOffset = positions.values.min() ?? .infinity
                             isScrolledToTop = topOffset > 0
 
+                            guard frameSortMode == .story else { return }
+
                             let visibleId = positions
                                 .filter { $0.value <= 0 }
                                 .sorted(by: { $0.value > $1.value })
                                 .first?.key
 
-                            if let id = visibleId, creativesToDisplay.contains(where: { $0.id == id }) {
+                            if let id = visibleId, gridSections.contains(where: { $0.id == id }) {
                                 currentCreativeId = id
                             } else if currentCreativeId == nil {
                                 synchronizeCreativeSelection()
@@ -843,12 +873,19 @@ private extension MainView {
     }
 }
 
+private struct GridSectionData: Identifiable {
+    let id: String
+    let title: String
+    let frames: [Frame]
+    let completedFrames: Int?
+    let totalFrames: Int?
+    let showHeader: Bool
+}
+
 // MARK: - Creative Grid Section
 
 struct CreativeGridSection: View {
-    let creative: Creative
-    let frames: [Frame]
-    let showHeader: Bool
+    let section: GridSectionData
     let onFrameTap: (String) -> Void
     let columnCount: Int
     let showDescriptions: Bool
@@ -860,9 +897,7 @@ struct CreativeGridSection: View {
     let onStatusSelected: (Frame, FrameStatus) -> Void
 
     init(
-        creative: Creative,
-        frames: [Frame],
-        showHeader: Bool,
+        section: GridSectionData,
         onFrameTap: @escaping (String) -> Void,
         columnCount: Int,
         showDescriptions: Bool,
@@ -873,9 +908,7 @@ struct CreativeGridSection: View {
         primaryAsset: @escaping (Frame) -> FrameAssetItem?,
         onStatusSelected: @escaping (Frame, FrameStatus) -> Void
     ) {
-        self.creative = creative
-        self.frames = frames
-        self.showHeader = showHeader
+        self.section = section
         self.onFrameTap = onFrameTap
         self.columnCount = columnCount
         self.showDescriptions = showDescriptions
@@ -893,36 +926,39 @@ struct CreativeGridSection: View {
         let count = max(1, columnCount)
         return Array(repeating: GridItem(.flexible(), spacing: 8), count: count)
     }
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if showHeader {
+            if section.showHeader {
                 HStack(){
-                    TrackableHeader(id: creative.id, title: creative.title, coordSpace: coordinateSpaceName)
-                    VStack(alignment: .leading, spacing: 6) {
-                        ProgressView(value: Double(creative.completedFrames), total: Double(max(creative.totalFrames, 1)))
-                            .tint(.accentColor)
-                            .accessibilityLabel("\(creative.completedFrames) of \(creative.totalFrames) frames complete")
+                    TrackableHeader(id: section.id, title: section.title, coordSpace: coordinateSpaceName)
 
-                        HStack {
-                            Text("\(creative.completedFrames) completed")
-                                .font(.footnote)
-                                .foregroundColor(.secondary)
+                    if let completed = section.completedFrames, let total = section.totalFrames {
+                        VStack(alignment: .leading, spacing: 6) {
+                            ProgressView(value: Double(completed), total: Double(max(total, 1)))
+                                .tint(.accentColor)
+                                .accessibilityLabel("\(completed) of \(total) frames complete")
 
-                            Spacer()
+                            HStack {
+                                Text("\(completed) completed")
+                                    .font(.footnote)
+                                    .foregroundColor(.secondary)
 
-                            Text("\(creative.totalFrames) total")
-                                .font(.footnote)
-                                .foregroundColor(.secondary)
+                                Spacer()
+
+                                Text("\(total) total")
+                                    .font(.footnote)
+                                    .foregroundColor(.secondary)
+                            }
                         }
+                        .padding(.horizontal)
                     }
-                    .padding(.horizontal)
                 }
             }
 
             // Grid of frames
             LazyVGrid(columns: columns, spacing: 8) {
-                ForEach(frames) { frame in
+                ForEach(section.frames) { frame in
                     Button {
                         onFrameTap(frame.id)
                     } label: {
