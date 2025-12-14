@@ -92,6 +92,7 @@ struct FrameLayout: View {
     var subtitle: String?
     var showStatusBadge: Bool = true
     var showFrameNumberOverlay: Bool = true
+    var showFrameTimeOverlay: Bool = true
     var cornerRadius: CGFloat = 8
 
     @Environment(\.horizontalSizeClass) private var hSizeClass
@@ -181,16 +182,18 @@ struct FrameLayout: View {
             }
 
             if showFrameTimeOverlay {
-                GeometryReader { geo in
-                    let height = max(18, geo.size.height * 0.08)
-
-                    VStack {
-                        Spacer()
-                        HStack {
-                            timeBadge(height: height)
+                if frameTimeOverlay{
+                    GeometryReader { geo in
+                        let height = max(18, geo.size.height * 0.08)
+                        
+                        VStack {
                             Spacer()
+                            HStack {
+                                timeBadge(height: height)
+                                Spacer()
+                            }
+                            .padding(max(2, height * 0.25))
                         }
-                        .padding(max(2, height * 0.25))
                     }
                 }
             }
@@ -313,7 +316,7 @@ struct FrameLayout: View {
 
     private var frameStartTimeText: String? { frame.formattedStartTime }
 
-    private var showFrameTimeOverlay: Bool { frameStartTimeText != nil }
+    private var frameTimeOverlay: Bool { frameStartTimeText != nil }
 
     @ViewBuilder
     private func timeBadge(height: CGFloat) -> some View {

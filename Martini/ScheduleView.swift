@@ -34,7 +34,7 @@ struct ScheduleView: View {
             }
             .padding()
         }
-        .navigationTitle("Schedule")
+        .navigationTitle(scheduleTitle)
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -98,6 +98,12 @@ struct ScheduleView: View {
                 Text(block.title ?? "")
                     .font(.headline)
                 Spacer(minLength: 0)
+                
+                if let description = block.description, !description.isEmpty {
+                    Text(description)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
             }
             .padding(.vertical, 10)
             .padding(.horizontal, 12)
@@ -128,6 +134,8 @@ struct ScheduleView: View {
                 storyboardGrid(for: block)
             }
             .padding(.vertical, 8)
+            .background(blockColor(block.color))
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
     }
 
@@ -142,8 +150,8 @@ struct ScheduleView: View {
         } else {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 12)], spacing: 12) {
                 ForEach(frames) { frame in
-                    FrameLayout(frame: frame, showStatusBadge: false)
-                        .frame(maxWidth: 200)
+                    FrameLayout(frame: frame, showStatusBadge: false, showFrameTimeOverlay: false)
+                        .frame(maxWidth: 100)
                 }
             }
         }
