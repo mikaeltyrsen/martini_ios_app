@@ -103,7 +103,7 @@ struct FrameView: View {
         if assetStack.isEmpty {
             AnyView(emptyState)
         } else {
-            AnyView(scroller)
+            AnyView(mainContent)
         }
     }
 
@@ -119,14 +119,21 @@ struct FrameView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private var scroller: some View {
-        StackedAssetScroller(
-            frame: frame,
-            assetStack: assetStack,
-            visibleAssetID: $visibleAssetID,
-            primaryText: primaryText,
-            secondaryText: secondaryText
-        )
+    private var mainContent: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                StackedAssetScroller(
+                    frame: frame,
+                    assetStack: assetStack,
+                    visibleAssetID: $visibleAssetID,
+                    primaryText: primaryText
+                )
+
+                descriptionSection
+                    .padding(.horizontal, 20)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 
     private var primaryText: String? {
@@ -137,6 +144,22 @@ struct FrameView: View {
     private var secondaryText: String? {
         if let description: String = frame.description, !description.isEmpty { return description }
         return nil
+    }
+
+    @ViewBuilder
+    private var descriptionSection: some View {
+        if let secondaryText {
+            let cleanText = plainTextFromHTML(secondaryText)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Description")
+                    .font(.headline)
+
+                Text(cleanText)
+                    .font(.body)
+                    .foregroundColor(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 
     private var statusMenuLabel: String {
@@ -408,7 +431,6 @@ private struct StackedAssetScroller: View {
     let assetStack: [FrameAssetItem]
     @Binding var visibleAssetID: FrameAssetItem.ID?
     let primaryText: String?
-    let secondaryText: String?
 
     var body: some View {
         GeometryReader { proxy in
@@ -421,8 +443,7 @@ private struct StackedAssetScroller: View {
                             frame: frame,
                             asset: asset,
                             cardWidth: cardWidth,
-                            primaryText: primaryText,
-                            secondaryText: secondaryText
+                            primaryText: primaryText
                         )
                         .id(asset.id)
                     }
@@ -443,13 +464,11 @@ private struct AssetCardView: View {
     let asset: FrameAssetItem
     let cardWidth: CGFloat
     let primaryText: String?
-    let secondaryText: String?
 
     var body: some View {
         FrameLayout(
             frame: frame,
             title: primaryText,
-            subtitle: secondaryText,
             showStatusBadge: true,
             showFrameNumberOverlay: true,
             cornerRadius: 16
