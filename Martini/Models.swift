@@ -588,6 +588,55 @@ struct Frame: Codable, Identifiable {
     @SafeOptionalBool var frameHide: Bool?
     @SafeTags var tags: [FrameTag]?
 
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        id = try container.decode(String.self, forKey: .id)
+        creativeId = try container.decode(String.self, forKey: .creativeId)
+        creativeTitle = try container.decodeIfPresent(String.self, forKey: .creativeTitle)
+        creativeColor = try container.decodeIfPresent(String.self, forKey: .creativeColor)
+        creativeAspectRatio = try container.decodeIfPresent(String.self, forKey: .creativeAspectRatio)
+        board = try container.decodeIfPresent(String.self, forKey: .board)
+        boardThumb = try container.decodeIfPresent(String.self, forKey: .boardThumb)
+        boardFileName = try container.decodeIfPresent(String.self, forKey: .boardFileName)
+        boardFileType = try container.decodeIfPresent(String.self, forKey: .boardFileType)
+        _boardFileSize = try container.decodeIfPresent(SafeOptionalInt.self, forKey: .boardFileSize) ?? SafeOptionalInt()
+        photoboard = try container.decodeIfPresent(String.self, forKey: .photoboard)
+        photoboardThumb = try container.decodeIfPresent(String.self, forKey: .photoboardThumb)
+        photoboardFileName = try container.decodeIfPresent(String.self, forKey: .photoboardFileName)
+        photoboardFileType = try container.decodeIfPresent(String.self, forKey: .photoboardFileType)
+        _photoboardFileSize = try container.decodeIfPresent(SafeOptionalInt.self, forKey: .photoboardFileSize) ?? SafeOptionalInt()
+        photoboardCrop = try container.decodeIfPresent(String.self, forKey: .photoboardCrop)
+        preview = try container.decodeIfPresent(String.self, forKey: .preview)
+        previewThumb = try container.decodeIfPresent(String.self, forKey: .previewThumb)
+        previewFileName = try container.decodeIfPresent(String.self, forKey: .previewFileName)
+        previewFileType = try container.decodeIfPresent(String.self, forKey: .previewFileType)
+        _previewFileSize = try container.decodeIfPresent(SafeOptionalInt.self, forKey: .previewFileSize) ?? SafeOptionalInt()
+        previewCrop = try container.decodeIfPresent(String.self, forKey: .previewCrop)
+        captureClipId = try container.decodeIfPresent(String.self, forKey: .captureClipId)
+        captureClip = try container.decodeIfPresent(String.self, forKey: .captureClip)
+        captureClipThumbnail = try container.decodeIfPresent(String.self, forKey: .captureClipThumbnail)
+        captureClipFileName = try container.decodeIfPresent(String.self, forKey: .captureClipFileName)
+        captureClipFileType = try container.decodeIfPresent(String.self, forKey: .captureClipFileType)
+        _captureClipFileSize = try container.decodeIfPresent(SafeOptionalInt.self, forKey: .captureClipFileSize) ?? SafeOptionalInt()
+        captureClipCrop = try container.decodeIfPresent(String.self, forKey: .captureClipCrop)
+        description = try container.decodeIfPresent(String.self, forKey: .description)
+        caption = try container.decodeIfPresent(String.self, forKey: .caption)
+        notes = try container.decodeIfPresent(String.self, forKey: .notes)
+        crop = try container.decodeIfPresent(String.self, forKey: .crop)
+        status = try container.decodeIfPresent(String.self, forKey: .status)
+        statusUpdated = try container.decodeIfPresent(String.self, forKey: .statusUpdated)
+        _isArchived = try container.decodeIfPresent(SafeOptionalBool.self, forKey: .isArchived) ?? SafeOptionalBool()
+        createdAt = try container.decodeIfPresent(String.self, forKey: .createdAt)
+        lastUpdated = try container.decodeIfPresent(String.self, forKey: .lastUpdated)
+        frameOrder = try container.decodeIfPresent(String.self, forKey: .frameOrder)
+        frameShootOrder = try container.decodeIfPresent(String.self, forKey: .frameShootOrder)
+        schedule = try container.decodeIfPresent(String.self, forKey: .schedule)
+        frameStartTime = try container.decodeIfPresent(String.self, forKey: .frameStartTime)
+        _frameHide = try container.decodeIfPresent(SafeOptionalBool.self, forKey: .frameHide) ?? SafeOptionalBool()
+        _tags = try container.decodeIfPresent(SafeTags.self, forKey: .tags) ?? SafeTags(wrappedValue: [])
+    }
+
     init(
         id: String,
         creativeId: String,
