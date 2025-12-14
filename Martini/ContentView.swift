@@ -873,7 +873,7 @@ private extension MainView {
     }
 }
 
-fileprivate struct GridSectionData: Identifiable {
+struct GridSectionData: Identifiable {
     let id: String
     let title: String
     let frames: [Frame]
