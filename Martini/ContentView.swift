@@ -550,11 +550,17 @@ struct MainView: View {
         }
     }
     
+    private var showCreativeHeaders: Bool { frameSortMode == .story }
+
     private var creativesListView: some View {
         ScrollView {
             LazyVStack(spacing: 24, pinnedViews: [.sectionHeaders]) {
                 ForEach(creativesToDisplay) { creative in
-                    CreativeSection(creative: creative, frames: frames(for: creative))
+                    CreativeSection(
+                        creative: creative,
+                        frames: frames(for: creative),
+                        showHeader: showCreativeHeaders
+                    )
                         .id(creative.id)
                 }
             }
@@ -574,6 +580,7 @@ struct MainView: View {
                                     CreativeGridSection(
                                         creative: creative,
                                         frames: frames(for: creative),
+                                        showHeader: showCreativeHeaders,
                                         onFrameTap: { frameId in
                                             selectedFrameId = frameId
                                             if let found = authService.frames.first(where: { $0.id == frameId }) {
@@ -841,6 +848,7 @@ private extension MainView {
 struct CreativeGridSection: View {
     let creative: Creative
     let frames: [Frame]
+    let showHeader: Bool
     let onFrameTap: (String) -> Void
     let columnCount: Int
     let showDescriptions: Bool
@@ -854,6 +862,7 @@ struct CreativeGridSection: View {
     init(
         creative: Creative,
         frames: [Frame],
+        showHeader: Bool,
         onFrameTap: @escaping (String) -> Void,
         columnCount: Int,
         showDescriptions: Bool,
@@ -866,6 +875,7 @@ struct CreativeGridSection: View {
     ) {
         self.creative = creative
         self.frames = frames
+        self.showHeader = showHeader
         self.onFrameTap = onFrameTap
         self.columnCount = columnCount
         self.showDescriptions = showDescriptions
@@ -886,26 +896,28 @@ struct CreativeGridSection: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(){
-                TrackableHeader(id: creative.id, title: creative.title, coordSpace: coordinateSpaceName)
-                VStack(alignment: .leading, spacing: 6) {
-                    ProgressView(value: Double(creative.completedFrames), total: Double(max(creative.totalFrames, 1)))
-                        .tint(.accentColor)
-                        .accessibilityLabel("\(creative.completedFrames) of \(creative.totalFrames) frames complete")
-                    
-                    HStack {
-                        Text("\(creative.completedFrames) completed")
-                            .font(.footnote)
-                            .foregroundColor(.secondary)
-                        
-                        Spacer()
-                        
-                        Text("\(creative.totalFrames) total")
-                            .font(.footnote)
-                            .foregroundColor(.secondary)
+            if showHeader {
+                HStack(){
+                    TrackableHeader(id: creative.id, title: creative.title, coordSpace: coordinateSpaceName)
+                    VStack(alignment: .leading, spacing: 6) {
+                        ProgressView(value: Double(creative.completedFrames), total: Double(max(creative.totalFrames, 1)))
+                            .tint(.accentColor)
+                            .accessibilityLabel("\(creative.completedFrames) of \(creative.totalFrames) frames complete")
+
+                        HStack {
+                            Text("\(creative.completedFrames) completed")
+                                .font(.footnote)
+                                .foregroundColor(.secondary)
+
+                            Spacer()
+
+                            Text("\(creative.totalFrames) total")
+                                .font(.footnote)
+                                .foregroundColor(.secondary)
+                        }
                     }
+                    .padding(.horizontal)
                 }
-                .padding(.horizontal)
             }
 
             // Grid of frames
@@ -1033,35 +1045,38 @@ private struct TrackableHeader: View {
 struct CreativeSection: View {
     let creative: Creative
     let frames: [Frame]
-    
+    let showHeader: Bool
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Creative header
-            VStack(alignment: .leading, spacing: 4) {
-                Text(creative.title)
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .padding(.horizontal)
-                
-                HStack {
-                    Text("\(creative.completedFrames)/\(creative.totalFrames) frames")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    
-                    Spacer()
-                    
-                    if let status = creative.frameStatus, !status.isEmpty {
-                        Text(status.uppercased())
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(statusColor(for: status))
-                            .cornerRadius(4)
+            if showHeader {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(creative.title)
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .padding(.horizontal)
+
+                    HStack {
+                        Text("\(creative.completedFrames)/\(creative.totalFrames) frames")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+
+                        Spacer()
+
+                        if let status = creative.frameStatus, !status.isEmpty {
+                            Text(status.uppercased())
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(statusColor(for: status))
+                                .cornerRadius(4)
+                        }
                     }
+                    .padding(.horizontal)
                 }
-                .padding(.horizontal)
             }
 
             // Frames list
