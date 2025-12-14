@@ -435,6 +435,7 @@ private struct StackedAssetScroller: View {
     var body: some View {
         GeometryReader { proxy in
             let cardWidth: CGFloat = proxy.size.width * 0.82
+            let cardHeight: CGFloat = cardWidth * 1.15
 
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .center, spacing: 0) {
@@ -454,8 +455,9 @@ private struct StackedAssetScroller: View {
             .scrollTargetBehavior(.paging)
             .scrollPosition(id: $visibleAssetID)
             .contentMargins(.horizontal, 16)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(maxWidth: .infinity, minHeight: cardHeight, maxHeight: cardHeight)
         }
+        .frame(minHeight: UIScreen.main.bounds.width * 0.82 * 1.15)
     }
 }
 
@@ -468,6 +470,7 @@ private struct AssetCardView: View {
     var body: some View {
         FrameLayout(
             frame: frame,
+            primaryAsset: asset,
             title: primaryText,
             showStatusBadge: true,
             showFrameNumberOverlay: true,
