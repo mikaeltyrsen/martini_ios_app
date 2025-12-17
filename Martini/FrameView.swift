@@ -390,6 +390,8 @@ private struct CommentsSheet: View {
         }
     }
 
+}
+
 private struct CommentsPage: View {
     let frameNumber: Int
     @State private var newCommentText: String = ""
