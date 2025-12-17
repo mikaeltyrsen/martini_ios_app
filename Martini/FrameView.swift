@@ -129,6 +129,8 @@ struct FrameView: View {
                     primaryText: primaryText
                 )
 
+                boardCarouselTabs
+                    
                 descriptionSection
                     .padding(.horizontal, 20)
             }
@@ -167,6 +169,47 @@ struct FrameView: View {
     }
 
     @ViewBuilder
+    private var boardCarouselTabs: some View {
+        let boards = assetStack.filter { $0.kind == .board }
+
+        if boards.count > 1 {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(boards) { board in
+                        let isSelected: Bool = (board.id == visibleAssetID)
+                        Button {
+                            visibleAssetID = board.id
+                        } label: {
+                            Text(board.label ?? "Board")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(isSelected ? Color.white : Color.primary)
+                                .lineLimit(1)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 10)
+                                .frame(minWidth: 80)
+                                .background(
+                                    Capsule()
+                                        .fill(isSelected ? Color.accentColor : Color.secondary.opacity(0.15))
+                                )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 20)
+            }
+        } else if let board = boards.first, let label = board.label {
+            HStack {
+                Text(label)
+                    .font(.system(size: 14, weight: .semibold))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(Capsule().fill(Color.secondary.opacity(0.15)))
+            }
+            .padding(.horizontal, 20)
+        }
+    }
+
+    @ViewBuilder
     private func statusMenuButton(title: String, status: FrameStatus, systemImage: String) -> some View {
         let isSelected: Bool = (selectedStatus == status)
 
@@ -184,9 +227,18 @@ struct FrameView: View {
 
     private static func orderedAssets(for frame: Frame, order: [FrameAssetKind]) -> [FrameAssetItem] {
         let available = frame.availableAssets
-        let ordered = order.compactMap { kind in available.first(where: { $0.kind == kind }) }
-        let remaining = available.filter { !ordered.contains($0) }
-        return ordered + remaining
+        var ordered: [FrameAssetItem] = []
+
+        for kind in order {
+            let matches = available.filter { $0.kind == kind && !ordered.contains($0) }
+            ordered.append(contentsOf: matches)
+        }
+
+        for asset in available where !ordered.contains(asset) {
+            ordered.append(asset)
+        }
+
+        return ordered
     }
 }
 
