@@ -1001,7 +1001,8 @@ struct GridFrameCell: View {
                 frame: frame,
                 primaryAsset: primaryAsset,
                 title: frame.caption,
-                cornerRadius: 6
+                cornerRadius: 6,
+                enablesFullScreen: false
             )
             .contextMenu {
                 statusMenu

@@ -107,6 +107,7 @@ struct FrameLayout: View {
     var showFrameTimeOverlay: Bool = true
     var showTextBlock: Bool = true
     var cornerRadius: CGFloat = 8
+    var enablesFullScreen: Bool = true
 
     @Environment(\.horizontalSizeClass) private var hSizeClass
     @Environment(\.colorScheme) private var colorScheme
@@ -239,7 +240,7 @@ struct FrameLayout: View {
         .aspectRatio(aspectRatio, contentMode: .fit)
         .contentShape(Rectangle())
         .onTapGesture {
-            guard resolvedMediaURL != nil else { return }
+            guard enablesFullScreen, resolvedMediaURL != nil else { return }
             isPresentingFullScreen = true
         }
         .overlay(
