@@ -11,6 +11,8 @@ struct FrameView: View {
     @State private var activeBoardID: FrameAssetItem.ID?
     @State private var showingComments: Bool = false
     @State private var showingFiles: Bool = false
+    @State private var descriptionExpanded: Bool = false
+    @State private var descriptionScrollOffset: CGFloat = 0
 
     init(frame: Frame, assetOrder: Binding<[FrameAssetKind]>, onClose: @escaping () -> Void) {
         self.frame = frame
@@ -131,12 +133,17 @@ struct FrameView: View {
 
     private var mainContent: some View {
         GeometryReader { proxy in
-            let peekHeight: CGFloat = max(proxy.size.height * 0.38, 240)
+            let collapsedHeight: CGFloat = proxy.size.height * 0.5
+            let expandedHeight: CGFloat = proxy.size.height
 
             ZStack(alignment: .top) {
                 boardsSection
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
-                descriptionOverlay(peekHeight: peekHeight)
+                VStack {
+                    Spacer()
+                    descriptionOverlay(height: descriptionExpanded ? expandedHeight : collapsedHeight)
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
@@ -173,30 +180,32 @@ struct FrameView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Description")
                     .font(.headline)
+                    .foregroundStyle(.white)
 
                 Text(cleanText)
                     .font(.body)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.white.opacity(0.9))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         } else {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Description")
                     .font(.headline)
+                    .foregroundStyle(.white)
 
                 Text("No description provided for this frame.")
                     .font(.body)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.white.opacity(0.7))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
-    private func descriptionOverlay(peekHeight: CGFloat) -> some View {
+    private func descriptionOverlay(height: CGFloat) -> some View {
         ScrollView(.vertical, showsIndicators: true) {
             VStack(alignment: .leading, spacing: 16) {
                 Capsule()
-                    .fill(Color.secondary.opacity(0.35))
+                    .fill(Color.white.opacity(0.3))
                     .frame(width: 44, height: 5)
                     .frame(maxWidth: .infinity)
                     .padding(.top, 10)
@@ -206,12 +215,42 @@ struct FrameView: View {
                     .padding(.bottom, 24)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                GeometryReader { proxy in
+                    Color.clear
+                        .preference(key: DescriptionScrollOffsetKey.self, value: proxy.frame(in: .named("descriptionScroll")).minY)
+                }
+            )
         }
-        .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: -6)
-        .padding(.horizontal, 12)
-        .padding(.top, peekHeight)
+        .coordinateSpace(name: "descriptionScroll")
+        .frame(maxWidth: .infinity)
+        .frame(height: height)
+        .background(Color.black)
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { value in
+                    if !descriptionExpanded {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                            descriptionExpanded = true
+                        }
+                    }
+
+                    if descriptionExpanded && descriptionScrollOffset >= 0 && value.translation.height > 20 {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
+                            descriptionExpanded = false
+                        }
+                    }
+                }
+        )
+        .onPreferenceChange(DescriptionScrollOffsetKey.self) { offset in
+            descriptionScrollOffset = offset
+        }
+        .onTapGesture {
+            guard !descriptionExpanded else { return }
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                descriptionExpanded = true
+            }
+        }
     }
 
     private var statusMenuLabel: String {
@@ -518,6 +557,14 @@ private extension View {
                 .offset(x: offsetX)
                 .scaleEffect(scale)
         }
+    }
+}
+
+private struct DescriptionScrollOffsetKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }
 
