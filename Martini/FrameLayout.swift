@@ -500,6 +500,8 @@ struct FrameLayout: View {
                 Text(frameNumberLabel)
                     .font(.headline)
                     .foregroundStyle(.white)
+            } else {
+                EmptyView()
             }
         }
 
