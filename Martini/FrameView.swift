@@ -8,7 +8,6 @@ struct FrameView: View {
     @State private var selectedStatus: FrameStatus
     @State private var assetStack: [FrameAssetItem]
     @State private var visibleAssetID: FrameAssetItem.ID?
-    @State private var activeBoardID: FrameAssetItem.ID?
     @State private var showingComments: Bool = false
     @State private var showingFiles: Bool = false
     @State private var descriptionExpanded: Bool = false
@@ -25,8 +24,6 @@ struct FrameView: View {
         _assetStack = State(initialValue: initialStack)
         let firstID: FrameAssetItem.ID? = initialStack.first?.id
         _visibleAssetID = State(initialValue: firstID)
-        let firstBoardID: FrameAssetItem.ID? = initialStack.first(where: { $0.kind == .board })?.id
-        _activeBoardID = State(initialValue: firstBoardID)
     }
 
     var body: some View {
@@ -54,13 +51,6 @@ struct FrameView: View {
             if visibleAssetID == nil, let first: FrameAssetItem.ID = newStack.first?.id {
                 visibleAssetID = first
             }
-            updateActiveBoardID(for: visibleAssetID)
-            if activeBoardID == nil {
-                activeBoardID = newStack.first(where: { $0.kind == .board })?.id
-            }
-        }
-        .onChange(of: visibleAssetID) { newValue in
-            updateActiveBoardID(for: newValue)
         }
     }
 
@@ -226,29 +216,31 @@ struct FrameView: View {
         .frame(maxWidth: .infinity)
         .frame(height: height)
         .background(Color.black)
-        .gesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { value in
-                    if !descriptionExpanded {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                            descriptionExpanded = true
-                        }
-                    }
-
-                    if descriptionExpanded && descriptionScrollOffset >= 0 && value.translation.height > 20 {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
-                            descriptionExpanded = false
-                        }
-                    }
-                }
-        )
         .onPreferenceChange(DescriptionScrollOffsetKey.self) { offset in
             descriptionScrollOffset = offset
+            handleDescriptionScroll(offset: offset)
         }
         .onTapGesture {
             guard !descriptionExpanded else { return }
             withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
                 descriptionExpanded = true
+            }
+        }
+    }
+
+    private func handleDescriptionScroll(offset: CGFloat) {
+        let expandThreshold: CGFloat = -12
+        let collapseThreshold: CGFloat = 18
+
+        if !descriptionExpanded && offset < expandThreshold {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                descriptionExpanded = true
+            }
+        }
+
+        if descriptionExpanded && offset > collapseThreshold {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
+                descriptionExpanded = false
             }
         }
     }
@@ -259,18 +251,15 @@ struct FrameView: View {
 
     @ViewBuilder
     private var boardCarouselTabs: some View {
-        let boards = assetStack.filter { $0.kind == .board }
-
-        if boards.count > 1 {
+        if assetStack.count > 1 {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    ForEach(boards) { board in
-                        let isSelected: Bool = (board.id == visibleAssetID)
+                    ForEach(assetStack) { asset in
+                        let isSelected: Bool = (asset.id == visibleAssetID)
                         Button {
-                            visibleAssetID = board.id
-                            activeBoardID = board.id
+                            visibleAssetID = asset.id
                         } label: {
-                            Text(board.label ?? "Board")
+                            Text(asset.label ?? asset.kind.displayName)
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundStyle(isSelected ? Color.white : Color.primary)
                                 .lineLimit(1)
@@ -289,14 +278,10 @@ struct FrameView: View {
                 .scrollTargetLayout()
             }
             .scrollTargetBehavior(.viewAligned(limitBehavior: .always))
-            .scrollPosition(id: $activeBoardID)
-            .onChange(of: activeBoardID) { newValue in
-                guard let newValue else { return }
-                visibleAssetID = newValue
-            }
-        } else if let board = boards.first, let label = board.label {
+            .scrollPosition(id: $visibleAssetID)
+        } else if let asset = assetStack.first {
             HStack {
-                Text(label)
+                Text(asset.label ?? asset.kind.displayName)
                     .font(.system(size: 14, weight: .semibold))
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
@@ -304,22 +289,6 @@ struct FrameView: View {
             }
             .padding(.horizontal, 20)
         }
-    }
-
-    private func updateActiveBoardID(for targetID: FrameAssetItem.ID?) {
-        guard let targetID else { return }
-
-        if let targetAsset = assetStack.first(where: { $0.id == targetID && $0.kind == .board }) {
-            activeBoardID = targetAsset.id
-            return
-        }
-
-        if let activeBoardID,
-           assetStack.contains(where: { $0.id == activeBoardID && $0.kind == .board }) {
-            return
-        }
-
-        activeBoardID = assetStack.first(where: { $0.kind == .board })?.id
     }
 
     @ViewBuilder
