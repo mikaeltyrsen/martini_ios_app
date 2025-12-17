@@ -105,6 +105,7 @@ struct FrameLayout: View {
     var showStatusBadge: Bool = true
     var showFrameNumberOverlay: Bool = true
     var showFrameTimeOverlay: Bool = true
+    var showTextBlock: Bool = true
     var cornerRadius: CGFloat = 8
 
     @Environment(\.horizontalSizeClass) private var hSizeClass
@@ -137,7 +138,9 @@ struct FrameLayout: View {
 
         layout {
             imageCard
-            textBlock
+            if showTextBlock {
+                textBlock
+            }
         }
         .fullScreenCover(isPresented: $isPresentingFullScreen) {
             FullscreenMediaView(
@@ -254,16 +257,24 @@ struct FrameLayout: View {
             captionText = Text(text)
         }
 
-        return captionText
-            .font(.system(size: 16, weight: .semibold))
-            .foregroundStyle(Color.white)
-            .multilineTextAlignment(.center)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(Color.black.opacity(0.6))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-            .padding(12)
+        return GeometryReader { geo in
+            let minDimension = min(geo.size.width, geo.size.height)
+            let fontSize = max(14, min(minDimension * 0.06, 28))
+            let horizontalPadding = minDimension * 0.08
+            let verticalPadding = minDimension * 0.05
+
+            captionText
+                .font(.system(size: fontSize, weight: .semibold))
+                .foregroundStyle(Color.white)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, horizontalPadding)
+                .padding(.vertical, verticalPadding)
+                .frame(width: geo.size.width, height: geo.size.height)
+                .background(Color.black.opacity(0.55))
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                .minimumScaleFactor(0.5)
+                .allowsHitTesting(false)
+        }
     }
 
     private var textBlock: some View {

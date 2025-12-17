@@ -80,12 +80,17 @@ struct FrameView: View {
                 statusMenuButton(title: "Omit", status: .skip, systemImage: "minus.circle")
                 statusMenuButton(title: "Clear", status: .none, systemImage: "xmark.circle")
             } label: {
-                HStack(spacing: 4) {
+                let statusColor = selectedStatus.labelColor
+                HStack(spacing: 6) {
                     Image(systemName: selectedStatus.systemImageName)
-                    Text("status")
+                        .foregroundStyle(statusColor)
+                    Text(selectedStatus.displayName)
                         .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(statusColor)
                 }
-               // Label(statusMenuLabel, systemImage: selectedStatus.systemImageName)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Capsule().fill(Color.secondary.opacity(0.15)))
             }
 
             Spacer()
@@ -567,6 +572,19 @@ extension FrameStatus {
             return "xmark.circle"
         }
     }
+
+    var labelColor: Color {
+        switch self {
+        case .done, .skip:
+            return .red
+        case .inProgress:
+            return .green
+        case .upNext:
+            return .orange
+        case .none:
+            return .white
+        }
+    }
 }
 
 private struct StackedAssetScroller: View {
@@ -617,6 +635,7 @@ private struct AssetCardView: View {
             title: primaryText,
             showStatusBadge: true,
             showFrameNumberOverlay: true,
+            showTextBlock: false,
             cornerRadius: 16
         )
         .frame(width: cardWidth)
