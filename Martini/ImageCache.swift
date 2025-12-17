@@ -63,7 +63,7 @@ actor ImageCache {
 
 struct CachedAsyncImage<Content: View>: View {
     let url: URL?
-    let content: (AsyncImagePhase) -> Content
+    let content: @ViewBuilder (AsyncImagePhase) -> Content
 
     @State private var phase: AsyncImagePhase = .empty
 
