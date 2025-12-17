@@ -1001,6 +1001,7 @@ struct GridFrameCell: View {
                 frame: frame,
                 primaryAsset: primaryAsset,
                 title: frame.caption,
+                showTextBlock: false,
                 cornerRadius: 6,
                 enablesFullScreen: false
             )
