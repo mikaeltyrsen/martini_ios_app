@@ -8,6 +8,7 @@ struct FrameView: View {
     @State private var selectedStatus: FrameStatus
     @State private var assetStack: [FrameAssetItem]
     @State private var visibleAssetID: FrameAssetItem.ID?
+    @State private var activeBoardID: FrameAssetItem.ID?
     @State private var showingComments: Bool = false
     @State private var showingFiles: Bool = false
 
@@ -22,6 +23,8 @@ struct FrameView: View {
         _assetStack = State(initialValue: initialStack)
         let firstID: FrameAssetItem.ID? = initialStack.first?.id
         _visibleAssetID = State(initialValue: firstID)
+        let firstBoardID: FrameAssetItem.ID? = initialStack.first(where: { $0.kind == .board })?.id
+        _activeBoardID = State(initialValue: firstBoardID)
     }
 
     var body: some View {
@@ -49,6 +52,13 @@ struct FrameView: View {
             if visibleAssetID == nil, let first: FrameAssetItem.ID = newStack.first?.id {
                 visibleAssetID = first
             }
+            updateActiveBoardID(for: visibleAssetID)
+            if activeBoardID == nil {
+                activeBoardID = newStack.first(where: { $0.kind == .board })?.id
+            }
+        }
+        .onChange(of: visibleAssetID) { newValue in
+            updateActiveBoardID(for: newValue)
         }
     }
 
@@ -179,6 +189,7 @@ struct FrameView: View {
                         let isSelected: Bool = (board.id == visibleAssetID)
                         Button {
                             visibleAssetID = board.id
+                            activeBoardID = board.id
                         } label: {
                             Text(board.label ?? "Board")
                                 .font(.system(size: 14, weight: .semibold))
@@ -196,6 +207,13 @@ struct FrameView: View {
                     }
                 }
                 .padding(.horizontal, 20)
+                .scrollTargetLayout()
+            }
+            .scrollTargetBehavior(.viewAligned(limitBehavior: .always))
+            .scrollPosition(id: $activeBoardID)
+            .onChange(of: activeBoardID) { newValue in
+                guard let newValue else { return }
+                visibleAssetID = newValue
             }
         } else if let board = boards.first, let label = board.label {
             HStack {
@@ -207,6 +225,22 @@ struct FrameView: View {
             }
             .padding(.horizontal, 20)
         }
+    }
+
+    private func updateActiveBoardID(for targetID: FrameAssetItem.ID?) {
+        guard let targetID else { return }
+
+        if let targetAsset = assetStack.first(where: { $0.id == targetID && $0.kind == .board }) {
+            activeBoardID = targetAsset.id
+            return
+        }
+
+        if let activeBoardID,
+           assetStack.contains(where: { $0.id == activeBoardID && $0.kind == .board }) {
+            return
+        }
+
+        activeBoardID = assetStack.first(where: { $0.kind == .board })?.id
     }
 
     @ViewBuilder
@@ -315,7 +349,6 @@ private struct CommentsSheet: View {
             composeFieldFocused = false
         }
     }
-}
 
 private struct CommentsPage: View {
     let frameNumber: Int

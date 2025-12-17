@@ -1,6 +1,7 @@
 import SwiftUI
 import UIKit
 import AVFoundation
+import AVKit
 import CryptoKit
 
 final class VideoCacheManager {
@@ -108,6 +109,7 @@ struct FrameLayout: View {
 
     @Environment(\.horizontalSizeClass) private var hSizeClass
     @Environment(\.colorScheme) private var colorScheme
+    @State private var isPresentingFullScreen: Bool = false
 
     private var resolvedTitle: String? {
         if let title, !title.isEmpty {
@@ -132,6 +134,15 @@ struct FrameLayout: View {
         layout {
             imageCard
             textBlock
+        }
+        .fullScreenCover(isPresented: $isPresentingFullScreen) {
+            FullscreenMediaView(
+                url: resolvedMediaURL,
+                isVideo: shouldPlayAsVideo,
+                aspectRatio: aspectRatio,
+                title: resolvedTitle,
+                frameNumberLabel: frameNumberLabel
+            )
         }
     }
 
@@ -211,6 +222,27 @@ struct FrameLayout: View {
 
             if showStatusBadge {
                 statusOverlay(for: frame.statusEnum)
+            }
+
+            if resolvedMediaURL != nil {
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        Button {
+                            isPresentingFullScreen = true
+                        } label: {
+                            Image(systemName: "arrow.up.left.and.down.right.magnifyingglass")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .padding(10)
+                                .background(Color.black.opacity(0.7))
+                                .clipShape(Circle())
+                        }
+                        .accessibilityLabel("View fullscreen")
+                        .padding(12)
+                    }
+                }
             }
         }
         .aspectRatio(aspectRatio, contentMode: .fit)
@@ -389,6 +421,98 @@ struct FrameLayout: View {
                 Text(frameNumberLabel)
                     .font(.caption)
                     .foregroundColor(.gray)
+            }
+        }
+    }
+
+    private struct FullscreenMediaView: View {
+        let url: URL?
+        let isVideo: Bool
+        let aspectRatio: CGFloat
+        let title: String?
+        let frameNumberLabel: String?
+
+        @Environment(\.dismiss) private var dismiss
+
+        var body: some View {
+            ZStack(alignment: .topTrailing) {
+                Color.black.ignoresSafeArea()
+
+                VStack(spacing: 12) {
+                    Spacer()
+
+                    mediaContent
+                        .frame(maxWidth: .infinity)
+                        .aspectRatio(aspectRatio, contentMode: .fit)
+
+                    metadata
+
+                    Spacer()
+                }
+
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 30, weight: .bold))
+                        .foregroundStyle(.white)
+                        .padding(8)
+                }
+                .accessibilityLabel("Close fullscreen")
+                .padding(16)
+            }
+        }
+
+        @ViewBuilder
+        private var mediaContent: some View {
+            if let url {
+                if isVideo {
+                    LoopingVideoView(url: url)
+                        .clipped()
+                } else {
+                    CachedAsyncImage(url: url) { phase in
+                        switch phase {
+                        case let .success(image):
+                            image
+                                .resizable()
+                                .scaledToFit()
+                        case .empty:
+                            ProgressView()
+                        case .failure:
+                            fallbackPlaceholder
+                        @unknown default:
+                            fallbackPlaceholder
+                        }
+                    }
+                }
+            } else {
+                fallbackPlaceholder
+            }
+        }
+
+        @ViewBuilder
+        private var metadata: some View {
+            if let title, !title.isEmpty {
+                Text(title)
+                    .font(.headline)
+                    .foregroundStyle(.white)
+            } else if let frameNumberLabel {
+                Text(frameNumberLabel)
+                    .font(.headline)
+                    .foregroundStyle(.white)
+            }
+        }
+
+        private var fallbackPlaceholder: some View {
+            VStack(spacing: 8) {
+                Image(systemName: "photo")
+                    .font(.system(size: 40))
+                    .foregroundStyle(.white.opacity(0.7))
+                if let frameNumberLabel {
+                    Text(frameNumberLabel)
+                        .font(.headline)
+                        .foregroundStyle(.white.opacity(0.8))
+                }
             }
         }
     }
