@@ -232,28 +232,13 @@ struct FrameLayout: View {
                 statusOverlay(for: frame.statusEnum)
             }
 
-            if resolvedMediaURL != nil {
-                VStack {
-                    Spacer()
-                    HStack {
-                        Spacer()
-                        Button {
-                            isPresentingFullScreen = true
-                        } label: {
-                            Image(systemName: "arrow.up.left.and.down.right.magnifyingglass")
-                                .font(.system(size: 18, weight: .semibold))
-                                .foregroundStyle(.white)
-                                .padding(10)
-                                .background(Color.black.opacity(0.7))
-                                .clipShape(Circle())
-                        }
-                        .accessibilityLabel("View fullscreen")
-                        .padding(12)
-                    }
-                }
-            }
         }
         .aspectRatio(aspectRatio, contentMode: .fit)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            guard resolvedMediaURL != nil else { return }
+            isPresentingFullScreen = true
+        }
         .overlay(
             RoundedRectangle(cornerRadius: cornerRadius)
                 .strokeBorder(borderColor, lineWidth: borderWidth)
