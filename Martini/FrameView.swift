@@ -130,15 +130,13 @@ struct FrameView: View {
     private var mainContent: some View {
         GeometryReader { proxy in
             let overlayHeight: CGFloat = proxy.size.height * descriptionHeightRatio
+            let boardsHeight: CGFloat = max(proxy.size.height - overlayHeight, 0)
 
-            ZStack(alignment: .top) {
-                boardsSection(height: proxy.size.height * 0.5)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            VStack(spacing: 0) {
+                boardsSection(height: boardsHeight)
+                    .frame(maxWidth: .infinity, maxHeight: boardsHeight, alignment: .top)
 
-                VStack {
-                    Spacer()
-                    descriptionOverlay(containerHeight: proxy.size.height, overlayHeight: overlayHeight)
-                }
+                descriptionOverlay(containerHeight: proxy.size.height, overlayHeight: overlayHeight)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
