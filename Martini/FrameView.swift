@@ -293,6 +293,8 @@ struct FrameView: View {
 
     private static func orderedAssets(for frame: Frame, order: [FrameAssetKind]) -> [FrameAssetItem] {
         let available = frame.availableAssets
+
+        guard !available.isEmpty else { return [placeholderBoardAsset] }
         var ordered: [FrameAssetItem] = []
 
         for kind in order {
@@ -306,6 +308,8 @@ struct FrameView: View {
 
         return ordered
     }
+
+    private static let placeholderBoardAsset = FrameAssetItem(kind: .board, primary: nil, fallback: nil)
 }
 
 private extension FrameView {
