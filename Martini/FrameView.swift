@@ -132,7 +132,7 @@ struct FrameView: View {
             let expandedHeight: CGFloat = proxy.size.height
 
             ZStack(alignment: .top) {
-                boardsSection
+                boardsSection(height: collapsedHeight)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
                 VStack {
@@ -144,7 +144,7 @@ struct FrameView: View {
         }
     }
 
-    private var boardsSection: some View {
+    private func boardsSection(height: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 16) {
             StackedAssetScroller(
                 frame: frame,
@@ -153,9 +153,12 @@ struct FrameView: View {
                 primaryText: primaryText
             )
 
+            Spacer()
+
             boardCarouselTabs
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: height, alignment: .top)
     }
 
     private var primaryText: String? {

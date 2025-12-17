@@ -150,7 +150,7 @@ struct ScheduleView: View {
         } else {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 12)], spacing: 12) {
                 ForEach(frames) { frame in
-                    FrameLayout(frame: frame, showStatusBadge: false, showFrameTimeOverlay: false)
+                    FrameLayout(frame: frame, showStatusBadge: false, showFrameTimeOverlay: false, enablesFullScreen: false)
                         .frame(maxWidth: 100)
                 }
             }
