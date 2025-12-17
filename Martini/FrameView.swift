@@ -90,7 +90,6 @@ struct FrameView: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(Capsule().fill(Color.secondary.opacity(0.15)))
             }
 
             Spacer()
