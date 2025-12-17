@@ -10,7 +10,8 @@ struct FrameView: View {
     @State private var visibleAssetID: FrameAssetItem.ID?
     @State private var showingComments: Bool = false
     @State private var showingFiles: Bool = false
-    @State private var descriptionExpanded: Bool = false
+    @State private var descriptionHeightRatio: CGFloat = 0.5
+    @State private var dragStartRatio: CGFloat?
     @State private var descriptionScrollOffset: CGFloat = 0
 
     init(frame: Frame, assetOrder: Binding<[FrameAssetKind]>, onClose: @escaping () -> Void) {
@@ -127,16 +128,15 @@ struct FrameView: View {
 
     private var mainContent: some View {
         GeometryReader { proxy in
-            let collapsedHeight: CGFloat = proxy.size.height * 0.5
-            let expandedHeight: CGFloat = proxy.size.height
+            let overlayHeight: CGFloat = proxy.size.height * descriptionHeightRatio
 
             ZStack(alignment: .top) {
-                boardsSection(height: collapsedHeight)
+                boardsSection(height: proxy.size.height * 0.5)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
                 VStack {
                     Spacer()
-                    descriptionOverlay(height: descriptionExpanded ? expandedHeight : collapsedHeight)
+                    descriptionOverlay(containerHeight: proxy.size.height, overlayHeight: overlayHeight)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -196,7 +196,7 @@ struct FrameView: View {
         }
     }
 
-    private func descriptionOverlay(height: CGFloat) -> some View {
+    private func descriptionOverlay(containerHeight: CGFloat, overlayHeight: CGFloat) -> some View {
         ScrollView(.vertical, showsIndicators: true) {
             VStack(alignment: .leading, spacing: 16) {
                 Capsule()
@@ -219,40 +219,24 @@ struct FrameView: View {
         }
         .coordinateSpace(name: "descriptionScroll")
         .frame(maxWidth: .infinity)
-        .frame(height: height)
+        .frame(height: overlayHeight)
         .background(Color.black)
-        .scrollDisabled(!descriptionExpanded)
+        .scrollDisabled(!isDescriptionExpanded)
         .onPreferenceChange(DescriptionScrollOffsetKey.self) { offset in
             descriptionScrollOffset = offset
             handleDescriptionScroll(offset: offset)
         }
-        .highPriorityGesture(
-            DragGesture()
-                .onEnded { value in
-                    guard !descriptionExpanded else { return }
-                    let dragThreshold: CGFloat = -40
-                    if value.translation.height < dragThreshold {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                            descriptionExpanded = true
-                        }
-                    }
-                }
-        )
+        .simultaneousGesture(descriptionDragGesture(containerHeight: containerHeight))
         .onTapGesture {
-            guard !descriptionExpanded else { return }
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                descriptionExpanded = true
-            }
+            setDescriptionExpanded(true)
         }
     }
 
     private func handleDescriptionScroll(offset: CGFloat) {
         let collapseThreshold: CGFloat = 18
 
-        if descriptionExpanded && offset > collapseThreshold {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
-                descriptionExpanded = false
-            }
+        if isDescriptionExpanded && offset > collapseThreshold {
+            setDescriptionExpanded(false)
         }
     }
 
@@ -332,6 +316,43 @@ struct FrameView: View {
         }
 
         return ordered
+    }
+}
+
+private extension FrameView {
+    private var isDescriptionExpanded: Bool {
+        descriptionHeightRatio > 0.75
+    }
+
+    private func descriptionDragGesture(containerHeight: CGFloat) -> some Gesture {
+        DragGesture()
+            .onChanged { value in
+                if dragStartRatio == nil { dragStartRatio = descriptionHeightRatio }
+
+                let startingRatio: CGFloat = dragStartRatio ?? descriptionHeightRatio
+                let translationRatio: CGFloat = -value.translation.height / containerHeight
+                let proposedRatio: CGFloat = startingRatio + translationRatio
+                descriptionHeightRatio = min(max(proposedRatio, 0.5), 1.0)
+            }
+            .onEnded { value in
+                let startingRatio: CGFloat = dragStartRatio ?? descriptionHeightRatio
+                let translationRatio: CGFloat = -value.translation.height / containerHeight
+                let proposedRatio: CGFloat = min(max(startingRatio + translationRatio, 0.5), 1.0)
+
+                let distanceToCollapsed: CGFloat = abs(proposedRatio - 0.5)
+                let distanceToExpanded: CGFloat = abs(1.0 - proposedRatio)
+                let targetExpanded: Bool = distanceToExpanded < distanceToCollapsed
+
+                setDescriptionExpanded(targetExpanded)
+                dragStartRatio = nil
+            }
+    }
+
+    private func setDescriptionExpanded(_ expanded: Bool) {
+        let targetRatio: CGFloat = expanded ? 1.0 : 0.5
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+            descriptionHeightRatio = targetRatio
+        }
     }
 }
 
