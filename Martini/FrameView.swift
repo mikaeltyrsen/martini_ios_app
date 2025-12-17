@@ -246,44 +246,33 @@ struct FrameView: View {
 
     @ViewBuilder
     private var boardCarouselTabs: some View {
-        if assetStack.count > 1 {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(assetStack) { asset in
-                        let isSelected: Bool = (asset.id == visibleAssetID)
-                        Button {
-                            visibleAssetID = asset.id
-                        } label: {
-                            Text(asset.label ?? asset.kind.displayName)
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(isSelected ? Color.white : Color.primary)
-                                .lineLimit(1)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 10)
-                                .frame(minWidth: 80)
-                                .background(
-                                    Capsule()
-                                        .fill(isSelected ? Color.accentColor : Color.secondary.opacity(0.15))
-                                )
-                        }
-                        .buttonStyle(.plain)
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(assetStack) { asset in
+                    let isSelected: Bool = (asset.id == visibleAssetID)
+                    Button {
+                        visibleAssetID = asset.id
+                    } label: {
+                        Text(asset.label ?? asset.kind.displayName)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(isSelected ? Color.white : Color.primary)
+                            .lineLimit(1)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
+                            .frame(minWidth: 80)
+                            .background(
+                                Capsule()
+                                    .fill(isSelected ? Color.accentColor : Color.secondary.opacity(0.15))
+                            )
                     }
+                    .buttonStyle(.plain)
                 }
-                .padding(.horizontal, 20)
-                .scrollTargetLayout()
-            }
-            .scrollTargetBehavior(.viewAligned(limitBehavior: .always))
-            .scrollPosition(id: $visibleAssetID)
-        } else if let asset = assetStack.first {
-            HStack {
-                Text(asset.label ?? asset.kind.displayName)
-                    .font(.system(size: 14, weight: .semibold))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
-                    .background(Capsule().fill(Color.secondary.opacity(0.15)))
             }
             .padding(.horizontal, 20)
+            .scrollTargetLayout()
         }
+        .scrollTargetBehavior(.viewAligned(limitBehavior: .always))
+        .scrollPosition(id: $visibleAssetID)
     }
 
     @ViewBuilder
