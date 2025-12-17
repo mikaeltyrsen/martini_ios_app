@@ -221,10 +221,23 @@ struct FrameView: View {
         .frame(maxWidth: .infinity)
         .frame(height: height)
         .background(Color.black)
+        .scrollDisabled(!descriptionExpanded)
         .onPreferenceChange(DescriptionScrollOffsetKey.self) { offset in
             descriptionScrollOffset = offset
             handleDescriptionScroll(offset: offset)
         }
+        .highPriorityGesture(
+            DragGesture()
+                .onEnded { value in
+                    guard !descriptionExpanded else { return }
+                    let dragThreshold: CGFloat = -40
+                    if value.translation.height < dragThreshold {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                            descriptionExpanded = true
+                        }
+                    }
+                }
+        )
         .onTapGesture {
             guard !descriptionExpanded else { return }
             withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
@@ -234,14 +247,7 @@ struct FrameView: View {
     }
 
     private func handleDescriptionScroll(offset: CGFloat) {
-        let expandThreshold: CGFloat = -12
         let collapseThreshold: CGFloat = 18
-
-        if !descriptionExpanded && offset < expandThreshold {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                descriptionExpanded = true
-            }
-        }
 
         if descriptionExpanded && offset > collapseThreshold {
             withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
