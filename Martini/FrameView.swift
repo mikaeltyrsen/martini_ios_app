@@ -13,6 +13,7 @@ struct FrameView: View {
     @State private var descriptionHeightRatio: CGFloat = 0.5
     @State private var dragStartRatio: CGFloat?
     @State private var descriptionScrollOffset: CGFloat = 0
+    @State private var isDraggingDescription: Bool = false
 
     init(frame: Frame, assetOrder: Binding<[FrameAssetKind]>, onClose: @escaping () -> Void) {
         self.frame = frame
@@ -235,7 +236,7 @@ struct FrameView: View {
     private func handleDescriptionScroll(offset: CGFloat) {
         let collapseThreshold: CGFloat = 18
 
-        if isDescriptionExpanded && offset > collapseThreshold {
+        if isDescriptionExpanded && offset > collapseThreshold && !isDraggingDescription {
             setDescriptionExpanded(false)
         }
     }
@@ -320,6 +321,7 @@ private extension FrameView {
     private func descriptionDragGesture(containerHeight: CGFloat) -> some Gesture {
         DragGesture()
             .onChanged { value in
+                if isDraggingDescription == false { isDraggingDescription = true }
                 if dragStartRatio == nil { dragStartRatio = descriptionHeightRatio }
 
                 let startingRatio: CGFloat = dragStartRatio ?? descriptionHeightRatio
@@ -338,6 +340,7 @@ private extension FrameView {
 
                 setDescriptionExpanded(targetExpanded)
                 dragStartRatio = nil
+                isDraggingDescription = false
             }
     }
 
