@@ -540,6 +540,40 @@ struct FrameTag: Codable, Identifiable {
     let name: String
 }
 
+// MARK: - Frame Board
+
+struct FrameBoard: Codable, Identifiable, Hashable {
+    let id: String
+    let label: String?
+    let order: Int?
+    @SafeBool var isPinned: Bool
+    let fileUrl: String?
+    let fileThumbUrl: String?
+    let fileName: String?
+    let fileType: String?
+    @SafeOptionalInt var fileSize: Int?
+    let fileCrop: String?
+    let createdBy: String?
+    let createdAt: String?
+    let lastUpdated: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case label
+        case order
+        case isPinned = "pinned"
+        case fileUrl = "file_url"
+        case fileThumbUrl = "file_thumb_url"
+        case fileName = "file_name"
+        case fileType = "file_type"
+        case fileSize = "file_size"
+        case fileCrop = "file_crop"
+        case createdBy = "created_by"
+        case createdAt = "created_at"
+        case lastUpdated = "last_updated"
+    }
+}
+
 // MARK: - Frame Model
 
 struct Frame: Codable, Identifiable {
@@ -548,6 +582,8 @@ struct Frame: Codable, Identifiable {
     let creativeTitle: String?
     let creativeColor: String?
     let creativeAspectRatio: String?
+    let boards: [FrameBoard]?
+    let mainBoardType: String?
     let board: String?
     let boardThumb: String?
     let boardFileName: String?
@@ -596,17 +632,23 @@ struct Frame: Codable, Identifiable {
         creativeTitle = try container.decodeIfPresent(String.self, forKey: .creativeTitle)
         creativeColor = try container.decodeIfPresent(String.self, forKey: .creativeColor)
         creativeAspectRatio = try container.decodeIfPresent(String.self, forKey: .creativeAspectRatio)
-        board = try container.decodeIfPresent(String.self, forKey: .board)
-        boardThumb = try container.decodeIfPresent(String.self, forKey: .boardThumb)
-        boardFileName = try container.decodeIfPresent(String.self, forKey: .boardFileName)
-        boardFileType = try container.decodeIfPresent(String.self, forKey: .boardFileType)
-        _boardFileSize = try container.decodeIfPresent(SafeOptionalInt.self, forKey: .boardFileSize) ?? SafeOptionalInt()
-        photoboard = try container.decodeIfPresent(String.self, forKey: .photoboard)
-        photoboardThumb = try container.decodeIfPresent(String.self, forKey: .photoboardThumb)
-        photoboardFileName = try container.decodeIfPresent(String.self, forKey: .photoboardFileName)
-        photoboardFileType = try container.decodeIfPresent(String.self, forKey: .photoboardFileType)
-        _photoboardFileSize = try container.decodeIfPresent(SafeOptionalInt.self, forKey: .photoboardFileSize) ?? SafeOptionalInt()
-        photoboardCrop = try container.decodeIfPresent(String.self, forKey: .photoboardCrop)
+        boards = try container.decodeIfPresent([FrameBoard].self, forKey: .boards)
+        mainBoardType = try container.decodeIfPresent(String.self, forKey: .mainBoardType)
+
+        let primaryBoard = Frame.selectPrimaryBoard(from: boards, matching: mainBoardType)
+        let photoBoard = Frame.selectPrimaryBoard(from: boards, matching: "photoboard")
+
+        board = try container.decodeIfPresent(String.self, forKey: .board) ?? primaryBoard?.fileUrl
+        boardThumb = try container.decodeIfPresent(String.self, forKey: .boardThumb) ?? primaryBoard?.fileThumbUrl
+        boardFileName = try container.decodeIfPresent(String.self, forKey: .boardFileName) ?? primaryBoard?.fileName
+        boardFileType = try container.decodeIfPresent(String.self, forKey: .boardFileType) ?? primaryBoard?.fileType
+        _boardFileSize = try container.decodeIfPresent(SafeOptionalInt.self, forKey: .boardFileSize) ?? SafeOptionalInt(wrappedValue: primaryBoard?.fileSize)
+        photoboard = try container.decodeIfPresent(String.self, forKey: .photoboard) ?? photoBoard?.fileUrl
+        photoboardThumb = try container.decodeIfPresent(String.self, forKey: .photoboardThumb) ?? photoBoard?.fileThumbUrl
+        photoboardFileName = try container.decodeIfPresent(String.self, forKey: .photoboardFileName) ?? photoBoard?.fileName
+        photoboardFileType = try container.decodeIfPresent(String.self, forKey: .photoboardFileType) ?? photoBoard?.fileType
+        _photoboardFileSize = try container.decodeIfPresent(SafeOptionalInt.self, forKey: .photoboardFileSize) ?? SafeOptionalInt(wrappedValue: photoBoard?.fileSize)
+        photoboardCrop = try container.decodeIfPresent(String.self, forKey: .photoboardCrop) ?? photoBoard?.fileCrop
         preview = try container.decodeIfPresent(String.self, forKey: .preview)
         previewThumb = try container.decodeIfPresent(String.self, forKey: .previewThumb)
         previewFileName = try container.decodeIfPresent(String.self, forKey: .previewFileName)
@@ -643,6 +685,8 @@ struct Frame: Codable, Identifiable {
         creativeTitle: String? = nil,
         creativeColor: String? = nil,
         creativeAspectRatio: String? = nil,
+        boards: [FrameBoard]? = nil,
+        mainBoardType: String? = nil,
         board: String? = nil,
         boardThumb: String? = nil,
         boardFileName: String? = nil,
@@ -688,6 +732,8 @@ struct Frame: Codable, Identifiable {
         self.creativeTitle = creativeTitle
         self.creativeColor = creativeColor
         self.creativeAspectRatio = creativeAspectRatio
+        self.boards = boards
+        self.mainBoardType = mainBoardType
         self.board = board
         self.boardThumb = boardThumb
         self.boardFileName = boardFileName
@@ -735,6 +781,8 @@ struct Frame: Codable, Identifiable {
         case creativeTitle = "creative_title"
         case creativeColor = "creative_color"
         case creativeAspectRatio = "creative_aspect_ratio"
+        case boards
+        case mainBoardType = "main_board_type"
         case board
         case boardThumb = "board_thumb"
         case boardFileName = "board_file_name"
@@ -859,6 +907,8 @@ struct Frame: Codable, Identifiable {
             creativeTitle: creativeTitle,
             creativeColor: creativeColor,
             creativeAspectRatio: creativeAspectRatio,
+            boards: boards,
+            mainBoardType: mainBoardType,
             board: board,
             boardThumb: boardThumb,
             boardFileName: boardFileName,
@@ -914,6 +964,25 @@ struct Frame: Codable, Identifiable {
         formatter.dateFormat = "h:mm a"
         return formatter
     }()
+
+    private static func selectPrimaryBoard(from boards: [FrameBoard]?, matching label: String?) -> FrameBoard? {
+        guard let boards, !boards.isEmpty else { return nil }
+
+        let filteredBoards: [FrameBoard]
+        if let label, !label.isEmpty {
+            filteredBoards = boards.filter { $0.label?.lowercased() == label.lowercased() }
+        } else {
+            filteredBoards = boards
+        }
+
+        if let pinned = filteredBoards.first(where: { $0.isPinned }) {
+            return pinned
+        }
+
+        return filteredBoards.min { lhs, rhs in
+            (lhs.order ?? Int.max) < (rhs.order ?? Int.max)
+        }
+    }
 }
 
 struct FramesResponse: Codable {
