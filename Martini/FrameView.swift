@@ -152,8 +152,6 @@ struct FrameView: View {
                 primaryText: primaryText
             )
 
-            Spacer()
-
             boardCarouselTabs
         }
         .frame(maxWidth: .infinity, alignment: .leading)

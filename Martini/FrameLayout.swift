@@ -154,8 +154,9 @@ struct FrameLayout: View {
         }
     }
 
+    @ViewBuilder
     private var imageCard: some View {
-        ZStack {
+        let card = ZStack {
             RoundedRectangle(cornerRadius: cornerRadius)
                 .fill(Color.gray.opacity(0.2))
                 .overlay(
@@ -219,7 +220,7 @@ struct FrameLayout: View {
                 if frameTimeOverlay{
                     GeometryReader { geo in
                         let height = max(18, geo.size.height * 0.08)
-                        
+
                         VStack {
                             Spacer()
                             HStack {
@@ -239,14 +240,19 @@ struct FrameLayout: View {
         }
         .aspectRatio(aspectRatio, contentMode: .fit)
         .contentShape(Rectangle())
-        .onTapGesture {
-            guard enablesFullScreen, resolvedMediaURL != nil else { return }
-            isPresentingFullScreen = true
-        }
         .overlay(
             RoundedRectangle(cornerRadius: cornerRadius)
                 .strokeBorder(borderColor, lineWidth: borderWidth)
         )
+
+        if enablesFullScreen, resolvedMediaURL != nil {
+            card
+                .onTapGesture {
+                    isPresentingFullScreen = true
+                }
+        } else {
+            card
+        }
     }
 
     private func captionOverlay(for text: String) -> some View {
