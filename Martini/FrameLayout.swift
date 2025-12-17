@@ -180,6 +180,10 @@ struct FrameLayout: View {
                 )
                 .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
 
+            if let resolvedTitle {
+                captionOverlay(for: resolvedTitle)
+            }
+
             if showFrameNumberOverlay {
                 GeometryReader { geo in
                     let diameter = max(18, geo.size.width * 0.08) // 8% of width with a minimum
@@ -250,6 +254,27 @@ struct FrameLayout: View {
             RoundedRectangle(cornerRadius: cornerRadius)
                 .strokeBorder(borderColor, lineWidth: borderWidth)
         )
+    }
+
+    private func captionOverlay(for text: String) -> some View {
+        let captionText: Text
+
+        if let attributedTitle = attributedString(fromHTML: text, defaultColor: UIColor.white) {
+            captionText = Text(attributedTitle)
+        } else {
+            captionText = Text(text)
+        }
+
+        return captionText
+            .font(.system(size: 16, weight: .semibold))
+            .foregroundStyle(Color.white)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(Color.black.opacity(0.6))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            .padding(12)
     }
 
     private var textBlock: some View {
