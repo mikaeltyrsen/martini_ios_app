@@ -130,22 +130,30 @@ struct FrameView: View {
     }
 
     private var mainContent: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                StackedAssetScroller(
-                    frame: frame,
-                    assetStack: assetStack,
-                    visibleAssetID: $visibleAssetID,
-                    primaryText: primaryText
-                )
+        GeometryReader { proxy in
+            let peekHeight: CGFloat = max(proxy.size.height * 0.38, 240)
 
-                boardCarouselTabs
-                    
-                descriptionSection
-                    .padding(.horizontal, 20)
+            ZStack(alignment: .top) {
+                boardsSection
+
+                descriptionOverlay(peekHeight: peekHeight)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
+    }
+
+    private var boardsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            StackedAssetScroller(
+                frame: frame,
+                assetStack: assetStack,
+                visibleAssetID: $visibleAssetID,
+                primaryText: primaryText
+            )
+
+            boardCarouselTabs
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var primaryText: String? {
@@ -171,7 +179,39 @@ struct FrameView: View {
                     .foregroundColor(.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Description")
+                    .font(.headline)
+
+                Text("No description provided for this frame.")
+                    .font(.body)
+                    .foregroundColor(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+    }
+
+    private func descriptionOverlay(peekHeight: CGFloat) -> some View {
+        ScrollView(.vertical, showsIndicators: true) {
+            VStack(alignment: .leading, spacing: 16) {
+                Capsule()
+                    .fill(Color.secondary.opacity(0.35))
+                    .frame(width: 44, height: 5)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 10)
+
+                descriptionSection
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 24)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: -6)
+        .padding(.horizontal, 12)
+        .padding(.top, peekHeight)
     }
 
     private var statusMenuLabel: String {
