@@ -10,6 +10,7 @@ final class VideoCacheManager {
     private let ioQueue = DispatchQueue(label: "VideoCacheManager.io")
     private let cacheDirectory: URL
     private var inFlightDownloads: [URL: [(URL?) -> Void]] = [:]
+    private let unsupportedCacheExtensions: Set<String> = ["m3u8"]
 
     private init() {
         let cachesDirectory = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first
@@ -17,11 +18,17 @@ final class VideoCacheManager {
     }
 
     func existingCachedFile(for url: URL) -> URL? {
+        guard shouldCache(url: url) else { return nil }
         let destination = cachedFileURL(for: url)
         return fileManager.fileExists(atPath: destination.path) ? destination : nil
     }
 
     func fetchCachedURL(for url: URL, completion: @escaping (URL?) -> Void) {
+        guard shouldCache(url: url) else {
+            completion(nil)
+            return
+        }
+
         if let cached = existingCachedFile(for: url) {
             completion(cached)
             return
@@ -82,6 +89,10 @@ final class VideoCacheManager {
         let hash = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
         let fileExtension = url.pathExtension.isEmpty ? "mp4" : url.pathExtension
         return "\(hash).\(fileExtension)"
+    }
+
+    private func shouldCache(url: URL) -> Bool {
+        !unsupportedCacheExtensions.contains(url.pathExtension.lowercased())
     }
 }
 
@@ -478,8 +489,10 @@ final class LoopingPlayerView: UIView {
     private let playerLayer = AVPlayerLayer()
     private var playerLooper: AVPlayerLooper?
     private var queuePlayer: AVQueuePlayer?
+    private var player: AVPlayer?
     private var currentURL: URL?
     private var resolvedPlaybackURL: URL?
+    private var endObserver: NSObjectProtocol?
 
     init(url: URL) {
         super.init(frame: .zero)
@@ -490,6 +503,12 @@ final class LoopingPlayerView: UIView {
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         setupPlayerLayer()
+    }
+
+    deinit {
+        endObserver.map(NotificationCenter.default.removeObserver)
+        queuePlayer?.pause()
+        player?.pause()
     }
 
     func update(with url: URL) {
@@ -529,18 +548,45 @@ final class LoopingPlayerView: UIView {
     private func configurePlayer(with url: URL) {
         resolvedPlaybackURL = url
 
-        let item = AVPlayerItem(url: url)
-        let queuePlayer = AVQueuePlayer()
-        queuePlayer.isMuted = true
-        queuePlayer.actionAtItemEnd = .none
+        endObserver.map(NotificationCenter.default.removeObserver)
+        endObserver = nil
 
-        let looper = AVPlayerLooper(player: queuePlayer, templateItem: item)
-        queuePlayer.play()
+        if url.pathExtension.lowercased() == "m3u8" {
+            let playerItem = AVPlayerItem(url: url)
+            let player = AVPlayer(playerItem: playerItem)
+            player.isMuted = true
+            player.actionAtItemEnd = .none
 
-        playerLayer.player = queuePlayer
+            endObserver = NotificationCenter.default.addObserver(
+                forName: .AVPlayerItemDidPlayToEndTime,
+                object: playerItem,
+                queue: .main
+            ) { [weak self] _ in
+                player.seek(to: .zero)
+                player.play()
+            }
 
-        self.queuePlayer = queuePlayer
-        playerLooper = looper
+            player.play()
+            playerLayer.player = player
+
+            self.player = player
+            queuePlayer = nil
+            playerLooper = nil
+        } else {
+            let item = AVPlayerItem(url: url)
+            let queuePlayer = AVQueuePlayer()
+            queuePlayer.isMuted = true
+            queuePlayer.actionAtItemEnd = .none
+
+            let looper = AVPlayerLooper(player: queuePlayer, templateItem: item)
+            queuePlayer.play()
+
+            playerLayer.player = queuePlayer
+
+            self.queuePlayer = queuePlayer
+            playerLooper = looper
+            player = nil
+        }
     }
 }
 
