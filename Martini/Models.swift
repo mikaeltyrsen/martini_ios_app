@@ -843,7 +843,27 @@ struct Frame: Codable, Identifiable {
     var availableAssets: [FrameAssetItem] {
         var items: [FrameAssetItem] = []
 
-        if board != nil || boardThumb != nil {
+        let sortedBoards: [FrameBoard] = (boards ?? [])
+            .sorted { lhs, rhs in
+                if lhs.isPinned != rhs.isPinned {
+                    return lhs.isPinned
+                }
+                return (lhs.order ?? Int.max) < (rhs.order ?? Int.max)
+            }
+
+        if !sortedBoards.isEmpty {
+            for board in sortedBoards {
+                items.append(
+                    FrameAssetItem(
+                        kind: .board,
+                        primary: board.fileUrl,
+                        fallback: board.fileThumbUrl,
+                        fileType: board.fileType,
+                        label: board.label
+                    )
+                )
+            }
+        } else if board != nil || boardThumb != nil {
             items.append(
                 FrameAssetItem(
                     kind: .board,
@@ -1027,12 +1047,14 @@ struct FrameAssetItem: Identifiable, Hashable {
     private let primary: String?
     private let fallback: String?
     private let fileType: String?
+    let label: String?
 
-    init(kind: FrameAssetKind, primary: String?, fallback: String?, fileType: String? = nil) {
+    init(kind: FrameAssetKind, primary: String?, fallback: String?, fileType: String? = nil, label: String? = nil) {
         self.kind = kind
         self.primary = primary
         self.fallback = fallback
         self.fileType = fileType
+        self.label = label
     }
 
     var url: URL? {
