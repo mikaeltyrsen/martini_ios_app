@@ -115,6 +115,10 @@ struct FrameLayout: View {
         if let title, !title.isEmpty {
             return title
         }
+        if let caption = frame.caption, !caption.isEmpty {
+            return caption
+        }
+
         return nil
     }
 
