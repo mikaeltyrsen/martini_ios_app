@@ -1069,7 +1069,7 @@ struct FrameAssetItem: Identifiable, Hashable {
         return Self.videoExtensions.contains(url.pathExtension.lowercased()) || url.absoluteString.lowercased().contains(".m3u8")
     }
 
-    var label: String { kind.displayName }
+    var displayLabel: String { label ?? kind.displayName }
     var iconName: String { kind.systemImageName }
 
     private static let videoExtensions: Set<String> = ["mp4", "mov", "m4v", "webm", "mkv"]
