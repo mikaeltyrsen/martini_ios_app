@@ -370,10 +370,19 @@ extension ProjectSchedule {
             return decoded.schedules
         }
 
+        if let decodedDays = try? decoder.decode(EmbeddedDaysResponse.self, from: directData) {
+            return decodedDays.days?.map { $0.asScheduleItem }
+        }
+
         if let unwrappedString = try? decoder.decode(String.self, from: directData),
-           let nestedData = unwrappedString.data(using: .utf8),
-           let decoded = try? decoder.decode(EmbeddedScheduleResponse.self, from: nestedData) {
-            return decoded.schedules
+           let nestedData = unwrappedString.data(using: .utf8) {
+            if let decoded = try? decoder.decode(EmbeddedScheduleResponse.self, from: nestedData) {
+                return decoded.schedules
+            }
+
+            if let decodedDays = try? decoder.decode(EmbeddedDaysResponse.self, from: nestedData) {
+                return decodedDays.days?.map { $0.asScheduleItem }
+            }
         }
 
         return nil
@@ -382,6 +391,59 @@ extension ProjectSchedule {
 
 private struct EmbeddedScheduleResponse: Codable {
     let schedules: [ProjectScheduleItem]?
+}
+
+private struct EmbeddedDaysResponse: Codable {
+    let days: [ScheduleDay]?
+}
+
+private struct ScheduleDay: Codable {
+    let id: String?
+    let title: String?
+    let date: String?
+    let startTime: String?
+    @SafeOptionalInt var duration: Int?
+    @SafeOptionalInt var durationMinutes: Int?
+    let groups: [ScheduleGroup]?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case date
+        case startTime = "start_time"
+        case startTimeCamel = "startTime"
+        case duration
+        case durationMinutes
+        case durationMinutesSnake = "duration_minutes"
+        case groups
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        id = try container.decodeIfPresent(String.self, forKey: .id)
+        title = try container.decodeIfPresent(String.self, forKey: .title)
+        date = try container.decodeIfPresent(String.self, forKey: .date)
+        startTime = try container.decodeIfPresent(String.self, forKey: .startTime)
+            ?? container.decodeIfPresent(String.self, forKey: .startTimeCamel)
+        _duration = try container.decodeIfPresent(SafeOptionalInt.self, forKey: .duration) ?? SafeOptionalInt()
+        _durationMinutes = try container.decodeIfPresent(SafeOptionalInt.self, forKey: .durationMinutes)
+            ?? container.decodeIfPresent(SafeOptionalInt.self, forKey: .durationMinutesSnake) ?? SafeOptionalInt()
+        groups = try container.decodeIfPresent([ScheduleGroup].self, forKey: .groups)
+    }
+
+    var asScheduleItem: ProjectScheduleItem {
+        ProjectScheduleItem(
+            id: id ?? date ?? title,
+            title: title ?? "Schedule Day",
+            date: date,
+            lastUpdated: nil,
+            startTime: startTime,
+            duration: duration,
+            durationMinutes: durationMinutes,
+            groups: groups
+        )
+    }
 }
 
 struct ScheduleFetchResponse: Codable {
@@ -465,6 +527,26 @@ struct ProjectScheduleItem: Codable, Hashable {
         try container.encodeIfPresent(duration, forKey: .duration)
         try container.encodeIfPresent(durationMinutes, forKey: .durationMinutes)
         try container.encodeIfPresent(groups, forKey: .groups)
+    }
+
+    init(
+        id: String? = nil,
+        title: String,
+        date: String? = nil,
+        lastUpdated: String? = nil,
+        startTime: String? = nil,
+        duration: Int? = nil,
+        durationMinutes: Int? = nil,
+        groups: [ScheduleGroup]? = nil
+    ) {
+        self.id = id
+        self.title = title
+        self.date = date
+        self.lastUpdated = lastUpdated
+        self.startTime = startTime
+        self.duration = duration
+        self.durationMinutes = durationMinutes
+        self.groups = groups
     }
 }
 
