@@ -384,6 +384,12 @@ extension ProjectSchedule {
             return decodedDays.days?.map { $0.asScheduleItem }
         }
 
+        if let decodedContainer = try? decoder.decode(EmbeddedDaysContainerResponse.self, from: directData) {
+            if let wrappedDays = decodedContainer.schedule?.days ?? decodedContainer.days {
+                return wrappedDays.map { $0.asScheduleItem }
+            }
+        }
+
         if let unwrappedString = try? decoder.decode(String.self, from: directData),
            let nestedData = unwrappedString.data(using: .utf8) {
             if let decoded = try? decoder.decode(EmbeddedScheduleResponse.self, from: nestedData) {
@@ -392,6 +398,12 @@ extension ProjectSchedule {
 
             if let decodedDays = try? decoder.decode(EmbeddedDaysResponse.self, from: nestedData) {
                 return decodedDays.days?.map { $0.asScheduleItem }
+            }
+
+            if let decodedContainer = try? decoder.decode(EmbeddedDaysContainerResponse.self, from: nestedData) {
+                if let wrappedDays = decodedContainer.schedule?.days ?? decodedContainer.days {
+                    return wrappedDays.map { $0.asScheduleItem }
+                }
             }
         }
 
@@ -404,6 +416,11 @@ private struct EmbeddedScheduleResponse: Codable {
 }
 
 private struct EmbeddedDaysResponse: Codable {
+    let days: [ScheduleDay]?
+}
+
+private struct EmbeddedDaysContainerResponse: Codable {
+    let schedule: EmbeddedDaysResponse?
     let days: [ScheduleDay]?
 }
 
