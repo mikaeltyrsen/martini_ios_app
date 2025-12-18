@@ -411,7 +411,9 @@ struct MainView: View {
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItemGroup(placement: .navigationBarLeading) {
-            creativeMenuButton
+            if frameSortMode == .story {
+                creativeMenuButton
+            }
         }
 
         ToolbarItemGroup(placement: .principal) {
@@ -1281,4 +1283,3 @@ struct SettingsView: View {
     ContentView()
         .environmentObject(AuthService())
 }
-
