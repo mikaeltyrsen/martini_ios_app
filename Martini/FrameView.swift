@@ -10,10 +10,12 @@ struct FrameView: View {
     @State private var visibleAssetID: FrameAssetItem.ID?
     @State private var showingComments: Bool = false
     @State private var showingFiles: Bool = false
-    @State private var descriptionHeightRatio: CGFloat = 0.5
+    @State private var descriptionHeightRatio: CGFloat = 0.4
     @State private var dragStartRatio: CGFloat?
     @State private var descriptionScrollOffset: CGFloat = 0
     @State private var isDraggingDescription: Bool = false
+
+    private let minDescriptionRatio: CGFloat = 0.35
 
     init(frame: Frame, assetOrder: Binding<[FrameAssetKind]>, onClose: @escaping () -> Void) {
         self.frame = frame
@@ -134,11 +136,12 @@ struct FrameView: View {
 
             VStack(spacing: 0) {
                 boardsSection(height: boardsHeight)
-                    .frame(maxWidth: .infinity, maxHeight: boardsHeight, alignment: .top)
-
-                descriptionOverlay(containerHeight: proxy.size.height, overlayHeight: overlayHeight)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .safeAreaInset(edge: .bottom) {
+                descriptionOverlay(containerHeight: proxy.size.height, overlayHeight: overlayHeight)
+            }
         }
     }
 
@@ -325,14 +328,14 @@ private extension FrameView {
                 let startingRatio: CGFloat = dragStartRatio ?? descriptionHeightRatio
                 let translationRatio: CGFloat = -value.translation.height / containerHeight
                 let proposedRatio: CGFloat = startingRatio + translationRatio
-                descriptionHeightRatio = min(max(proposedRatio, 0.5), 1.0)
+                descriptionHeightRatio = min(max(proposedRatio, minDescriptionRatio), 1.0)
             }
             .onEnded { value in
                 let startingRatio: CGFloat = dragStartRatio ?? descriptionHeightRatio
                 let translationRatio: CGFloat = -value.translation.height / containerHeight
-                let proposedRatio: CGFloat = min(max(startingRatio + translationRatio, 0.5), 1.0)
+                let proposedRatio: CGFloat = min(max(startingRatio + translationRatio, minDescriptionRatio), 1.0)
 
-                let distanceToCollapsed: CGFloat = abs(proposedRatio - 0.5)
+                let distanceToCollapsed: CGFloat = abs(proposedRatio - minDescriptionRatio)
                 let distanceToExpanded: CGFloat = abs(1.0 - proposedRatio)
                 let targetExpanded: Bool = distanceToExpanded < distanceToCollapsed
 
@@ -343,7 +346,7 @@ private extension FrameView {
     }
 
     private func setDescriptionExpanded(_ expanded: Bool) {
-        let targetRatio: CGFloat = expanded ? 1.0 : 0.5
+        let targetRatio: CGFloat = expanded ? 1.0 : minDescriptionRatio
         withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
             descriptionHeightRatio = targetRatio
         }
@@ -661,7 +664,7 @@ private struct AssetCardView: View {
         )
         .frame(width: cardWidth)
         .padding(.horizontal, 20)
-        .padding(.vertical, 24)
+        .padding(.vertical, 16)
         .applyHorizontalScrollTransition()
         .shadow(radius: 10, x: 0, y: 10)
     }
@@ -682,5 +685,3 @@ private struct AssetCardView: View {
 //    )
 //    FrameView(frame: sample, assetOrder: .constant([.board, .photoboard, .preview])) {}
 //}
-
-

@@ -456,7 +456,7 @@ struct MainView: View {
         ToolbarItemGroup(placement: .bottomBar) {
 
             Button(action: {
-                withAnimation {
+                withAnimation(.easeInOut(duration: 0.12)) {
                     viewMode = (viewMode == .grid) ? .list : .grid
                 }
             }) {
@@ -469,7 +469,7 @@ struct MainView: View {
             Spacer()
 
             Button {
-                withAnimation(.spring(response: 0.25)) {
+                withAnimation(.easeInOut(duration: 0.12)) {
                     frameSortMode = (frameSortMode == .story) ? .shoot : .story
                 }
             } label: {
@@ -575,7 +575,7 @@ struct MainView: View {
     @ViewBuilder
     private func sortMenuButton(title: String, mode: FrameSortMode) -> some View {
         Button(action: {
-            withAnimation(.spring(response: 0.25)) {
+            withAnimation(.easeInOut(duration: 0.12)) {
                 frameSortMode = mode
             }
         }) {
@@ -633,7 +633,7 @@ struct MainView: View {
                                             if let found = authService.frames.first(where: { $0.id == frameId }) {
                                                 selectedFrame = found
                                             }
-                                            withAnimation {
+                                            withAnimation(.easeInOut(duration: 0.12)) {
                                                 viewMode = .list
                                             }
                                         },
