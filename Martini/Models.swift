@@ -432,6 +432,17 @@ private struct ScheduleDay: Codable {
         groups = try container.decodeIfPresent([ScheduleGroup].self, forKey: .groups)
     }
 
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(id, forKey: .id)
+        try container.encodeIfPresent(title, forKey: .title)
+        try container.encodeIfPresent(date, forKey: .date)
+        try container.encodeIfPresent(startTime, forKey: .startTime)
+        try container.encodeIfPresent(duration, forKey: .duration)
+        try container.encodeIfPresent(durationMinutes, forKey: .durationMinutes)
+        try container.encodeIfPresent(groups, forKey: .groups)
+    }
+
     var asScheduleItem: ProjectScheduleItem {
         ProjectScheduleItem(
             id: id ?? date ?? title,
