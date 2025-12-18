@@ -338,7 +338,17 @@ struct ProjectSchedule: Codable, Identifiable, Hashable {
         location = try container.decodeIfPresent(String.self, forKey: .location)
         lat = try container.decodeIfPresent(Double.self, forKey: .lat)
         lng = try container.decodeIfPresent(Double.self, forKey: .lng)
-        groups = try container.decodeIfPresent([ScheduleGroup].self, forKey: .groups)
+        var decodedGroups = try container.decodeIfPresent([ScheduleGroup].self, forKey: .groups)
+
+        if decodedGroups == nil,
+           let schedules,
+           schedules.count == 1,
+           let scheduleGroups = schedules.first?.groups,
+           !scheduleGroups.isEmpty {
+            decodedGroups = scheduleGroups
+        }
+
+        groups = decodedGroups
     }
 
     func encode(to encoder: Encoder) throws {
