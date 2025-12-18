@@ -31,7 +31,7 @@ class AuthService: ObservableObject {
     private let projectIdKey = "martini_project_id"
     private let projectTitleKey = "martini_project_title"
     private let accessCodeKey = "martini_access_code"
-    private let baseScriptsURL = "https://dev.shoot.nucontext.com/scripts/"
+    private let baseScriptsURL = "https://dev.staging.trymartini.com/scripts/"
     private let scheduleCache = ScheduleCache.shared
 
     init() {

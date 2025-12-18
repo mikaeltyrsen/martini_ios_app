@@ -289,8 +289,9 @@ struct MainView: View {
     var body: some View {
         NavigationStack(path: $navigationPath) {
             mainContent
-                .navigationTitle(displayedNavigationTitle)
+                //.navigationTitle(displayedNavigationTitle)
                 .toolbar { toolbarContent }
+                .navigationBarTitleDisplayMode(.inline)
                 .task {
                     await loadCreativesIfNeeded()
                     await loadFramesIfNeeded()
@@ -606,7 +607,7 @@ struct MainView: View {
             GeometryReader { outerGeo in
                 ZStack(alignment: .top) {
                     ScrollView {
-                        LazyVStack(spacing: 20) {
+                        LazyVStack(spacing: 50) {
                             ForEach(gridSections) { section in
                                 VStack(alignment: .leading, spacing: 12) {
                                     CreativeGridSection(
