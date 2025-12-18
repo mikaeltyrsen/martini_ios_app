@@ -226,7 +226,7 @@ struct MainView: View {
                 )
             }
         case .shoot:
-            let mergedFrames = creativesToDisplay.flatMap { frames(for: $0) }
+            let mergedFrames = creativesToDisplay.flatMap { frames(for: $0, mode: .shoot) }
             let sortedFrames = mergedFrames.sorted { lhs, rhs in
                 sortingTuple(for: lhs, mode: .shoot) < sortingTuple(for: rhs, mode: .shoot)
             }
@@ -242,10 +242,23 @@ struct MainView: View {
         }
     }
 
-    private func frames(for creative: Creative) -> [Frame] {
+    private var displayedFramesInCurrentMode: [Frame] {
+        gridSections.flatMap(\.frames)
+    }
+
+    private var shootOrderedFrames: [Frame] {
+        creativesToDisplay
+            .flatMap { frames(for: $0, mode: .shoot) }
+            .sorted { lhs, rhs in
+                sortingTuple(for: lhs, mode: .shoot) < sortingTuple(for: rhs, mode: .shoot)
+            }
+    }
+
+    private func frames(for creative: Creative, mode: FrameSortMode? = nil) -> [Frame] {
+        let sortMode = mode ?? frameSortMode
         var frames = useMockData ? mockFrames(for: creative) : authService.frames.filter { $0.creativeId == creative.id }
 
-        switch frameSortMode {
+        switch sortMode {
         case .story:
             break // Always show every board in story order, even when a schedule exists
         case .shoot:
@@ -256,7 +269,7 @@ struct MainView: View {
         }
 
         return frames.sorted { lhs, rhs in
-            sortingTuple(for: lhs, mode: frameSortMode) < sortingTuple(for: rhs, mode: frameSortMode)
+            sortingTuple(for: lhs, mode: sortMode) < sortingTuple(for: rhs, mode: sortMode)
         }
     }
 
@@ -334,6 +347,9 @@ struct MainView: View {
                 .onAppear(perform: synchronizeCreativeSelection)
                 .onChange(of: creativesToDisplay.count) { _ in
                     synchronizeCreativeSelection()
+                }
+                .onChange(of: frameSortMode) { _ in
+                    scrollToPriorityFrame()
                 }
                 .navigationDestination(for: ScheduleRoute.self) { route in
                     switch route {
@@ -785,7 +801,7 @@ private extension MainView {
     }
 
     var inProgressFrame: Frame? {
-        authService.frames.first { $0.statusEnum == .inProgress }
+        displayedFramesInCurrentMode.first { $0.statusEnum == .inProgress }
     }
 
     var shouldShowInProgressShortcut: Bool {
@@ -794,9 +810,46 @@ private extension MainView {
     }
 
     func scrollToInProgressFrame() {
-        guard let id = inProgressFrame?.id, let proxy = gridScrollProxy else { return }
+        guard let frame = inProgressFrame else { return }
+        scrollToFrame(frame)
+    }
+
+    private func scrollToPriorityFrame() {
+        guard let target = preferredFrameForCurrentMode() else { return }
+
+        DispatchQueue.main.async {
+            scrollToFrame(target)
+        }
+    }
+
+    private func preferredFrameForCurrentMode() -> Frame? {
+        if let here = displayedFramesInCurrentMode.first(where: { $0.statusEnum == .inProgress }) {
+            return here
+        }
+
+        if let upNext = displayedFramesInCurrentMode.first(where: { $0.statusEnum == .upNext }) {
+            return upNext
+        }
+
+        return lastCrossedFrameInShootOrder()
+    }
+
+    private func scrollToFrame(_ frame: Frame, anchor: UnitPoint = .center) {
+        guard let proxy = gridScrollProxy else { return }
+
+        if frameSortMode == .story {
+            currentCreativeId = frame.creativeId
+        }
+
         withAnimation {
-            proxy.scrollTo(id, anchor: .center)
+            proxy.scrollTo(frame.id, anchor: anchor)
+        }
+    }
+
+    private func lastCrossedFrameInShootOrder() -> Frame? {
+        shootOrderedFrames.last { frame in
+            let status = frame.statusEnum
+            return status == .done || status == .skip
         }
     }
 
