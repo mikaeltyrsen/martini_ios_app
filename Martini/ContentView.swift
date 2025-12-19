@@ -75,6 +75,8 @@ struct MainView: View {
     @State private var currentCreativeId: String? = nil
     @State private var isScrolledToTop: Bool = true
     @State private var navigationPath: [ScheduleRoute] = []
+    @State private var isShowingFilters = false
+    @State private var selectedTagIds: Set<String> = []
 
     enum ViewMode {
         case list
@@ -215,11 +217,17 @@ struct MainView: View {
     private var gridSections: [GridSectionData] {
         switch frameSortMode {
         case .story:
-            return creativesToDisplay.map { creative in
-                GridSectionData(
+            return creativesToDisplay.compactMap { creative in
+                let frames = frames(for: creative)
+
+                if isFilterActive && frames.isEmpty {
+                    return nil
+                }
+
+                return GridSectionData(
                     id: creative.id,
                     title: creative.title,
-                    frames: frames(for: creative),
+                    frames: frames,
                     completedFrames: creative.completedFrames,
                     totalFrames: creative.totalFrames,
                     showHeader: showCreativeHeaders
@@ -257,6 +265,14 @@ struct MainView: View {
     private func frames(for creative: Creative, mode: FrameSortMode? = nil) -> [Frame] {
         let sortMode = mode ?? frameSortMode
         var frames = useMockData ? mockFrames(for: creative) : authService.frames.filter { $0.creativeId == creative.id }
+
+        if !selectedTagIds.isEmpty {
+            frames = frames.filter { frame in
+                guard let tags = frame.tags else { return false }
+                let identifiers = tags.map(tagIdentifier)
+                return identifiers.contains(where: { selectedTagIds.contains($0) })
+            }
+        }
 
         switch sortMode {
         case .story:
@@ -422,6 +438,9 @@ struct MainView: View {
     private var contentStack: some View {
         ZStack(alignment: .bottom) {
             gridView
+                .overlay(alignment: .leading) {
+                    filterSidebar
+                }
 
             if shouldShowInProgressShortcut {
                 Button(action: scrollToInProgressFrame) {
@@ -461,6 +480,10 @@ struct MainView: View {
             if shouldShowScheduleButton {
                 scheduleButton
             }
+        }
+
+        ToolbarItem(placement: .navigationBarLeading) {
+            filterButton
         }
 
         ToolbarItemGroup(placement: .bottomBar) {
@@ -984,6 +1007,190 @@ private extension MainView {
 
     private func updateFrameStatus(_ frame: Frame, to status: FrameStatus) {
         authService.updateFrameStatus(id: frame.id, to: status)
+    }
+
+    private var isFilterActive: Bool {
+        !selectedTagIds.isEmpty
+    }
+
+    private var availableTagGroups: [TagGroup] {
+        let frames = useMockData ? [] : authService.frames
+        let allTags = frames.compactMap { $0.tags }.flatMap { $0 }
+
+        let grouped = Dictionary(grouping: allTags) { tag -> String in
+            let group = tag.groupName?.trimmingCharacters(in: .whitespacesAndNewlines)
+            return (group?.isEmpty == false ? group : nil) ?? "Other"
+        }
+
+        return grouped.map { key, tags in
+            TagGroup(id: key, name: key, tags: Array(Set(tags)).sorted { $0.name.lowercased() < $1.name.lowercased() })
+        }
+        .sorted { lhs, rhs in
+            if lhs.name == "Other" { return false }
+            if rhs.name == "Other" { return true }
+            return lhs.name.lowercased() < rhs.name.lowercased()
+        }
+    }
+
+    private func tagIdentifier(_ tag: FrameTag) -> String {
+        tag.id ?? tag.name.lowercased()
+    }
+
+    private func toggleTag(_ tag: FrameTag) {
+        let identifier = tagIdentifier(tag)
+        if selectedTagIds.contains(identifier) {
+            selectedTagIds.remove(identifier)
+        } else {
+            selectedTagIds.insert(identifier)
+        }
+    }
+
+    private func clearFilters() {
+        selectedTagIds.removeAll()
+    }
+
+    private var filterButton: some View {
+        Button {
+            withAnimation(.spring(response: 0.28, dampingFraction: 0.85)) {
+                isShowingFilters.toggle()
+            }
+        } label: {
+            Label("Filters", systemImage: "line.3.horizontal.decrease.circle")
+                .font(.system(size: 16, weight: .semibold))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .background(
+                    Capsule()
+                        .fill(isFilterActive ? Color.accentColor.opacity(0.15) : Color(.systemGray5))
+                )
+                .overlay(
+                    Capsule()
+                        .stroke(isFilterActive ? Color.accentColor : Color(.systemGray3), lineWidth: 1)
+                )
+                .foregroundColor(isFilterActive ? .accentColor : .primary)
+        }
+        .accessibilityLabel(isFilterActive ? "Filters active" : "Open filters")
+    }
+
+    @ViewBuilder
+    private var filterSidebar: some View {
+        if isShowingFilters {
+            ZStack(alignment: .leading) {
+                Color.black.opacity(0.25)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
+                            isShowingFilters = false
+                        }
+                    }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Text("Filters")
+                            .font(.title3)
+                            .fontWeight(.semibold)
+
+                        Spacer()
+
+                        if isFilterActive {
+                            Button("Clear") {
+                                withAnimation(.easeInOut(duration: 0.15)) {
+                                    clearFilters()
+                                }
+                            }
+                            .font(.system(size: 14, weight: .semibold))
+                        }
+
+                        Button {
+                            withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
+                                isShowingFilters = false
+                            }
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 14, weight: .bold))
+                                .padding(8)
+                                .background(Color(.systemGray5), in: Circle())
+                        }
+                    }
+
+                    Divider()
+
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 16) {
+                            if availableTagGroups.isEmpty {
+                                Text("No tags available")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            } else {
+                                ForEach(availableTagGroups) { group in
+                                    VStack(alignment: .leading, spacing: 10) {
+                                        Text(group.name)
+                                            .font(.subheadline)
+                                            .fontWeight(.semibold)
+                                            .foregroundColor(.secondary)
+
+                                        VStack(alignment: .leading, spacing: 8) {
+                                            ForEach(group.tags) { tag in
+                                                FilterToggleRow(
+                                                    tag: tag,
+                                                    isSelected: selectedTagIds.contains(tagIdentifier(tag)),
+                                                    action: { toggleTag(tag) }
+                                                )
+                                            }
+                                        }
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.bottom, 4)
+                                    Divider()
+                                }
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+                .padding()
+                .frame(width: 320, alignment: .leading)
+                .frame(maxHeight: .infinity, alignment: .top)
+                .background(.ultraThickMaterial)
+                .transition(.move(edge: .leading))
+            }
+        }
+    }
+}
+
+private struct TagGroup: Identifiable {
+    let id: String
+    let name: String
+    let tags: [FrameTag]
+}
+
+private struct FilterToggleRow: View {
+    let tag: FrameTag
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                Image(systemName: isSelected ? "checkmark.square.fill" : "square")
+                    .foregroundColor(isSelected ? .accentColor : .secondary)
+                    .imageScale(.medium)
+
+                Text(tag.name)
+                    .font(.body)
+                    .foregroundColor(.primary)
+
+                Spacer()
+            }
+            .padding(.vertical, 6)
+            .padding(.horizontal, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(isSelected ? Color.accentColor.opacity(0.12) : Color.clear)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Tag: \(tag.name)")
     }
 }
 
