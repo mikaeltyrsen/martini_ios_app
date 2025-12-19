@@ -327,9 +327,26 @@ struct MainView: View {
                     Text(dataError ?? "Unknown error")
                 }
                 .fullScreenCover(item: $selectedFrame) { frame in
-                    FrameView(frame: frame, assetOrder: assetOrderBinding(for: frame)) {
-                        selectedFrame = nil
-                    }
+                    let navigation = navigationContext(for: frame)
+                    FrameView(
+                        frame: frame,
+                        assetOrder: assetOrderBinding(for: frame),
+                        onClose: { selectedFrame = nil },
+                        hasPreviousFrame: navigation.previous != nil,
+                        hasNextFrame: navigation.next != nil,
+                        onNavigate: { direction in
+                            switch direction {
+                            case .previous:
+                                if let previous = navigationContext(for: frame).previous {
+                                    selectedFrame = previous
+                                }
+                            case .next:
+                                if let next = navigationContext(for: frame).next {
+                                    selectedFrame = next
+                                }
+                            }
+                        }
+                    )
                     .interactiveDismissDisabled(false)
                 }
                 .sheet(isPresented: $isShowingSettings) {
@@ -853,6 +870,17 @@ private extension MainView {
         }
     }
 
+    private func navigationContext(for frame: Frame) -> (previous: Frame?, next: Frame?) {
+        let frames = displayedFramesInCurrentMode
+        guard let index = frames.firstIndex(where: { $0.id == frame.id }) else { return (nil, nil) }
+
+        let previous = index > 0 ? frames[index - 1] : nil
+        let nextIndex = index + 1
+        let next = nextIndex < frames.count ? frames[nextIndex] : nil
+
+        return (previous, next)
+    }
+
     func assetOrder(for frame: Frame) -> [FrameAssetKind] {
         let availableKinds = frame.availableAssets.map(\.kind)
         var stored = frameAssetOrders[frame.id]?.filter { availableKinds.contains($0) } ?? []
@@ -1089,13 +1117,21 @@ struct GridFrameCell: View {
     }
 
     private var statusMenu: some View {
-        ForEach([FrameStatus.done, .inProgress, .upNext, .skip, .none], id: \.self) { status in
+        ForEach(statusOptions, id: \.self) { status in
             Button {
                 onStatusSelected(status)
             } label: {
                 Label(status.displayName, systemImage: status.systemImageName)
             }
         }
+    }
+
+    private var statusOptions: [FrameStatus] {
+        var options: [FrameStatus] = [.done, .inProgress, .upNext, .skip]
+        if frame.statusEnum != .none {
+            options.append(.none)
+        }
+        return options
     }
 }
 

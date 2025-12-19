@@ -5,6 +5,9 @@ struct FrameView: View {
     let frame: Frame
     @Binding var assetOrder: [FrameAssetKind]
     let onClose: () -> Void
+    let hasPreviousFrame: Bool
+    let hasNextFrame: Bool
+    let onNavigate: (FrameNavigationDirection) -> Void
     @State private var selectedStatus: FrameStatus
     @State private var assetStack: [FrameAssetItem]
     @State private var visibleAssetID: FrameAssetItem.ID?
@@ -17,10 +20,20 @@ struct FrameView: View {
 
     private let minDescriptionRatio: CGFloat = 0.35
 
-    init(frame: Frame, assetOrder: Binding<[FrameAssetKind]>, onClose: @escaping () -> Void) {
+    init(
+        frame: Frame,
+        assetOrder: Binding<[FrameAssetKind]>,
+        onClose: @escaping () -> Void,
+        hasPreviousFrame: Bool = false,
+        hasNextFrame: Bool = false,
+        onNavigate: @escaping (FrameNavigationDirection) -> Void = { _ in }
+    ) {
         self.frame = frame
         _assetOrder = assetOrder
         self.onClose = onClose
+        self.hasPreviousFrame = hasPreviousFrame
+        self.hasNextFrame = hasNextFrame
+        self.onNavigate = onNavigate
         _selectedStatus = State(initialValue: frame.statusEnum)
 
         let orderValue: [FrameAssetKind] = assetOrder.wrappedValue
@@ -63,6 +76,24 @@ struct FrameView: View {
         ToolbarItem(placement: .topBarLeading) {
             Button("Close") { onClose() }
         }
+
+        ToolbarItemGroup(placement: .topBarTrailing) {
+            Button {
+                onNavigate(.previous)
+            } label: {
+                Image(systemName: "arrow.up")
+            }
+            .accessibilityLabel("Previous frame")
+            .disabled(!hasPreviousFrame)
+
+            Button {
+                onNavigate(.next)
+            } label: {
+                Image(systemName: "arrow.down")
+            }
+            .accessibilityLabel("Next frame")
+            .disabled(!hasNextFrame)
+        }
     }
 
     @ToolbarContentBuilder
@@ -82,13 +113,16 @@ struct FrameView: View {
                 statusMenuButton(title: "Here", status: .inProgress, systemImage: "figure.wave")
                 statusMenuButton(title: "Next", status: .upNext, systemImage: "arrow.turn.up.right")
                 statusMenuButton(title: "Omit", status: .skip, systemImage: "minus.circle")
-                statusMenuButton(title: "Clear", status: .none, systemImage: "xmark.circle")
+                if selectedStatus != .none {
+                    statusMenuButton(title: "Clear", status: .none, systemImage: "xmark.circle")
+                }
             } label: {
                 let statusColor = selectedStatus.labelColor
+                let statusLabel = selectedStatus == .none ? "Mark Frame" : selectedStatus.displayName
                 HStack(spacing: 6) {
                     Image(systemName: selectedStatus.systemImageName)
                         .foregroundStyle(statusColor)
-                    Text(selectedStatus.displayName)
+                    Text(statusLabel)
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(statusColor)
                 }
@@ -240,10 +274,6 @@ struct FrameView: View {
         if isDescriptionExpanded && offset > collapseThreshold && !isDraggingDescription {
             setDescriptionExpanded(false)
         }
-    }
-
-    private var statusMenuLabel: String {
-        "Status: \(selectedStatus.displayName)"
     }
 
     @ViewBuilder
@@ -535,6 +565,11 @@ private struct FilesSheet: View {
             .navigationBarTitleDisplayMode(.inline)
         }
     }
+}
+
+enum FrameNavigationDirection {
+    case previous
+    case next
 }
 
 private extension View {
