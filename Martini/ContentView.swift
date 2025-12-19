@@ -444,23 +444,16 @@ struct MainView: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        ToolbarItemGroup(placement: .navigationBarLeading) {
-            if frameSortMode == .story {
-                creativeMenuButton
-            }
-        }
-
         ToolbarItemGroup(placement: .principal) {
-            VStack(spacing: 6) {
-                Text(displayedNavigationTitle)
-                    .font(.headline)
-                    .fontWeight(.semibold)
-
-                if overallTotalFrames > 0 {
-                    ProgressView(value: Double(overallCompletedFrames), total: Double(overallTotalFrames))
-                        .progressViewStyle(.linear)
-                        .frame(width: 180)
+            if shouldAllowCreativeSelectionMenu {
+                Menu {
+                    creativeMenuContent
+                } label: {
+                    navigationTitleStack
                 }
+                .accessibilityLabel("Select creative")
+            } else {
+                navigationTitleStack
             }
         }
 
@@ -758,29 +751,44 @@ struct MainView: View {
         .accessibilityLabel("Open Schedule")
     }
 
-    private var creativeMenuButton: some View {
-        Menu {
-            if !creativesToDisplay.isEmpty {
-                Section("Creatives") {
-                    ForEach(creativesToDisplay) { creative in
-                        Button {
-                            selectCreative(creative.id)
-                        } label: {
-                            if creative.id == (currentCreativeId ?? creativesToDisplay.first?.id) {
-                                Label(creative.title, systemImage: "checkmark")
-                            } else {
-                                Text(creative.title)
-                            }
+    @ViewBuilder
+    private var creativeMenuContent: some View {
+        if !creativesToDisplay.isEmpty {
+            Section("Creatives") {
+                ForEach(creativesToDisplay) { creative in
+                    Button {
+                        selectCreative(creative.id)
+                    } label: {
+                        if creative.id == (currentCreativeId ?? creativesToDisplay.first?.id) {
+                            Label(creative.title, systemImage: "checkmark")
+                        } else {
+                            Text(creative.title)
                         }
                     }
                 }
             }
-        } label: {
-            Image(systemName: "ellipsis.circle")
-                .imageScale(.large)
         }
-        .accessibilityLabel("More creatives")
-        .disabled(creativesToDisplay.isEmpty)
+    }
+
+    private var navigationTitleStack: some View {
+        VStack(spacing: 6) {
+            Text(displayedNavigationTitle)
+                .font(.headline)
+                .fontWeight(.semibold)
+
+            if overallTotalFrames > 0 {
+                ProgressView(value: Double(overallCompletedFrames), total: Double(overallTotalFrames))
+                    .progressViewStyle(.linear)
+                    .frame(width: 180)
+            }
+        }
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(shouldAllowCreativeSelectionMenu ? .isButton : [])
+    }
+
+    private var shouldAllowCreativeSelectionMenu: Bool {
+        frameSortMode == .story && !creativesToDisplay.isEmpty
     }
     
     private var fontScale: CGFloat {
