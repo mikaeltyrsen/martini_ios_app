@@ -357,7 +357,7 @@ struct MainView: View {
                         gridFontStep: $gridFontStep,
                         gridPriority: gridAssetPriorityBinding
                     )
-                    .presentationDetents([.medium, .large])
+                    .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
                     .interactiveDismissDisabled(false)
                 }
