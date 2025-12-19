@@ -655,9 +655,52 @@ struct ScheduleBlock: Codable, Hashable, Identifiable {
 
 // MARK: - Tag Model
 
-struct FrameTag: Codable, Identifiable {
+struct FrameTag: Codable, Identifiable, Hashable {
     let id: String?
     let name: String
+    let groupName: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case groupName = "group"
+        case tagTypeName = "tag_type_name"
+        case tagGroup = "tag_group"
+        case typeName = "type_name"
+    }
+
+    init(id: String?, name: String, groupName: String? = nil) {
+        self.id = id
+        self.name = name
+        self.groupName = groupName
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        let decodedGroup = try container.decodeIfPresent(String.self, forKey: .groupName)
+        let decodedType = try container.decodeIfPresent(String.self, forKey: .tagTypeName)
+        let decodedTagGroup = try container.decodeIfPresent(String.self, forKey: .tagGroup)
+        let decodedTypeName = try container.decodeIfPresent(String.self, forKey: .typeName)
+
+        groupName = decodedGroup ?? decodedType ?? decodedTagGroup ?? decodedTypeName
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encodeIfPresent(groupName, forKey: .groupName)
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id ?? name.lowercased())
+    }
+
+    static func == (lhs: FrameTag, rhs: FrameTag) -> Bool {
+        lhs.id ?? lhs.name.lowercased() == rhs.id ?? rhs.name.lowercased()
+    }
 }
 
 // MARK: - Frame Board
