@@ -160,32 +160,7 @@ struct FrameLayout: View {
             RoundedRectangle(cornerRadius: cornerRadius)
                 .fill(Color.gray.opacity(0.2))
                 .overlay(
-                    Group {
-                        if let url = resolvedMediaURL {
-                            if shouldPlayAsVideo {
-                                LoopingVideoView(url: url)
-                            } else {
-                                CachedAsyncImage(url: url) { phase in
-                                    switch phase {
-                                    case let .success(image):
-                                        AnyView(
-                                            image
-                                                .resizable()
-                                                .scaledToFill()
-                                        )
-                                    case .empty:
-                                        AnyView(ProgressView())
-                                    case .failure:
-                                        AnyView(placeholder)
-                                    @unknown default:
-                                        AnyView(placeholder)
-                                    }
-                                }
-                            }
-                        } else {
-                            placeholder
-                        }
-                    }
+                    mediaContent
                 )
                 .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
 
@@ -252,6 +227,39 @@ struct FrameLayout: View {
                 }
         } else {
             card
+        }
+    }
+
+    private var mediaContent: some View {
+        Group {
+            if let url = resolvedMediaURL {
+                if shouldPlayAsVideo {
+                    LoopingVideoView(url: url)
+                } else {
+                    CachedAsyncImage(url: url) { phase in
+                        switch phase {
+                        case let .success(image):
+                            AnyView(
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                            )
+                        case .empty:
+                            AnyView(ProgressView())
+                        case .failure:
+                            AnyView(placeholder)
+                        @unknown default:
+                            AnyView(placeholder)
+                        }
+                    }
+                }
+            } else {
+                placeholder
+            }
+        }
+        // Prevent the image content from animating independently when the card resizes
+        .transaction { transaction in
+            transaction.animation = nil
         }
     }
 
@@ -747,4 +755,3 @@ final class LoopingPlayerView: UIView {
         }
     }
 }
-
