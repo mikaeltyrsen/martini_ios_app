@@ -120,8 +120,10 @@ struct FrameView: View {
                 let statusColor = selectedStatus.labelColor
                 let statusLabel = selectedStatus == .none ? "Mark Frame" : selectedStatus.displayName
                 HStack(spacing: 6) {
-                    Image(systemName: selectedStatus.systemImageName)
-                        .foregroundStyle(statusColor)
+                    if selectedStatus != .none {
+                        Image(systemName: selectedStatus.systemImageName)
+                            .foregroundStyle(statusColor)
+                    }
                     Text(statusLabel)
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(statusColor)

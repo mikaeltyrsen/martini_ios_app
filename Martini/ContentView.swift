@@ -426,7 +426,7 @@ struct MainView: View {
             if shouldShowInProgressShortcut {
                 Button(action: scrollToInProgressFrame) {
                     HStack(spacing: 8) {
-                        Image(systemName: "eye")
+                        Image(systemName: inProgressShortcutIconName)
                         Text("Jump to In-Progress")
                             .font(.system(size: 15, weight: .semibold))
                     }
@@ -490,11 +490,8 @@ struct MainView: View {
                     frameSortMode = (frameSortMode == .story) ? .shoot : .story
                 }
             } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "photo.stack")
-                    Text(frameSortMode == .story ? "Story" : "Shoot")
-                        .font(.system(size: 14, weight: .semibold))
-                }
+                Text(frameSortMode == .story ? "Story Order" : "Shoot Order")
+                    .font(.system(size: 14, weight: .semibold))
             }
 
             Spacer()
@@ -819,6 +816,31 @@ private extension MainView {
 
     var inProgressFrame: Frame? {
         displayedFramesInCurrentMode.first { $0.statusEnum == .inProgress }
+    }
+
+    var inProgressShortcutIconName: String {
+        guard
+            let frame = inProgressFrame,
+            let targetIndex = displayedFramesInCurrentMode.firstIndex(where: { $0.id == frame.id })
+        else {
+            return "arrow.up"
+        }
+
+        let visibleIndices = visibleFrameIds.compactMap { id in
+            displayedFramesInCurrentMode.firstIndex(where: { $0.id == id })
+        }
+
+        guard let minVisible = visibleIndices.min(), let maxVisible = visibleIndices.max() else {
+            return "arrow.up"
+        }
+
+        if targetIndex < minVisible {
+            return "arrow.up"
+        } else if targetIndex > maxVisible {
+            return "arrow.down"
+        }
+
+        return "arrow.up"
     }
 
     var shouldShowInProgressShortcut: Bool {
