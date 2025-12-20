@@ -584,17 +584,19 @@ struct FrameLayout: View {
             }
         }
 
-        private var fallbackPlaceholder: some View {
-            VStack(spacing: 8) {
-                Image(systemName: "photo")
-                    .font(.system(size: 40))
-                    .foregroundStyle(.white.opacity(0.7))
-                if let frameNumberLabel {
-                    Text(frameNumberLabel)
-                        .font(.headline)
-                        .foregroundStyle(.white.opacity(0.8))
+        private var fallbackPlaceholder: AnyView {
+            AnyView(
+                VStack(spacing: 8) {
+                    Image(systemName: "photo")
+                        .font(.system(size: 40))
+                        .foregroundStyle(.white.opacity(0.7))
+                    if let frameNumberLabel {
+                        Text(frameNumberLabel)
+                            .font(.headline)
+                            .foregroundStyle(.white.opacity(0.8))
+                    }
                 }
-            }
+            )
         }
     }
 
@@ -620,9 +622,10 @@ struct FrameLayout: View {
                         CachedAsyncImage(url: url) { phase in
                             switch phase {
                             case let .success(image):
-                                AnyView(
-                                    (imageShouldFill ? image.resizable().scaledToFill() : image.resizable().scaledToFit())
-                                )
+                                let renderedImage: AnyView = imageShouldFill
+                                    ? AnyView(image.resizable().scaledToFill())
+                                    : AnyView(image.resizable().scaledToFit())
+                                renderedImage
                             case .empty:
                                 AnyView(ProgressView())
                             case .failure:
