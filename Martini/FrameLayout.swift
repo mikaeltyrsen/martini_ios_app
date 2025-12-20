@@ -113,6 +113,10 @@ struct FrameLayout: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var fullscreenConfig: FullscreenMediaConfiguration?
     @Namespace private var fullscreenNamespace
+    @State private var borderScale: CGFloat = 1.0
+    @State private var skipOverlayOpacity: Double = 0
+    @State private var doneLineProgress: CGFloat = 0
+    @State private var lastAnimatedStatus: FrameStatus = .none
 
     private var resolvedTitle: String? {
         if let title, !title.isEmpty {
@@ -219,15 +223,29 @@ struct FrameLayout: View {
             }
 
         }
-        .aspectRatio(aspectRatio, contentMode: .fit)
-        .contentShape(Rectangle())
-        .overlay(
-            RoundedRectangle(cornerRadius: cornerRadius)
-                .strokeBorder(borderColor, lineWidth: borderWidth)
-        )
+        let animatedCard = card
+            .aspectRatio(aspectRatio, contentMode: .fit)
+            .contentShape(Rectangle())
+            .scaleEffect(borderScale)
+            .animation(.spring(response: 0.3, dampingFraction: 0.55, blendDuration: 0.12), value: borderScale)
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .strokeBorder(borderColor, lineWidth: borderWidth)
+            )
+            .onAppear {
+                configureInitialStatusAnimation()
+            }
+            .onChange(of: frame.statusEnum) { newStatus in
+                guard newStatus != lastAnimatedStatus else { return }
+                lastAnimatedStatus = newStatus
+                animateStatusChange(to: newStatus)
+            }
+            .onChange(of: frame.id) { _ in
+                configureInitialStatusAnimation()
+            }
 
         if enablesFullScreen, resolvedMediaURL != nil {
-            card
+            animatedCard
                 .onTapGesture {
                     fullscreenConfig = FullscreenMediaConfiguration(
                         url: resolvedMediaURL,
@@ -238,7 +256,7 @@ struct FrameLayout: View {
                     )
                 }
         } else {
-            card
+            animatedCard
         }
     }
 
@@ -411,19 +429,22 @@ struct FrameLayout: View {
             // Red X lines from corner to corner
             GeometryReader { geometry in
                 ZStack {
-                    // Diagonal line from top-left to bottom-right
+                    let firstLineProgress = min(doneLineProgress, 0.5) * 2
+                    let secondLineProgress = max(doneLineProgress - 0.5, 0) * 2
+
                     Path { path in
                         path.move(to: .zero)
                         path.addLine(to: CGPoint(x: geometry.size.width, y: geometry.size.height))
                     }
-                    .stroke(Color.red, lineWidth: 5)
+                    .trim(from: 0, to: firstLineProgress)
+                    .stroke(Color.red, style: StrokeStyle(lineWidth: 5, lineCap: .round))
 
-                    // Diagonal line from top-right to bottom-left
                     Path { path in
                         path.move(to: CGPoint(x: geometry.size.width, y: 0))
                         path.addLine(to: CGPoint(x: 0, y: geometry.size.height))
                     }
-                    .stroke(Color.red, lineWidth: 5)
+                    .trim(from: 0, to: secondLineProgress)
+                    .stroke(Color.red, style: StrokeStyle(lineWidth: 5, lineCap: .round))
                 }
             }
             .aspectRatio(aspectRatio, contentMode: .fit)
@@ -431,11 +452,55 @@ struct FrameLayout: View {
 
         case .skip:
             // Red transparent layer
-            Color.red.opacity(0.3)
+            Color.red.opacity(0.3 * skipOverlayOpacity)
                 .cornerRadius(cornerRadius)
 
         case .inProgress, .upNext, .none:
             EmptyView()
+        }
+    }
+
+    private func configureInitialStatusAnimation() {
+        lastAnimatedStatus = frame.statusEnum
+        skipOverlayOpacity = frame.statusEnum == .skip ? 1 : 0
+        doneLineProgress = frame.statusEnum == .done ? 1 : 0
+        borderScale = 1
+    }
+
+    private func animateStatusChange(to status: FrameStatus) {
+        animateBorderBounce()
+
+        switch status {
+        case .skip:
+            withAnimation(.easeOut(duration: 0.1)) {
+                doneLineProgress = 0
+            }
+            withAnimation(.easeInOut(duration: 0.35)) {
+                skipOverlayOpacity = 1
+            }
+        case .done:
+            withAnimation(.easeOut(duration: 0.2)) {
+                skipOverlayOpacity = 0
+            }
+            doneLineProgress = 0
+            withAnimation(.linear(duration: 0.65).delay(0.05)) {
+                doneLineProgress = 1
+            }
+        case .inProgress, .upNext, .none:
+            withAnimation(.easeOut(duration: 0.25)) {
+                skipOverlayOpacity = 0
+                doneLineProgress = 0
+            }
+        }
+    }
+
+    private func animateBorderBounce() {
+        withAnimation(.spring(response: 0.22, dampingFraction: 0.55, blendDuration: 0.08)) {
+            borderScale = 1.06
+        }
+
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8, blendDuration: 0.08).delay(0.08)) {
+            borderScale = 1.0
         }
     }
 
