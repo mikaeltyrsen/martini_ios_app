@@ -198,15 +198,17 @@ struct FrameLayout: View {
             if showFrameTimeOverlay {
                 if frameTimeOverlay{
                     GeometryReader { geo in
-                        let height = max(18, geo.size.height * 0.08)
+                        let minDimension = min(geo.size.width, geo.size.height)
+                        let badgeHeight = max(18, minDimension * 0.12)
+                        let maxBadgeWidth = geo.size.width * 0.65
 
                         VStack {
                             Spacer()
                             HStack {
-                                timeBadge(height: height)
+                                timeBadge(height: badgeHeight, maxWidth: maxBadgeWidth)
                                 Spacer()
                             }
-                            .padding(max(2, height * 0.25))
+                            .padding(max(2, badgeHeight * 0.25))
                         }
                     }
                 }
@@ -379,15 +381,23 @@ struct FrameLayout: View {
     private var frameTimeOverlay: Bool { frameStartTimeText != nil }
 
     @ViewBuilder
-    private func timeBadge(height: CGFloat) -> some View {
+    private func timeBadge(height: CGFloat, maxWidth: CGFloat) -> some View {
         if let frameStartTimeText {
-            HStack(spacing: 6) {
+            let fontSize = height * 0.42
+            let contentSpacing = height * 0.28
+            let horizontalPadding = height * 0.35
+            let verticalPadding = height * 0.25
+
+            HStack(spacing: contentSpacing) {
                 Image(systemName: "clock")
                 Text(frameStartTimeText)
             }
-            .font(.system(size: height * 0.4, weight: .semibold))
-            .padding(.horizontal, height * 0.35)
-            .padding(.vertical, height * 0.25)
+            .font(.system(size: fontSize, weight: .semibold))
+            .lineLimit(1)
+            .minimumScaleFactor(0.6)
+            .padding(.horizontal, horizontalPadding)
+            .padding(.vertical, verticalPadding)
+            .frame(maxWidth: maxWidth, alignment: .leading)
             .background(Color.black.opacity(0.8))
             .foregroundColor(.white)
             .clipShape(Capsule())
