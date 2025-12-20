@@ -76,6 +76,7 @@ struct MainView: View {
     @State private var isScrolledToTop: Bool = true
     @State private var navigationPath: [ScheduleRoute] = []
     @State private var isShowingFilters = false
+    @State private var selectedCreativeIds: Set<String> = []
     @State private var selectedTagIds: Set<String> = []
 
     enum ViewMode {
@@ -156,8 +157,13 @@ struct MainView: View {
     // Use mock data for now (set to true to see design)
     private let useMockData = false
 
-    private var creativesToDisplay: [Creative] {
+    private var allCreatives: [Creative] {
         useMockData ? mockCreatives : authService.creatives
+    }
+
+    private var creativesToDisplay: [Creative] {
+        guard !selectedCreativeIds.isEmpty else { return allCreatives }
+        return allCreatives.filter { selectedCreativeIds.contains($0.id) }
     }
 
     private var activeSchedule: ProjectSchedule? {
@@ -265,6 +271,10 @@ struct MainView: View {
     private func frames(for creative: Creative, mode: FrameSortMode? = nil) -> [Frame] {
         let sortMode = mode ?? frameSortMode
         var frames = useMockData ? mockFrames(for: creative) : authService.frames.filter { $0.creativeId == creative.id }
+
+        guard selectedCreativeIds.isEmpty || selectedCreativeIds.contains(creative.id) else {
+            return []
+        }
 
         if !selectedTagIds.isEmpty {
             frames = frames.filter { frame in
@@ -379,6 +389,9 @@ struct MainView: View {
                 }
                 .onAppear(perform: synchronizeCreativeSelection)
                 .onChange(of: creativesToDisplay.count) { _ in
+                    synchronizeCreativeSelection()
+                }
+                .onChange(of: selectedCreativeIds) { _ in
                     synchronizeCreativeSelection()
                 }
                 .onChange(of: frameSortMode) { _ in
@@ -1010,7 +1023,7 @@ private extension MainView {
     }
 
     private var isFilterActive: Bool {
-        !selectedTagIds.isEmpty
+        !selectedTagIds.isEmpty || !selectedCreativeIds.isEmpty
     }
 
     private var availableTagGroups: [TagGroup] {
@@ -1045,8 +1058,17 @@ private extension MainView {
         }
     }
 
+    private func toggleCreative(_ creative: Creative) {
+        if selectedCreativeIds.contains(creative.id) {
+            selectedCreativeIds.remove(creative.id)
+        } else {
+            selectedCreativeIds.insert(creative.id)
+        }
+    }
+
     private func clearFilters() {
         selectedTagIds.removeAll()
+        selectedCreativeIds.removeAll()
     }
 
     private var filterButton: some View {
@@ -1055,7 +1077,7 @@ private extension MainView {
                 isShowingFilters.toggle()
             }
         } label: {
-            Label("Filters", systemImage: "line.3.horizontal.decrease.circle")
+            Label("Filters", systemImage: isFilterActive ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
                 .font(.system(size: 16, weight: .semibold))
                 .padding(.horizontal, 10)
                 .padding(.vertical, 8)
@@ -1117,6 +1139,32 @@ private extension MainView {
 
                     ScrollView {
                         VStack(alignment: .leading, spacing: 16) {
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("Creatives")
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.secondary)
+
+                                if allCreatives.isEmpty {
+                                    Text("No creatives available")
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                } else {
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        ForEach(allCreatives) { creative in
+                                            CreativeFilterRow(
+                                                creative: creative,
+                                                isSelected: selectedCreativeIds.contains(creative.id),
+                                                action: { toggleCreative(creative) }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.bottom, 4)
+                            Divider()
+
                             if availableTagGroups.isEmpty {
                                 Text("No tags available")
                                     .font(.subheadline)
@@ -1152,8 +1200,12 @@ private extension MainView {
                 .frame(width: 320, alignment: .leading)
                 .frame(maxHeight: .infinity, alignment: .top)
                 .background(.ultraThickMaterial)
-                .transition(.move(edge: .leading))
+                .transition(.asymmetric(
+                    insertion: .move(edge: .leading).combined(with: .opacity),
+                    removal: .move(edge: .leading).combined(with: .opacity)
+                ))
             }
+            .animation(.spring(response: 0.3, dampingFraction: 0.88), value: isShowingFilters)
         }
     }
 }
@@ -1162,6 +1214,36 @@ private struct TagGroup: Identifiable {
     let id: String
     let name: String
     let tags: [FrameTag]
+}
+
+private struct CreativeFilterRow: View {
+    let creative: Creative
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                Image(systemName: isSelected ? "checkmark.square.fill" : "square")
+                    .foregroundColor(isSelected ? .accentColor : .secondary)
+                    .imageScale(.medium)
+
+                Text(creative.title)
+                    .font(.body)
+                    .foregroundColor(.primary)
+
+                Spacer()
+            }
+            .padding(.vertical, 6)
+            .padding(.horizontal, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(isSelected ? Color.accentColor.opacity(0.12) : Color.clear)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Creative: \(creative.title)")
+    }
 }
 
 private struct FilterToggleRow: View {
