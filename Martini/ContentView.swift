@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct ContentView: View {
     @EnvironmentObject var authService: AuthService
@@ -54,13 +55,15 @@ struct ContentView: View {
 
 struct MainView: View {
     @EnvironmentObject var authService: AuthService
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
     @State private var viewMode: ViewMode = .list
     @State private var selectedFrameId: String?
     @State private var selectedFrame: Frame?
     @State private var dataError: String?
     @State private var hasLoadedFrames = false
     @State private var hasLoadedCreatives = false
-    @AppStorage("gridSizeStep") private var gridSizeStep: Int = 1 // 1..4, where 1 -> 4 columns, 4 -> 1 column
+    @AppStorage("gridSizeStep") private var gridSizeStep: Int = 1 // 1..4, portrait: 4->1 columns, landscape: 5->2 columns
     @State private var frameSortMode: FrameSortMode = .story
     @State private var isShowingSettings = false
     @State private var frameAssetOrders: [String: [FrameAssetKind]] = [:]
@@ -212,13 +215,33 @@ struct MainView: View {
 
     private var effectiveShowFullDescriptions: Bool { effectiveShowDescriptions && showFullDescriptions }
 
+    private var isLandscape: Bool {
+        if let verticalSizeClass, verticalSizeClass == .compact {
+            return true
+        }
+
+        if let horizontalSizeClass, let verticalSizeClass,
+           horizontalSizeClass == .regular, verticalSizeClass == .regular {
+            return UIScreen.main.bounds.width > UIScreen.main.bounds.height
+        }
+
+        return UIScreen.main.bounds.width > UIScreen.main.bounds.height
+    }
+
     private var gridColumnCount: Int {
-        if viewMode == .grid { return 5 } // Overview fixed columns
-        switch gridSizeStep { // Grid View adjustable
-        case 1: return 4
-        case 2: return 3
-        case 3: return 2
-        default: return 1
+        if viewMode == .grid {
+            return isLandscape ? 7 : 5 // Overview fixed columns by orientation
+        }
+
+        return adjustableColumnCount(for: gridSizeStep)
+    }
+
+    private func adjustableColumnCount(for step: Int) -> Int {
+        switch step { // Grid View adjustable
+        case 1: return isLandscape ? 5 : 4
+        case 2: return isLandscape ? 4 : 3
+        case 3: return isLandscape ? 3 : 2
+        default: return isLandscape ? 2 : 1
         }
     }
 
@@ -1618,7 +1641,7 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var showDescriptions: Bool
     @Binding var showFullDescriptions: Bool
-    @Binding var gridSizeStep: Int // 1..4 (4->1 col)
+    @Binding var gridSizeStep: Int // 1..4 (portrait: 4->1, landscape: 5->2)
     @Binding var gridFontStep: Int // 1..5
     @Binding var gridPriority: FrameAssetKind
 
@@ -1638,7 +1661,7 @@ struct SettingsView: View {
                     }
                     .pickerStyle(.segmented)
 
-                    // Grid size slider: 1->4 maps to 4/3/2/1 columns (already handled by gridColumnCount)
+                    // Grid size slider: portrait 4/3/2/1, landscape 5/4/3/2 (handled by gridColumnCount)
                     VStack(alignment: .leading) {
                         Text("Grid Size")
                         HStack {
@@ -1685,11 +1708,11 @@ struct SettingsView: View {
 
     private var gridSizeLabel: String {
         switch gridSizeStep {
-        case 1: return "Small (4 cols)"
-        case 2: return "Small+ (3 cols)"
-        case 3: return "Medium (2 cols)"
-        case 4: return "Large (1 col)"
-        default: return "Custom"
+        case 1: return "Small"
+        case 2: return "Small+"
+        case 3: return "Medium"
+        case 4: return "Large"
+        default: return "Adaptive"
         }
     }
 
