@@ -1179,6 +1179,12 @@ struct FramesResponse: Codable {
     let error: String?
 }
 
+struct UpdateFrameStatusResponse: Codable {
+    @SafeBool var success: Bool
+    let frame: Frame?
+    let error: String?
+}
+
 // MARK: - Clips
 
 struct Clip: Codable, Identifiable, Hashable {
