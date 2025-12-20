@@ -1491,6 +1491,7 @@ struct GridFrameCell: View {
     private var statusMenu: some View {
         ForEach(statusOptions, id: \.self) { status in
             Button {
+                triggerStatusHaptic(for: status)
                 onStatusSelected(status)
             } label: {
                 Label(status.displayName, systemImage: status.systemImageName)

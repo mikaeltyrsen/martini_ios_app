@@ -436,7 +436,7 @@ struct FrameView: View {
     private func updateStatus(to status: FrameStatus) {
         let updatedFrame = frame.updatingStatus(status)
 
-        triggerHaptic(for: status)
+        triggerStatusHaptic(for: status)
 
         withAnimation(.easeInOut(duration: 0.2)) {
             selectedStatus = status
@@ -444,23 +444,6 @@ struct FrameView: View {
 
         frame = updatedFrame
         onStatusSelected(updatedFrame, status)
-    }
-
-    private func triggerHaptic(for status: FrameStatus) {
-        switch status {
-        case .done:
-            let generator = UINotificationFeedbackGenerator()
-            generator.prepare()
-            generator.notificationOccurred(.success)
-        case .skip:
-            let generator = UINotificationFeedbackGenerator()
-            generator.prepare()
-            generator.notificationOccurred(.warning)
-        default:
-            let impact = UIImpactFeedbackGenerator(style: .medium)
-            impact.prepare()
-            impact.impactOccurred(intensity: 0.9)
-        }
     }
 
     private func syncWithProvidedFrame() {
