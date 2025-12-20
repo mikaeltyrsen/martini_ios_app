@@ -469,13 +469,7 @@ struct MainView: View {
     }
 
     private var loadingView: some View {
-        VStack {
-            ProgressView()
-            Text("Loading creatives...")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .padding(.top)
-        }
+        SkeletonGridPlaceholder(columnCount: gridColumnCount)
     }
 
     private var emptyStateView: some View {
@@ -1513,6 +1507,45 @@ struct GridFrameCell: View {
             options.append(.none)
         }
         return options
+    }
+}
+
+// MARK: - Skeleton Grid Loader
+
+struct SkeletonGridPlaceholder: View {
+    let columnCount: Int
+
+    private var columns: [GridItem] {
+        let count = max(1, columnCount)
+        return Array(repeating: GridItem(.flexible(), spacing: 8), count: count)
+    }
+
+    private var placeholderItems: Int {
+        max(columnCount * 3, columnCount * 2)
+    }
+
+    var body: some View {
+        ScrollView {
+            LazyVGrid(columns: columns, spacing: 12) {
+                ForEach(0..<placeholderItems, id: \.self) { _ in
+                    SkeletonGridCell()
+                }
+            }
+            .padding(.horizontal)
+            .padding(.vertical)
+        }
+    }
+}
+
+struct SkeletonGridCell: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            FrameLayout.ShimmerView(cornerRadius: 6)
+                .aspectRatio(16.0 / 9.0, contentMode: .fit)
+
+            FrameLayout.ShimmerView(cornerRadius: 4)
+                .frame(width: 120, height: 10, alignment: .leading)
+        }
     }
 }
 

@@ -376,10 +376,15 @@ class AuthService: ObservableObject {
         
         let decoder = JSONDecoder()
         let creativesResponse = try decoder.decode(CreativesResponse.self, from: data)
-        
+
         guard creativesResponse.success else {
             print("❌ Creatives response failed: \(creativesResponse.error ?? "Unknown error")")
             throw AuthError.authenticationFailedWithMessage(creativesResponse.error ?? "Failed to fetch creatives")
+        }
+
+        if (self.projectId ?? "").isEmpty, let responseProjectId = creativesResponse.projectId, !responseProjectId.isEmpty {
+            self.projectId = responseProjectId
+            UserDefaults.standard.set(responseProjectId, forKey: projectIdKey)
         }
         
         self.creatives = creativesResponse.creatives
