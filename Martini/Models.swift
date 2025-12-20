@@ -257,7 +257,33 @@ struct Creative: Codable, Identifiable {
 struct CreativesResponse: Codable {
     @SafeBool var success: Bool
     let creatives: [Creative]
+    let projectId: String?
     let error: String?
+
+    enum CodingKeys: String, CodingKey {
+        case success
+        case creatives
+        case projectId
+        case projectID = "project_id"
+        case error
+    }
+
+    init(success: Bool, creatives: [Creative], projectId: String? = nil, error: String? = nil) {
+        _success = SafeBool(wrappedValue: success)
+        self.creatives = creatives
+        self.projectId = projectId
+        self.error = error
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        _success = try container.decode(SafeBool.self, forKey: .success)
+        creatives = try container.decode([Creative].self, forKey: .creatives)
+        projectId = try container.decodeIfPresent(String.self, forKey: .projectId)
+            ?? container.decodeIfPresent(String.self, forKey: .projectID)
+        error = try container.decodeIfPresent(String.self, forKey: .error)
+    }
 }
 
 // MARK: - Project Model
