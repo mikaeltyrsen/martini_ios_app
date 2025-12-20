@@ -79,6 +79,27 @@ public func plainTextFromHTML(_ html: String) -> String {
     return collapsed.trimmingCharacters(in: .whitespacesAndNewlines)
 }
 
+public struct ProgressCounts {
+    public let completed: Int
+    public let total: Int
+
+    public var percentage: Double {
+        guard total > 0 else { return 0 }
+        return Double(completed) / Double(total)
+    }
+}
+
+public func progressCounts(
+    for frames: [Frame],
+    totalOverride: Int? = nil,
+    completedStatuses: Set<FrameStatus> = [.done, .skip]
+) -> ProgressCounts {
+    let completed = frames.filter { completedStatuses.contains($0.statusEnum) }.count
+    let total = totalOverride ?? frames.count
+
+    return ProgressCounts(completed: min(completed, total), total: total)
+}
+
 /// Formats a duration in minutes into a combination of hours and minutes.
 /// - Parameter minutes: The duration in minutes.
 /// - Returns: A human-readable string such as "45min" or "1h 30min".
