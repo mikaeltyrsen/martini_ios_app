@@ -115,7 +115,8 @@ struct FrameLayout: View {
     @Namespace private var fullscreenNamespace
     @State private var borderScale: CGFloat = 1.0
     @State private var skipOverlayOpacity: Double = 0
-    @State private var doneLineProgress: CGFloat = 0
+    @State private var doneFirstLineProgress: CGFloat = 0
+    @State private var doneSecondLineProgress: CGFloat = 0
     @State private var lastAnimatedStatus: FrameStatus = .none
 
     private var resolvedTitle: String? {
@@ -429,21 +430,18 @@ struct FrameLayout: View {
             // Red X lines from corner to corner
             GeometryReader { geometry in
                 ZStack {
-                    let firstLineProgress = min(doneLineProgress, 0.5) * 2
-                    let secondLineProgress = max(doneLineProgress - 0.5, 0) * 2
-
                     Path { path in
                         path.move(to: .zero)
                         path.addLine(to: CGPoint(x: geometry.size.width, y: geometry.size.height))
                     }
-                    .trim(from: 0, to: firstLineProgress)
+                    .trim(from: 0, to: doneFirstLineProgress)
                     .stroke(Color.red, style: StrokeStyle(lineWidth: 5, lineCap: .round))
 
                     Path { path in
                         path.move(to: CGPoint(x: geometry.size.width, y: 0))
                         path.addLine(to: CGPoint(x: 0, y: geometry.size.height))
                     }
-                    .trim(from: 0, to: secondLineProgress)
+                    .trim(from: 0, to: doneSecondLineProgress)
                     .stroke(Color.red, style: StrokeStyle(lineWidth: 5, lineCap: .round))
                 }
             }
@@ -463,7 +461,9 @@ struct FrameLayout: View {
     private func configureInitialStatusAnimation() {
         lastAnimatedStatus = frame.statusEnum
         skipOverlayOpacity = frame.statusEnum == .skip ? 1 : 0
-        doneLineProgress = frame.statusEnum == .done ? 1 : 0
+        let isDone = frame.statusEnum == .done
+        doneFirstLineProgress = isDone ? 1 : 0
+        doneSecondLineProgress = isDone ? 1 : 0
         borderScale = 1
     }
 
@@ -473,7 +473,8 @@ struct FrameLayout: View {
         switch status {
         case .skip:
             withAnimation(.easeOut(duration: 0.1)) {
-                doneLineProgress = 0
+                doneFirstLineProgress = 0
+                doneSecondLineProgress = 0
             }
             withAnimation(.easeInOut(duration: 0.35)) {
                 skipOverlayOpacity = 1
@@ -482,14 +483,19 @@ struct FrameLayout: View {
             withAnimation(.easeOut(duration: 0.2)) {
                 skipOverlayOpacity = 0
             }
-            doneLineProgress = 0
-            withAnimation(.linear(duration: 0.65).delay(0.05)) {
-                doneLineProgress = 1
+            doneFirstLineProgress = 0
+            doneSecondLineProgress = 0
+            withAnimation(.linear(duration: 0.16)) {
+                doneFirstLineProgress = 1
+            }
+            withAnimation(.linear(duration: 0.16).delay(0.08)) {
+                doneSecondLineProgress = 1
             }
         case .inProgress, .upNext, .none:
             withAnimation(.easeOut(duration: 0.25)) {
                 skipOverlayOpacity = 0
-                doneLineProgress = 0
+                doneFirstLineProgress = 0
+                doneSecondLineProgress = 0
             }
         }
     }

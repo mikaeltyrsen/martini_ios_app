@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 /// Formats a date string from `yyyy-MM-dd` into a user-friendly style.
 /// - Parameters:
@@ -113,5 +114,22 @@ public func formattedDuration(fromMinutes minutes: Int) -> String {
         return "\(hours)h"
     } else {
         return "\(minutes)min"
+    }
+}
+
+func triggerStatusHaptic(for status: FrameStatus) {
+    switch status {
+    case .done:
+        let generator = UINotificationFeedbackGenerator()
+        generator.prepare()
+        generator.notificationOccurred(.success)
+    case .skip:
+        let generator = UINotificationFeedbackGenerator()
+        generator.prepare()
+        generator.notificationOccurred(.warning)
+    default:
+        let impact = UIImpactFeedbackGenerator(style: .medium)
+        impact.prepare()
+        impact.impactOccurred(intensity: 0.9)
     }
 }
