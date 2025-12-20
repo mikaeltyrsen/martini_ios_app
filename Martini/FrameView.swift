@@ -23,7 +23,7 @@ struct FrameView: View {
     @State private var isLoadingClips: Bool = false
     @State private var clipsError: String?
     @State private var filesBadgeCount: Int? = nil
-    @State private var descriptionHeightRatio: CGFloat = 0.4
+    @State private var descriptionHeightRatio: CGFloat
     @State private var dragStartRatio: CGFloat?
     @State private var descriptionScrollOffset: CGFloat = 0
     @State private var isDraggingDescription: Bool = false
@@ -54,6 +54,7 @@ struct FrameView: View {
         _assetStack = State(initialValue: initialStack)
         let firstID: FrameAssetItem.ID? = initialStack.first?.id
         _visibleAssetID = State(initialValue: firstID)
+        _descriptionHeightRatio = State(initialValue: minDescriptionRatio)
     }
 
     var body: some View {
@@ -309,11 +310,17 @@ struct FrameView: View {
     private func descriptionOverlay(containerHeight: CGFloat, overlayHeight: CGFloat, allowsExpansion: Bool) -> some View {
         ScrollView(.vertical, showsIndicators: true) {
             VStack(alignment: .leading, spacing: 16) {
-                Capsule()
-                    .fill(Color.white.opacity(0.3))
-                    .frame(width: 44, height: 5)
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 10)
+                if allowsExpansion {
+                    Capsule()
+                        .fill(Color.white.opacity(0.3))
+                        .frame(width: 44, height: 5)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 10)
+                } else {
+                    Color.clear
+                        .frame(height: 10)
+                        .frame(maxWidth: .infinity)
+                }
 
                 descriptionSection
                     .padding(.horizontal, 20)
@@ -443,6 +450,7 @@ struct FrameView: View {
         clips = []
         filesBadgeCount = nil
         clipsError = nil
+        descriptionHeightRatio = minDescriptionRatio
         Task {
             await loadClips(force: true)
         }
@@ -982,7 +990,10 @@ private struct StackedAssetScroller: View {
     var body: some View {
         GeometryReader { proxy in
             let cardWidth: CGFloat = proxy.size.width * 0.82
-            let cardHeight: CGFloat = cardWidth * 1.15
+            let idealHeight: CGFloat = cardWidth * 1.15
+            let availableHeight: CGFloat = proxy.size.height
+            let maxHeight: CGFloat = availableHeight > 0 ? availableHeight * 0.92 : idealHeight
+            let cardHeight: CGFloat = min(idealHeight, maxHeight)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .center, spacing: 0) {
@@ -1004,7 +1015,6 @@ private struct StackedAssetScroller: View {
             .contentMargins(.horizontal, 16)
             .frame(maxWidth: .infinity, minHeight: cardHeight, maxHeight: cardHeight)
         }
-        .frame(minHeight: UIScreen.main.bounds.width * 0.82 * 1.15)
     }
 }
 
