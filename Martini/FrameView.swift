@@ -398,21 +398,14 @@ struct FrameView: View {
     }
 
     private func loadClips(force: Bool) async {
-        var shootId: String?
-        let shouldSkip = await MainActor.run { () -> Bool in
-            if isLoadingClips { return true }
-            if !force && !clips.isEmpty { return true }
-            shootId = authService.projectId
-            if shootId == nil {
-                clipsError = "Missing project ID"
-                return true
-            }
-            isLoadingClips = true
-            return false
+        if isLoadingClips { return }
+        if !force && !clips.isEmpty { return }
+        guard let shootId = authService.projectId else {
+            clipsError = "Missing project ID"
+            return
         }
 
-        if shouldSkip { return }
-        guard let shootId else { return }
+        isLoadingClips = true
 
         do {
             let fetched = try await authService.fetchClips(
@@ -420,19 +413,14 @@ struct FrameView: View {
                 frameId: frame.id,
                 creativeId: frame.creativeId
             )
-            await MainActor.run {
-                clips = fetched
-                filesBadgeCount = fetched.count
-                clipsError = nil
-            }
+            clips = fetched
+            filesBadgeCount = fetched.count
+            clipsError = nil
         } catch {
-            await MainActor.run {
-                clipsError = error.localizedDescription
-            }
+            clipsError = error.localizedDescription
         }
-        await MainActor.run {
-            isLoadingClips = false
-        }
+
+        isLoadingClips = false
     }
 
     private func updateStatus(to status: FrameStatus) {
