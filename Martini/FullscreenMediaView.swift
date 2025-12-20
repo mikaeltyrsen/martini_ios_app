@@ -36,7 +36,7 @@ struct FullscreenMediaView: View {
                         frameNumberLabel: frameNumberLabel,
                         placeholder: fallbackPlaceholder,
                         imageShouldFill: false,
-                        isSource: true
+                        isSource: false
                     )
                     .frame(maxWidth: proxy.size.width * 0.98)
 

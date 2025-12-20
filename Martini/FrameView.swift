@@ -4,6 +4,7 @@ import UIKit
 
 @MainActor
 struct FrameView: View {
+    private let providedFrame: Frame
     @EnvironmentObject private var authService: AuthService
     @State private var frame: Frame
     @Binding var assetOrder: [FrameAssetKind]
@@ -37,6 +38,7 @@ struct FrameView: View {
         onNavigate: @escaping (FrameNavigationDirection) -> Void = { _ in },
         onStatusSelected: @escaping (Frame, FrameStatus) -> Void = { _, _ in }
     ) {
+        providedFrame = frame
         _frame = State(initialValue: frame)
         _assetOrder = assetOrder
         self.onClose = onClose
@@ -87,6 +89,9 @@ struct FrameView: View {
         }
         .task {
             await loadClips(force: false)
+        }
+        .onChange(of: providedFrame.id) { _ in
+            syncWithProvidedFrame()
         }
         .onChange(of: authService.frames) { frames in
             guard let updated = frames.first(where: { $0.id == frame.id }) else { return }
@@ -412,6 +417,20 @@ struct FrameView: View {
 
         frame = updatedFrame
         onStatusSelected(updatedFrame, status)
+    }
+
+    private func syncWithProvidedFrame() {
+        frame = providedFrame
+        selectedStatus = providedFrame.statusEnum
+        let newStack: [FrameAssetItem] = FrameView.orderedAssets(for: providedFrame, order: assetOrder)
+        assetStack = newStack
+        visibleAssetID = newStack.first?.id
+        clips = []
+        filesBadgeCount = nil
+        clipsError = nil
+        Task {
+            await loadClips(force: true)
+        }
     }
 
     @ViewBuilder
