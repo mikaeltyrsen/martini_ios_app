@@ -1,6 +1,7 @@
 import SwiftUI
 import AVKit
 import UIKit
+import Combine
 
 @MainActor
 struct FrameView: View {
@@ -93,7 +94,7 @@ struct FrameView: View {
         .onChange(of: providedFrame.id) { _ in
             syncWithProvidedFrame()
         }
-        .onChange(of: authService.frames) { frames in
+        .onReceive(authService.$frames) { frames in
             guard let updated = frames.first(where: { $0.id == frame.id }) else { return }
             frame = updated
             selectedStatus = updated.statusEnum
