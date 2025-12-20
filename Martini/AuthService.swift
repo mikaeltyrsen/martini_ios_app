@@ -44,6 +44,7 @@ class AuthService: ObservableObject {
         case creatives = "creatives/get_creatives.php"
         case frames = "frames/get.php"
         case schedule = "schedules/fetch.php"
+        case clips = "clips/fetch.php"
 
         var path: String { rawValue }
     }
@@ -447,6 +448,53 @@ class AuthService: ObservableObject {
         print("✅ Successfully fetched \(frames.count) frames")
     }
 
+    func fetchClips(shootId: String, frameId: String, creativeId: String) async throws -> [Clip] {
+        let body: [String: Any] = [
+            "shootId": shootId,
+            "frameId": frameId,
+            "creativeId": creativeId
+        ]
+
+        var request = try authorizedRequest(for: .clips, body: body)
+
+        let requestJSON = String(data: request.httpBody ?? Data(), encoding: .utf8) ?? "Unable to encode"
+        print("📤 Fetching clips...")
+        print("🔗 URL: \(request.url?.absoluteString ?? "unknown")")
+        print("📝 Request body: \(requestJSON)")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw AuthError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let errorBody = String(data: data, encoding: .utf8) ?? "No response body"
+            print("❌ Failed to fetch clips - Status: \(httpResponse.statusCode)")
+            print("📝 Response: \(errorBody)")
+            if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
+                logout()
+                throw AuthError.unauthorized
+            }
+            throw AuthError.requestFailed(statusCode: httpResponse.statusCode)
+        }
+
+        let responseJSON = String(data: data, encoding: .utf8) ?? "Unable to decode"
+        print("📥 Clips response received (\(httpResponse.statusCode)):")
+        print(responseJSON)
+
+        let decoder = JSONDecoder()
+        let clipsResponse = try decoder.decode(ClipsResponse.self, from: data)
+
+        guard clipsResponse.success else {
+            print("❌ Clips response failed: \(clipsResponse.error ?? "Unknown error")")
+            throw AuthError.authenticationFailedWithMessage(clipsResponse.error ?? "Failed to fetch clips")
+        }
+
+        print("✅ Successfully fetched \(clipsResponse.clips.count) clips")
+        return clipsResponse.clips
+    }
+
     func fetchProjectDetails() async throws {
         guard let projectId = projectId else {
             throw AuthError.noAuth
@@ -694,4 +742,3 @@ enum AuthError: LocalizedError {
         }
     }
 }
-

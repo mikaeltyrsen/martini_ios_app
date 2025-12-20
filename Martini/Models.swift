@@ -1174,6 +1174,76 @@ struct FramesResponse: Codable {
     let error: String?
 }
 
+// MARK: - Clips
+
+struct Clip: Codable, Identifiable, Hashable {
+    let id: Int
+    let name: String?
+    let fileName: String?
+    let fileNameRaw: String?
+    let fileType: String?
+    @SafeOptionalInt var fileSize: Int?
+    let thumbnail: String?
+    let previewURL: String?
+    let linkType: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case fileName = "file_name"
+        case fileNameRaw = "file_name_raw"
+        case fileType = "file_type"
+        case fileSize = "file_size"
+        case thumbnail
+        case previewURL = "preview_url"
+        case linkType = "link_type"
+    }
+
+    var fileURL: URL? {
+        if let fileName, let url = URL(string: fileName) { return url }
+        return nil
+    }
+
+    var thumbnailURL: URL? {
+        if let thumbnail, let url = URL(string: thumbnail) { return url }
+        return nil
+    }
+
+    var displayName: String {
+        name?.isEmpty == false ? name! : (fileNameRaw ?? fileURL?.lastPathComponent ?? "Clip")
+    }
+
+    var isVideo: Bool {
+        guard let lowercased = fileType?.lowercased() ?? fileURL?.pathExtension.lowercased() else { return false }
+        return Clip.videoExtensions.contains(lowercased) || (fileType?.lowercased().contains("video") ?? false)
+    }
+
+    var isImage: Bool {
+        guard let lowercased = fileType?.lowercased() ?? fileURL?.pathExtension.lowercased() else { return false }
+        return Clip.imageExtensions.contains(lowercased) || (fileType?.lowercased().contains("image") ?? false)
+    }
+
+    var formattedFileSize: String? {
+        guard let fileSize else { return nil }
+        return Clip.byteFormatter.string(fromByteCount: Int64(fileSize))
+    }
+
+    private static let videoExtensions: Set<String> = ["mp4", "mov", "m4v", "webm", "mkv", "m3u8"]
+    private static let imageExtensions: Set<String> = ["jpg", "jpeg", "png", "gif", "heic", "webp"]
+    private static let byteFormatter: ByteCountFormatter = {
+        let formatter = ByteCountFormatter()
+        formatter.allowedUnits = [.useKB, .useMB, .useGB]
+        formatter.countStyle = .file
+        return formatter
+    }()
+}
+
+struct ClipsResponse: Codable {
+    @SafeBool var success: Bool
+    let clips: [Clip]
+    let error: String?
+}
+
 // MARK: - Frame Assets
 
 enum FrameAssetKind: String, CaseIterable, Hashable {
