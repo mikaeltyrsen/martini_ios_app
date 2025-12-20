@@ -1018,6 +1018,7 @@ struct Frame: Codable, Identifiable {
             for board in sortedBoards {
                 items.append(
                     FrameAssetItem(
+                        id: board.id,
                         kind: .board,
                         primary: board.fileUrl,
                         fallback: board.fileThumbUrl,
@@ -1029,6 +1030,7 @@ struct Frame: Codable, Identifiable {
         } else if board != nil || boardThumb != nil {
             items.append(
                 FrameAssetItem(
+                    id: "board-main",
                     kind: .board,
                     primary: board,
                     fallback: boardThumb,
@@ -1040,6 +1042,7 @@ struct Frame: Codable, Identifiable {
         if photoboard != nil || photoboardThumb != nil {
             items.append(
                 FrameAssetItem(
+                    id: "photoboard",
                     kind: .photoboard,
                     primary: photoboard,
                     fallback: photoboardThumb,
@@ -1051,6 +1054,7 @@ struct Frame: Codable, Identifiable {
         if preview != nil || previewThumb != nil {
             items.append(
                 FrameAssetItem(
+                    id: "preview",
                     kind: .preview,
                     primary: preview,
                     fallback: previewThumb,
@@ -1060,6 +1064,7 @@ struct Frame: Codable, Identifiable {
         } else if captureClipThumbnail != nil || captureClip != nil {
             items.append(
                 FrameAssetItem(
+                    id: "captureClip",
                     kind: .preview,
                     primary: captureClip,
                     fallback: captureClipThumbnail,
@@ -1275,14 +1280,22 @@ enum FrameAssetKind: String, CaseIterable, Hashable {
 }
 
 struct FrameAssetItem: Identifiable, Hashable {
-    let id = UUID()
+    let id: String
     let kind: FrameAssetKind
     private let primary: String?
     private let fallback: String?
     private let fileType: String?
     let label: String?
 
-    init(kind: FrameAssetKind, primary: String?, fallback: String?, fileType: String? = nil, label: String? = nil) {
+    init(
+        id: String = UUID().uuidString,
+        kind: FrameAssetKind,
+        primary: String?,
+        fallback: String?,
+        fileType: String? = nil,
+        label: String? = nil
+    ) {
+        self.id = id
         self.kind = kind
         self.primary = primary
         self.fallback = fallback
