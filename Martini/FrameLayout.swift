@@ -112,6 +112,8 @@ struct FrameLayout: View {
     @Environment(\.horizontalSizeClass) private var hSizeClass
     @Environment(\.colorScheme) private var colorScheme
     @State private var isPresentingFullScreen: Bool = false
+    @State private var showFullScreenChrome: Bool = false
+    @Namespace private var fullscreenNamespace
 
     private var resolvedTitle: String? {
         if let title, !title.isEmpty {
@@ -137,21 +139,31 @@ struct FrameLayout: View {
         ? AnyLayout(HStackLayout(alignment: .top, spacing: 12))
         : AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
 
-        layout {
-            imageCard
-            if showTextBlock {
-                textBlock
+        ZStack {
+            layout {
+                imageCard
+                if showTextBlock {
+                    textBlock
+                }
+            }
+            .overlay(alignment: .center) {
+                if isPresentingFullScreen, resolvedMediaURL != nil {
+                    FullscreenMediaView(
+                        url: resolvedMediaURL,
+                        isVideo: shouldPlayAsVideo,
+                        aspectRatio: aspectRatio,
+                        title: resolvedTitle,
+                        frameNumberLabel: frameNumberLabel,
+                        namespace: fullscreenNamespace,
+                        heroID: mediaHeroID,
+                        showChrome: $showFullScreenChrome,
+                        onDismiss: dismissFullScreen
+                    )
+                    .transition(.opacity)
+                }
             }
         }
-        .fullScreenCover(isPresented: $isPresentingFullScreen) {
-            FullscreenMediaView(
-                url: resolvedMediaURL,
-                isVideo: shouldPlayAsVideo,
-                aspectRatio: aspectRatio,
-                title: resolvedTitle,
-                frameNumberLabel: frameNumberLabel
-            )
-        }
+        .animation(.spring(response: 0.45, dampingFraction: 0.9), value: isPresentingFullScreen)
     }
 
     @ViewBuilder
@@ -159,9 +171,9 @@ struct FrameLayout: View {
         let card = ZStack {
             RoundedRectangle(cornerRadius: cornerRadius)
                 .fill(Color.gray.opacity(0.2))
-                .overlay(
-                    mediaContent
-                )
+                .overlay(alignment: .center) {
+                    heroMedia(contentMode: .fill, isFullscreen: false)
+                }
                 .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
 
             if let resolvedTitle {
@@ -223,43 +235,13 @@ struct FrameLayout: View {
         if enablesFullScreen, resolvedMediaURL != nil {
             card
                 .onTapGesture {
-                    isPresentingFullScreen = true
+                    showFullScreenChrome = false
+                    withAnimation(.spring(response: 0.45, dampingFraction: 0.9)) {
+                        isPresentingFullScreen = true
+                    }
                 }
         } else {
             card
-        }
-    }
-
-    private var mediaContent: some View {
-        Group {
-            if let url = resolvedMediaURL {
-                if shouldPlayAsVideo {
-                    LoopingVideoView(url: url)
-                } else {
-                    CachedAsyncImage(url: url) { phase in
-                        switch phase {
-                        case let .success(image):
-                            AnyView(
-                                image
-                                    .resizable()
-                                    .scaledToFill()
-                            )
-                        case .empty:
-                            AnyView(ProgressView())
-                        case .failure:
-                            AnyView(placeholder)
-                        @unknown default:
-                            AnyView(placeholder)
-                        }
-                    }
-                }
-            } else {
-                placeholder
-            }
-        }
-        // Prevent the image content from animating independently when the card resizes
-        .transaction { transaction in
-            transaction.animation = nil
         }
     }
 
@@ -465,68 +447,125 @@ struct FrameLayout: View {
         }
     }
 
+    private var mediaHeroID: String { "frame-media-\(frame.id)" }
+
+    @ViewBuilder
+    private func heroMedia(contentMode: ContentMode, isFullscreen: Bool) -> some View {
+        HeroMediaView(
+            url: resolvedMediaURL,
+            isVideo: shouldPlayAsVideo,
+            aspectRatio: aspectRatio,
+            contentMode: contentMode,
+            cornerRadius: isFullscreen ? 0 : cornerRadius,
+            namespace: fullscreenNamespace,
+            heroID: mediaHeroID,
+            frameNumberLabel: frameNumberLabel,
+            placeholder: AnyView(placeholder),
+            imageShouldFill: !isFullscreen,
+            isSource: !isFullscreen
+        )
+        // Prevent the image content from animating independently when the card resizes
+        .transaction { transaction in
+            transaction.animation = nil
+        }
+    }
+
+    private func dismissFullScreen() {
+        withAnimation(.easeInOut(duration: 0.22)) {
+            showFullScreenChrome = false
+        }
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.9)) {
+            isPresentingFullScreen = false
+        }
+    }
+
     private struct FullscreenMediaView: View {
         let url: URL?
         let isVideo: Bool
         let aspectRatio: CGFloat
         let title: String?
         let frameNumberLabel: String?
+        let namespace: Namespace.ID
+        let heroID: String
+        @Binding var showChrome: Bool
+        let onDismiss: () -> Void
 
-        @Environment(\.dismiss) private var dismiss
+        @State private var backgroundOpacity: Double = 0
 
         var body: some View {
-            ZStack(alignment: .topTrailing) {
-                Color.black.ignoresSafeArea()
+            GeometryReader { proxy in
+                ZStack(alignment: .topLeading) {
+                    Color.black
+                        .opacity(backgroundOpacity)
+                        .ignoresSafeArea()
+                        .transition(.opacity)
 
-                VStack(spacing: 12) {
-                    Spacer()
+                    VStack(spacing: 12) {
+                        Spacer()
 
-                    mediaContent
-                        .frame(maxWidth: .infinity)
-                        .aspectRatio(aspectRatio, contentMode: .fit)
+                        HeroMediaView(
+                            url: url,
+                            isVideo: isVideo,
+                            aspectRatio: aspectRatio,
+                            contentMode: .fit,
+                            cornerRadius: 0,
+                            namespace: namespace,
+                            heroID: heroID,
+                            frameNumberLabel: frameNumberLabel,
+                            placeholder: fallbackPlaceholder,
+                            imageShouldFill: false,
+                            isSource: true
+                        )
+                        .frame(maxWidth: proxy.size.width * 0.98)
 
-                    metadata
+                        metadata
+                            .opacity(showChrome ? 1 : 0)
+                            .animation(.easeInOut(duration: 0.2), value: showChrome)
 
-                    Spacer()
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.9)) {
+                            showChrome.toggle()
+                        }
+                    }
+
+                    if showChrome {
+                        topToolbar
+                            .padding(.horizontal, 16)
+                            .padding(.top, 20)
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                    }
                 }
-
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 30, weight: .bold))
-                        .foregroundStyle(.white)
-                        .padding(8)
+            }
+            .onAppear {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    backgroundOpacity = 1
                 }
-                .accessibilityLabel("Close fullscreen")
-                .padding(16)
+            }
+            .onDisappear {
+                backgroundOpacity = 0
             }
         }
 
-        @ViewBuilder
-        private var mediaContent: some View {
-            if let url {
-                if isVideo {
-                    LoopingVideoView(url: url)
-                        .clipped()
-                } else {
-                    CachedAsyncImage(url: url) { phase in
-                        switch phase {
-                        case let .success(image):
-                            image
-                                .resizable()
-                                .scaledToFit()
-                        case .empty:
-                            ProgressView()
-                        case .failure:
-                            fallbackPlaceholder
-                        @unknown default:
-                            fallbackPlaceholder
-                        }
-                    }
+        private var topToolbar: some View {
+            HStack {
+                Button {
+                    onDismiss()
+                } label: {
+                    Image(systemName: "chevron.down.circle.fill")
+                        .font(.system(size: 30, weight: .bold))
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(.white)
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 10)
+                        .background(.ultraThinMaterial, in: Capsule())
                 }
-            } else {
-                fallbackPlaceholder
+                .accessibilityLabel("Close fullscreen")
+
+                Spacer()
             }
         }
 
@@ -557,6 +596,65 @@ struct FrameLayout: View {
                 }
             }
         }
+    }
+
+    private struct HeroMediaView: View {
+        let url: URL?
+        let isVideo: Bool
+        let aspectRatio: CGFloat
+        let contentMode: ContentMode
+        let cornerRadius: CGFloat
+        let namespace: Namespace.ID
+        let heroID: String
+        let frameNumberLabel: String?
+        let placeholder: AnyView
+        let imageShouldFill: Bool
+        let isSource: Bool
+
+        var body: some View {
+            Group {
+                if let url {
+                    if isVideo {
+                        LoopingVideoView(url: url, videoGravity: imageShouldFill ? .resizeAspectFill : .resizeAspect)
+                    } else {
+                        CachedAsyncImage(url: url) { phase in
+                            switch phase {
+                            case let .success(image):
+                                AnyView(
+                                    (imageShouldFill ? image.resizable().scaledToFill() : image.resizable().scaledToFit())
+                                )
+                            case .empty:
+                                AnyView(ProgressView())
+                            case .failure:
+                                placeholder
+                            @unknown default:
+                                placeholder
+                            }
+                        }
+                    }
+                } else {
+                    placeholder
+                }
+            }
+            .aspectRatio(aspectRatio, contentMode: contentMode)
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+            .matchedGeometryEffect(id: heroID, in: namespace, isSource: isSource)
+        }
+    }
+
+    private var fallbackPlaceholder: AnyView {
+        AnyView(
+            VStack(spacing: 8) {
+                Image(systemName: "photo")
+                    .font(.system(size: 40))
+                    .foregroundStyle(.white.opacity(0.7))
+                if let frameNumberLabel {
+                    Text(frameNumberLabel)
+                        .font(.headline)
+                        .foregroundStyle(.white.opacity(0.8))
+                }
+            }
+        )
     }
 
     private func attributedString(fromHTML html: String, defaultColor: UIColor? = nil) -> AttributedString? {
@@ -641,13 +739,14 @@ struct FrameLayout: View {
 
 struct LoopingVideoView: UIViewRepresentable {
     let url: URL
+    var videoGravity: AVLayerVideoGravity = .resizeAspectFill
 
     func makeUIView(context _: Context) -> LoopingPlayerView {
-        LoopingPlayerView(url: url)
+        LoopingPlayerView(url: url, videoGravity: videoGravity)
     }
 
     func updateUIView(_ uiView: LoopingPlayerView, context _: Context) {
-        uiView.update(with: url)
+        uiView.update(with: url, videoGravity: videoGravity)
     }
 }
 
@@ -659,11 +758,13 @@ final class LoopingPlayerView: UIView {
     private var currentURL: URL?
     private var resolvedPlaybackURL: URL?
     private var endObserver: NSObjectProtocol?
+    private var currentVideoGravity: AVLayerVideoGravity = .resizeAspectFill
 
-    init(url: URL) {
+    init(url: URL, videoGravity: AVLayerVideoGravity = .resizeAspectFill) {
         super.init(frame: .zero)
+        currentVideoGravity = videoGravity
         setupPlayerLayer()
-        update(with: url)
+        update(with: url, videoGravity: videoGravity)
     }
 
     required init?(coder: NSCoder) {
@@ -677,7 +778,11 @@ final class LoopingPlayerView: UIView {
         player?.pause()
     }
 
-    func update(with url: URL) {
+    func update(with url: URL, videoGravity: AVLayerVideoGravity? = nil) {
+        if let videoGravity, videoGravity != currentVideoGravity {
+            currentVideoGravity = videoGravity
+            playerLayer.videoGravity = videoGravity
+        }
         guard url != currentURL else { return }
         currentURL = url
 
@@ -707,7 +812,7 @@ final class LoopingPlayerView: UIView {
     }
 
     private func setupPlayerLayer() {
-        playerLayer.videoGravity = .resizeAspectFill
+        playerLayer.videoGravity = currentVideoGravity
         layer.addSublayer(playerLayer)
     }
 
