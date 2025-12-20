@@ -216,16 +216,38 @@ struct FrameView: View {
 
     private var mainContent: some View {
         GeometryReader { proxy in
+            let isLandscape: Bool = proxy.size.width > proxy.size.height
             let overlayHeight: CGFloat = proxy.size.height * descriptionHeightRatio
             let boardsHeight: CGFloat = max(proxy.size.height - overlayHeight, 0)
 
-            VStack(spacing: 0) {
-                boardsSection(height: boardsHeight)
+            Group {
+                if isLandscape {
+                    HStack(spacing: 0) {
+                        boardsSection(height: proxy.size.height)
+                            .frame(width: proxy.size.width * 0.6, alignment: .top)
+
+                        descriptionOverlay(
+                            containerHeight: proxy.size.height,
+                            overlayHeight: proxy.size.height,
+                            allowsExpansion: false
+                        )
+                        .frame(width: proxy.size.width * 0.4, height: proxy.size.height)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                } else {
+                    VStack(spacing: 0) {
+                        boardsSection(height: boardsHeight)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    }
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .safeAreaInset(edge: .bottom) {
-                descriptionOverlay(containerHeight: proxy.size.height, overlayHeight: overlayHeight)
+                    .safeAreaInset(edge: .bottom) {
+                        descriptionOverlay(
+                            containerHeight: proxy.size.height,
+                            overlayHeight: overlayHeight,
+                            allowsExpansion: true
+                        )
+                    }
+                }
             }
         }
     }
@@ -283,7 +305,7 @@ struct FrameView: View {
         }
     }
 
-    private func descriptionOverlay(containerHeight: CGFloat, overlayHeight: CGFloat) -> some View {
+    private func descriptionOverlay(containerHeight: CGFloat, overlayHeight: CGFloat, allowsExpansion: Bool) -> some View {
         ScrollView(.vertical, showsIndicators: true) {
             VStack(alignment: .leading, spacing: 16) {
                 Capsule()
@@ -308,13 +330,17 @@ struct FrameView: View {
         .frame(maxWidth: .infinity)
         .frame(height: overlayHeight)
         .background(Color.black)
-        .scrollDisabled(!isDescriptionExpanded)
+        .scrollDisabled(allowsExpansion ? !isDescriptionExpanded : false)
         .onPreferenceChange(DescriptionScrollOffsetKey.self) { offset in
             descriptionScrollOffset = offset
             handleDescriptionScroll(offset: offset)
         }
-        .simultaneousGesture(descriptionDragGesture(containerHeight: containerHeight))
+        .gesture(
+            descriptionDragGesture(containerHeight: containerHeight),
+            including: allowsExpansion ? .all : .none
+        )
         .onTapGesture {
+            guard allowsExpansion else { return }
             setDescriptionExpanded(true)
         }
     }
@@ -489,9 +515,15 @@ private extension FrameView {
                 let translationRatio: CGFloat = -value.translation.height / containerHeight
                 let proposedRatio: CGFloat = min(max(startingRatio + translationRatio, minDescriptionRatio), 1.0)
 
-                let distanceToCollapsed: CGFloat = abs(proposedRatio - minDescriptionRatio)
-                let distanceToExpanded: CGFloat = abs(1.0 - proposedRatio)
-                let targetExpanded: Bool = distanceToExpanded < distanceToCollapsed
+                let traveled: CGFloat = abs(proposedRatio - startingRatio)
+                let snapThreshold: CGFloat = 0.1
+                let targetExpanded: Bool
+
+                if traveled < snapThreshold {
+                    targetExpanded = startingRatio > 0.5
+                } else {
+                    targetExpanded = translationRatio > 0
+                }
 
                 setDescriptionExpanded(targetExpanded)
                 dragStartRatio = nil
