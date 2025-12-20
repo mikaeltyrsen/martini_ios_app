@@ -284,6 +284,15 @@ struct CreativesResponse: Codable {
             ?? container.decodeIfPresent(String.self, forKey: .projectID)
         error = try container.decodeIfPresent(String.self, forKey: .error)
     }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encode(_success, forKey: .success)
+        try container.encode(creatives, forKey: .creatives)
+        try container.encodeIfPresent(projectId, forKey: .projectID)
+        try container.encodeIfPresent(error, forKey: .error)
+    }
 }
 
 // MARK: - Project Model
