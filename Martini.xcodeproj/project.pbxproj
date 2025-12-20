@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0730F3E52EF6E788000B598F /* FullscreenMediaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F3E42EF6E788000B598F /* FullscreenMediaView.swift */; };
 		075456022EC9A6E200C45739 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075455FE2EC9A6E100C45739 /* AuthService.swift */; };
 		075456032EC9A6E200C45739 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075455FF2EC9A6E100C45739 /* LoginView.swift */; };
 		075456042EC9A6E200C45739 /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075456002EC9A6E100C45739 /* QRScannerView.swift */; };
@@ -18,93 +19,95 @@
 		07C904B22EDB92DB004EDBFA /* playground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C904B12EDB92D8004EDBFA /* playground.swift */; };
 		07C904B42EDB9F3D004EDBFA /* Uiplayground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C904B32EDB9F3D004EDBFA /* Uiplayground.swift */; };
 		07C904B62EDBAE73004EDBFA /* FrameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C904B52EDBAE73004EDBFA /* FrameView.swift */; };
-                07C904B72FE2B5E9004EDBFA /* FrameLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C904B82FE2B5E9004EDBFA /* FrameLayout.swift */; };
-                07C904B82EDC888C004EDBFA /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C904B72EDC888C004EDBFA /* Helpers.swift */; };
-                07D1C1032FF0BBBB00000001 /* ImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07D1C1022FF0BBBB00000001 /* ImageCache.swift */; };
-                07D1C1052FF0BBBB00000002 /* ScheduleCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07D1C1042FF0BBBB00000002 /* ScheduleCache.swift */; };
-                07F4E0022FF0AAAA00000001 /* RealtimeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07F4E0012FF0AAAA00000001 /* RealtimeService.swift */; };
-                57E214BA1EC84898ABC8A8A6 /* SchedulesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 477F863DD3304428A7C610C5 /* SchedulesView.swift */; };
-                F501C2E32028424CABAFBC56 /* ScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60C91863CD124D159734FD1B /* ScheduleView.swift */; };
+		07C904B72FE2B5E9004EDBFA /* FrameLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C904B82FE2B5E9004EDBFA /* FrameLayout.swift */; };
+		07C904B82EDC888C004EDBFA /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C904B72EDC888C004EDBFA /* Helpers.swift */; };
+		07D1C1032FF0BBBB00000001 /* ImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07D1C1022FF0BBBB00000001 /* ImageCache.swift */; };
+		07D1C1052FF0BBBB00000002 /* ScheduleCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07D1C1042FF0BBBB00000002 /* ScheduleCache.swift */; };
+		07F4E0022FF0AAAA00000001 /* RealtimeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07F4E0012FF0AAAA00000001 /* RealtimeService.swift */; };
+		57E214BA1EC84898ABC8A8A6 /* SchedulesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 477F863DD3304428A7C610C5 /* SchedulesView.swift */; };
+		F501C2E32028424CABAFBC56 /* ScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60C91863CD124D159734FD1B /* ScheduleView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0730F3E42EF6E788000B598F /* FullscreenMediaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullscreenMediaView.swift; sourceTree = "<group>"; };
 		075455FE2EC9A6E100C45739 /* AuthService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		075455FF2EC9A6E100C45739 /* LoginView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		075456002EC9A6E100C45739 /* QRScannerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
 		075456072EC9AA2100C45739 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		07A6A6822EC9A272002C8EB9 /* Martini.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Martini.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		07A6A6852EC9A272002C8EB9 /* MartiniApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MartiniApp.swift; sourceTree = "<group>"; };
-07A6A6872EC9A272002C8EB9 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-07A6A68C2EC9A272002C8EB9 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
-07ACD0013127F1D000000001 /* Martini.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Martini.entitlements; sourceTree = "<group>"; };
-07C904AE2EDA7A48004EDBFA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		07A6A6872EC9A272002C8EB9 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		07A6A68C2EC9A272002C8EB9 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		07ACD0013127F1D000000001 /* Martini.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Martini.entitlements; sourceTree = "<group>"; };
+		07C904AE2EDA7A48004EDBFA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		07C904AF2EDA8665004EDBFA /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		07C904B12EDB92D8004EDBFA /* playground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = playground.swift; sourceTree = "<group>"; };
 		07C904B32EDB9F3D004EDBFA /* Uiplayground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Uiplayground.swift; sourceTree = "<group>"; };
-                07C904B52EDBAE73004EDBFA /* FrameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameView.swift; sourceTree = "<group>"; };
-                07C904B72EDC888C004EDBFA /* Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Helpers.swift; sourceTree = "<group>"; };
-                07C904B82FE2B5E9004EDBFA /* FrameLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameLayout.swift; sourceTree = "<group>"; };
-                07D1C1022FF0BBBB00000001 /* ImageCache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ImageCache.swift; sourceTree = "<group>"; };
-                07D1C1042FF0BBBB00000002 /* ScheduleCache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScheduleCache.swift; sourceTree = "<group>"; };
-                07F4E0012FF0AAAA00000001 /* RealtimeService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RealtimeService.swift; sourceTree = "<group>"; };
-                477F863DD3304428A7C610C5 /* SchedulesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchedulesView.swift; sourceTree = "<group>"; };
-                60C91863CD124D159734FD1B /* ScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleView.swift; sourceTree = "<group>"; };
+		07C904B52EDBAE73004EDBFA /* FrameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameView.swift; sourceTree = "<group>"; };
+		07C904B72EDC888C004EDBFA /* Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Helpers.swift; sourceTree = "<group>"; };
+		07C904B82FE2B5E9004EDBFA /* FrameLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameLayout.swift; sourceTree = "<group>"; };
+		07D1C1022FF0BBBB00000001 /* ImageCache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ImageCache.swift; sourceTree = "<group>"; };
+		07D1C1042FF0BBBB00000002 /* ScheduleCache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScheduleCache.swift; sourceTree = "<group>"; };
+		07F4E0012FF0AAAA00000001 /* RealtimeService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RealtimeService.swift; sourceTree = "<group>"; };
+		477F863DD3304428A7C610C5 /* SchedulesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchedulesView.swift; sourceTree = "<group>"; };
+		60C91863CD124D159734FD1B /* ScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-                07A6A67F2EC9A272002C8EB9 /* Frameworks */ = {
-                        isa = PBXFrameworksBuildPhase;
-                        buildActionMask = 2147483647;
-                        files = (
-                        );
-                        runOnlyForDeploymentPostprocessing = 0;
-                };
+		07A6A67F2EC9A272002C8EB9 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-07A6A6792EC9A272002C8EB9 = {
-isa = PBXGroup;
-children = (
-07A6A6842EC9A272002C8EB9 /* Martini */,
-07A6A6832EC9A272002C8EB9 /* Products */,
-);
-sourceTree = "<group>";
-};
-07A6A6832EC9A272002C8EB9 /* Products */ = {
-isa = PBXGroup;
-children = (
-07A6A6822EC9A272002C8EB9 /* Martini.app */,
-);
-name = Products;
-sourceTree = "<group>";
-};
-07A6A6842EC9A272002C8EB9 /* Martini */ = {
-isa = PBXGroup;
-children = (
-07ACD0013127F1D000000001 /* Martini.entitlements */,
-07C904B12EDB92D8004EDBFA /* playground.swift */,
-                07C904B32EDB9F3D004EDBFA /* Uiplayground.swift */, 
-                07C904AF2EDA8665004EDBFA /* Models.swift */, 
-                07C904AE2EDA7A48004EDBFA /* Info.plist */, 
-                07A6A6852EC9A272002C8EB9 /* MartiniApp.swift */, 
-                07A6A6872EC9A272002C8EB9 /* ContentView.swift */, 
-                075456072EC9AA2100C45739 /* Assets.xcassets */, 
-                075455FE2EC9A6E100C45739 /* AuthService.swift */, 
-                075455FF2EC9A6E100C45739 /* LoginView.swift */, 
-                075456002EC9A6E100C45739 /* QRScannerView.swift */, 
-                07F4E0012FF0AAAA00000001 /* RealtimeService.swift */, 
-                07A6A68B2EC9A272002C8EB9 /* Preview Content */, 
-                07C904B52EDBAE73004EDBFA /* FrameView.swift */, 
-                07C904B82FE2B5E9004EDBFA /* FrameLayout.swift */, 
-                07C904B72EDC888C004EDBFA /* Helpers.swift */,
-                07D1C1022FF0BBBB00000001 /* ImageCache.swift */,
-                07D1C1042FF0BBBB00000002 /* ScheduleCache.swift */,
-                477F863DD3304428A7C610C5 /* SchedulesView.swift */,
-                60C91863CD124D159734FD1B /* ScheduleView.swift */,
-            );
-            path = Martini; 
-            sourceTree = "<group>"; 
-        }; 
+		07A6A6792EC9A272002C8EB9 = {
+			isa = PBXGroup;
+			children = (
+				07A6A6842EC9A272002C8EB9 /* Martini */,
+				07A6A6832EC9A272002C8EB9 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		07A6A6832EC9A272002C8EB9 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				07A6A6822EC9A272002C8EB9 /* Martini.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		07A6A6842EC9A272002C8EB9 /* Martini */ = {
+			isa = PBXGroup;
+			children = (
+				07ACD0013127F1D000000001 /* Martini.entitlements */,
+				07C904B12EDB92D8004EDBFA /* playground.swift */,
+				07C904B32EDB9F3D004EDBFA /* Uiplayground.swift */,
+				07C904AF2EDA8665004EDBFA /* Models.swift */,
+				07C904AE2EDA7A48004EDBFA /* Info.plist */,
+				07A6A6852EC9A272002C8EB9 /* MartiniApp.swift */,
+				07A6A6872EC9A272002C8EB9 /* ContentView.swift */,
+				075456072EC9AA2100C45739 /* Assets.xcassets */,
+				075455FE2EC9A6E100C45739 /* AuthService.swift */,
+				075455FF2EC9A6E100C45739 /* LoginView.swift */,
+				075456002EC9A6E100C45739 /* QRScannerView.swift */,
+				07F4E0012FF0AAAA00000001 /* RealtimeService.swift */,
+				07A6A68B2EC9A272002C8EB9 /* Preview Content */,
+				07C904B52EDBAE73004EDBFA /* FrameView.swift */,
+				0730F3E42EF6E788000B598F /* FullscreenMediaView.swift */,
+				07C904B82FE2B5E9004EDBFA /* FrameLayout.swift */,
+				07C904B72EDC888C004EDBFA /* Helpers.swift */,
+				07D1C1022FF0BBBB00000001 /* ImageCache.swift */,
+				07D1C1042FF0BBBB00000002 /* ScheduleCache.swift */,
+				477F863DD3304428A7C610C5 /* SchedulesView.swift */,
+				60C91863CD124D159734FD1B /* ScheduleView.swift */,
+			);
+			path = Martini;
+			sourceTree = "<group>";
+		};
 		07A6A68B2EC9A272002C8EB9 /* Preview Content */ = {
 			isa = PBXGroup;
 			children = (
@@ -116,38 +119,38 @@ children = (
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-07A6A6812EC9A272002C8EB9 /* Martini */ = {
-isa = PBXNativeTarget;
-buildConfigurationList = 07A6A6902EC9A272002C8EB9 /* Build configuration list for PBXNativeTarget "Martini" */;
-buildPhases = (
-07A6A67E2EC9A272002C8EB9 /* Sources */,
-07A6A67F2EC9A272002C8EB9 /* Frameworks */,
-07A6A6802EC9A272002C8EB9 /* Resources */,
-);
-buildRules = (
-);
-dependencies = (
-);
-name = Martini;
-productName = Martini;
-productReference = 07A6A6822EC9A272002C8EB9 /* Martini.app */;
-productType = "com.apple.product-type.application";
-};
+		07A6A6812EC9A272002C8EB9 /* Martini */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 07A6A6902EC9A272002C8EB9 /* Build configuration list for PBXNativeTarget "Martini" */;
+			buildPhases = (
+				07A6A67E2EC9A272002C8EB9 /* Sources */,
+				07A6A67F2EC9A272002C8EB9 /* Frameworks */,
+				07A6A6802EC9A272002C8EB9 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Martini;
+			productName = Martini;
+			productReference = 07A6A6822EC9A272002C8EB9 /* Martini.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-                07A6A67A2EC9A272002C8EB9 /* Project object */ = {
-                        isa = PBXProject;
-attributes = {
-BuildIndependentTargetsInParallel = 1;
-LastSwiftUpdateCheck = 1540;
-LastUpgradeCheck = 2610;
-TargetAttributes = {
-07A6A6812EC9A272002C8EB9 = {
-CreatedOnToolsVersion = 15.4;
-};
-};
-};
+		07A6A67A2EC9A272002C8EB9 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1540;
+				LastUpgradeCheck = 2610;
+				TargetAttributes = {
+					07A6A6812EC9A272002C8EB9 = {
+						CreatedOnToolsVersion = 15.4;
+					};
+				};
+			};
 			buildConfigurationList = 07A6A67D2EC9A272002C8EB9 /* Build configuration list for PBXProject "Martini" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
@@ -156,52 +159,53 @@ CreatedOnToolsVersion = 15.4;
 				en,
 				Base,
 			);
-mainGroup = 07A6A6792EC9A272002C8EB9;
-productRefGroup = 07A6A6832EC9A272002C8EB9 /* Products */;
-projectDirPath = "";
-projectRoot = "";
-targets = (
-07A6A6812EC9A272002C8EB9 /* Martini */,
-);
-                };
+			mainGroup = 07A6A6792EC9A272002C8EB9;
+			productRefGroup = 07A6A6832EC9A272002C8EB9 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				07A6A6812EC9A272002C8EB9 /* Martini */,
+			);
+		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-                07A6A6802EC9A272002C8EB9 /* Resources */ = {
-                        isa = PBXResourcesBuildPhase;
-                        buildActionMask = 2147483647;
-                        files = (
-                                07A6A68D2EC9A272002C8EB9 /* Preview Assets.xcassets in Resources */,
-                                075456082EC9AA2100C45739 /* Assets.xcassets in Resources */,
-                        );
-                        runOnlyForDeploymentPostprocessing = 0;
-                };
+		07A6A6802EC9A272002C8EB9 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				07A6A68D2EC9A272002C8EB9 /* Preview Assets.xcassets in Resources */,
+				075456082EC9AA2100C45739 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-07A6A67E2EC9A272002C8EB9 /* Sources */ = {
-isa = PBXSourcesBuildPhase;
-buildActionMask = 2147483647;
-files = (
-07C904B42EDB9F3D004EDBFA /* Uiplayground.swift in Sources */,
+		07A6A67E2EC9A272002C8EB9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				07C904B42EDB9F3D004EDBFA /* Uiplayground.swift in Sources */,
 				075456022EC9A6E200C45739 /* AuthService.swift in Sources */,
 				07C904B22EDB92DB004EDBFA /* playground.swift in Sources */,
-                                07C904B62EDBAE73004EDBFA /* FrameView.swift in Sources */,
-                                07C904B72FE2B5E9004EDBFA /* FrameLayout.swift in Sources */,
-                                07D1C1032FF0BBBB00000001 /* ImageCache.swift in Sources */,
-                                07D1C1052FF0BBBB00000002 /* ScheduleCache.swift in Sources */,
-07A6A6882EC9A272002C8EB9 /* ContentView.swift in Sources */,
-07F4E0022FF0AAAA00000001 /* RealtimeService.swift in Sources */,
-                                07C904B82EDC888C004EDBFA /* Helpers.swift in Sources */,
-                                075456032EC9A6E200C45739 /* LoginView.swift in Sources */,
-                                57E214BA1EC84898ABC8A8A6 /* SchedulesView.swift in Sources */,
-                                F501C2E32028424CABAFBC56 /* ScheduleView.swift in Sources */,
-                                07C904B02EDA8665004EDBFA /* Models.swift in Sources */,
-07A6A6862EC9A272002C8EB9 /* MartiniApp.swift in Sources */,
-075456042EC9A6E200C45739 /* QRScannerView.swift in Sources */,
-);
-runOnlyForDeploymentPostprocessing = 0;
-};
+				07C904B62EDBAE73004EDBFA /* FrameView.swift in Sources */,
+				07C904B72FE2B5E9004EDBFA /* FrameLayout.swift in Sources */,
+				07D1C1032FF0BBBB00000001 /* ImageCache.swift in Sources */,
+				07D1C1052FF0BBBB00000002 /* ScheduleCache.swift in Sources */,
+				07A6A6882EC9A272002C8EB9 /* ContentView.swift in Sources */,
+				0730F3E52EF6E788000B598F /* FullscreenMediaView.swift in Sources */,
+				07F4E0022FF0AAAA00000001 /* RealtimeService.swift in Sources */,
+				07C904B82EDC888C004EDBFA /* Helpers.swift in Sources */,
+				075456032EC9A6E200C45739 /* LoginView.swift in Sources */,
+				57E214BA1EC84898ABC8A8A6 /* SchedulesView.swift in Sources */,
+				F501C2E32028424CABAFBC56 /* ScheduleView.swift in Sources */,
+				07C904B02EDA8665004EDBFA /* Models.swift in Sources */,
+				07A6A6862EC9A272002C8EB9 /* MartiniApp.swift in Sources */,
+				075456042EC9A6E200C45739 /* QRScannerView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
@@ -316,82 +320,82 @@ runOnlyForDeploymentPostprocessing = 0;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
-GCC_WARN_UNUSED_VARIABLE = YES;
-IPHONEOS_DEPLOYMENT_TARGET = 17.5;
-LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-MTL_ENABLE_DEBUG_INFO = NO;
-MTL_FAST_MATH = YES;
-SDKROOT = iphoneos;
-STRING_CATALOG_GENERATE_SYMBOLS = YES;
-SWIFT_COMPILATION_MODE = wholemodule;
-VALIDATE_PRODUCT = YES;
-};
-name = Release;
-};
-                07A6A6912EC9A272002C8EB9 /* Debug */ = {
-                        isa = XCBuildConfiguration;
-                        buildSettings = {
-                                ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-                                ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-                                CODE_SIGN_ENTITLEMENTS = Martini/Martini.entitlements;
-                                CODE_SIGN_STYLE = Automatic;
-                                CURRENT_PROJECT_VERSION = 1;
-                                DEVELOPMENT_ASSET_PATHS = "\"Martini/Preview Content\"";
-                                ENABLE_PREVIEWS = YES;
-                                GENERATE_INFOPLIST_FILE = YES;
-                                INFOPLIST_FILE = Martini/Info.plist;
-                                INFOPLIST_KEY_NSCameraUsageDescription = "Martini needs access to your camera in order to scan QR codes to access Martini projects.";
-                                INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-                                INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-                                INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-                                INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-                                INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-                                INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
-                                LD_RUNPATH_SEARCH_PATHS = (
-                                        "$(inherited)",
-                                        "@executable_path/Frameworks",
-                                );
-                                MARKETING_VERSION = 1.0;
-                                PRODUCT_BUNDLE_IDENTIFIER = com.martini.Martini;
-                                PRODUCT_NAME = "$(TARGET_NAME)";
-                                SWIFT_EMIT_LOC_STRINGS = YES;
-                                SWIFT_VERSION = 5.0;
-                                TARGETED_DEVICE_FAMILY = "1,2";
-                        };
-                        name = Debug;
-                };
-                07A6A6922EC9A272002C8EB9 /* Release */ = {
-                        isa = XCBuildConfiguration;
-                        buildSettings = {
-                                ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-                                ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-                                CODE_SIGN_ENTITLEMENTS = Martini/Martini.entitlements;
-                                CODE_SIGN_STYLE = Automatic;
-                                CURRENT_PROJECT_VERSION = 1;
-                                DEVELOPMENT_ASSET_PATHS = "\"Martini/Preview Content\"";
-                                ENABLE_PREVIEWS = YES;
-                                GENERATE_INFOPLIST_FILE = YES;
-                                INFOPLIST_FILE = Martini/Info.plist;
-                                INFOPLIST_KEY_NSCameraUsageDescription = "Martini needs access to your camera in order to scan QR codes to access Martini projects.";
-                                INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-                                INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-                                INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-                                INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-                                INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-                                INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
-                                LD_RUNPATH_SEARCH_PATHS = (
-                                        "$(inherited)",
-                                        "@executable_path/Frameworks",
-                                );
-                                MARKETING_VERSION = 1.0;
-                                PRODUCT_BUNDLE_IDENTIFIER = com.martini.Martini;
-                                PRODUCT_NAME = "$(TARGET_NAME)";
-                                SWIFT_EMIT_LOC_STRINGS = YES;
-                                SWIFT_VERSION = 5.0;
-                                TARGETED_DEVICE_FAMILY = "1,2";
-                        };
-                        name = Release;
-                };
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.5;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		07A6A6912EC9A272002C8EB9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Martini/Martini.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"Martini/Preview Content\"";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Martini/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Martini needs access to your camera in order to scan QR codes to access Martini projects.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.martini.Martini;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		07A6A6922EC9A272002C8EB9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Martini/Martini.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"Martini/Preview Content\"";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Martini/Info.plist;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Martini needs access to your camera in order to scan QR codes to access Martini projects.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.martini.Martini;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -404,15 +408,15 @@ name = Release;
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-                07A6A6902EC9A272002C8EB9 /* Build configuration list for PBXNativeTarget "Martini" */ = {
-                        isa = XCConfigurationList;
-                        buildConfigurations = (
-                                07A6A6912EC9A272002C8EB9 /* Debug */,
-                                07A6A6922EC9A272002C8EB9 /* Release */,
-                        );
-                        defaultConfigurationIsVisible = 0;
-                        defaultConfigurationName = Release;
-                };
+		07A6A6902EC9A272002C8EB9 /* Build configuration list for PBXNativeTarget "Martini" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				07A6A6912EC9A272002C8EB9 /* Debug */,
+				07A6A6922EC9A272002C8EB9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 	};
 	rootObject = 07A6A67A2EC9A272002C8EB9 /* Project object */;
