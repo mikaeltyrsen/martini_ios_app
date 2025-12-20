@@ -79,17 +79,17 @@ public func plainTextFromHTML(_ html: String) -> String {
     return collapsed.trimmingCharacters(in: .whitespacesAndNewlines)
 }
 
-public struct ProgressCounts {
-    public let completed: Int
-    public let total: Int
+struct ProgressCounts {
+    let completed: Int
+    let total: Int
 
-    public var percentage: Double {
+    var percentage: Double {
         guard total > 0 else { return 0 }
         return Double(completed) / Double(total)
     }
 }
 
-public func progressCounts(
+func progressCounts(
     for frames: [Frame],
     totalOverride: Int? = nil,
     completedStatuses: Set<FrameStatus> = [.done, .skip]
