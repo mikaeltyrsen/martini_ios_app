@@ -306,7 +306,7 @@ struct FrameView: View {
             .scrollTargetLayout()
         }
         .scrollTargetBehavior(.viewAligned(limitBehavior: .always))
-        .scrollPosition(id: $visibleAssetID)
+        .scrollPosition(id: $visibleAssetID, anchor: .center)
     }
 
     @ViewBuilder
