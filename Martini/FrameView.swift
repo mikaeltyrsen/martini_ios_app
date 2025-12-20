@@ -27,6 +27,8 @@ struct FrameView: View {
     @State private var dragStartRatio: CGFloat?
     @State private var descriptionScrollOffset: CGFloat = 0
     @State private var isDraggingDescription: Bool = false
+    @State private var isUpdatingStatus: Bool = false
+    @State private var statusUpdateError: String?
 
     private let minDescriptionRatio: CGFloat = 0.35
 
@@ -66,6 +68,17 @@ struct FrameView: View {
                     topToolbar
                     bottomToolbar
                 }
+        }
+        .alert(
+            "Unable to Update Status",
+            isPresented: Binding(
+                get: { statusUpdateError != nil },
+                set: { if !$0 { statusUpdateError = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) { statusUpdateError = nil }
+        } message: {
+            Text(statusUpdateError ?? "An unknown error occurred.")
         }
         .sheet(isPresented: $showingFiles) {
             FilesSheet(
@@ -171,10 +184,16 @@ struct FrameView: View {
                     statusMenuButton(title: "Clear", status: .none, systemImage: "xmark.circle")
                 }
             } label: {
-                let statusColor = selectedStatus.labelColor
-                let statusLabel = selectedStatus == .none ? "Mark Frame" : selectedStatus.displayName
+                let statusColor: Color = isUpdatingStatus ? .secondary : selectedStatus.labelColor
+                let statusLabel: String = {
+                    if isUpdatingStatus { return "Updating Status" }
+                    return selectedStatus == .none ? "Mark Frame" : selectedStatus.displayName
+                }()
                 HStack(spacing: 6) {
-                    if selectedStatus != .none {
+                    if isUpdatingStatus {
+                        ProgressView()
+                            .tint(statusColor)
+                    } else if selectedStatus != .none {
                         Image(systemName: selectedStatus.systemImageName)
                             .foregroundStyle(statusColor)
                     }
@@ -185,6 +204,7 @@ struct FrameView: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
             }
+            .disabled(isUpdatingStatus)
 
             Spacer()
 
@@ -434,16 +454,31 @@ struct FrameView: View {
     }
 
     private func updateStatus(to status: FrameStatus) {
-        let updatedFrame = frame.updatingStatus(status)
+        guard !isUpdatingStatus else { return }
+        isUpdatingStatus = true
+        Task {
+            do {
+                let updatedFrame = try await authService.updateFrameStatus(id: frame.id, to: status)
+                triggerStatusHaptic(for: status)
 
-        triggerStatusHaptic(for: status)
+                await MainActor.run {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        selectedStatus = updatedFrame.statusEnum
+                    }
 
-        withAnimation(.easeInOut(duration: 0.2)) {
-            selectedStatus = status
+                    frame = updatedFrame
+                    onStatusSelected(updatedFrame, updatedFrame.statusEnum)
+                }
+            } catch {
+                await MainActor.run {
+                    statusUpdateError = error.localizedDescription
+                }
+            }
+
+            await MainActor.run {
+                isUpdatingStatus = false
+            }
         }
-
-        frame = updatedFrame
-        onStatusSelected(updatedFrame, status)
     }
 
     private func syncWithProvidedFrame() {
@@ -472,7 +507,7 @@ struct FrameView: View {
                 .foregroundStyle(Color.primary)
         }
         .accessibilityLabel("Set status to \(title)")
-        .disabled(isSelected)
+        .disabled(isSelected || isUpdatingStatus)
     }
 
     private static func orderedAssets(for frame: Frame, order: [FrameAssetKind]) -> [FrameAssetItem] {
@@ -947,6 +982,15 @@ private struct DescriptionScrollOffsetKey: PreferenceKey {
 }
 
 extension FrameStatus {
+    var requestValue: String {
+        switch self {
+        case .none:
+            return "0"
+        default:
+            return rawValue
+        }
+    }
+
     var displayName: String {
         switch self {
         case .done:

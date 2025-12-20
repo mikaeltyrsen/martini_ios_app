@@ -43,6 +43,7 @@ class AuthService: ObservableObject {
         case project = "projects/get_project.php"
         case creatives = "creatives/get_creatives.php"
         case frames = "frames/get.php"
+        case updateFrameStatus = "frames/update_status.php"
         case schedule = "schedules/fetch.php"
         case clips = "clips/fetch.php"
 
@@ -549,11 +550,68 @@ class AuthService: ObservableObject {
         print("✅ Successfully fetched project details for \(projectResponse.name)")
     }
 
-    func updateFrameStatus(id: String, to status: FrameStatus) {
-        guard let index = frames.firstIndex(where: { $0.id == id }) else { return }
+    func updateFrameStatus(id: String, to status: FrameStatus) async throws -> Frame {
+        guard let projectId else {
+            throw AuthError.noAuth
+        }
 
-        let updated = frames[index].updatingStatus(status)
-        frames[index] = updated
+        let body: [String: Any] = [
+            "projectId": projectId,
+            "frameId": id,
+            "status": status.requestValue
+        ]
+
+        var request = try authorizedRequest(for: .updateFrameStatus, body: body)
+
+        let requestJSON = String(data: request.httpBody ?? Data(), encoding: .utf8) ?? "Unable to encode"
+        print("📤 Updating frame status...")
+        print("🔗 URL: \(request.url?.absoluteString ?? "unknown")")
+        print("📝 Request body: \(requestJSON)")
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw AuthError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let errorBody = String(data: data, encoding: .utf8) ?? "No response body"
+            print("❌ Failed to update frame status - Status: \(httpResponse.statusCode)")
+            print("📝 Response: \(errorBody)")
+            if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
+                logout()
+                throw AuthError.unauthorized
+            }
+            throw AuthError.requestFailed(statusCode: httpResponse.statusCode)
+        }
+
+        let responseJSON = String(data: data, encoding: .utf8) ?? "Unable to decode"
+        print("📥 Update status response received (\(httpResponse.statusCode)):")
+        print(responseJSON)
+
+        let decoder = JSONDecoder()
+        let statusResponse = try decoder.decode(UpdateFrameStatusResponse.self, from: data)
+
+        guard statusResponse.success else {
+            print("❌ Update status response failed: \(statusResponse.error ?? "Unknown error")")
+            throw AuthError.authenticationFailedWithMessage(statusResponse.error ?? "Failed to update frame status")
+        }
+
+        let updatedFrame: Frame
+        if let responseFrame = statusResponse.frame {
+            updatedFrame = responseFrame
+        } else {
+            guard let existingIndex = frames.firstIndex(where: { $0.id == id }) else {
+                throw AuthError.authenticationFailedWithMessage("Updated frame not found")
+            }
+            updatedFrame = frames[existingIndex].updatingStatus(status)
+        }
+
+        if let index = frames.firstIndex(where: { $0.id == updatedFrame.id }) {
+            frames[index] = updatedFrame
+        }
+
+        return updatedFrame
     }
 
     // Logout and clear auth data

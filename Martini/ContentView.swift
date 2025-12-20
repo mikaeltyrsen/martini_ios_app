@@ -1069,9 +1069,17 @@ private extension MainView {
     }
 
     private func updateFrameStatus(_ frame: Frame, to status: FrameStatus) {
-        authService.updateFrameStatus(id: frame.id, to: status)
-        if selectedFrame?.id == frame.id {
-            selectedFrame = frame.updatingStatus(status)
+        Task {
+            do {
+                let updatedFrame = try await authService.updateFrameStatus(id: frame.id, to: status)
+                if selectedFrame?.id == frame.id {
+                    selectedFrame = updatedFrame
+                }
+            } catch {
+                await MainActor.run {
+                    dataError = error.localizedDescription
+                }
+            }
         }
     }
 
