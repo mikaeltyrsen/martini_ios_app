@@ -4,13 +4,14 @@ import UIKit
 
 @MainActor
 struct FrameView: View {
-    let frame: Frame
     @EnvironmentObject private var authService: AuthService
+    @State private var frame: Frame
     @Binding var assetOrder: [FrameAssetKind]
     let onClose: () -> Void
     let hasPreviousFrame: Bool
     let hasNextFrame: Bool
     let onNavigate: (FrameNavigationDirection) -> Void
+    let onStatusSelected: (Frame, FrameStatus) -> Void
     @State private var selectedStatus: FrameStatus
     @State private var assetStack: [FrameAssetItem]
     @State private var visibleAssetID: FrameAssetItem.ID?
@@ -33,14 +34,16 @@ struct FrameView: View {
         onClose: @escaping () -> Void,
         hasPreviousFrame: Bool = false,
         hasNextFrame: Bool = false,
-        onNavigate: @escaping (FrameNavigationDirection) -> Void = { _ in }
+        onNavigate: @escaping (FrameNavigationDirection) -> Void = { _ in },
+        onStatusSelected: @escaping (Frame, FrameStatus) -> Void = { _, _ in }
     ) {
-        self.frame = frame
+        _frame = State(initialValue: frame)
         _assetOrder = assetOrder
         self.onClose = onClose
         self.hasPreviousFrame = hasPreviousFrame
         self.hasNextFrame = hasNextFrame
         self.onNavigate = onNavigate
+        self.onStatusSelected = onStatusSelected
         _selectedStatus = State(initialValue: frame.statusEnum)
 
         let orderValue: [FrameAssetKind] = assetOrder.wrappedValue
@@ -84,6 +87,17 @@ struct FrameView: View {
         }
         .task {
             await loadClips(force: false)
+        }
+        .onChange(of: authService.frames) { frames in
+            guard let updated = frames.first(where: { $0.id == frame.id }) else { return }
+            frame = updated
+            selectedStatus = updated.statusEnum
+
+            let newStack: [FrameAssetItem] = FrameView.orderedAssets(for: updated, order: assetOrder)
+            if assetStack.map(\.id) != newStack.map(\.id) {
+                assetStack = newStack
+                if visibleAssetID == nil { visibleAssetID = newStack.first?.id }
+            }
         }
     }
 
@@ -389,14 +403,23 @@ struct FrameView: View {
         }
     }
 
+    private func updateStatus(to status: FrameStatus) {
+        let updatedFrame = frame.updatingStatus(status)
+
+        withAnimation(.easeInOut(duration: 0.2)) {
+            selectedStatus = status
+        }
+
+        frame = updatedFrame
+        onStatusSelected(updatedFrame, status)
+    }
+
     @ViewBuilder
     private func statusMenuButton(title: String, status: FrameStatus, systemImage: String) -> some View {
         let isSelected: Bool = (selectedStatus == status)
 
         Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                selectedStatus = status
-            }
+            updateStatus(to: status)
         } label: {
             Label(title, systemImage: systemImage)
                 .foregroundStyle(Color.primary)

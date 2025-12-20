@@ -166,6 +166,10 @@ struct MainView: View {
         return allCreatives.filter { selectedCreativeIds.contains($0.id) }
     }
 
+    private var displayedCreativeIds: Set<String> {
+        Set(creativesToDisplay.map(\.id))
+    }
+
     private var activeSchedule: ProjectSchedule? {
         guard let schedule = authService.projectDetails?.activeSchedule else { return nil }
         return authService.cachedSchedule(for: schedule.id) ?? schedule
@@ -186,12 +190,10 @@ struct MainView: View {
         return authService.projectId ?? "Martini"
     }
 
-    private var overallCompletedFrames: Int {
-        creativesToDisplay.reduce(0) { $0 + $1.completedFrames }
-    }
-
-    private var overallTotalFrames: Int {
-        creativesToDisplay.reduce(0) { $0 + $1.totalFrames }
+    private var overallProgress: ProgressCounts {
+        let frames = authService.frames.filter { displayedCreativeIds.contains($0.creativeId) }
+        let totalOverride = creativesToDisplay.reduce(0) { $0 + $1.totalFrames }
+        return progressCounts(for: frames, totalOverride: totalOverride)
     }
 
     private var gridAssetPriority: FrameAssetKind {
@@ -220,11 +222,17 @@ struct MainView: View {
         }
     }
 
+    private func creativeProgress(_ creative: Creative) -> ProgressCounts {
+        let frames = authService.frames.filter { $0.creativeId == creative.id }
+        return progressCounts(for: frames, totalOverride: creative.totalFrames)
+    }
+
     private var gridSections: [GridSectionData] {
         switch frameSortMode {
         case .story:
             return creativesToDisplay.compactMap { creative in
                 let frames = frames(for: creative)
+                let progress = creativeProgress(creative)
 
                 if isFilterActive && frames.isEmpty {
                     return nil
@@ -234,8 +242,8 @@ struct MainView: View {
                     id: creative.id,
                     title: creative.title,
                     frames: frames,
-                    completedFrames: creative.completedFrames,
-                    totalFrames: creative.totalFrames,
+                    completedFrames: progress.completed,
+                    totalFrames: progress.total,
                     showHeader: showCreativeHeaders
                 )
             }
@@ -371,6 +379,9 @@ struct MainView: View {
                                     selectedFrame = next
                                 }
                             }
+                        },
+                        onStatusSelected: { updatedFrame, status in
+                            updateFrameStatus(updatedFrame, to: status)
                         }
                     )
                     .interactiveDismissDisabled(false)
@@ -648,10 +659,12 @@ struct MainView: View {
         ScrollView {
             LazyVStack(spacing: 24, pinnedViews: [.sectionHeaders]) {
                 ForEach(creativesToDisplay) { creative in
+                    let creativeFrames = frames(for: creative)
                     CreativeSection(
                         creative: creative,
-                        frames: frames(for: creative),
-                        showHeader: showCreativeHeaders
+                        frames: creativeFrames,
+                        showHeader: showCreativeHeaders,
+                        progress: creativeProgress(creative)
                     )
                         .id(creative.id)
                 }
@@ -812,8 +825,8 @@ struct MainView: View {
                 .font(.headline)
                 .fontWeight(.semibold)
 
-            if overallTotalFrames > 0 {
-                ProgressView(value: Double(overallCompletedFrames), total: Double(overallTotalFrames))
+            if overallProgress.total > 0 {
+                ProgressView(value: Double(overallProgress.completed), total: Double(overallProgress.total))
                     .progressViewStyle(.linear)
                     .frame(width: 180)
             }
@@ -1020,6 +1033,9 @@ private extension MainView {
 
     private func updateFrameStatus(_ frame: Frame, to status: FrameStatus) {
         authService.updateFrameStatus(id: frame.id, to: status)
+        if selectedFrame?.id == frame.id {
+            selectedFrame = frame.updatingStatus(status)
+        }
     }
 
     private var isFilterActive: Bool {
@@ -1495,6 +1511,7 @@ struct CreativeSection: View {
     let creative: Creative
     let frames: [Frame]
     let showHeader: Bool
+    let progress: ProgressCounts
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -1507,7 +1524,7 @@ struct CreativeSection: View {
                         .padding(.horizontal)
 
                     HStack {
-                        Text("\(creative.completedFrames)/\(creative.totalFrames) frames")
+                        Text("\(progress.completed)/\(progress.total) frames")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
 
