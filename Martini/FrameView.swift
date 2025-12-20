@@ -85,7 +85,10 @@ struct FrameView: View {
         }
         .onChange(of: assetStack) { (newStack: [FrameAssetItem]) in
             assetOrder = newStack.map(\.kind)
-            if visibleAssetID == nil, let first: FrameAssetItem.ID = newStack.first?.id {
+            let newIDs = Set(newStack.map(\.id))
+            if let currentID = visibleAssetID, !newIDs.contains(currentID) {
+                visibleAssetID = newStack.first?.id
+            } else if visibleAssetID == nil, let first: FrameAssetItem.ID = newStack.first?.id {
                 visibleAssetID = first
             }
         }
@@ -488,7 +491,12 @@ struct FrameView: View {
         return ordered
     }
 
-    private static let placeholderBoardAsset = FrameAssetItem(kind: .board, primary: nil, fallback: nil)
+    private static let placeholderBoardAsset = FrameAssetItem(
+        id: "placeholder-board",
+        kind: .board,
+        primary: nil,
+        fallback: nil
+    )
 }
 
 private extension FrameView {
