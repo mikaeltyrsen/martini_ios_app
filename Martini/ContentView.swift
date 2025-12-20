@@ -198,6 +198,18 @@ struct MainView: View {
         let totalOverride = creativesToDisplay.reduce(0) { $0 + $1.totalFrames }
         return progressCounts(for: frames, totalOverride: totalOverride)
     }
+    
+    private var navigationProgress: ProgressCounts {
+        guard frameSortMode == .story, !isScrolledToTop else { return overallProgress }
+        guard
+            let currentId = currentCreativeId ?? creativesToDisplay.first?.id,
+            let creative = creativesToDisplay.first(where: { $0.id == currentId })
+        else {
+            return overallProgress
+        }
+
+        return creativeProgress(creative)
+    }
 
     private var gridAssetPriority: FrameAssetKind {
         get { FrameAssetKind(rawValue: gridAssetPriorityRawValue) ?? .board }
@@ -848,10 +860,12 @@ struct MainView: View {
                 .font(.headline)
                 .fontWeight(.semibold)
 
-            if overallProgress.total > 0 {
-                ProgressView(value: Double(overallProgress.completed), total: Double(overallProgress.total))
+            let progress = navigationProgress
+            if progress.total > 0 {
+                ProgressView(value: Double(progress.completed), total: Double(progress.total))
                     .progressViewStyle(.linear)
                     .frame(width: 180)
+                    .animation(.easeInOut(duration: 0.25), value: progress.percentage)
             }
         }
         .contentShape(Rectangle())
