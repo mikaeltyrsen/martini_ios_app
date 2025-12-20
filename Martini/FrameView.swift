@@ -310,33 +310,45 @@ struct FrameView: View {
 
     @ViewBuilder
     private var boardCarouselTabs: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(assetStack) { asset in
-                    let isSelected: Bool = (asset.id == visibleAssetID)
-                    Button {
-                        visibleAssetID = asset.id
-                    } label: {
-                        Text(asset.label ?? asset.kind.displayName)
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(isSelected ? Color.white : Color.primary)
-                            .lineLimit(1)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 10)
-                            .frame(minWidth: 80)
-                            .background(
-                                Capsule()
-                                    .fill(isSelected ? Color.accentColor : Color.secondary.opacity(0.15))
-                            )
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(assetStack) { asset in
+                        let isSelected: Bool = (asset.id == visibleAssetID)
+                        Button {
+                            visibleAssetID = asset.id
+                        } label: {
+                            Text(asset.label ?? asset.kind.displayName)
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(isSelected ? Color.white : Color.primary)
+                                .lineLimit(1)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 10)
+                                .frame(minWidth: 80)
+                                .background(
+                                    Capsule()
+                                        .fill(isSelected ? Color.accentColor : Color.secondary.opacity(0.15))
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .id(asset.id)
                     }
-                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 20)
+                .scrollTargetLayout()
+            }
+            .scrollTargetBehavior(.viewAligned(limitBehavior: .always))
+            .onChange(of: visibleAssetID) { (id: FrameAssetItem.ID?) in
+                guard let id else { return }
+                withAnimation(.snappy(duration: 0.25)) {
+                    proxy.scrollTo(id, anchor: .center)
                 }
             }
-            .padding(.horizontal, 20)
-            .scrollTargetLayout()
+            .onAppear {
+                guard let id: FrameAssetItem.ID = visibleAssetID else { return }
+                proxy.scrollTo(id, anchor: .center)
+            }
         }
-        .scrollTargetBehavior(.viewAligned(limitBehavior: .always))
-        .scrollPosition(id: $visibleAssetID, anchor: .center)
     }
 
     private func loadClips(force: Bool) async {
