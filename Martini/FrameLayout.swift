@@ -492,7 +492,12 @@ struct FrameLayout: View {
                                     : AnyView(image.resizable().scaledToFit())
                                 renderedImage
                             case .empty:
-                                AnyView(ProgressView())
+                                AnyView(
+                                    ShimmerLoadingPlaceholder(
+                                        cornerRadius: cornerRadius,
+                                        overlay: placeholder
+                                    )
+                                )
                             case .failure:
                                 placeholder
                             @unknown default:
@@ -507,6 +512,69 @@ struct FrameLayout: View {
             .aspectRatio(aspectRatio, contentMode: contentMode)
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
             .matchedGeometryEffect(id: heroID, in: namespace, isSource: isSource)
+        }
+    }
+
+    struct ShimmerLoadingPlaceholder: View {
+        let cornerRadius: CGFloat
+        let overlay: AnyView?
+
+        init(cornerRadius: CGFloat, overlay: AnyView? = nil) {
+            self.cornerRadius = cornerRadius
+            self.overlay = overlay
+        }
+
+        var body: some View {
+            ZStack {
+                ShimmerView(cornerRadius: cornerRadius)
+                if let overlay {
+                    overlay
+                }
+            }
+        }
+    }
+
+    struct ShimmerView: View {
+        var cornerRadius: CGFloat
+        var baseOpacity: Double = 0.28
+        var highlightOpacity: Double = 0.55
+
+        @State private var offsetProgress: CGFloat = -1.2
+
+        private var animation: Animation {
+            .linear(duration: 1.2).repeatForever(autoreverses: false)
+        }
+
+        var body: some View {
+            GeometryReader { proxy in
+                let width = proxy.size.width
+                let gradientWidth = width * 1.4
+                let baseColor = Color.gray.opacity(baseOpacity)
+                let highlight = Color.white.opacity(highlightOpacity)
+
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(baseColor)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: cornerRadius)
+                            .fill(
+                                LinearGradient(
+                                    colors: [baseColor, highlight, baseColor],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                            .frame(width: gradientWidth)
+                            .rotationEffect(.degrees(20))
+                            .offset(x: offsetProgress * width)
+                    }
+                    .clipped()
+                    .onAppear {
+                        offsetProgress = -1.2
+                        withAnimation(animation) {
+                            offsetProgress = 1.2
+                        }
+                    }
+            }
         }
     }
 
