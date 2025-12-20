@@ -628,32 +628,33 @@ private struct FilesSheet: View {
         }
     }
 
-    @ViewBuilder
     private var content: some View {
-        if isLoading {
-            VStack(spacing: 12) {
-                ProgressView()
-                Text("Loading clips...")
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if !clips.isEmpty {
-            List(clips) { clip in
-                ClipRow(clip: clip) {
-                    selectedClip = clip
+        Group {
+            if isLoading {
+                VStack(spacing: 12) {
+                    ProgressView()
+                    Text("Loading clips...")
+                        .foregroundStyle(.secondary)
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if !clips.isEmpty {
+                List(clips) { clip in
+                    ClipRow(clip: clip) {
+                        selectedClip = clip
+                    }
+                }
+                .listStyle(.plain)
+            } else {
+                VStack(spacing: 12) {
+                    Image(systemName: "folder.badge.questionmark")
+                        .font(.system(size: 40))
+                        .foregroundStyle(.tertiary)
+                    Text("No files found")
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .listStyle(.plain)
-        } else {
-            VStack(spacing: 12) {
-                Image(systemName: "folder.badge.questionmark")
-                    .font(.system(size: 40))
-                    .foregroundStyle(.tertiary)
-                Text("No files found")
-                    .font(.headline)
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .sheet(item: $selectedClip) { clip in
             ClipPreviewView(clip: clip)
