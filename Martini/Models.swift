@@ -362,6 +362,8 @@ struct ProjectSchedule: Codable, Identifiable, Hashable {
             schedules = directSchedules
         } else if let scheduleString = try container.decodeIfPresent(String.self, forKey: .schedule) {
             schedules = ProjectSchedule.decodeEmbeddedSchedules(from: scheduleString)
+        } else if let scheduleObject = try container.decodeIfPresent(EmbeddedScheduleContainer.self, forKey: .schedule) {
+            schedules = scheduleObject.asScheduleItems
         } else {
             schedules = nil
         }
@@ -458,6 +460,28 @@ private struct EmbeddedDaysResponse: Codable {
 private struct EmbeddedDaysContainerResponse: Codable {
     let schedule: EmbeddedDaysResponse?
     let days: [ScheduleDay]?
+}
+
+private struct EmbeddedScheduleContainer: Codable {
+    let schedules: [ProjectScheduleItem]?
+    let days: [ScheduleDay]?
+    let schedule: EmbeddedScheduleContainer?
+
+    var asScheduleItems: [ProjectScheduleItem]? {
+        if let schedules, !schedules.isEmpty {
+            return schedules
+        }
+
+        if let days, !days.isEmpty {
+            return days.map { $0.asScheduleItem }
+        }
+
+        if let nested = schedule {
+            return nested.asScheduleItems
+        }
+
+        return nil
+    }
 }
 
 private struct ScheduleDay: Codable {
