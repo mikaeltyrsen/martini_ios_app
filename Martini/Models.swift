@@ -462,7 +462,7 @@ private struct EmbeddedDaysContainerResponse: Codable {
     let days: [ScheduleDay]?
 }
 
-private struct EmbeddedScheduleContainer: Codable {
+private final class EmbeddedScheduleContainer: Codable {
     let schedules: [ProjectScheduleItem]?
     let days: [ScheduleDay]?
     let schedule: EmbeddedScheduleContainer?
