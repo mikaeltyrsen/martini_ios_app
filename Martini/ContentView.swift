@@ -89,6 +89,7 @@ struct MainView: View {
     @State private var selectedFrame: Frame?
     @State private var dataError: String?
     @State private var hasLoadedFrames = false
+    @State private var hasLoadedProjectDetails = false
     @State private var hasLoadedCreatives = false
     @AppStorage("gridSizeStep") private var gridSizeStep: Int = 1 // 1..4, portrait: 4->1 columns, landscape: 5->2 columns
     @State private var frameSortMode: FrameSortMode = .story
@@ -402,6 +403,7 @@ struct MainView: View {
                 .toolbar { toolbarContent }
                 .navigationBarTitleDisplayMode(.inline)
                 .task {
+                    await loadProjectDetailsIfNeeded()
                     await loadCreativesIfNeeded()
                     await loadFramesIfNeeded()
                 }
@@ -662,8 +664,29 @@ struct MainView: View {
         return newPath
     }
 
+    private func loadProjectDetailsIfNeeded() async {
+        if hasLoadedProjectDetails || authService.projectDetails != nil {
+            hasLoadedProjectDetails = true
+            return
+        }
+
+        do {
+            try await authService.fetchProjectDetails()
+            hasLoadedProjectDetails = true
+        } catch {
+            dataError = error.localizedDescription
+            print("❌ Failed to load project details: \(error)")
+        }
+    }
+
     private func loadCreativesIfNeeded() async {
-        guard !useMockData, !hasLoadedCreatives else { return }
+        guard !useMockData else { return }
+
+        if hasLoadedCreatives || !authService.creatives.isEmpty {
+            hasLoadedCreatives = true
+            return
+        }
+
         do {
             try await authService.fetchCreatives()
             hasLoadedCreatives = true
@@ -699,7 +722,13 @@ struct MainView: View {
     }
 
     private func loadFramesIfNeeded() async {
-        guard !useMockData, !hasLoadedFrames else { return }
+        guard !useMockData else { return }
+
+        if hasLoadedFrames || !authService.frames.isEmpty {
+            hasLoadedFrames = true
+            return
+        }
+
         do {
             try await authService.fetchFrames()
             hasLoadedFrames = true
