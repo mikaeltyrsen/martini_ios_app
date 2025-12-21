@@ -617,8 +617,8 @@ struct FrameLayout: View {
 
     struct ShimmerView: View {
         var cornerRadius: CGFloat
-        var baseOpacity: Double = 0.28
-        var highlightOpacity: Double = 0.55
+        var baseOpacity: Double = 0
+        var highlightOpacity: Double = 0.1
 
         @State private var offsetProgress: CGFloat = -1.2
 
@@ -629,12 +629,15 @@ struct FrameLayout: View {
         var body: some View {
             GeometryReader { proxy in
                 let width = proxy.size.width
-                let gradientWidth = width * 1.4
+                let height = proxy.size.width
+                let gradientWidth = width * 2
+                let gradientHeight = height
+                let bgColor = Color.gray.opacity(0.2)
                 let baseColor = Color.gray.opacity(baseOpacity)
                 let highlight = Color.white.opacity(highlightOpacity)
 
                 RoundedRectangle(cornerRadius: cornerRadius)
-                    .fill(baseColor)
+                    .fill(bgColor)
                     .overlay {
                         RoundedRectangle(cornerRadius: cornerRadius)
                             .fill(
@@ -644,15 +647,15 @@ struct FrameLayout: View {
                                     endPoint: .bottom
                                 )
                             )
-                            .frame(width: gradientWidth)
-                            .rotationEffect(.degrees(20))
+                            .frame(width: gradientWidth, height: gradientHeight)
+                            .rotationEffect(.degrees(45))
                             .offset(x: offsetProgress * width)
                     }
                     .clipped()
                     .onAppear {
-                        offsetProgress = -1.2
+                        offsetProgress = -2
                         withAnimation(animation) {
-                            offsetProgress = 1.2
+                            offsetProgress = 2
                         }
                     }
             }

@@ -561,8 +561,8 @@ class AuthService: ObservableObject {
         }
 
         let body: [String: Any] = [
-            "projectId": projectId,
-            "frameId": id,
+            "project": projectId,
+            "id": id,
             "status": status.requestValue
         ]
 
