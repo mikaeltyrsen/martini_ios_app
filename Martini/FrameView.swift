@@ -134,7 +134,7 @@ struct FrameView: View {
             Button {
                 onNavigate(.previous)
             } label: {
-                Image(systemName: "arrow.up")
+                Image(systemName: "arrow.left")
             }
             .accessibilityLabel("Previous frame")
             .disabled(!hasPreviousFrame)
@@ -142,7 +142,7 @@ struct FrameView: View {
             Button {
                 onNavigate(.next)
             } label: {
-                Image(systemName: "arrow.down")
+                Image(systemName: "arrow.right")
             }
             .accessibilityLabel("Next frame")
             .disabled(!hasNextFrame)
