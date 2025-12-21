@@ -120,10 +120,9 @@ class AuthService: ObservableObject {
             self.token = token
             self.isAuthenticated = true
 
-            // Automatically refresh creatives when a token is already stored
+            // Automatically refresh project details, creatives, and frames when a token is already stored
             Task {
-                try? await self.fetchCreatives()
-                try? await self.fetchProjectDetails()
+                try? await self.fetchProjectCreativesAndFrames()
             }
         }
     }
@@ -267,14 +266,13 @@ class AuthService: ObservableObject {
         )
         
         print("💾 Saved auth data - projectId: \(projectId)")
-        print("🎬 About to fetch creatives...")
+        print("🎬 About to fetch project details, creatives, and frames...")
 
-        // Fetch creatives after successful authentication
+        // Fetch project details, creatives, and frames after successful authentication
         do {
-            try await fetchCreatives()
-            try await fetchProjectDetails()
+            try await fetchProjectCreativesAndFrames()
         } catch {
-            print("❌ Failed to fetch creatives: \(error)")
+            print("❌ Failed to fetch project data: \(error)")
             throw error
         }
     }
@@ -331,6 +329,12 @@ class AuthService: ObservableObject {
         }
 
         return data
+    }
+
+    func fetchProjectCreativesAndFrames() async throws {
+        try await fetchProjectDetails()
+        try await fetchCreatives()
+        try await fetchFrames()
     }
     
     // Fetch creatives for the current project
