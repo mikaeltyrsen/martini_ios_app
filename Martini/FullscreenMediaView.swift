@@ -13,6 +13,7 @@ struct FullscreenMediaView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showChrome: Bool = false
     @State private var backgroundOpacity: Double = 0
+    @State private var mediaOpacity: Double = 0
 
     var body: some View {
         GeometryReader { proxy in
@@ -36,9 +37,12 @@ struct FullscreenMediaView: View {
                         frameNumberLabel: frameNumberLabel,
                         placeholder: fallbackPlaceholder,
                         imageShouldFill: false,
-                        isSource: false
+                        isSource: false,
+                        useMatchedGeometry: false
                     )
                     .frame(maxWidth: proxy.size.width * 0.98)
+                    .opacity(mediaOpacity)
+                    .animation(.easeInOut(duration: 0.25), value: mediaOpacity)
 
                     metadata
                         .opacity(showChrome ? 1 : 0)
@@ -49,7 +53,7 @@ struct FullscreenMediaView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .contentShape(Rectangle())
                 .onTapGesture {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.9)) {
+                    withAnimation(.easeInOut(duration: 0.2)) {
                         showChrome.toggle()
                     }
                 }
@@ -57,18 +61,19 @@ struct FullscreenMediaView: View {
                 if showChrome {
                     topToolbar(topPadding: proxy.safeAreaInsets.top)
                         .padding(.horizontal, 16)
-                        .transition(.move(edge: .top).combined(with: .opacity))
+                        .transition(.opacity)
                 }
             }
         }
         .onAppear {
             withAnimation(.easeInOut(duration: 0.25)) {
                 backgroundOpacity = 1
-                showChrome = true
+                mediaOpacity = 1
             }
         }
         .onDisappear {
             backgroundOpacity = 0
+            mediaOpacity = 0
         }
     }
 
@@ -78,7 +83,7 @@ struct FullscreenMediaView: View {
                 onDismiss()
                 dismiss()
             } label: {
-                Image(systemName: "chevron.down.circle.fill")
+                Image(systemName: "xmark.circle.fill")
                     .font(.system(size: 30, weight: .bold))
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(.white)

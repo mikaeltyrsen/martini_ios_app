@@ -538,7 +538,8 @@ struct FrameLayout: View {
             frameNumberLabel: frameNumberLabel,
             placeholder: AnyView(placeholder),
             imageShouldFill: !isFullscreen,
-            isSource: !isFullscreen
+            isSource: !isFullscreen,
+            useMatchedGeometry: !isFullscreen
         )
         // Prevent the image content from animating independently when the card resizes
         .transaction { transaction in
@@ -558,6 +559,7 @@ struct FrameLayout: View {
         let placeholder: AnyView
         let imageShouldFill: Bool
         let isSource: Bool
+        let useMatchedGeometry: Bool
 
         var body: some View {
             Group {
@@ -592,7 +594,22 @@ struct FrameLayout: View {
             }
             .aspectRatio(aspectRatio, contentMode: contentMode)
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-            .matchedGeometryEffect(id: heroID, in: namespace, isSource: isSource)
+            .modifier(MatchedGeometryModifier(useMatchedGeometry: useMatchedGeometry, heroID: heroID, namespace: namespace, isSource: isSource))
+        }
+    }
+
+    private struct MatchedGeometryModifier: ViewModifier {
+        let useMatchedGeometry: Bool
+        let heroID: String
+        let namespace: Namespace.ID
+        let isSource: Bool
+
+        func body(content: Content) -> some View {
+            if useMatchedGeometry {
+                content.matchedGeometryEffect(id: heroID, in: namespace, isSource: isSource)
+            } else {
+                content
+            }
         }
     }
 
