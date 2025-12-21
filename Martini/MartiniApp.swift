@@ -11,6 +11,7 @@ import SwiftUI
 struct MartiniApp: App {
     @StateObject private var authService: AuthService
     @StateObject private var realtimeService: RealtimeService
+    @StateObject private var fullscreenCoordinator = FullscreenMediaCoordinator()
 
     init() {
         let authService = AuthService()
@@ -23,6 +24,7 @@ struct MartiniApp: App {
             ContentView()
                 .environmentObject(authService)
                 .environmentObject(realtimeService)
+                .fullscreenMediaCoordinator(fullscreenCoordinator)
         }
     }
 }

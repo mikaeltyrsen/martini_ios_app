@@ -111,7 +111,7 @@ struct FrameLayout: View {
 
     @Environment(\.horizontalSizeClass) private var hSizeClass
     @Environment(\.colorScheme) private var colorScheme
-    @State private var fullscreenConfig: FullscreenMediaConfiguration?
+    @Environment(\.fullscreenMediaCoordinator) private var fullscreenCoordinator
     @Namespace private var fullscreenNamespace
     @State private var borderScale: CGFloat = 1.0
     @State private var skipOverlayOpacity: Double = 0
@@ -148,18 +148,6 @@ struct FrameLayout: View {
             if showTextBlock {
                 textBlock
             }
-        }
-        .fullScreenCover(item: $fullscreenConfig) { configuration in
-            FullscreenMediaView(
-                url: configuration.url,
-                isVideo: configuration.isVideo,
-                aspectRatio: configuration.aspectRatio,
-                title: configuration.title,
-                frameNumberLabel: configuration.frameNumberLabel,
-                namespace: fullscreenNamespace,
-                heroID: mediaHeroID,
-                onDismiss: { fullscreenConfig = nil }
-            )
         }
     }
 
@@ -248,12 +236,14 @@ struct FrameLayout: View {
         if enablesFullScreen, resolvedMediaURL != nil {
             animatedCard
                 .onTapGesture {
-                    fullscreenConfig = FullscreenMediaConfiguration(
+                    fullscreenCoordinator?.configuration = FullscreenMediaConfiguration(
                         url: resolvedMediaURL,
                         isVideo: shouldPlayAsVideo,
                         aspectRatio: aspectRatio,
                         title: resolvedTitle,
-                        frameNumberLabel: frameNumberLabel
+                        frameNumberLabel: frameNumberLabel,
+                        namespace: fullscreenNamespace,
+                        heroID: mediaHeroID
                     )
                 }
         } else {
@@ -757,15 +747,6 @@ struct FrameLayout: View {
         let maxSize: CGFloat = 20
         return max(minSize, min(proportional, maxSize))
     }
-}
-
-private struct FullscreenMediaConfiguration: Identifiable {
-    let id = UUID()
-    let url: URL?
-    let isVideo: Bool
-    let aspectRatio: CGFloat
-    let title: String?
-    let frameNumberLabel: String?
 }
 
 struct LoopingVideoView: UIViewRepresentable {

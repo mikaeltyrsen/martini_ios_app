@@ -11,6 +11,7 @@ import UIKit
 struct ContentView: View {
     @EnvironmentObject var authService: AuthService
     @EnvironmentObject var realtimeService: RealtimeService
+    @Environment(\.fullscreenMediaCoordinator) private var fullscreenCoordinator
     
     var body: some View {
         Group {
@@ -33,6 +34,10 @@ struct ContentView: View {
         .onOpenURL { url in
             handleIncomingURL(url)
         }
+        .overlay(alignment: .center) {
+            fullscreenOverlay
+        }
+        .animation(.easeInOut(duration: 0.25), value: fullscreenCoordinator?.configuration?.id)
     }
 
     private func synchronizeRealtimeConnection() {
@@ -48,6 +53,28 @@ struct ContentView: View {
 
     private func handleIncomingURL(_ url: URL) {
         authService.handleDeepLink(url)
+    }
+
+    @ViewBuilder
+    private var fullscreenOverlay: some View {
+        if let configuration = fullscreenCoordinator?.configuration {
+            FullscreenMediaView(
+                url: configuration.url,
+                isVideo: configuration.isVideo,
+                aspectRatio: configuration.aspectRatio,
+                title: configuration.title,
+                frameNumberLabel: configuration.frameNumberLabel,
+                namespace: configuration.namespace,
+                heroID: configuration.heroID,
+                onDismiss: {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        fullscreenCoordinator?.configuration = nil
+                    }
+                }
+            )
+            .transition(.opacity)
+            .zIndex(1)
+        }
     }
 }
 

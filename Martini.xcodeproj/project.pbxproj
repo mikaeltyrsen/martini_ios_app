@@ -21,6 +21,7 @@
 		07C904B62EDBAE73004EDBFA /* FrameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C904B52EDBAE73004EDBFA /* FrameView.swift */; };
 		07C904B72FE2B5E9004EDBFA /* FrameLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C904B82FE2B5E9004EDBFA /* FrameLayout.swift */; };
 		07C904B82EDC888C004EDBFA /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C904B72EDC888C004EDBFA /* Helpers.swift */; };
+		07C904BE2FF4B4A4004EDBFA /* FullscreenMediaCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C904BD2FF4B4A4004EDBFA /* FullscreenMediaCoordinator.swift */; };
 		07D1C1032FF0BBBB00000001 /* ImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07D1C1022FF0BBBB00000001 /* ImageCache.swift */; };
 		07D1C1052FF0BBBB00000002 /* ScheduleCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07D1C1042FF0BBBB00000002 /* ScheduleCache.swift */; };
 		07F4E0022FF0AAAA00000001 /* RealtimeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07F4E0012FF0AAAA00000001 /* RealtimeService.swift */; };
@@ -46,6 +47,7 @@
 		07C904B52EDBAE73004EDBFA /* FrameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameView.swift; sourceTree = "<group>"; };
 		07C904B72EDC888C004EDBFA /* Helpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Helpers.swift; sourceTree = "<group>"; };
 		07C904B82FE2B5E9004EDBFA /* FrameLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameLayout.swift; sourceTree = "<group>"; };
+		07C904BD2FF4B4A4004EDBFA /* FullscreenMediaCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullscreenMediaCoordinator.swift; sourceTree = "<group>"; };
 		07D1C1022FF0BBBB00000001 /* ImageCache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ImageCache.swift; sourceTree = "<group>"; };
 		07D1C1042FF0BBBB00000002 /* ScheduleCache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScheduleCache.swift; sourceTree = "<group>"; };
 		07F4E0012FF0AAAA00000001 /* RealtimeService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RealtimeService.swift; sourceTree = "<group>"; };
@@ -99,6 +101,7 @@
 				07C904B52EDBAE73004EDBFA /* FrameView.swift */,
 				0730F3E42EF6E788000B598F /* FullscreenMediaView.swift */,
 				07C904B82FE2B5E9004EDBFA /* FrameLayout.swift */,
+				07C904BD2FF4B4A4004EDBFA /* FullscreenMediaCoordinator.swift */,
 				07C904B72EDC888C004EDBFA /* Helpers.swift */,
 				07D1C1022FF0BBBB00000001 /* ImageCache.swift */,
 				07D1C1042FF0BBBB00000002 /* ScheduleCache.swift */,
@@ -195,6 +198,7 @@
 				07D1C1052FF0BBBB00000002 /* ScheduleCache.swift in Sources */,
 				07A6A6882EC9A272002C8EB9 /* ContentView.swift in Sources */,
 				0730F3E52EF6E788000B598F /* FullscreenMediaView.swift in Sources */,
+				07C904BE2FF4B4A4004EDBFA /* FullscreenMediaCoordinator.swift in Sources */,
 				07F4E0022FF0AAAA00000001 /* RealtimeService.swift in Sources */,
 				07C904B82EDC888C004EDBFA /* Helpers.swift in Sources */,
 				075456032EC9A6E200C45739 /* LoginView.swift in Sources */,
