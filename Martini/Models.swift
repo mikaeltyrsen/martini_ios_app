@@ -407,42 +407,43 @@ extension ProjectSchedule {
     /// This helper first attempts to decode the raw string and then retries by unwrapping any
     /// nested JSON string if needed.
     fileprivate static func decodeEmbeddedSchedules(from scheduleString: String) -> [ProjectScheduleItem]? {
-        guard let directData = scheduleString.data(using: .utf8) else { return nil }
-
+        guard var data = scheduleString.data(using: .utf8) else { return nil }
         let decoder = JSONDecoder()
 
-        if let decoded = try? decoder.decode(EmbeddedScheduleResponse.self, from: directData) {
-            return decoded.schedules
-        }
-
-        if let decodedDays = try? decoder.decode(EmbeddedDaysResponse.self, from: directData) {
-            return decodedDays.days?.map { $0.asScheduleItem }
-        }
-
-        if let decodedContainer = try? decoder.decode(EmbeddedDaysContainerResponse.self, from: directData) {
-            if let wrappedDays = decodedContainer.schedule?.days ?? decodedContainer.days {
-                return wrappedDays.map { $0.asScheduleItem }
-            }
-        }
-
-        if let unwrappedString = try? decoder.decode(String.self, from: directData),
-           let nestedData = unwrappedString.data(using: .utf8) {
-            if let decoded = try? decoder.decode(EmbeddedScheduleResponse.self, from: nestedData) {
+        func decodeSchedules(from data: Data) -> [ProjectScheduleItem]? {
+            if let decoded = try? decoder.decode(EmbeddedScheduleResponse.self, from: data) {
                 return decoded.schedules
             }
 
-            if let decodedDays = try? decoder.decode(EmbeddedDaysResponse.self, from: nestedData) {
+            if let decodedDays = try? decoder.decode(EmbeddedDaysResponse.self, from: data) {
                 return decodedDays.days?.map { $0.asScheduleItem }
             }
 
-            if let decodedContainer = try? decoder.decode(EmbeddedDaysContainerResponse.self, from: nestedData) {
+            if let decodedContainer = try? decoder.decode(EmbeddedDaysContainerResponse.self, from: data) {
                 if let wrappedDays = decodedContainer.schedule?.days ?? decodedContainer.days {
                     return wrappedDays.map { $0.asScheduleItem }
                 }
             }
+
+            return nil
         }
 
-        return nil
+        // Attempt to decode up to two layers of nested string encoding.
+        for _ in 0..<2 {
+            if let schedules = decodeSchedules(from: data) {
+                return schedules
+            }
+
+            if let unwrappedString = try? decoder.decode(String.self, from: data),
+               let nestedData = unwrappedString.data(using: .utf8) {
+                data = nestedData
+                continue
+            }
+
+            break
+        }
+
+        return decodeSchedules(from: data)
     }
 }
 
