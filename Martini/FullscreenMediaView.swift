@@ -11,13 +11,13 @@ struct FullscreenMediaView: View {
     let onDismiss: () -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @State private var showChrome: Bool = false
+    @State private var showChrome: Bool = true
     @State private var backgroundOpacity: Double = 0
     @State private var mediaOpacity: Double = 0
 
     var body: some View {
         GeometryReader { proxy in
-            ZStack(alignment: .topLeading) {
+            ZStack(alignment: .topTrailing) {
                 Color.black
                     .opacity(backgroundOpacity)
                     .ignoresSafeArea()
@@ -58,11 +58,10 @@ struct FullscreenMediaView: View {
                     }
                 }
 
-                if showChrome {
-                    topToolbar(topPadding: proxy.safeAreaInsets.top)
-                        .padding(.horizontal, 16)
-                        .transition(.opacity)
-                }
+                topToolbar(topPadding: proxy.safeAreaInsets.top)
+                    .padding(.horizontal, 16)
+                    .opacity(showChrome ? 1 : 0.5)
+                    .animation(.easeInOut(duration: 0.2), value: showChrome)
             }
         }
         .onAppear {
@@ -79,21 +78,21 @@ struct FullscreenMediaView: View {
 
     private func topToolbar(topPadding: CGFloat) -> some View {
         HStack {
+            Spacer()
+
             Button {
                 onDismiss()
                 dismiss()
             } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 30, weight: .bold))
-                    .symbolRenderingMode(.hierarchical)
+                Image(systemName: "xmark")
+                    .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(.white)
-                    .padding(.vertical, 6)
-                    .padding(.horizontal, 10)
-                    .background(.ultraThinMaterial, in: Capsule())
+                    .padding(10)
             }
+            .buttonStyle(.bordered)
+            .buttonBorderShape(.capsule)
+            .tint(.white.opacity(0.12))
             .accessibilityLabel("Close fullscreen")
-
-            Spacer()
         }
         .padding(.top, max(20, topPadding + 8))
     }
