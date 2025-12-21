@@ -7,6 +7,7 @@ import Combine
 struct FrameView: View {
     private let providedFrame: Frame
     @EnvironmentObject private var authService: AuthService
+    @Environment(\.fullscreenMediaCoordinator) private var fullscreenCoordinator
     @State private var frame: Frame
     @Binding var assetOrder: [FrameAssetKind]
     let onClose: () -> Void
@@ -122,6 +123,10 @@ struct FrameView: View {
                 if visibleAssetID == nil { visibleAssetID = newStack.first?.id }
             }
         }
+        .overlay(alignment: .center) {
+            fullscreenOverlay
+        }
+        .animation(.easeInOut(duration: 0.25), value: fullscreenCoordinator?.configuration?.id)
     }
 
     @ToolbarContentBuilder
@@ -539,6 +544,28 @@ struct FrameView: View {
 private extension FrameView {
     private var isDescriptionExpanded: Bool {
         descriptionHeightRatio > 0.75
+    }
+
+    @ViewBuilder
+    private var fullscreenOverlay: some View {
+        if let configuration = fullscreenCoordinator?.configuration {
+            FullscreenMediaView(
+                url: configuration.url,
+                isVideo: configuration.isVideo,
+                aspectRatio: configuration.aspectRatio,
+                title: configuration.title,
+                frameNumberLabel: configuration.frameNumberLabel,
+                namespace: configuration.namespace,
+                heroID: configuration.heroID,
+                onDismiss: {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        fullscreenCoordinator?.configuration = nil
+                    }
+                }
+            )
+            .transition(.opacity)
+            .zIndex(1)
+        }
     }
 
     private func descriptionDragGesture(containerHeight: CGFloat) -> some Gesture {
