@@ -33,6 +33,7 @@ class AuthService: ObservableObject {
     private let accessCodeKey = "martini_access_code"
     private let baseScriptsURL = "https://dev.staging.trymartini.com/scripts/"
     private let scheduleCache = ScheduleCache.shared
+    private var creativesFetchTask: Task<Void, Error>?
 
     init() {
         loadAuthData()
@@ -338,62 +339,79 @@ class AuthService: ObservableObject {
             throw AuthError.noAuth
         }
 
-        isLoadingCreatives = true
-        defer { isLoadingCreatives = false }
-
-        var body: [String: Any] = [
-            "projectId": projectId,
-            "pullAll": pullAll
-        ]
-
-        var request = try authorizedRequest(for: .creatives, body: body)
-
-        let requestJSON = String(data: request.httpBody ?? Data(), encoding: .utf8) ?? "Unable to encode"
-        print("📤 Fetching creatives...")
-        print("🔗 URL: \(request.url?.absoluteString ?? "unknown")")
-        print("📝 Request body: \(requestJSON)")
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw AuthError.invalidResponse
+        if let existingTask = creativesFetchTask {
+            return try await existingTask.value
         }
-        
-        guard httpResponse.statusCode == 200 else {
-            let errorBody = String(data: data, encoding: .utf8) ?? "No response body"
-            print("❌ Failed to fetch creatives - Status: \(httpResponse.statusCode)")
-            print("📝 Response: \(errorBody)")
-            if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
-                logout()
-                throw AuthError.unauthorized
+
+        let fetchTask: Task<Void, Error> = Task { @MainActor in
+            isLoadingCreatives = true
+            defer {
+                isLoadingCreatives = false
+                creativesFetchTask = nil
             }
-            throw AuthError.requestFailed(statusCode: httpResponse.statusCode)
-        }
-        
-        let responseJSON = String(data: data, encoding: .utf8) ?? "Unable to decode"
-        print("📥 Response received (\(httpResponse.statusCode)):")
-        print(responseJSON)
-        
-        let decoder = JSONDecoder()
-        let creativesResponse = try decoder.decode(CreativesResponse.self, from: data)
 
-        guard creativesResponse.success else {
-            print("❌ Creatives response failed: \(creativesResponse.error ?? "Unknown error")")
-            throw AuthError.authenticationFailedWithMessage(creativesResponse.error ?? "Failed to fetch creatives")
+            var body: [String: Any] = [
+                "projectId": projectId,
+                "pullAll": pullAll
+            ]
+
+            var request = try authorizedRequest(for: .creatives, body: body)
+
+            let requestJSON = String(data: request.httpBody ?? Data(), encoding: .utf8) ?? "Unable to encode"
+            print("📤 Fetching creatives...")
+            print("🔗 URL: \(request.url?.absoluteString ?? "unknown")")
+            print("📝 Request body: \(requestJSON)")
+            
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw AuthError.invalidResponse
+            }
+            
+            guard httpResponse.statusCode == 200 else {
+                let errorBody = String(data: data, encoding: .utf8) ?? "No response body"
+                print("❌ Failed to fetch creatives - Status: \(httpResponse.statusCode)")
+                print("📝 Response: \(errorBody)")
+                if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
+                    logout()
+                    throw AuthError.unauthorized
+                }
+                throw AuthError.requestFailed(statusCode: httpResponse.statusCode)
+            }
+            
+            let responseJSON = String(data: data, encoding: .utf8) ?? "Unable to decode"
+            print("📥 Response received (\(httpResponse.statusCode)):")
+            print(responseJSON)
+            
+            let decoder = JSONDecoder()
+            let creativesResponse = try decoder.decode(CreativesResponse.self, from: data)
+
+            guard creativesResponse.success else {
+                print("❌ Creatives response failed: \(creativesResponse.error ?? "Unknown error")")
+                throw AuthError.authenticationFailedWithMessage(creativesResponse.error ?? "Failed to fetch creatives")
+            }
+
+            if (self.projectId ?? "").isEmpty, let responseProjectId = creativesResponse.projectId, !responseProjectId.isEmpty {
+                self.projectId = responseProjectId
+                UserDefaults.standard.set(responseProjectId, forKey: projectIdKey)
+            }
+            
+            self.creatives = creativesResponse.creatives
+            print("✅ Successfully fetched \(creatives.count) creatives")
+            for (index, creative) in creatives.prefix(3).enumerated() {
+                print("  \(index + 1). \(creative.title) - \(creative.completedFrames)/\(creative.totalFrames) frames")
+            }
+            if creatives.count > 3 {
+                print("  ... and \(creatives.count - 3) more")
+            }
         }
 
-        if (self.projectId ?? "").isEmpty, let responseProjectId = creativesResponse.projectId, !responseProjectId.isEmpty {
-            self.projectId = responseProjectId
-            UserDefaults.standard.set(responseProjectId, forKey: projectIdKey)
-        }
-        
-        self.creatives = creativesResponse.creatives
-        print("✅ Successfully fetched \(creatives.count) creatives")
-        for (index, creative) in creatives.prefix(3).enumerated() {
-            print("  \(index + 1). \(creative.title) - \(creative.completedFrames)/\(creative.totalFrames) frames")
-        }
-        if creatives.count > 3 {
-            print("  ... and \(creatives.count - 3) more")
+        creativesFetchTask = fetchTask
+        do {
+            try await fetchTask.value
+        } catch {
+            creativesFetchTask = nil
+            throw error
         }
     }
 
