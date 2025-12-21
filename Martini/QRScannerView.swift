@@ -7,6 +7,9 @@
 
 import SwiftUI
 import AVFoundation
+#if os(iOS)
+import AudioToolbox
+#endif
 
 struct QRScannerView: View {
     @Environment(\.dismiss) var dismiss
@@ -157,7 +160,9 @@ class QRScanner: NSObject, ObservableObject, AVCaptureMetadataOutputObjectsDeleg
             guard let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject else { return }
             guard let stringValue = readableObject.stringValue else { return }
             
+#if os(iOS) && !targetEnvironment(macCatalyst)
             AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
+#endif
             scannedCode = stringValue
             stopScanning()
         }
