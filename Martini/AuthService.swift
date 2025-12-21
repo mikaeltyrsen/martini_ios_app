@@ -25,6 +25,7 @@ class AuthService: ObservableObject {
     @Published var frames: [Frame] = []
     @Published var isLoadingFrames: Bool = false
     @Published var isScheduleActive: Bool = false
+    @Published var isLoadingProjectDetails: Bool = false
     @Published var pendingDeepLink: String?
     
     private let tokenHashKey = "martini_token_hash"
@@ -34,6 +35,7 @@ class AuthService: ObservableObject {
     private let baseScriptsURL = "https://dev.staging.trymartini.com/scripts/"
     private let scheduleCache = ScheduleCache.shared
     private var creativesFetchTask: Task<Void, Error>?
+    private var projectDetailsFetchTask: Task<Void, Error>?
 
     init() {
         loadAuthData()
@@ -528,53 +530,73 @@ class AuthService: ObservableObject {
             throw AuthError.noAuth
         }
 
-        let body: [String: Any] = [
-            "projectId": projectId
-        ]
-
-        var request = try authorizedRequest(for: .project, body: body)
-
-        let requestJSON = String(data: request.httpBody ?? Data(), encoding: .utf8) ?? "Unable to encode"
-        print("📤 Fetching project details...")
-        print("🔗 URL: \(request.url?.absoluteString ?? "unknown")")
-        print("📝 Request body: \(requestJSON)")
-
-        let (data, response) = try await URLSession.shared.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw AuthError.invalidResponse
+        if let existingTask = projectDetailsFetchTask {
+            return try await existingTask.value
         }
 
-        guard httpResponse.statusCode == 200 else {
-            let errorBody = String(data: data, encoding: .utf8) ?? "No response body"
-            print("❌ Failed to fetch project details - Status: \(httpResponse.statusCode)")
-            print("📝 Response: \(errorBody)")
-            if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
-                logout()
-                throw AuthError.unauthorized
+        let fetchTask: Task<Void, Error> = Task { @MainActor in
+            isLoadingProjectDetails = true
+            defer {
+                isLoadingProjectDetails = false
+                projectDetailsFetchTask = nil
             }
-            throw AuthError.requestFailed(statusCode: httpResponse.statusCode)
+
+            let body: [String: Any] = [
+                "projectId": projectId
+            ]
+
+            var request = try authorizedRequest(for: .project, body: body)
+
+            let requestJSON = String(data: request.httpBody ?? Data(), encoding: .utf8) ?? "Unable to encode"
+            print("📤 Fetching project details...")
+            print("🔗 URL: \(request.url?.absoluteString ?? "unknown")")
+            print("📝 Request body: \(requestJSON)")
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw AuthError.invalidResponse
+            }
+
+            guard httpResponse.statusCode == 200 else {
+                let errorBody = String(data: data, encoding: .utf8) ?? "No response body"
+                print("❌ Failed to fetch project details - Status: \(httpResponse.statusCode)")
+                print("📝 Response: \(errorBody)")
+                if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
+                    logout()
+                    throw AuthError.unauthorized
+                }
+                throw AuthError.requestFailed(statusCode: httpResponse.statusCode)
+            }
+
+            let responseJSON = String(data: data, encoding: .utf8) ?? "Unable to decode"
+            print("📥 Project response received (\(httpResponse.statusCode)):")
+            print(responseJSON)
+
+            let decoder = JSONDecoder()
+            let projectResponse = try decoder.decode(ProjectDetails.self, from: data)
+
+            guard projectResponse.success else {
+                print("❌ Project response failed")
+                throw AuthError.authenticationFailedWithMessage("Failed to fetch project details")
+            }
+
+            self.projectDetails = projectResponse
+            self.isScheduleActive = projectResponse.activeSchedule != nil || frames.contains { frame in
+                if let schedule = frame.schedule, !schedule.isEmpty { return true }
+                return false
+            }
+
+            print("✅ Successfully fetched project details for \(projectResponse.name)")
         }
 
-        let responseJSON = String(data: data, encoding: .utf8) ?? "Unable to decode"
-        print("📥 Project response received (\(httpResponse.statusCode)):")
-        print(responseJSON)
-
-        let decoder = JSONDecoder()
-        let projectResponse = try decoder.decode(ProjectDetails.self, from: data)
-
-        guard projectResponse.success else {
-            print("❌ Project response failed")
-            throw AuthError.authenticationFailedWithMessage("Failed to fetch project details")
+        projectDetailsFetchTask = fetchTask
+        do {
+            try await fetchTask.value
+        } catch {
+            projectDetailsFetchTask = nil
+            throw error
         }
-
-        self.projectDetails = projectResponse
-        self.isScheduleActive = projectResponse.activeSchedule != nil || frames.contains { frame in
-            if let schedule = frame.schedule, !schedule.isEmpty { return true }
-            return false
-        }
-
-        print("✅ Successfully fetched project details for \(projectResponse.name)")
     }
 
     func updateFrameStatus(id: String, to status: FrameStatus) async throws -> Frame {
