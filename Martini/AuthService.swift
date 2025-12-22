@@ -7,6 +7,22 @@
 
 import Foundation
 
+struct FrameUpdateEvent: Equatable {
+    let frameId: String
+    let context: FrameUpdateContext
+
+    private let identifier = UUID()
+
+    static func == (lhs: FrameUpdateEvent, rhs: FrameUpdateEvent) -> Bool {
+        lhs.identifier == rhs.identifier
+    }
+}
+
+enum FrameUpdateContext: Equatable {
+    case localStatusChange
+    case websocket(event: String)
+}
+
 @MainActor
 class AuthService: ObservableObject {
     @Published var isAuthenticated: Bool = false
@@ -23,6 +39,7 @@ class AuthService: ObservableObject {
     @Published var cachedSchedule: ProjectSchedule?
     @Published var fetchedSchedules: [ProjectSchedule] = []
     @Published var frames: [Frame] = []
+    @Published var frameUpdateEvent: FrameUpdateEvent?
     @Published var isLoadingFrames: Bool = false
     @Published var isScheduleActive: Bool = false
     @Published var isLoadingProjectDetails: Bool = false
@@ -599,6 +616,10 @@ class AuthService: ObservableObject {
         }
     }
 
+    func publishFrameUpdate(frameId: String, context: FrameUpdateContext) {
+        frameUpdateEvent = FrameUpdateEvent(frameId: frameId, context: context)
+    }
+
     func updateFrameStatus(id: String, to status: FrameStatus) async throws -> Frame {
         guard let projectId else {
             throw AuthError.noAuth
@@ -660,6 +681,7 @@ class AuthService: ObservableObject {
             frames[index] = updatedFrame
         }
 
+        publishFrameUpdate(frameId: updatedFrame.id, context: .localStatusChange)
         return updatedFrame
     }
 
