@@ -18,6 +18,7 @@ final class RealtimeService: NSObject, ObservableObject {
     private let reconnectDelay: TimeInterval = 2.0
     private let eventQueue = DispatchQueue(label: "com.martini.realtime")
 
+    @MainActor
     init(authService: AuthService) {
         self.authService = authService
         self.websocketCalls = WebsocketCalls(authService: authService)
@@ -103,6 +104,7 @@ final class RealtimeService: NSObject, ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + reconnectDelay, execute: workItem)
     }
 
+    @MainActor
     private func handleEvent(name: String, dataString: String) {
         lastEventName = name
 
