@@ -25,6 +25,7 @@
 		07D1C1032FF0BBBB00000001 /* ImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07D1C1022FF0BBBB00000001 /* ImageCache.swift */; };
 		07D1C1052FF0BBBB00000002 /* ScheduleCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07D1C1042FF0BBBB00000002 /* ScheduleCache.swift */; };
 		07F4E0022FF0AAAA00000001 /* RealtimeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07F4E0012FF0AAAA00000001 /* RealtimeService.swift */; };
+		07F4E0052FF0AAAA00000002 /* WebsocketCalls.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07F4E0032FF0AAAA00000002 /* WebsocketCalls.swift */; };
 		57E214BA1EC84898ABC8A8A6 /* SchedulesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 477F863DD3304428A7C610C5 /* SchedulesView.swift */; };
 		F501C2E32028424CABAFBC56 /* ScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60C91863CD124D159734FD1B /* ScheduleView.swift */; };
 /* End PBXBuildFile section */
@@ -51,6 +52,7 @@
 		07D1C1022FF0BBBB00000001 /* ImageCache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ImageCache.swift; sourceTree = "<group>"; };
 		07D1C1042FF0BBBB00000002 /* ScheduleCache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScheduleCache.swift; sourceTree = "<group>"; };
 		07F4E0012FF0AAAA00000001 /* RealtimeService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RealtimeService.swift; sourceTree = "<group>"; };
+		07F4E0032FF0AAAA00000002 /* WebsocketCalls.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebsocketCalls.swift; sourceTree = "<group>"; };
 		477F863DD3304428A7C610C5 /* SchedulesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchedulesView.swift; sourceTree = "<group>"; };
 		60C91863CD124D159734FD1B /* ScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -97,6 +99,7 @@
 				075455FF2EC9A6E100C45739 /* LoginView.swift */,
 				075456002EC9A6E100C45739 /* QRScannerView.swift */,
 				07F4E0012FF0AAAA00000001 /* RealtimeService.swift */,
+				07F4E0032FF0AAAA00000002 /* WebsocketCalls.swift */,
 				07A6A68B2EC9A272002C8EB9 /* Preview Content */,
 				07C904B52EDBAE73004EDBFA /* FrameView.swift */,
 				0730F3E42EF6E788000B598F /* FullscreenMediaView.swift */,
@@ -200,6 +203,7 @@
 				0730F3E52EF6E788000B598F /* FullscreenMediaView.swift in Sources */,
 				07C904BE2FF4B4A4004EDBFA /* FullscreenMediaCoordinator.swift in Sources */,
 				07F4E0022FF0AAAA00000001 /* RealtimeService.swift in Sources */,
+				07F4E0052FF0AAAA00000002 /* WebsocketCalls.swift in Sources */,
 				07C904B82EDC888C004EDBFA /* Helpers.swift in Sources */,
 				075456032EC9A6E200C45739 /* LoginView.swift in Sources */,
 				57E214BA1EC84898ABC8A8A6 /* SchedulesView.swift in Sources */,
