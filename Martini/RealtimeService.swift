@@ -7,6 +7,7 @@ final class RealtimeService: NSObject, ObservableObject {
     @Published private(set) var lastError: String?
 
     private let authService: AuthService
+    private let websocketCalls: WebsocketCalls
     private var session: URLSession!
     private var task: URLSessionDataTask?
     private var buffer = Data()
@@ -17,37 +18,9 @@ final class RealtimeService: NSObject, ObservableObject {
     private let reconnectDelay: TimeInterval = 2.0
     private let eventQueue = DispatchQueue(label: "com.martini.realtime")
 
-    private let frameEvents: Set<String> = [
-        "frame-status-updated",
-        "frame-order-updated",
-        "frame-image-updated",
-        "frame-image-inserted",
-        "frame-crop-updated",
-        "frame-description-updated",
-        "frame-caption-updated",
-        "update-clips",
-        "reload"
-    ]
-
-    private let creativeEvents: Set<String> = [
-        "creative-live-updated",
-        "creative-deleted",
-        "creative-title-updated",
-        "creative-order-updated",
-        "creative-aspect-ratio-updated",
-        "activate-schedule",
-        "update-schedule",
-        "project-files-updated",
-        "reload"
-    ]
-
-    private let scheduleEvents: Set<String> = [
-        "activate-schedule",
-        "update-schedule"
-    ]
-
     init(authService: AuthService) {
         self.authService = authService
+        self.websocketCalls = WebsocketCalls(authService: authService)
         super.init()
 
         let configuration = URLSessionConfiguration.default
@@ -130,7 +103,7 @@ final class RealtimeService: NSObject, ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + reconnectDelay, execute: workItem)
     }
 
-    private func handleEvent(name: String, dataString _: String) {
+    private func handleEvent(name: String, dataString: String) {
         lastEventName = name
 
         if name == "connected" {
@@ -138,29 +111,7 @@ final class RealtimeService: NSObject, ObservableObject {
             return
         }
 
-                if frameEvents.contains(name) {
-                    Task { [weak self] in
-                        guard let self else { return }
-
-                        try? await self.authService.fetchFrames()
-
-                        if name == "frame-status-updated" {
-                            try? await self.authService.fetchCreatives()
-                        }
-                    }
-                }
-
-        if creativeEvents.contains(name) {
-            Task { [weak self] in
-                try? await self?.authService.fetchCreatives()
-            }
-        }
-
-        if scheduleEvents.contains(name) {
-            Task { [weak self] in
-                try? await self?.authService.fetchProjectDetails()
-            }
-        }
+        websocketCalls.handle(event: name, dataString: dataString)
     }
 
     private func processEventChunk(_ chunk: Data) {
