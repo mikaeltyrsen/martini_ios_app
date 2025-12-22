@@ -59,6 +59,8 @@ final class WebsocketCalls {
     }
 
     private func handleFrameEvent(name: String, dataString: String) async {
+        let frameId = frameIdentifier(from: dataString)
+
         if name == "frame-status-updated", let frameStatusUpdate = FrameStatusUpdate.parse(dataString: dataString) {
             applyFrameStatusUpdate(frameStatusUpdate)
             return
@@ -66,9 +68,7 @@ final class WebsocketCalls {
 
         try? await authService.fetchFrames()
 
-        if name == "frame-status-updated" {
-            await refreshCreatives()
-        }
+        notifyFrameUpdate(id: frameId, eventName: name)
     }
 
     private func applyFrameStatusUpdate(_ update: FrameStatusUpdate) {
@@ -78,6 +78,8 @@ final class WebsocketCalls {
             authService.frames[index] = authService.frames[index].updatingStatus(status)
         }
 
+        notifyFrameUpdate(id: update.id, eventName: "frame-status-updated")
+
         Task { [weak self] in
             await self?.refreshCreatives()
         }
@@ -85,6 +87,39 @@ final class WebsocketCalls {
 
     private func refreshCreatives() async {
         try? await authService.fetchCreatives()
+    }
+
+    private func notifyFrameUpdate(id: String?, eventName: String) {
+        guard let id else { return }
+        authService.publishFrameUpdate(frameId: id, context: .websocket(event: eventName))
+    }
+
+    private func frameIdentifier(from dataString: String) -> String? {
+        guard let data = dataString.data(using: .utf8) else { return nil }
+
+        if let decoded = try? JSONDecoder().decode(FrameIdentifierPayload.self, from: data) {
+            return decoded.resolvedId
+        }
+
+        if let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+            if let id = json["id"] as? String {
+                return id
+            }
+
+            if let frameId = json["frameId"] as? String {
+                return frameId
+            }
+
+            if let camelFrameId = json["frameID"] as? String {
+                return camelFrameId
+            }
+
+            if let snakeFrameId = json["frame_id"] as? String {
+                return snakeFrameId
+            }
+        }
+
+        return nil
     }
 }
 
@@ -95,5 +130,16 @@ private struct FrameStatusUpdate: Codable {
     static func parse(dataString: String) -> FrameStatusUpdate? {
         guard let data = dataString.data(using: .utf8) else { return nil }
         return try? JSONDecoder().decode(FrameStatusUpdate.self, from: data)
+    }
+}
+
+private struct FrameIdentifierPayload: Decodable {
+    let id: String?
+    let frameId: String?
+    let frameID: String?
+    let frame_id: String?
+
+    var resolvedId: String? {
+        id ?? frameId ?? frameID ?? frame_id
     }
 }

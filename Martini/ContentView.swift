@@ -472,6 +472,10 @@ struct MainView: View {
                 .onChange(of: frameSortMode) { _ in
                     scrollToPriorityFrame()
                 }
+                .onChange(of: authService.frameUpdateEvent) { event in
+                    guard let event else { return }
+                    handleFrameUpdateEvent(event)
+                }
                 .navigationDestination(for: ScheduleRoute.self) { route in
                     switch route {
                     case .list(let schedule):
@@ -1003,6 +1007,16 @@ private extension MainView {
         DispatchQueue.main.async {
             scrollToFrame(target)
         }
+    }
+
+    private func handleFrameUpdateEvent(_ event: FrameUpdateEvent) {
+        scrollFrameIntoGridIfAvailable(frameId: event.frameId)
+    }
+
+    private func scrollFrameIntoGridIfAvailable(frameId: String, anchor: UnitPoint = .center) {
+        guard viewMode == .grid else { return }
+        guard let frame = displayedFramesInCurrentMode.first(where: { $0.id == frameId }) else { return }
+        scrollToFrame(frame, anchor: anchor)
     }
 
     private func preferredFrameForCurrentMode() -> Frame? {
