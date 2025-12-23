@@ -168,7 +168,7 @@ final class WebsocketCalls {
 
 private struct FrameStatusUpdate: Codable {
     let id: String
-    let status: String
+    let status: String?
 
     static func parse(dataString: String) -> FrameStatusUpdate? {
         guard let data = dataString.data(using: .utf8) else { return nil }
