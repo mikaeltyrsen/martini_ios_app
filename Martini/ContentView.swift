@@ -442,8 +442,8 @@ struct MainView: View {
                                 }
                             }
                         },
-                        onStatusSelected: { updatedFrame, status in
-                            updateFrameStatus(updatedFrame, to: status)
+                        onStatusSelected: { updatedFrame, _ in
+                            applyLocalStatusUpdate(updatedFrame)
                         }
                     )
                     .interactiveDismissDisabled(false)
@@ -1138,6 +1138,12 @@ private extension MainView {
                     dataError = error.localizedDescription
                 }
             }
+        }
+    }
+
+    private func applyLocalStatusUpdate(_ updatedFrame: Frame) {
+        if selectedFrame?.id == updatedFrame.id {
+            selectedFrame = updatedFrame
         }
     }
 

@@ -79,10 +79,6 @@ final class WebsocketCalls {
         }
 
         notifyFrameUpdate(id: update.id, eventName: "frame-status-updated")
-
-        Task { [weak self] in
-            await self?.refreshCreatives()
-        }
     }
 
     private func refreshCreatives() async {
