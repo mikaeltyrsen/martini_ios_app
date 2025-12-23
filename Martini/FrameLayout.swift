@@ -317,13 +317,13 @@ struct FrameLayout: View {
 
         switch status {
         case .done:
-            return .green
+            return .red
         case .here:
-            return .blue
+            return .green
         case .next:
             return .orange
         case .omit:
-            return .gray
+            return .red
         case .none:
             return .gray.opacity(0.3)
         }
