@@ -62,19 +62,33 @@ final class WebsocketCalls {
     private func handleFrameEvent(name: String, dataString: String) async {
         let frameId = frameIdentifier(from: dataString)
 
-        if name == "frame-status-updated", let frameStatusUpdate = FrameStatusUpdate.parse(dataString: dataString) {
-            applyFrameStatusUpdate(frameStatusUpdate)
+        switch name {
+        case "frame-status-updated":
+            if let frameStatusUpdate = FrameStatusUpdate.parse(dataString: dataString) {
+                applyFrameStatusUpdate(frameStatusUpdate)
+            } else {
+                notifyFrameUpdate(id: frameId, eventName: name)
+            }
             return
-        }
 
-        if name == "frame-description-updated", let frameDescriptionUpdate = FrameDescriptionUpdate.parse(dataString: dataString) {
-            applyFrameDescriptionUpdate(frameDescriptionUpdate)
+        case "frame-description-updated":
+            if let frameDescriptionUpdate = FrameDescriptionUpdate.parse(dataString: dataString) {
+                applyFrameDescriptionUpdate(frameDescriptionUpdate)
+            } else {
+                notifyFrameUpdate(id: frameId, eventName: name)
+            }
             return
-        }
 
-        if name == "frame-board-updated", let frameBoardUpdate = FrameBoardUpdate.parse(dataString: dataString) {
-            applyFrameBoardUpdate(frameBoardUpdate)
+        case "frame-board-updated":
+            if let frameBoardUpdate = FrameBoardUpdate.parse(dataString: dataString) {
+                applyFrameBoardUpdate(frameBoardUpdate)
+            } else {
+                notifyFrameUpdate(id: frameId, eventName: name)
+            }
             return
+
+        default:
+            break
         }
 
         try? await authService.fetchFrames()
