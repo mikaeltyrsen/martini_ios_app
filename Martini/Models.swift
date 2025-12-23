@@ -1148,25 +1148,70 @@ struct Frame: Codable, Identifiable {
     var hasScheduledTime: Bool { formattedStartTime != nil }
 
     func updatingStatus(_ status: FrameStatus) -> Frame {
+        copyFrame(status: status == .none ? nil : status.rawValue)
+    }
+
+    func updatingDescription(_ description: String?) -> Frame {
+        copyFrame(description: description)
+    }
+
+    func updatingBoards(_ boards: [FrameBoard], mainBoardType: String?) -> Frame {
+        let primaryBoard = Frame.selectPrimaryBoard(from: boards, matching: mainBoardType)
+        let photoBoard = Frame.selectPrimaryBoard(from: boards, matching: "photoboard")
+
+        return copyFrame(
+            boards: boards,
+            mainBoardType: mainBoardType,
+            board: primaryBoard?.fileUrl,
+            boardThumb: primaryBoard?.fileThumbUrl,
+            boardFileName: primaryBoard?.fileName,
+            boardFileType: primaryBoard?.fileType,
+            boardFileSize: primaryBoard?.fileSize,
+            photoboard: photoBoard?.fileUrl,
+            photoboardThumb: photoBoard?.fileThumbUrl,
+            photoboardFileName: photoBoard?.fileName,
+            photoboardFileType: photoBoard?.fileType,
+            photoboardFileSize: photoBoard?.fileSize,
+            photoboardCrop: photoBoard?.fileCrop
+        )
+    }
+
+    private func copyFrame(
+        description: String? = nil,
+        status: String? = nil,
+        boards: [FrameBoard]? = nil,
+        mainBoardType: String? = nil,
+        board: String? = nil,
+        boardThumb: String? = nil,
+        boardFileName: String? = nil,
+        boardFileType: String? = nil,
+        boardFileSize: Int? = nil,
+        photoboard: String? = nil,
+        photoboardThumb: String? = nil,
+        photoboardFileName: String? = nil,
+        photoboardFileType: String? = nil,
+        photoboardFileSize: Int? = nil,
+        photoboardCrop: String? = nil
+    ) -> Frame {
         Frame(
             id: id,
             creativeId: creativeId,
             creativeTitle: creativeTitle,
             creativeColor: creativeColor,
             creativeAspectRatio: creativeAspectRatio,
-            boards: boards,
-            mainBoardType: mainBoardType,
-            board: board,
-            boardThumb: boardThumb,
-            boardFileName: boardFileName,
-            boardFileType: boardFileType,
-            boardFileSize: boardFileSize,
-            photoboard: photoboard,
-            photoboardThumb: photoboardThumb,
-            photoboardFileName: photoboardFileName,
-            photoboardFileType: photoboardFileType,
-            photoboardFileSize: photoboardFileSize,
-            photoboardCrop: photoboardCrop,
+            boards: boards ?? self.boards,
+            mainBoardType: mainBoardType ?? self.mainBoardType,
+            board: board ?? self.board,
+            boardThumb: boardThumb ?? self.boardThumb,
+            boardFileName: boardFileName ?? self.boardFileName,
+            boardFileType: boardFileType ?? self.boardFileType,
+            boardFileSize: boardFileSize ?? self.boardFileSize,
+            photoboard: photoboard ?? self.photoboard,
+            photoboardThumb: photoboardThumb ?? self.photoboardThumb,
+            photoboardFileName: photoboardFileName ?? self.photoboardFileName,
+            photoboardFileType: photoboardFileType ?? self.photoboardFileType,
+            photoboardFileSize: photoboardFileSize ?? self.photoboardFileSize,
+            photoboardCrop: photoboardCrop ?? self.photoboardCrop,
             preview: preview,
             previewThumb: previewThumb,
             previewFileName: previewFileName,
@@ -1180,11 +1225,11 @@ struct Frame: Codable, Identifiable {
             captureClipFileType: captureClipFileType,
             captureClipFileSize: captureClipFileSize,
             captureClipCrop: captureClipCrop,
-            description: description,
+            description: description ?? self.description,
             caption: caption,
             notes: notes,
             crop: crop,
-            status: status == .none ? nil : status.rawValue,
+            status: status ?? self.status,
             statusUpdated: statusUpdated,
             isArchived: isArchived,
             createdAt: createdAt,

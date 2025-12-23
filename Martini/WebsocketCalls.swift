@@ -12,6 +12,7 @@ final class WebsocketCalls {
         "frame-image-inserted",
         "frame-crop-updated",
         "frame-description-updated",
+        "frame-board-updated",
         "frame-caption-updated",
         "update-clips",
         "reload"
@@ -66,6 +67,16 @@ final class WebsocketCalls {
             return
         }
 
+        if name == "frame-description-updated", let frameDescriptionUpdate = FrameDescriptionUpdate.parse(dataString: dataString) {
+            applyFrameDescriptionUpdate(frameDescriptionUpdate)
+            return
+        }
+
+        if name == "frame-board-updated", let frameBoardUpdate = FrameBoardUpdate.parse(dataString: dataString) {
+            applyFrameBoardUpdate(frameBoardUpdate)
+            return
+        }
+
         try? await authService.fetchFrames()
 
         notifyFrameUpdate(id: frameId, eventName: name)
@@ -79,6 +90,28 @@ final class WebsocketCalls {
         }
 
         notifyFrameUpdate(id: update.id, eventName: "frame-status-updated")
+    }
+
+    private func applyFrameDescriptionUpdate(_ update: FrameDescriptionUpdate) {
+        guard let frameId = update.resolvedId else { return }
+
+        guard let index = authService.frames.firstIndex(where: { $0.id == frameId }) else { return }
+
+        authService.frames[index] = authService.frames[index].updatingDescription(update.description)
+
+        notifyFrameUpdate(id: frameId, eventName: "frame-description-updated")
+    }
+
+    private func applyFrameBoardUpdate(_ update: FrameBoardUpdate) {
+        guard
+            let frameId = update.resolvedId,
+            let boards = update.boards,
+            let index = authService.frames.firstIndex(where: { $0.id == frameId })
+        else { return }
+
+        authService.frames[index] = authService.frames[index].updatingBoards(boards, mainBoardType: update.mainBoardType)
+
+        notifyFrameUpdate(id: frameId, eventName: "frame-board-updated")
     }
 
     private func refreshCreatives() async {
@@ -126,6 +159,46 @@ private struct FrameStatusUpdate: Codable {
     static func parse(dataString: String) -> FrameStatusUpdate? {
         guard let data = dataString.data(using: .utf8) else { return nil }
         return try? JSONDecoder().decode(FrameStatusUpdate.self, from: data)
+    }
+}
+
+private struct FrameDescriptionUpdate: Decodable {
+    let id: String?
+    let frameId: String?
+    let frameID: String?
+    let frame_id: String?
+    let description: String?
+
+    var resolvedId: String? { id ?? frameId ?? frameID ?? frame_id }
+
+    static func parse(dataString: String) -> FrameDescriptionUpdate? {
+        guard let data = dataString.data(using: .utf8) else { return nil }
+        return try? JSONDecoder().decode(FrameDescriptionUpdate.self, from: data)
+    }
+}
+
+private struct FrameBoardUpdate: Decodable {
+    let id: String?
+    let frameId: String?
+    let frameID: String?
+    let frame_id: String?
+    let mainBoardType: String?
+    let boards: [FrameBoard]?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case frameId
+        case frameID
+        case frame_id
+        case mainBoardType = "main_board_type"
+        case boards
+    }
+
+    var resolvedId: String? { id ?? frameId ?? frameID ?? frame_id }
+
+    static func parse(dataString: String) -> FrameBoardUpdate? {
+        guard let data = dataString.data(using: .utf8) else { return nil }
+        return try? JSONDecoder().decode(FrameBoardUpdate.self, from: data)
     }
 }
 

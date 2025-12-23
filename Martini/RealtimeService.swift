@@ -106,6 +106,8 @@ final class RealtimeService: NSObject, ObservableObject {
 
     @MainActor
     private func handleEvent(name: String, dataString: String) {
+        print("📡 Websocket event received: \(name) | data: \(dataString)")
+
         lastEventName = name
 
         if name == "connected" {
