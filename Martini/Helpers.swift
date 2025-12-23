@@ -93,7 +93,7 @@ struct ProgressCounts {
 func progressCounts(
     for frames: [Frame],
     totalOverride: Int? = nil,
-    completedStatuses: Set<FrameStatus> = [.done, .skip]
+    completedStatuses: Set<FrameStatus> = [.done, .omit]
 ) -> ProgressCounts {
     let completed = frames.filter { completedStatuses.contains($0.statusEnum) }.count
     let total = totalOverride ?? frames.count
@@ -123,7 +123,7 @@ func triggerStatusHaptic(for status: FrameStatus) {
         let generator = UINotificationFeedbackGenerator()
         generator.prepare()
         generator.notificationOccurred(.success)
-    case .skip:
+    case .omit:
         let generator = UINotificationFeedbackGenerator()
         generator.prepare()
         generator.notificationOccurred(.warning)

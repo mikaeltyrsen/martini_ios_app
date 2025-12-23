@@ -114,7 +114,7 @@ struct FrameLayout: View {
     @Environment(\.fullscreenMediaCoordinator) private var fullscreenCoordinator
     @Namespace private var fullscreenNamespace
     @State private var borderScale: CGFloat = 1.0
-    @State private var skipOverlayOpacity: Double = 0
+    @State private var omitOverlayOpacity: Double = 0
     @State private var doneFirstLineProgress: CGFloat = 0
     @State private var doneSecondLineProgress: CGFloat = 0
     @State private var lastAnimatedStatus: FrameStatus = .none
@@ -317,13 +317,13 @@ struct FrameLayout: View {
 
         switch status {
         case .done:
-            return .red
-        case .inProgress:
             return .green
-        case .skip:
-            return .red
-        case .upNext:
+        case .here:
+            return .blue
+        case .next:
             return .orange
+        case .omit:
+            return .gray
         case .none:
             return .gray.opacity(0.3)
         }
@@ -438,19 +438,19 @@ struct FrameLayout: View {
             .aspectRatio(aspectRatio, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
 
-        case .skip:
-            // Red transparent layer
-            Color.red.opacity(0.3 * skipOverlayOpacity)
+        case .omit:
+            // Transparent overlay layer
+            Color.red.opacity(0.3 * omitOverlayOpacity)
                 .cornerRadius(cornerRadius)
 
-        case .inProgress, .upNext, .none:
+        case .here, .next, .none:
             EmptyView()
         }
     }
 
     private func configureInitialStatusAnimation() {
         lastAnimatedStatus = frame.statusEnum
-        skipOverlayOpacity = frame.statusEnum == .skip ? 1 : 0
+        omitOverlayOpacity = frame.statusEnum == .omit ? 0.6 : 0
         let isDone = frame.statusEnum == .done
         doneFirstLineProgress = isDone ? 1 : 0
         doneSecondLineProgress = isDone ? 1 : 0
@@ -461,17 +461,17 @@ struct FrameLayout: View {
         animateBorderBounce()
 
         switch status {
-        case .skip:
+        case .omit:
             withAnimation(.easeOut(duration: 0.1)) {
                 doneFirstLineProgress = 0
                 doneSecondLineProgress = 0
             }
             withAnimation(.easeInOut(duration: 0.35)) {
-                skipOverlayOpacity = 1
+                omitOverlayOpacity = 0.6
             }
         case .done:
             withAnimation(.easeOut(duration: 0.2)) {
-                skipOverlayOpacity = 0
+                omitOverlayOpacity = 0
             }
             doneFirstLineProgress = 0
             doneSecondLineProgress = 0
@@ -481,9 +481,9 @@ struct FrameLayout: View {
             withAnimation(.linear(duration: 0.16).delay(0.08)) {
                 doneSecondLineProgress = 1
             }
-        case .inProgress, .upNext, .none:
+        case .here, .next, .none:
             withAnimation(.easeOut(duration: 0.25)) {
-                skipOverlayOpacity = 0
+                omitOverlayOpacity = 0
                 doneFirstLineProgress = 0
                 doneSecondLineProgress = 0
             }

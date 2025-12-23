@@ -142,7 +142,6 @@ struct MainView: View {
 //                frameFileName: nil,
 //                frameImage: nil,
 //                frameBoardType: nil,
-//                frameStatus: "in-progress",
 //                frameNumber: 1,
 //                image: nil
 //            ),
@@ -160,7 +159,6 @@ struct MainView: View {
 //                frameFileName: nil,
 //                frameImage: nil,
 //                frameBoardType: nil,
-//                frameStatus: "up-next",
 //                frameNumber: 9,
 //                image: nil
 //            ),
@@ -376,11 +374,11 @@ struct MainView: View {
                 if index <= creative.completedFrames {
                     return .done
                 } else if index == creative.completedFrames + 1 {
-                    return .inProgress
+                    return .here
                 } else if index == creative.completedFrames + 2 {
-                    return .upNext
+                    return .next
                 } else if index == creative.totalFrames {
-                    return .skip
+                    return .omit
                 }
                 return nil
             }()
@@ -528,11 +526,11 @@ struct MainView: View {
                     filterSidebar
                 }
 
-            if shouldShowInProgressShortcut {
-                Button(action: scrollToInProgressFrame) {
+            if shouldShowHereShortcut {
+                Button(action: scrollToHereFrame) {
                     HStack(spacing: 8) {
-                        Image(systemName: inProgressShortcutIconName)
-                        Text("Jump to In-Progress")
+                        Image(systemName: hereShortcutIconName)
+                        Text("Jump to Here")
                             .font(.system(size: 15, weight: .semibold))
                     }
                     .padding(.horizontal, 14)
@@ -962,13 +960,13 @@ private extension MainView {
         return intValue
     }
 
-    var inProgressFrame: Frame? {
-        displayedFramesInCurrentMode.first { $0.statusEnum == .inProgress }
+    var hereFrame: Frame? {
+        displayedFramesInCurrentMode.first { $0.statusEnum == .here }
     }
 
-    var inProgressShortcutIconName: String {
+    var hereShortcutIconName: String {
         guard
-            let frame = inProgressFrame,
+            let frame = hereFrame,
             let targetIndex = displayedFramesInCurrentMode.firstIndex(where: { $0.id == frame.id })
         else {
             return "arrow.up"
@@ -991,13 +989,13 @@ private extension MainView {
         return "arrow.up"
     }
 
-    var shouldShowInProgressShortcut: Bool {
-        guard let id = inProgressFrame?.id else { return false }
+    var shouldShowHereShortcut: Bool {
+        guard let id = hereFrame?.id else { return false }
         return !visibleFrameIds.contains(id)
     }
 
-    func scrollToInProgressFrame() {
-        guard let frame = inProgressFrame else { return }
+    func scrollToHereFrame() {
+        guard let frame = hereFrame else { return }
         scrollToFrame(frame)
     }
 
@@ -1020,12 +1018,8 @@ private extension MainView {
     }
 
     private func preferredFrameForCurrentMode() -> Frame? {
-        if let here = displayedFramesInCurrentMode.first(where: { $0.statusEnum == .inProgress }) {
+        if let here = displayedFramesInCurrentMode.first(where: { $0.statusEnum == .here }) {
             return here
-        }
-
-        if let upNext = displayedFramesInCurrentMode.first(where: { $0.statusEnum == .upNext }) {
-            return upNext
         }
 
         return lastCrossedFrameInShootOrder()
@@ -1046,7 +1040,7 @@ private extension MainView {
     private func lastCrossedFrameInShootOrder() -> Frame? {
         shootOrderedFrames.last { frame in
             let status = frame.statusEnum
-            return status == .done || status == .skip
+            return status == .done || status == .omit
         }
     }
 
@@ -1572,7 +1566,7 @@ struct GridFrameCell: View {
     }
 
     private var statusOptions: [FrameStatus] {
-        var options: [FrameStatus] = [.done, .inProgress, .upNext, .skip]
+        var options: [FrameStatus] = [.done, .here, .next, .omit]
         if frame.statusEnum != .none {
             options.append(.none)
         }
@@ -1706,13 +1700,13 @@ struct CreativeSection: View {
     
     private func statusColor(for status: String) -> Color {
         switch status.lowercased() {
-        case "in-progress":
+        case "here":
             return .blue
-        case "up-next":
+        case "next":
             return .orange
         case "done":
             return .green
-        case "skip":
+        case "omit":
             return .gray
         default:
             return .secondary
@@ -1722,9 +1716,9 @@ struct CreativeSection: View {
 
 enum FrameStatus: String {
     case done = "done"
-    case inProgress = "in-progress"
-    case skip = "skip"
-    case upNext = "up-next"
+    case here = "here"
+    case next = "next"
+    case omit = "omit"
     case none = ""
 }
 
