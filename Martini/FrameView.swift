@@ -182,9 +182,9 @@ struct FrameView: View {
             
             Menu {
                 statusMenuButton(title: "Done", status: .done, systemImage: "checkmark.circle")
-                statusMenuButton(title: "Here", status: .inProgress, systemImage: "figure.wave")
-                statusMenuButton(title: "Next", status: .upNext, systemImage: "arrow.turn.up.right")
-                statusMenuButton(title: "Omit", status: .skip, systemImage: "minus.circle")
+                statusMenuButton(title: "Here", status: .here, systemImage: "figure.wave")
+                statusMenuButton(title: "Next", status: .next, systemImage: "arrow.turn.up.right")
+                statusMenuButton(title: "Omit", status: .omit, systemImage: "minus.circle.dashed")
                 if selectedStatus != .none {
                     statusMenuButton(title: "Clear", status: .none, systemImage: "xmark.circle")
                 }
@@ -1009,10 +1009,29 @@ private struct DescriptionScrollOffsetKey: PreferenceKey {
 }
 
 extension FrameStatus {
-    var requestValue: String {
+    static func fromAPIValue(_ value: String?) -> FrameStatus {
+        guard let value = value?.lowercased() else { return .none }
+
+        switch value {
+        case "done":
+            return .done
+        case "here":
+            return .here
+        case "next":
+            return .next
+        case "omit":
+            return .omit
+        case "", "0", "null":
+            return .none
+        default:
+            return .none
+        }
+    }
+
+    var requestValue: Any {
         switch self {
         case .none:
-            return "0"
+            return NSNull()
         default:
             return rawValue
         }
@@ -1022,12 +1041,12 @@ extension FrameStatus {
         switch self {
         case .done:
             return "Done"
-        case .inProgress:
+        case .here:
             return "Here"
-        case .skip:
-            return "Omit"
-        case .upNext:
+        case .next:
             return "Next"
+        case .omit:
+            return "Omit"
         case .none:
             return "Clear"
         }
@@ -1037,12 +1056,12 @@ extension FrameStatus {
         switch self {
         case .done:
             return "checkmark.circle"
-        case .inProgress:
+        case .here:
             return "figure.wave"
-        case .upNext:
+        case .next:
             return "arrow.turn.up.right"
-        case .skip:
-            return "minus.circle"
+        case .omit:
+            return "minus.circle.dashed"
         case .none:
             return "xmark.circle"
         }
@@ -1050,12 +1069,14 @@ extension FrameStatus {
 
     var labelColor: Color {
         switch self {
-        case .done, .skip:
-            return .red
-        case .inProgress:
+        case .done:
             return .green
-        case .upNext:
+        case .here:
+            return .blue
+        case .next:
             return .orange
+        case .omit:
+            return .gray
         case .none:
             return .white
         }

@@ -1058,8 +1058,7 @@ struct Frame: Codable, Identifiable {
     }
 
     var statusEnum: FrameStatus {
-        guard let status else { return .none }
-        return FrameStatus(rawValue: status.lowercased()) ?? .none
+        FrameStatus.fromAPIValue(status)
     }
 
     /// Returns the available assets for this frame in the order they should be shown by default.

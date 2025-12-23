@@ -72,7 +72,7 @@ final class WebsocketCalls {
     }
 
     private func applyFrameStatusUpdate(_ update: FrameStatusUpdate) {
-        guard let status = FrameStatus(rawValue: update.status) else { return }
+        let status = FrameStatus.fromAPIValue(update.status)
 
         if let index = authService.frames.firstIndex(where: { $0.id == update.id }) {
             authService.frames[index] = authService.frames[index].updatingStatus(status)
