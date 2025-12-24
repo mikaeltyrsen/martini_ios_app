@@ -37,7 +37,7 @@ struct QRScannerView: View {
                                 UIApplication.shared.open(settingsURL)
                             }
                         }
-                        .foregroundColor(.blue)
+                        .foregroundColor(.martiniDefaultColor)
                     }
                     .padding()
                     .background(Color.black.opacity(0.7))

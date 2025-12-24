@@ -961,8 +961,9 @@ struct MainView: View {
             } else if progress.total > 0 {
                 ProgressView(value: Double(progress.completed), total: Double(progress.total))
                     .progressViewStyle(.linear)
+                    .tint(.martiniDefaultColor)
                     .frame(width: 180)
-                    .animation(.easeInOut(duration: 0.25), value: progress.percentage)
+                    .animation(.timingCurve(0.2, 0.0, 0.0, 1.0, duration: 0.35), value: progress.percentage)
             }
         }
         .contentShape(Rectangle())
@@ -1550,8 +1551,9 @@ struct CreativeGridSection: View {
                     if let completed = section.completedFrames, let total = section.totalFrames {
                         VStack(alignment: .leading, spacing: 6) {
                             ProgressView(value: Double(completed), total: Double(max(total, 1)))
-                                .tint(.accentColor)
+                                .tint(.martiniDefaultColor)
                                 .accessibilityLabel("\(completed) of \(total) frames complete")
+                                .animation(.timingCurve(0.2, 0.0, 0.0, 1.0, duration: 0.35), value: Double(completed))
 
                             HStack {
                                 Text("\(completed) completed")
@@ -1799,7 +1801,7 @@ struct CreativeSection: View {
     private func statusColor(for status: String) -> Color {
         switch status.lowercased() {
         case "here":
-            return .blue
+            return .martiniDefaultColor
         case "next":
             return .orange
         case "done":
