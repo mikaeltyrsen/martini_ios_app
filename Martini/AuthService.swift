@@ -55,8 +55,10 @@ class AuthService: ObservableObject {
     private let scheduleCache = ScheduleCache.shared
     private var creativesFetchTask: Task<Void, Error>?
     private var projectDetailsFetchTask: Task<Void, Error>?
+    private let connectionMonitor: ConnectionMonitor?
 
-    init() {
+    init(connectionMonitor: ConnectionMonitor? = nil) {
+        self.connectionMonitor = connectionMonitor
         loadAuthData()
     }
 
@@ -219,7 +221,7 @@ class AuthService: ObservableObject {
         
         let (data, response): (Data, URLResponse)
         do {
-            (data, response) = try await URLSession.shared.data(for: request)
+            (data, response) = try await performRequest(request)
             print("🔍 Received response")
         } catch {
             print("🔍 Network error: \(error)")
@@ -334,7 +336,7 @@ class AuthService: ObservableObject {
         }
 
         let request = try authorizedRequest(for: endpoint, method: "GET")
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await performRequest(request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw AuthError.invalidResponse
@@ -388,7 +390,7 @@ class AuthService: ObservableObject {
             print("🔗 URL: \(request.url?.absoluteString ?? "unknown")")
             print("📝 Request body: \(requestJSON)")
             
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await performRequest(request)
             
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw AuthError.invalidResponse
@@ -462,7 +464,7 @@ class AuthService: ObservableObject {
         print("🔗 URL: \(request.url?.absoluteString ?? "unknown")")
         print("📝 Request body: \(requestJSON)")
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await performRequest(request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw AuthError.invalidResponse
@@ -514,7 +516,7 @@ class AuthService: ObservableObject {
         print("🔗 URL: \(request.url?.absoluteString ?? "unknown")")
         print("📝 Request body: \(requestJSON)")
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await performRequest(request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw AuthError.invalidResponse
@@ -574,7 +576,7 @@ class AuthService: ObservableObject {
             print("🔗 URL: \(request.url?.absoluteString ?? "unknown")")
             print("📝 Request body: \(requestJSON)")
 
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await performRequest(request)
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw AuthError.invalidResponse
@@ -643,7 +645,7 @@ class AuthService: ObservableObject {
         print("🔗 URL: \(request.url?.absoluteString ?? "unknown")")
         print("📝 Request body: \(requestJSON)")
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await performRequest(request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw AuthError.invalidResponse
@@ -808,6 +810,17 @@ class AuthService: ObservableObject {
         scheduleCache.clear(exceptId: scheduleId)
     }
 
+    private func performRequest(_ request: URLRequest) async throws -> (Data, URLResponse) {
+        do {
+            let response = try await URLSession.shared.data(for: request)
+            connectionMonitor?.registerNetworkSuccess()
+            return response
+        } catch {
+            connectionMonitor?.registerImmediateFailure(for: error)
+            throw error
+        }
+    }
+
     func fetchSchedule(for scheduleId: String) async throws -> ProjectSchedule {
         let body: [String: Any] = [
             "scheduleId": scheduleId
@@ -820,7 +833,7 @@ class AuthService: ObservableObject {
         print("🔗 URL: \(request.url?.absoluteString ?? "unknown")")
         print("📝 Request body: \(requestJSON)")
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await performRequest(request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw AuthError.invalidResponse

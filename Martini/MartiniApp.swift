@@ -5,16 +5,22 @@
 //  Created by Mikael Tyrsen on 11/15/25.
 //
 
+import Foundation
 import SwiftUI
 
 @main
 struct MartiniApp: App {
     @StateObject private var authService: AuthService
     @StateObject private var realtimeService: RealtimeService
+    @StateObject private var connectionMonitor: ConnectionMonitor
     @StateObject private var fullscreenCoordinator = FullscreenMediaCoordinator()
 
     init() {
-        let authService = AuthService()
+        let connectionMonitor = ConnectionMonitor(
+            pingURL: URL(string: "https://dev.staging.trymartini.com/scripts/")!
+        )
+        _connectionMonitor = StateObject(wrappedValue: connectionMonitor)
+        let authService = AuthService(connectionMonitor: connectionMonitor)
         _authService = StateObject(wrappedValue: authService)
         _realtimeService = StateObject(wrappedValue: RealtimeService(authService: authService))
     }
@@ -24,6 +30,7 @@ struct MartiniApp: App {
             ContentView()
                 .environmentObject(authService)
                 .environmentObject(realtimeService)
+                .environmentObject(connectionMonitor)
                 .fullscreenMediaCoordinator(fullscreenCoordinator)
         }
     }
