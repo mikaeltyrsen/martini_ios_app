@@ -414,6 +414,7 @@ struct FrameView: View {
                     }
                 }
                 .padding(.horizontal, 20)
+                .frame(maxWidth: .infinity, alignment: .center)
                 .scrollTargetLayout()
             }
             .scrollTargetBehavior(.viewAligned(limitBehavior: .always))
@@ -1104,6 +1105,8 @@ private struct StackedAssetScroller: View {
                             cardWidth: cardWidth,
                             primaryText: primaryText
                         )
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .containerRelativeFrame(.horizontal, alignment: .center)
                         .id(asset.id)
                     }
                 }
@@ -1112,7 +1115,6 @@ private struct StackedAssetScroller: View {
             .scrollIndicators(.hidden)
             .scrollTargetBehavior(.paging)
             .scrollPosition(id: $visibleAssetID)
-            .contentMargins(.horizontal, 16)
             .frame(maxWidth: .infinity, minHeight: cardHeight, maxHeight: cardHeight)
         }
     }
@@ -1135,7 +1137,6 @@ private struct AssetCardView: View {
             cornerRadius: 16
         )
         .frame(width: cardWidth)
-        .padding(.horizontal, 20)
         .padding(.vertical, 16)
         .applyHorizontalScrollTransition()
         .shadow(radius: 10, x: 0, y: 10)
