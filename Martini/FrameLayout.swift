@@ -408,7 +408,7 @@ struct FrameLayout: View {
             .minimumScaleFactor(0.6)
             .padding(.horizontal, horizontalPadding)
             .padding(.vertical, verticalPadding)
-            .frame(maxWidth: maxWidth, alignment: .leading)
+            .fixedSize(horizontal: true, vertical: false)
             .background(Color.black.opacity(0.8))
             .foregroundColor(.white)
             .clipShape(Capsule())
