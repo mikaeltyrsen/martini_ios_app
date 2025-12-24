@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0730F3E52EF6E788000B598F /* FullscreenMediaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F3E42EF6E788000B598F /* FullscreenMediaView.swift */; };
-		0730F3E72EFC14E3000B598F /* Colors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F3E62EFC14E3000B598F /* Colors.swift */; };
+		0730F3E72EFC14E3000B598F /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F3E62EFC14E3000B598F /* Config.swift */; };
 		075456022EC9A6E200C45739 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075455FE2EC9A6E100C45739 /* AuthService.swift */; };
 		075456032EC9A6E200C45739 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075455FF2EC9A6E100C45739 /* LoginView.swift */; };
 		075456042EC9A6E200C45739 /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075456002EC9A6E100C45739 /* QRScannerView.swift */; };
@@ -34,7 +34,7 @@
 
 /* Begin PBXFileReference section */
 		0730F3E42EF6E788000B598F /* FullscreenMediaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullscreenMediaView.swift; sourceTree = "<group>"; };
-		0730F3E62EFC14E3000B598F /* Colors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Colors.swift; sourceTree = "<group>"; };
+		0730F3E62EFC14E3000B598F /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		075455FE2EC9A6E100C45739 /* AuthService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		075455FF2EC9A6E100C45739 /* LoginView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		075456002EC9A6E100C45739 /* QRScannerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
@@ -115,7 +115,7 @@
 				07D1C1042FF0BBBB00000002 /* ScheduleCache.swift */,
 				477F863DD3304428A7C610C5 /* SchedulesView.swift */,
 				60C91863CD124D159734FD1B /* ScheduleView.swift */,
-				0730F3E62EFC14E3000B598F /* Colors.swift */,
+				0730F3E62EFC14E3000B598F /* Config.swift */,
 			);
 			path = Martini;
 			sourceTree = "<group>";
@@ -208,7 +208,7 @@
 				07D1C1052FF0BBBB00000002 /* ScheduleCache.swift in Sources */,
 				07A6A6882EC9A272002C8EB9 /* ContentView.swift in Sources */,
 				0730F3E52EF6E788000B598F /* FullscreenMediaView.swift in Sources */,
-				0730F3E72EFC14E3000B598F /* Colors.swift in Sources */,
+				0730F3E72EFC14E3000B598F /* Config.swift in Sources */,
 				07C904BE2FF4B4A4004EDBFA /* FullscreenMediaCoordinator.swift in Sources */,
 				07F4E0022FF0AAAA00000001 /* RealtimeService.swift in Sources */,
 				07F4E0052FF0AAAA00000002 /* WebsocketCalls.swift in Sources */,
