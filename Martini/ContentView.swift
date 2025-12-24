@@ -104,6 +104,8 @@ struct MainView: View {
     @AppStorage("doneCrossLineWidth") private var doneCrossLineWidth: Double = 5.0
     @AppStorage("showDoneCrosses") private var showDoneCrosses: Bool = true
     @State private var visibleFrameIds: Set<String> = []
+    @State private var isHereShortcutVisible = false
+    @State private var hereShortcutIconName = "arrow.up"
     @State private var gridScrollProxy: ScrollViewProxy?
     @State private var currentCreativeId: String? = nil
     @State private var isScrolledToTop: Bool = true
@@ -530,7 +532,7 @@ struct MainView: View {
                     filterSidebar
                 }
 
-            if shouldShowHereShortcut {
+            if isHereShortcutVisible {
                 Button(action: scrollToHereFrame) {
                     HStack(spacing: 8) {
                         Image(systemName: hereShortcutIconName)
@@ -807,8 +809,17 @@ struct MainView: View {
                     .onPreferenceChange(VisibleFramePreferenceKey.self) { ids in
                         // Defer state updates to avoid mutating view state during the render pass while scrolling
                         DispatchQueue.main.async {
-                            visibleFrameIds = ids
+                            if visibleFrameIds != ids {
+                                visibleFrameIds = ids
+                            }
+                            updateHereShortcutState(using: ids)
                         }
+                    }
+                    .onChange(of: viewMode) { _ in
+                        updateHereShortcutState(using: visibleFrameIds)
+                    }
+                    .onChange(of: frameSortMode) { _ in
+                        updateHereShortcutState(using: visibleFrameIds)
                     }
                     .onPreferenceChange(SectionHeaderAnchorKey.self) { positions in
                         // Track the nearest section header above the fold so the selector stays in sync
@@ -968,34 +979,47 @@ private extension MainView {
         displayedFramesInCurrentMode.first { $0.statusEnum == .here }
     }
 
-    var hereShortcutIconName: String {
-        guard
-            let frame = hereFrame,
-            let targetIndex = displayedFramesInCurrentMode.firstIndex(where: { $0.id == frame.id })
-        else {
-            return "arrow.up"
+    func updateHereShortcutState(using visibleIds: Set<String>) {
+        guard viewMode == .grid else {
+            if isHereShortcutVisible {
+                isHereShortcutVisible = false
+            }
+            return
         }
 
-        let visibleIndices = visibleFrameIds.compactMap { id in
-            displayedFramesInCurrentMode.firstIndex(where: { $0.id == id })
+        guard let frame = hereFrame else {
+            if isHereShortcutVisible {
+                isHereShortcutVisible = false
+            }
+            return
         }
 
-        guard let minVisible = visibleIndices.min(), let maxVisible = visibleIndices.max() else {
-            return "arrow.up"
+        let shouldShow = !visibleIds.contains(frame.id)
+        if shouldShow != isHereShortcutVisible {
+            isHereShortcutVisible = shouldShow
         }
 
+        guard shouldShow else { return }
+
+        let indexLookup = Dictionary(uniqueKeysWithValues: displayedFramesInCurrentMode.enumerated().map { ($0.element.id, $0.offset) })
+
+        guard let targetIndex = indexLookup[frame.id] else { return }
+
+        let visibleIndices = visibleIds.compactMap { indexLookup[$0] }
+        guard let minVisible = visibleIndices.min(), let maxVisible = visibleIndices.max() else { return }
+
+        let updatedIconName: String
         if targetIndex < minVisible {
-            return "arrow.up"
+            updatedIconName = "arrow.up"
         } else if targetIndex > maxVisible {
-            return "arrow.down"
+            updatedIconName = "arrow.down"
+        } else {
+            updatedIconName = "arrow.up"
         }
 
-        return "arrow.up"
-    }
-
-    var shouldShowHereShortcut: Bool {
-        guard let id = hereFrame?.id else { return false }
-        return !visibleFrameIds.contains(id)
+        if updatedIconName != hereShortcutIconName {
+            hereShortcutIconName = updatedIconName
+        }
     }
 
     func scrollToHereFrame() {
