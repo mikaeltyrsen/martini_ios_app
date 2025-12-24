@@ -602,14 +602,11 @@ struct MainView: View {
 
             Spacer()
 
-            Button {
-                withAnimation(.easeInOut(duration: 0.12)) {
-                    frameSortMode = (frameSortMode == .story) ? .shoot : .story
-                }
-            } label: {
-                Text(frameSortMode == .story ? "Story Order" : "Shoot Order")
-                    .font(.system(size: 14, weight: .semibold))
+            Picker("Sort order", selection: $frameSortMode) {
+                Text("Story").tag(FrameSortMode.story)
+                Text("Shoot").tag(FrameSortMode.shoot)
             }
+            .pickerStyle(.segmented)
 
             Spacer()
 
