@@ -2,11 +2,11 @@ import SwiftUI
 
 enum AppConfig {
     enum MarkerIcons {
-        static let done = "checkmark.circle"
-        static let here = "figure.wave"
-        static let next = "arrow.turn.up.right"
-        static let omit = "minus.circle.dashed"
-        static let none = "xmark.circle"
+        static let done = "xmark"
+        static let here = "video"
+        static let next = "forward"
+        static let omit = "minus"
+        static let none = "photo"
 
         static func systemImageName(for status: FrameStatus) -> String {
             switch status {
