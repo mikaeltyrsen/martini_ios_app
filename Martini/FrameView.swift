@@ -30,6 +30,8 @@ struct FrameView: View {
     @State private var isDraggingDescription: Bool = false
     @State private var isUpdatingStatus: Bool = false
     @State private var statusUpdateError: String?
+    @State private var showingStatusSheet: Bool = false
+    @State private var statusBeingUpdated: FrameStatus?
 
     private let minDescriptionRatio: CGFloat = 0.35
 
@@ -124,6 +126,9 @@ struct FrameView: View {
             .overlay(alignment: .center) {
                 fullscreenOverlay
             }
+            .overlay(alignment: .bottom) {
+                statusSheetOverlay
+            }
             .animation(.easeInOut(duration: 0.25), value: fullscreenCoordinator?.configuration?.id)
     }
 
@@ -177,36 +182,35 @@ struct FrameView: View {
 
             Spacer()
 
-            
-            Menu {
-                statusMenuButton(title: "Done", status: .done, systemImage: "checkmark.circle")
-                statusMenuButton(title: "Here", status: .here, systemImage: "figure.wave")
-                statusMenuButton(title: "Next", status: .next, systemImage: "arrow.turn.up.right")
-                statusMenuButton(title: "Omit", status: .omit, systemImage: "minus.circle.dashed")
-                if selectedStatus != .none {
-                    statusMenuButton(title: "Clear", status: .none, systemImage: "xmark.circle")
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    showingStatusSheet = true
                 }
             } label: {
-                let statusColor: Color = isUpdatingStatus ? .secondary : selectedStatus.labelColor
                 let statusLabel: String = {
                     if isUpdatingStatus { return "Updating Status" }
                     return selectedStatus == .none ? "Mark Frame" : selectedStatus.displayName
                 }()
-                HStack(spacing: 6) {
+                HStack(spacing: 8) {
                     if isUpdatingStatus {
                         ProgressView()
-                            .tint(statusColor)
-                    } else if selectedStatus != .none {
-                        Image(systemName: selectedStatus.systemImageName)
-                            .foregroundStyle(statusColor)
+                            .tint(.white)
+                    } else {
+                        Image(systemName: selectedStatus == .none ? "tag" : selectedStatus.systemImageName)
+                            .foregroundStyle(.white)
                     }
                     Text(statusLabel)
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(statusColor)
+                        .foregroundStyle(.white)
                 }
-                .padding(.horizontal, 12)
+                .padding(.horizontal, 14)
                 .padding(.vertical, 8)
+                .background(
+                    Capsule()
+                        .fill(selectedStatus.markerBackgroundColor)
+                )
             }
+            .buttonStyle(.plain)
             .disabled(isUpdatingStatus)
 
             Spacer()
@@ -275,6 +279,50 @@ struct FrameView: View {
                             allowsExpansion: true
                         )
                     }
+                }
+            }
+        }
+    }
+
+    private var statusSheetOverlay: some View {
+        Group {
+            if showingStatusSheet {
+                ZStack(alignment: .bottom) {
+                    Color.black.opacity(0.35)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            guard !isUpdatingStatus else { return }
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                showingStatusSheet = false
+                            }
+                        }
+
+                    VStack(spacing: 12) {
+                        Capsule()
+                            .fill(Color.secondary.opacity(0.5))
+                            .frame(width: 36, height: 5)
+                            .padding(.top, 8)
+
+                        VStack(spacing: 10) {
+                            statusSelectionButton(for: .here)
+                            statusSelectionButton(for: .next)
+                            statusSelectionButton(for: .done)
+                            statusSelectionButton(for: .omit)
+                            if selectedStatus != .none {
+                                statusSelectionButton(for: .none)
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 20)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .fill(Color(.systemBackground))
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
         }
@@ -460,6 +508,7 @@ struct FrameView: View {
     private func updateStatus(to status: FrameStatus) {
         guard !isUpdatingStatus else { return }
         isUpdatingStatus = true
+        statusBeingUpdated = status
         Task {
             do {
                 let updatedFrame = try await authService.updateFrameStatus(id: frame.id, to: status)
@@ -472,6 +521,7 @@ struct FrameView: View {
 
                     frame = updatedFrame
                     onStatusSelected(updatedFrame, updatedFrame.statusEnum)
+                    showingStatusSheet = false
                 }
             } catch {
                 await MainActor.run {
@@ -481,6 +531,7 @@ struct FrameView: View {
 
             await MainActor.run {
                 isUpdatingStatus = false
+                statusBeingUpdated = nil
             }
         }
     }
@@ -495,22 +546,48 @@ struct FrameView: View {
         filesBadgeCount = nil
         clipsError = nil
         descriptionHeightRatio = minDescriptionRatio
+        showingStatusSheet = false
         Task {
             await loadClips(force: true)
         }
     }
 
     @ViewBuilder
-    private func statusMenuButton(title: String, status: FrameStatus, systemImage: String) -> some View {
+    private func statusSelectionButton(for status: FrameStatus) -> some View {
         let isSelected: Bool = (selectedStatus == status)
+        let isLoading: Bool = isUpdatingStatus && statusBeingUpdated == status
 
         Button {
             updateStatus(to: status)
         } label: {
-            Label(title, systemImage: systemImage)
-                .foregroundStyle(Color.primary)
+            HStack(spacing: 12) {
+                Group {
+                    if isLoading {
+                        ProgressView()
+                            .tint(status.markerBackgroundColor)
+                    } else {
+                        Image(systemName: status.systemImageName)
+                            .foregroundStyle(status.markerBackgroundColor)
+                    }
+                }
+                .frame(width: 20)
+
+                Text(status.displayName)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.primary)
+
+                Spacer()
+            }
+            .padding(.vertical, 12)
+            .padding(.horizontal, 16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color(.secondarySystemBackground))
+            )
         }
-        .accessibilityLabel("Set status to \(title)")
+        .buttonStyle(.plain)
+        .accessibilityLabel("Set status to \(status.displayName)")
         .disabled(isSelected || isUpdatingStatus)
     }
 
@@ -1069,15 +1146,30 @@ extension FrameStatus {
     var labelColor: Color {
         switch self {
         case .done:
-            return .green
+            return .red
         case .here:
-            return .blue
+            return .green
         case .next:
             return .orange
         case .omit:
-            return .gray
+            return .red
         case .none:
-            return .white
+            return .gray
+        }
+    }
+
+    var markerBackgroundColor: Color {
+        switch self {
+        case .done:
+            return .red
+        case .here:
+            return .green
+        case .next:
+            return .orange
+        case .omit:
+            return .red
+        case .none:
+            return .gray
         }
     }
 }
