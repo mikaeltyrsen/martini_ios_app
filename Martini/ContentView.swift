@@ -11,6 +11,7 @@ import UIKit
 struct ContentView: View {
     @EnvironmentObject var authService: AuthService
     @EnvironmentObject var realtimeService: RealtimeService
+    @EnvironmentObject var connectionMonitor: ConnectionMonitor
     @Environment(\.fullscreenMediaCoordinator) private var fullscreenCoordinator
     
     var body: some View {
@@ -49,6 +50,7 @@ struct ContentView: View {
 
     private func synchronizeAppState() {
         synchronizeRealtimeConnection()
+        connectionMonitor.updateConnection(isAuthenticated: authService.isAuthenticated)
     }
 
     private func handleIncomingURL(_ url: URL) {
@@ -82,6 +84,7 @@ struct ContentView: View {
 
 struct MainView: View {
     @EnvironmentObject var authService: AuthService
+    @EnvironmentObject var connectionMonitor: ConnectionMonitor
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @State private var viewMode: ViewMode = .list
@@ -936,6 +939,16 @@ struct MainView: View {
                 .font(.headline)
                 .fontWeight(.semibold)
 
+            if let banner = connectionBanner {
+                Text(banner.text)
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(banner.color)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(banner.color.opacity(0.2), in: Capsule())
+                    .transition(.opacity)
+            }
+
             let progress = navigationProgress
             if isProjectLoading {
                 HStack(spacing: 6) {
@@ -955,6 +968,19 @@ struct MainView: View {
         .contentShape(Rectangle())
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(shouldAllowCreativeSelectionMenu ? .isButton : [])
+    }
+
+    private var connectionBanner: (text: String, color: Color)? {
+        switch connectionMonitor.status {
+        case .online:
+            return nil
+        case .unstable:
+            return ("Unstable Connection", .orange)
+        case .offline:
+            return ("No Connection", .red)
+        case .backOnline:
+            return ("Back online", .green)
+        }
     }
 
     private var shouldAllowCreativeSelectionMenu: Bool {

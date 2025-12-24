@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		0730F3E52EF6E788000B598F /* FullscreenMediaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F3E42EF6E788000B598F /* FullscreenMediaView.swift */; };
 		075456022EC9A6E200C45739 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075455FE2EC9A6E100C45739 /* AuthService.swift */; };
+		07E1A0033B7A111100000001 /* ConnectionMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07E1A0023B7A111100000001 /* ConnectionMonitor.swift */; };
 		075456032EC9A6E200C45739 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075455FF2EC9A6E100C45739 /* LoginView.swift */; };
 		075456042EC9A6E200C45739 /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075456002EC9A6E100C45739 /* QRScannerView.swift */; };
 		075456082EC9AA2100C45739 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 075456072EC9AA2100C45739 /* Assets.xcassets */; };
@@ -33,6 +34,7 @@
 /* Begin PBXFileReference section */
 		0730F3E42EF6E788000B598F /* FullscreenMediaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullscreenMediaView.swift; sourceTree = "<group>"; };
 		075455FE2EC9A6E100C45739 /* AuthService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		07E1A0023B7A111100000001 /* ConnectionMonitor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConnectionMonitor.swift; sourceTree = "<group>"; };
 		075455FF2EC9A6E100C45739 /* LoginView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		075456002EC9A6E100C45739 /* QRScannerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
 		075456072EC9AA2100C45739 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -96,6 +98,7 @@
 				07A6A6872EC9A272002C8EB9 /* ContentView.swift */,
 				075456072EC9AA2100C45739 /* Assets.xcassets */,
 				075455FE2EC9A6E100C45739 /* AuthService.swift */,
+				07E1A0023B7A111100000001 /* ConnectionMonitor.swift */,
 				075455FF2EC9A6E100C45739 /* LoginView.swift */,
 				075456002EC9A6E100C45739 /* QRScannerView.swift */,
 				07F4E0012FF0AAAA00000001 /* RealtimeService.swift */,
@@ -194,6 +197,7 @@
 			files = (
 				07C904B42EDB9F3D004EDBFA /* Uiplayground.swift in Sources */,
 				075456022EC9A6E200C45739 /* AuthService.swift in Sources */,
+				07E1A0033B7A111100000001 /* ConnectionMonitor.swift in Sources */,
 				07C904B22EDB92DB004EDBFA /* playground.swift in Sources */,
 				07C904B62EDBAE73004EDBFA /* FrameView.swift in Sources */,
 				07C904B72FE2B5E9004EDBFA /* FrameLayout.swift in Sources */,
