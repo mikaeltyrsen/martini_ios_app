@@ -1155,6 +1155,10 @@ struct Frame: Codable, Identifiable {
         copyFrame(description: description)
     }
 
+    func updatingCaption(_ caption: String?) -> Frame {
+        copyFrame(caption: caption)
+    }
+
     func updatingBoards(_ boards: [FrameBoard], mainBoardType: String?) -> Frame {
         let primaryBoard = Frame.selectPrimaryBoard(from: boards, matching: mainBoardType)
         let photoBoard = Frame.selectPrimaryBoard(from: boards, matching: "photoboard")
@@ -1178,6 +1182,7 @@ struct Frame: Codable, Identifiable {
 
     private func copyFrame(
         description: String? = nil,
+        caption: String? = nil,
         status: String?? = nil,
         boards: [FrameBoard]? = nil,
         mainBoardType: String? = nil,
@@ -1226,7 +1231,7 @@ struct Frame: Codable, Identifiable {
             captureClipFileSize: captureClipFileSize,
             captureClipCrop: captureClipCrop,
             description: description ?? self.description,
-            caption: caption,
+            caption: caption ?? self.caption,
             notes: notes,
             crop: crop,
             status: status ?? self.status,
