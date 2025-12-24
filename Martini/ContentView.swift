@@ -607,7 +607,7 @@ struct MainView: View {
                 Text("Shoot").tag(FrameSortMode.shoot)
             }
             .pickerStyle(.segmented)
-            .fixedSize()
+            .frame(width: 200)
 
             Spacer()
 
