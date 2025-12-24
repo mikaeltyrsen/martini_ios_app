@@ -5,6 +5,8 @@ struct ScheduleView: View {
     let item: ProjectScheduleItem
 
     @EnvironmentObject private var authService: AuthService
+    @Environment(\.dismiss) private var dismiss
+    @State private var frameAssetOrders: [String: [FrameAssetKind]] = [:]
     private var scheduleGroups: [ScheduleGroup] { item.groups ?? schedule.groups ?? [] }
 
     private var scheduleTitle: String { item.title.isEmpty ? (schedule.title ?? schedule.name) : item.title }
@@ -150,8 +152,22 @@ struct ScheduleView: View {
         } else {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 12)], spacing: 12) {
                 ForEach(frames) { frame in
-                    FrameLayout(frame: frame, showStatusBadge: false, showFrameTimeOverlay: false, enablesFullScreen: true)
+                    NavigationLink {
+                        FrameView(
+                            frame: frame,
+                            assetOrder: assetOrderBinding(for: frame),
+                            onClose: { dismiss() }
+                        )
+                    } label: {
+                        FrameLayout(
+                            frame: frame,
+                            showStatusBadge: false,
+                            showFrameTimeOverlay: false,
+                            enablesFullScreen: false
+                        )
                         .frame(maxWidth: 100)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }
@@ -174,5 +190,16 @@ struct ScheduleView: View {
         case "orange": return .orange.opacity(0.2)
         default: return Color.gray.opacity(0.12)
         }
+    }
+
+    private func assetOrder(for frame: Frame) -> [FrameAssetKind] {
+        frameAssetOrders[frame.id] ?? frame.availableAssets.map(\.kind)
+    }
+
+    private func assetOrderBinding(for frame: Frame) -> Binding<[FrameAssetKind]> {
+        Binding(
+            get: { assetOrder(for: frame) },
+            set: { frameAssetOrders[frame.id] = $0 }
+        )
     }
 }
