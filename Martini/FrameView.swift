@@ -192,25 +192,28 @@ struct FrameView: View {
                     if isUpdatingStatus { return "Updating Status" }
                     return selectedStatus == .none ? "Mark Frame" : selectedStatus.displayName
                 }()
-                HStack(spacing: 8) {
+                Label {
+                    Text(statusLabel)
+                        .font(.system(size: 14, weight: .semibold))
+                        .lineLimit(1)
+                } icon: {
                     if isUpdatingStatus {
                         ProgressView()
                             .tint(.white)
                     } else {
                         Image(systemName: selectedStatus == .none ? "tag" : selectedStatus.systemImageName)
-                            .foregroundStyle(.white)
                     }
-                    Text(statusLabel)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
                 }
+                .labelStyle(.titleAndIcon)
+                .foregroundStyle(.white)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)
                 .background(
                     Capsule()
                         .fill(selectedStatus.markerBackgroundColor)
                 )
+                .fixedSize(horizontal: true, vertical: false)
+                .layoutPriority(1)
             }
             .buttonStyle(.plain)
             .disabled(isUpdatingStatus)
