@@ -774,22 +774,28 @@ final class LoopingPlayerView: UIView {
     private var currentURL: URL?
     private var resolvedPlaybackURL: URL?
     private var endObserver: NSObjectProtocol?
+    private var didBecomeActiveObserver: NSObjectProtocol?
+    private var willResignActiveObserver: NSObjectProtocol?
     private var currentVideoGravity: AVLayerVideoGravity = .resizeAspectFill
 
     init(url: URL, videoGravity: AVLayerVideoGravity = .resizeAspectFill) {
         super.init(frame: .zero)
         currentVideoGravity = videoGravity
         setupPlayerLayer()
+        setupLifecycleObservers()
         update(with: url, videoGravity: videoGravity)
     }
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
         setupPlayerLayer()
+        setupLifecycleObservers()
     }
 
     deinit {
         endObserver.map(NotificationCenter.default.removeObserver)
+        didBecomeActiveObserver.map(NotificationCenter.default.removeObserver)
+        willResignActiveObserver.map(NotificationCenter.default.removeObserver)
         queuePlayer?.pause()
         player?.pause()
     }
@@ -830,6 +836,44 @@ final class LoopingPlayerView: UIView {
     private func setupPlayerLayer() {
         playerLayer.videoGravity = currentVideoGravity
         layer.addSublayer(playerLayer)
+    }
+
+    private func setupLifecycleObservers() {
+        didBecomeActiveObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.resumePlayback()
+        }
+
+        willResignActiveObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.willResignActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.pausePlayback()
+        }
+    }
+
+    private func resumePlayback() {
+        if let queuePlayer {
+            queuePlayer.play()
+            return
+        }
+
+        if let player {
+            player.play()
+            return
+        }
+
+        playerLayer.player?.play()
+    }
+
+    private func pausePlayback() {
+        queuePlayer?.pause()
+        player?.pause()
+        playerLayer.player?.pause()
     }
 
     private func configurePlayer(with url: URL) {
