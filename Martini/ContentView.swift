@@ -101,6 +101,8 @@ struct MainView: View {
     @AppStorage("showDescriptions") private var showDescriptions: Bool = true
     @AppStorage("showFullDescriptions") private var showFullDescriptions: Bool = false
     @AppStorage("gridFontStep") private var gridFontStep: Int = 3 // 1..5
+    @AppStorage("doneCrossLineWidth") private var doneCrossLineWidth: Double = 5.0
+    @AppStorage("showDoneCrosses") private var showDoneCrosses: Bool = true
     @State private var visibleFrameIds: Set<String> = []
     @State private var gridScrollProxy: ScrollViewProxy?
     @State private var currentCreativeId: String? = nil
@@ -454,7 +456,9 @@ struct MainView: View {
                         showFullDescriptions: $showFullDescriptions,
                         gridSizeStep: $gridSizeStep,
                         gridFontStep: $gridFontStep,
-                        gridPriority: gridAssetPriorityBinding
+                        gridPriority: gridAssetPriorityBinding,
+                        doneCrossLineWidth: $doneCrossLineWidth,
+                        showDoneCrosses: $showDoneCrosses
                     )
                     .presentationDetents([.large])
                     .presentationDragIndicator(.visible)
@@ -1770,6 +1774,8 @@ struct SettingsView: View {
     @Binding var gridSizeStep: Int // 1..4 (portrait: 4->1, landscape: 5->2)
     @Binding var gridFontStep: Int // 1..5
     @Binding var gridPriority: FrameAssetKind
+    @Binding var doneCrossLineWidth: Double
+    @Binding var showDoneCrosses: Bool
 
     var body: some View {
         NavigationStack {
@@ -1808,6 +1814,20 @@ struct SettingsView: View {
                             Spacer()
                             Image(systemName: "textformat.size.larger")
                         }
+                    }
+                }
+
+                Section("Boards") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Done Cross Thickness")
+                        HStack {
+                            Image(systemName: "line.diagonal")
+                            Spacer()
+                            Slider(value: $doneCrossLineWidth, in: 1...12, step: 0.5)
+                            Spacer()
+                            Image(systemName: "line.diagonal.arrow")
+                        }
+                        Toggle("Show Done Crosses", isOn: $showDoneCrosses)
                     }
                 }
 

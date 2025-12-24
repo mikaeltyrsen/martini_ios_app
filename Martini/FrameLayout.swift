@@ -112,6 +112,8 @@ struct FrameLayout: View {
     @Environment(\.horizontalSizeClass) private var hSizeClass
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.fullscreenMediaCoordinator) private var fullscreenCoordinator
+    @AppStorage("doneCrossLineWidth") private var doneCrossLineWidth: Double = 5.0
+    @AppStorage("showDoneCrosses") private var showDoneCrosses: Bool = true
     @Namespace private var fullscreenNamespace
     @State private var borderScale: CGFloat = 1.0
     @State private var omitOverlayOpacity: Double = 0
@@ -417,26 +419,28 @@ struct FrameLayout: View {
     private func statusOverlay(for status: FrameStatus) -> some View {
         switch status {
         case .done:
-            // Red X lines from corner to corner
-            GeometryReader { geometry in
-                ZStack {
-                    Path { path in
-                        path.move(to: .zero)
-                        path.addLine(to: CGPoint(x: geometry.size.width, y: geometry.size.height))
-                    }
-                    .trim(from: 0, to: doneFirstLineProgress)
-                    .stroke(Color.red, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+            if showDoneCrosses {
+                // Red X lines from corner to corner
+                GeometryReader { geometry in
+                    ZStack {
+                        Path { path in
+                            path.move(to: .zero)
+                            path.addLine(to: CGPoint(x: geometry.size.width, y: geometry.size.height))
+                        }
+                        .trim(from: 0, to: doneFirstLineProgress)
+                        .stroke(Color.red, style: StrokeStyle(lineWidth: CGFloat(doneCrossLineWidth), lineCap: .round))
 
-                    Path { path in
-                        path.move(to: CGPoint(x: geometry.size.width, y: 0))
-                        path.addLine(to: CGPoint(x: 0, y: geometry.size.height))
+                        Path { path in
+                            path.move(to: CGPoint(x: geometry.size.width, y: 0))
+                            path.addLine(to: CGPoint(x: 0, y: geometry.size.height))
+                        }
+                        .trim(from: 0, to: doneSecondLineProgress)
+                        .stroke(Color.red, style: StrokeStyle(lineWidth: CGFloat(doneCrossLineWidth), lineCap: .round))
                     }
-                    .trim(from: 0, to: doneSecondLineProgress)
-                    .stroke(Color.red, style: StrokeStyle(lineWidth: 5, lineCap: .round))
                 }
+                .aspectRatio(aspectRatio, contentMode: .fit)
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
             }
-            .aspectRatio(aspectRatio, contentMode: .fit)
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
 
         case .omit:
             // Transparent overlay layer
