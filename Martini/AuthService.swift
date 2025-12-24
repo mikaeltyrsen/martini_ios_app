@@ -24,6 +24,12 @@ enum FrameUpdateContext: Equatable {
 }
 
 @MainActor
+protocol ConnectionMonitoring: AnyObject {
+    func registerNetworkSuccess()
+    func registerImmediateFailure(for error: Error)
+}
+
+@MainActor
 class AuthService: ObservableObject {
     @Published var isAuthenticated: Bool = false
     @Published var projectId: String?
@@ -55,9 +61,9 @@ class AuthService: ObservableObject {
     private let scheduleCache = ScheduleCache.shared
     private var creativesFetchTask: Task<Void, Error>?
     private var projectDetailsFetchTask: Task<Void, Error>?
-    private let connectionMonitor: ConnectionMonitor?
+    private let connectionMonitor: (any ConnectionMonitoring)?
 
-    init(connectionMonitor: ConnectionMonitor? = nil) {
+    init(connectionMonitor: (any ConnectionMonitoring)? = nil) {
         self.connectionMonitor = connectionMonitor
         loadAuthData()
     }
@@ -687,9 +693,7 @@ class AuthService: ObservableObject {
         if let index = frames.firstIndex(where: { $0.id == updatedFrame.id }) {
             frames[index] = updatedFrame
         }
-        if let projectId {
-            cacheFrames(frames, for: projectId)
-        }
+        cacheFrames(frames, for: projectId)
 
         publishFrameUpdate(frameId: updatedFrame.id, context: .localStatusChange)
         return updatedFrame
