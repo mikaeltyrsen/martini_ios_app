@@ -116,6 +116,8 @@ final class ConnectionMonitor: ObservableObject {
     }
 }
 
+extension ConnectionMonitor: ConnectionMonitoring {}
+
 private extension Error {
     var isConnectivityError: Bool {
         let nsError = self as NSError
