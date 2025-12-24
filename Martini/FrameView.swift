@@ -203,6 +203,7 @@ struct FrameView: View {
                     Text(statusLabel)
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(.white)
+                        .lineLimit(1)
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)
