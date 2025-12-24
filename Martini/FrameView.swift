@@ -199,6 +199,11 @@ struct FrameView: View {
                     } else {
                         Image(systemName: selectedStatus == .none ? "tag" : selectedStatus.systemImageName)
                             .foregroundStyle(.white)
+                            .background(.ultraThinMaterial, in: Circle())
+                                .overlay(
+                                    Circle()
+                                        .stroke(.white.opacity(0.25), lineWidth: 0.5)
+                                )
                     }
                     Text(statusLabel)
                         .font(.system(size: 14, weight: .semibold))
