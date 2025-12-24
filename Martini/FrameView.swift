@@ -285,48 +285,49 @@ struct FrameView: View {
     }
 
     private var statusSheetOverlay: some View {
-        Group {
+        ZStack(alignment: .bottom) {
             if showingStatusSheet {
-                ZStack(alignment: .bottom) {
-                    Color.black.opacity(0.35)
-                        .ignoresSafeArea()
-                        .onTapGesture {
-                            guard !isUpdatingStatus else { return }
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                showingStatusSheet = false
-                            }
-                        }
-
-                    VStack(spacing: 12) {
-                        Capsule()
-                            .fill(Color.secondary.opacity(0.5))
-                            .frame(width: 36, height: 5)
-                            .padding(.top, 8)
-
-                        VStack(spacing: 10) {
-                            statusSelectionButton(for: .here)
-                            statusSelectionButton(for: .next)
-                            statusSelectionButton(for: .done)
-                            statusSelectionButton(for: .omit)
-                            if selectedStatus != .none {
-                                statusSelectionButton(for: .none)
-                            }
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 20)
+                // Dimmer: no fade
+                Color(.martiniDefault).opacity(0.5)
+                    .ignoresSafeArea()
+                    .transition(.identity)
+                    .onTapGesture {
+                        guard !isUpdatingStatus else { return }
+                        showingStatusSheet = false
                     }
-                    .frame(maxWidth: .infinity)
-                    .background(
-                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .fill(Color(.systemBackground))
-                    )
-                    .padding(.horizontal, 16)
+
+                // Sheet: slides only
+                sheetContent
                     .padding(.bottom, 12)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.timingCurve(0.00, 0.77, 0.00, 1.00, duration: 0.45), value: showingStatusSheet)
+    }
+
+    private var sheetContent: some View {
+        VStack(spacing: 0) {
+            VStack(spacing: 0) {
+                statusSelectionButton(for: .here)
+                Divider()
+                statusSelectionButton(for: .next)
+                Divider()
+                statusSelectionButton(for: .done)
+                Divider()
+                statusSelectionButton(for: .omit)
+                Divider()
+                if selectedStatus != .none {
+                    statusSelectionButton(for: .none)
                 }
             }
         }
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color.black.opacity(1))
+        )
     }
+
 
     private func boardsSection(height: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -582,13 +583,13 @@ struct FrameView: View {
 
                 Spacer()
             }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 16)
+            .padding(.vertical, 18)
+            .padding(.horizontal, 25)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(.secondarySystemBackground))
-            )
+//            .background(
+//                RoundedRectangle(cornerRadius: 12)
+//                    .fill(Color(.secondarySystemBackground))
+//            )
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Set status to \(status.displayName)")
