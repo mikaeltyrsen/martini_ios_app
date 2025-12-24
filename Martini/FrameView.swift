@@ -698,7 +698,7 @@ private struct CommentsSheet: View {
                         let idx: Int = index + 1
                         VStack(alignment: .leading, spacing: 6) {
                             HStack {
-                                Circle().fill(Color.blue.opacity(0.2)).frame(width: 28, height: 28)
+                                Circle().fill(Color.martiniDefaultColor.opacity(0.2)).frame(width: 28, height: 28)
                                 Text("User \(idx)").font(.headline)
                                 Spacer()
                                 Text("2h ago").font(.caption).foregroundStyle(.secondary)
@@ -772,7 +772,7 @@ private struct CommentsPage: View {
                     let idx: Int = index + 1
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
-                            Circle().fill(Color.blue.opacity(0.2)).frame(width: 28, height: 28)
+                            Circle().fill(Color.martiniDefaultColor.opacity(0.2)).frame(width: 28, height: 28)
                             Text("User \(idx)").font(.headline)
                             Spacer()
                             Text("2h ago").font(.caption).foregroundStyle(.secondary)

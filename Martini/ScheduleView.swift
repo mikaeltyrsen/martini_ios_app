@@ -183,7 +183,7 @@ struct ScheduleView: View {
 
     private func blockColor(_ name: String?) -> Color {
         switch name?.lowercased() {
-        case "blue": return .blue.opacity(0.12)
+        case "blue": return .martiniDefaultColor.opacity(0.12)
         case "yellow": return .yellow.opacity(0.24)
         case "green": return .green.opacity(0.18)
         case "red": return .red.opacity(0.18)
