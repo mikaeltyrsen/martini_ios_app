@@ -1148,7 +1148,7 @@ struct Frame: Codable, Identifiable {
     var hasScheduledTime: Bool { formattedStartTime != nil }
 
     func updatingStatus(_ status: FrameStatus) -> Frame {
-        copyFrame(status: status == .none ? nil : status.rawValue)
+        copyFrame(status: .some(status == .none ? nil : status.rawValue))
     }
 
     func updatingDescription(_ description: String?) -> Frame {
@@ -1178,7 +1178,7 @@ struct Frame: Codable, Identifiable {
 
     private func copyFrame(
         description: String? = nil,
-        status: String? = nil,
+        status: String?? = nil,
         boards: [FrameBoard]? = nil,
         mainBoardType: String? = nil,
         board: String? = nil,
