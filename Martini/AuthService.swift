@@ -634,12 +634,17 @@ class AuthService: ObservableObject {
     }
 
     func updateFramesAspectRatio(creativeId: String, aspectRatio: String) {
+        var didChange = false
         let updatedFrames = frames.map { frame in
             guard frame.creativeId == creativeId else { return frame }
-            return frame.updatingCreativeAspectRatio(aspectRatio)
+            let updatedFrame = frame.updatingCreativeAspectRatio(aspectRatio)
+            if updatedFrame.creativeAspectRatio != frame.creativeAspectRatio {
+                didChange = true
+            }
+            return updatedFrame
         }
 
-        guard updatedFrames != frames else { return }
+        guard didChange else { return }
 
         frames = updatedFrames
 
