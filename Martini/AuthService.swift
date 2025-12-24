@@ -49,6 +49,8 @@ class AuthService: ObservableObject {
     private let projectIdKey = "martini_project_id"
     private let projectTitleKey = "martini_project_title"
     private let accessCodeKey = "martini_access_code"
+    private let cachedCreativesKeyPrefix = "martini_cached_creatives_"
+    private let cachedFramesKeyPrefix = "martini_cached_frames_"
     private let baseScriptsURL = "https://dev.staging.trymartini.com/scripts/"
     private let scheduleCache = ScheduleCache.shared
     private var creativesFetchTask: Task<Void, Error>?
@@ -138,6 +140,7 @@ class AuthService: ObservableObject {
             self.projectTitle = UserDefaults.standard.string(forKey: projectTitleKey)
             self.token = token
             self.isAuthenticated = true
+            loadCachedProjectData(for: projectId)
 
             // Automatically refresh project details, creatives, and frames when a token is already stored
             Task {
@@ -420,6 +423,7 @@ class AuthService: ObservableObject {
             }
             
             self.creatives = creativesResponse.creatives
+            cacheCreatives(creativesResponse.creatives, for: projectId)
             print("✅ Successfully fetched \(creatives.count) creatives")
             for (index, creative) in creatives.prefix(3).enumerated() {
                 print("  \(index + 1). \(creative.title) - \(creative.completedFrames)/\(creative.totalFrames) frames")
@@ -488,6 +492,7 @@ class AuthService: ObservableObject {
         }
 
         self.frames = framesResponse.frames
+        cacheFrames(framesResponse.frames, for: projectId)
         self.isScheduleActive = framesResponse.frames.contains { frame in
             if let schedule = frame.schedule, !schedule.isEmpty { return true }
             return false
@@ -680,6 +685,9 @@ class AuthService: ObservableObject {
         if let index = frames.firstIndex(where: { $0.id == updatedFrame.id }) {
             frames[index] = updatedFrame
         }
+        if let projectId {
+            cacheFrames(frames, for: projectId)
+        }
 
         publishFrameUpdate(frameId: updatedFrame.id, context: .localStatusChange)
         return updatedFrame
@@ -687,10 +695,15 @@ class AuthService: ObservableObject {
 
     // Logout and clear auth data
     func logout() {
+        let cachedProjectId = projectId
         UserDefaults.standard.removeObject(forKey: projectIdKey)
         UserDefaults.standard.removeObject(forKey: projectTitleKey)
         UserDefaults.standard.removeObject(forKey: accessCodeKey)
         UserDefaults.standard.removeObject(forKey: tokenHashKey)
+        if let cachedProjectId {
+            UserDefaults.standard.removeObject(forKey: cachedCreativesKey(for: cachedProjectId))
+            UserDefaults.standard.removeObject(forKey: cachedFramesKey(for: cachedProjectId))
+        }
         self.projectId = nil
         self.projectTitle = nil
         self.accessCode = nil
@@ -702,6 +715,68 @@ class AuthService: ObservableObject {
         self.isScheduleActive = false
         self.cachedSchedule = nil
         self.fetchedSchedules = []
+    }
+
+    private func cachedCreativesKey(for projectId: String) -> String {
+        "\(cachedCreativesKeyPrefix)\(projectId)"
+    }
+
+    private func cachedFramesKey(for projectId: String) -> String {
+        "\(cachedFramesKeyPrefix)\(projectId)"
+    }
+
+    private func loadCachedProjectData(for projectId: String) {
+        if creatives.isEmpty, let cached = loadCachedCreatives(for: projectId) {
+            creatives = cached
+        }
+
+        if frames.isEmpty, let cached = loadCachedFrames(for: projectId) {
+            frames = cached
+        }
+    }
+
+    private func loadCachedCreatives(for projectId: String) -> [Creative]? {
+        guard let data = UserDefaults.standard.data(forKey: cachedCreativesKey(for: projectId)) else {
+            return nil
+        }
+
+        do {
+            return try JSONDecoder().decode([Creative].self, from: data)
+        } catch {
+            print("❌ Failed to decode cached creatives: \(error)")
+            return nil
+        }
+    }
+
+    private func loadCachedFrames(for projectId: String) -> [Frame]? {
+        guard let data = UserDefaults.standard.data(forKey: cachedFramesKey(for: projectId)) else {
+            return nil
+        }
+
+        do {
+            return try JSONDecoder().decode([Frame].self, from: data)
+        } catch {
+            print("❌ Failed to decode cached frames: \(error)")
+            return nil
+        }
+    }
+
+    private func cacheCreatives(_ creatives: [Creative], for projectId: String) {
+        do {
+            let data = try JSONEncoder().encode(creatives)
+            UserDefaults.standard.set(data, forKey: cachedCreativesKey(for: projectId))
+        } catch {
+            print("❌ Failed to cache creatives: \(error)")
+        }
+    }
+
+    private func cacheFrames(_ frames: [Frame], for projectId: String) {
+        do {
+            let data = try JSONEncoder().encode(frames)
+            UserDefaults.standard.set(data, forKey: cachedFramesKey(for: projectId))
+        } catch {
+            print("❌ Failed to cache frames: \(error)")
+        }
     }
 
     // MARK: - Schedule Fetching

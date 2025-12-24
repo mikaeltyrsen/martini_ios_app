@@ -497,7 +497,7 @@ struct MainView: View {
 
     private var mainContent: some View {
         Group {
-            if authService.isLoadingCreatives && !useMockData {
+            if shouldShowInitialLoadingState {
                 loadingView
             } else if creativesToDisplay.isEmpty {
                 emptyStateView
@@ -505,6 +505,12 @@ struct MainView: View {
                 contentStack
             }
         }
+    }
+
+    private var shouldShowInitialLoadingState: Bool {
+        guard !useMockData else { return false }
+        guard creativesToDisplay.isEmpty else { return false }
+        return authService.isLoadingProjectDetails || authService.isLoadingCreatives
     }
 
     private var loadingView: some View {
@@ -797,7 +803,8 @@ struct MainView: View {
                                         primaryAsset: { primaryAsset(for: $0) },
                                         onStatusSelected: { frame, status in
                                             updateFrameStatus(frame, to: status)
-                                        }
+                                        },
+                                        showSkeleton: shouldShowFrameSkeleton && section.frames.isEmpty
                                     )
                                 }
                                 .id(section.id)
@@ -930,7 +937,15 @@ struct MainView: View {
                 .fontWeight(.semibold)
 
             let progress = navigationProgress
-            if progress.total > 0 {
+            if isProjectLoading {
+                HStack(spacing: 6) {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                    Text("Loading project...")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+            } else if progress.total > 0 {
                 ProgressView(value: Double(progress.completed), total: Double(progress.total))
                     .progressViewStyle(.linear)
                     .frame(width: 180)
@@ -944,6 +959,18 @@ struct MainView: View {
 
     private var shouldAllowCreativeSelectionMenu: Bool {
         frameSortMode == .story && !creativesToDisplay.isEmpty
+    }
+
+    private var isProjectLoading: Bool {
+        let isFetching = authService.isLoadingProjectDetails
+            || authService.isLoadingCreatives
+            || authService.isLoadingFrames
+        return isFetching && creativesToDisplay.isEmpty && authService.frames.isEmpty
+    }
+
+    private var shouldShowFrameSkeleton: Bool {
+        guard !useMockData else { return false }
+        return authService.isLoadingFrames && authService.frames.isEmpty
     }
     
     private var fontScale: CGFloat {
@@ -1453,6 +1480,7 @@ struct CreativeGridSection: View {
     let viewportHeight: CGFloat
     let primaryAsset: (Frame) -> FrameAssetItem?
     let onStatusSelected: (Frame, FrameStatus) -> Void
+    let showSkeleton: Bool
 
     init(
         section: GridSectionData,
@@ -1464,7 +1492,8 @@ struct CreativeGridSection: View {
         coordinateSpaceName: String,
         viewportHeight: CGFloat,
         primaryAsset: @escaping (Frame) -> FrameAssetItem?,
-        onStatusSelected: @escaping (Frame, FrameStatus) -> Void
+        onStatusSelected: @escaping (Frame, FrameStatus) -> Void,
+        showSkeleton: Bool
     ) {
         self.section = section
         self.onFrameTap = onFrameTap
@@ -1476,6 +1505,7 @@ struct CreativeGridSection: View {
         self.viewportHeight = viewportHeight
         self.primaryAsset = primaryAsset
         self.onStatusSelected = onStatusSelected
+        self.showSkeleton = showSkeleton
     }
 
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
@@ -1516,24 +1546,30 @@ struct CreativeGridSection: View {
 
             // Grid of frames
             LazyVGrid(columns: columns, spacing: 8) {
-                ForEach(section.frames) { frame in
-                    Button {
-                        onFrameTap(frame.id)
-                    } label: {
-                        GridFrameCell(
-                            frame: frame,
-                            primaryAsset: primaryAsset(frame),
-                            showDescription: showDescriptions,
-                            showFullDescription: showFullDescriptions,
-                            fontScale: fontScale,
-                            coordinateSpaceName: coordinateSpaceName,
-                            viewportHeight: viewportHeight,
-                            onStatusSelected: { status in
-                                onStatusSelected(frame, status)
-                            }
-                        )
+                if showSkeleton {
+                    ForEach(0..<max(columnCount * 2, columnCount * 3), id: \.self) { _ in
+                        SkeletonGridCell()
                     }
-                    .id(frame.id)
+                } else {
+                    ForEach(section.frames) { frame in
+                        Button {
+                            onFrameTap(frame.id)
+                        } label: {
+                            GridFrameCell(
+                                frame: frame,
+                                primaryAsset: primaryAsset(frame),
+                                showDescription: showDescriptions,
+                                showFullDescription: showFullDescriptions,
+                                fontScale: fontScale,
+                                coordinateSpaceName: coordinateSpaceName,
+                                viewportHeight: viewportHeight,
+                                onStatusSelected: { status in
+                                    onStatusSelected(frame, status)
+                                }
+                            )
+                        }
+                        .id(frame.id)
+                    }
                 }
             }
             .padding(.horizontal)
