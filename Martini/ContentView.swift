@@ -1780,13 +1780,6 @@ struct SettingsView: View {
                     Toggle("Show Full Descriptions", isOn: $showFullDescriptions)
                         .disabled(!showDescriptions)
 
-                    Picker("Prioritize", selection: $gridPriority) {
-                        Text("Boards").tag(FrameAssetKind.board)
-                        Text("Photo").tag(FrameAssetKind.photoboard)
-                        Text("Preview").tag(FrameAssetKind.preview)
-                    }
-                    .pickerStyle(.segmented)
-
                     // Grid size slider: portrait 4/3/2/1, landscape 5/4/3/2 (handled by gridColumnCount)
                     VStack(alignment: .leading) {
                         Text("Grid Size")
