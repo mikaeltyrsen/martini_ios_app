@@ -23,7 +23,6 @@ final class WebsocketCalls {
         "creative-deleted",
         "creative-title-updated",
         "creative-order-updated",
-        "creative-aspect-ratio-updated",
         "activate-schedule",
         "update-schedule",
         "project-files-updated",
@@ -40,6 +39,13 @@ final class WebsocketCalls {
     }
 
     func handle(event name: String, dataString: String) {
+        if name == "creative-aspect-ratio-updated" {
+            Task { [weak self] in
+                await self?.handleCreativeAspectRatioUpdate(dataString: dataString)
+            }
+            return
+        }
+
         if frameEvents.contains(name) {
             Task { [weak self] in
                 await self?.handleFrameEvent(name: name, dataString: dataString)
@@ -150,6 +156,14 @@ final class WebsocketCalls {
         try? await authService.fetchCreatives()
     }
 
+    private func handleCreativeAspectRatioUpdate(dataString: String) async {
+        guard let update = CreativeAspectRatioUpdate.parse(dataString: dataString) else { return }
+        guard let creativeId = update.resolvedCreativeId,
+              let aspectRatio = update.normalizedAspectRatio else { return }
+
+        authService.updateFramesAspectRatio(creativeId: creativeId, aspectRatio: aspectRatio)
+    }
+
     private func notifyFrameUpdate(id: String?, eventName: String) {
         guard let id else { return }
         authService.publishFrameUpdate(frameId: id, context: .websocket(event: eventName))
@@ -257,5 +271,31 @@ private struct FrameIdentifierPayload: Decodable {
 
     var resolvedId: String? {
         id ?? frameId ?? frameID ?? frame_id
+    }
+}
+
+private struct CreativeAspectRatioUpdate: Decodable {
+    let creativeId: String?
+    let creativeID: String?
+    let creative_id: String?
+    let aspectRatio: String?
+    let aspect_ratio: String?
+
+    var resolvedCreativeId: String? {
+        creativeId ?? creativeID ?? creative_id
+    }
+
+    var normalizedAspectRatio: String? {
+        guard let aspectRatio else { return nil }
+        let trimmed = aspectRatio.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed == "1" {
+            return "1 / 1"
+        }
+        return trimmed
+    }
+
+    static func parse(dataString: String) -> CreativeAspectRatioUpdate? {
+        guard let data = dataString.data(using: .utf8) else { return nil }
+        return try? JSONDecoder().decode(CreativeAspectRatioUpdate.self, from: data)
     }
 }

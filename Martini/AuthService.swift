@@ -633,6 +633,25 @@ class AuthService: ObservableObject {
         frameUpdateEvent = FrameUpdateEvent(frameId: frameId, context: context)
     }
 
+    func updateFramesAspectRatio(creativeId: String, aspectRatio: String) {
+        let updatedFrames = frames.map { frame in
+            guard frame.creativeId == creativeId else { return frame }
+            return frame.updatingCreativeAspectRatio(aspectRatio)
+        }
+
+        guard updatedFrames != frames else { return }
+
+        frames = updatedFrames
+
+        if let projectId {
+            cacheFrames(updatedFrames, for: projectId)
+        }
+
+        for frame in updatedFrames where frame.creativeId == creativeId {
+            publishFrameUpdate(frameId: frame.id, context: .websocket(event: "creative-aspect-ratio-updated"))
+        }
+    }
+
     func updateFrameStatus(id: String, to status: FrameStatus) async throws -> Frame {
         guard let projectId else {
             throw AuthError.noAuth
