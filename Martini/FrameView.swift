@@ -521,7 +521,9 @@ struct FrameView: View {
 
                     frame = updatedFrame
                     onStatusSelected(updatedFrame, updatedFrame.statusEnum)
-                    showingStatusSheet = false
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showingStatusSheet = false
+                    }
                 }
             } catch {
                 await MainActor.run {
@@ -546,7 +548,9 @@ struct FrameView: View {
         filesBadgeCount = nil
         clipsError = nil
         descriptionHeightRatio = minDescriptionRatio
-        showingStatusSheet = false
+        withAnimation(.easeInOut(duration: 0.2)) {
+            showingStatusSheet = false
+        }
         Task {
             await loadClips(force: true)
         }
