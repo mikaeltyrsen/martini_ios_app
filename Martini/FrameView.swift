@@ -31,9 +31,12 @@ struct FrameView: View {
     @State private var isUpdatingStatus: Bool = false
     @State private var statusUpdateError: String?
     @State private var showingStatusSheet: Bool = false
+    @State private var sheetVisible: Bool = false
     @State private var statusBeingUpdated: FrameStatus?
 
     private let minDescriptionRatio: CGFloat = 0.35
+    private let dimmerAnim = Animation.easeInOut(duration: 0.28)
+    private let sheetAnim = Animation.spring(response: 0.42, dampingFraction: 0.92, blendDuration: 0.20)
 
     init(
         frame: Frame,
@@ -183,9 +186,7 @@ struct FrameView: View {
             Spacer()
 
             Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    showingStatusSheet = true
-                }
+                openStatusSheet()
             } label: {
                 let statusLabel: String = {
                     if isUpdatingStatus { return "Updating Status" }
@@ -287,22 +288,24 @@ struct FrameView: View {
     private var statusSheetOverlay: some View {
         ZStack(alignment: .bottom) {
             if showingStatusSheet {
-                // Dimmer: no fade
-                Color(.martiniDefault).opacity(0.5)
+                // Dimmer (gentle, native)
+                Color.black
+                    .opacity(sheetVisible ? 0.45 : 0)
                     .ignoresSafeArea()
-                    .transition(.identity)
+                    .animation(dimmerAnim, value: sheetVisible)
                     .onTapGesture {
                         guard !isUpdatingStatus else { return }
-                        showingStatusSheet = false
+                        closeStatusSheet()
                     }
 
-                // Sheet: slides only
+                // Sheet (native spring)
                 sheetContent
+                    .padding(.horizontal, 16)
                     .padding(.bottom, 12)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .offset(y: sheetVisible ? 0 : 420)
+                    .animation(sheetAnim, value: sheetVisible)
             }
         }
-        .animation(.timingCurve(0.00, 0.77, 0.00, 1.00, duration: 0.45), value: showingStatusSheet)
     }
 
     private var sheetContent: some View {
@@ -324,10 +327,23 @@ struct FrameView: View {
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color.black.opacity(1))
+                .fill(Color.black.opacity(0.88))
         )
     }
 
+    private func openStatusSheet() {
+        showingStatusSheet = true
+        DispatchQueue.main.async {
+            sheetVisible = true
+        }
+    }
+
+    private func closeStatusSheet() {
+        sheetVisible = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
+            showingStatusSheet = false
+        }
+    }
 
     private func boardsSection(height: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -522,9 +538,7 @@ struct FrameView: View {
 
                     frame = updatedFrame
                     onStatusSelected(updatedFrame, updatedFrame.statusEnum)
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        showingStatusSheet = false
-                    }
+                    closeStatusSheet()
                 }
             } catch {
                 await MainActor.run {
@@ -549,9 +563,7 @@ struct FrameView: View {
         filesBadgeCount = nil
         clipsError = nil
         descriptionHeightRatio = minDescriptionRatio
-        withAnimation(.easeInOut(duration: 0.2)) {
-            showingStatusSheet = false
-        }
+        closeStatusSheet()
         Task {
             await loadClips(force: true)
         }
