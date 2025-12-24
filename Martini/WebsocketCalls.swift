@@ -87,6 +87,14 @@ final class WebsocketCalls {
             }
             return
 
+        case "frame-caption-updated":
+            if let frameCaptionUpdate = FrameCaptionUpdate.parse(dataString: dataString) {
+                applyFrameCaptionUpdate(frameCaptionUpdate)
+            } else {
+                notifyFrameUpdate(id: frameId, eventName: name)
+            }
+            return
+
         default:
             break
         }
@@ -126,6 +134,16 @@ final class WebsocketCalls {
         authService.frames[index] = authService.frames[index].updatingBoards(boards, mainBoardType: update.mainBoardType)
 
         notifyFrameUpdate(id: frameId, eventName: "frame-board-updated")
+    }
+
+    private func applyFrameCaptionUpdate(_ update: FrameCaptionUpdate) {
+        guard let frameId = update.resolvedId else { return }
+
+        guard let index = authService.frames.firstIndex(where: { $0.id == frameId }) else { return }
+
+        authService.frames[index] = authService.frames[index].updatingCaption(update.caption)
+
+        notifyFrameUpdate(id: frameId, eventName: "frame-caption-updated")
     }
 
     private func refreshCreatives() async {
@@ -213,6 +231,21 @@ private struct FrameBoardUpdate: Decodable {
     static func parse(dataString: String) -> FrameBoardUpdate? {
         guard let data = dataString.data(using: .utf8) else { return nil }
         return try? JSONDecoder().decode(FrameBoardUpdate.self, from: data)
+    }
+}
+
+private struct FrameCaptionUpdate: Decodable {
+    let id: String?
+    let frameId: String?
+    let frameID: String?
+    let frame_id: String?
+    let caption: String?
+
+    var resolvedId: String? { id ?? frameId ?? frameID ?? frame_id }
+
+    static func parse(dataString: String) -> FrameCaptionUpdate? {
+        guard let data = dataString.data(using: .utf8) else { return nil }
+        return try? JSONDecoder().decode(FrameCaptionUpdate.self, from: data)
     }
 }
 
