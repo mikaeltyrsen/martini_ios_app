@@ -400,7 +400,7 @@ struct FrameLayout: View {
             let verticalPadding = height * 0.25
 
             HStack(spacing: contentSpacing) {
-                Image(systemName: "clock")
+                Image(systemName: "video.fill")
                 Text(frameStartTimeText)
             }
             .font(.system(size: fontSize, weight: .semibold))
