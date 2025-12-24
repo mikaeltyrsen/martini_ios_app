@@ -1129,18 +1129,7 @@ extension FrameStatus {
     }
 
     var systemImageName: String {
-        switch self {
-        case .done:
-            return "checkmark.circle"
-        case .here:
-            return "figure.wave"
-        case .next:
-            return "arrow.turn.up.right"
-        case .omit:
-            return "minus.circle.dashed"
-        case .none:
-            return "xmark.circle"
-        }
+        AppConfig.MarkerIcons.systemImageName(for: self)
     }
 
     var labelColor: Color {
