@@ -15,7 +15,6 @@
 		075456082EC9AA2100C45739 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 075456072EC9AA2100C45739 /* Assets.xcassets */; };
 		07A6A6862EC9A272002C8EB9 /* MartiniApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07A6A6852EC9A272002C8EB9 /* MartiniApp.swift */; };
 		07A6A6882EC9A272002C8EB9 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07A6A6872EC9A272002C8EB9 /* ContentView.swift */; };
-		07A6A68D2EC9A272002C8EB9 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 07A6A68C2EC9A272002C8EB9 /* Preview Assets.xcassets */; };
 		07C904B02EDA8665004EDBFA /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C904AF2EDA8665004EDBFA /* Models.swift */; };
 		07C904B22EDB92DB004EDBFA /* playground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C904B12EDB92D8004EDBFA /* playground.swift */; };
 		07C904B42EDB9F3D004EDBFA /* Uiplayground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C904B32EDB9F3D004EDBFA /* Uiplayground.swift */; };
@@ -42,7 +41,6 @@
 		07A6A6822EC9A272002C8EB9 /* Martini.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Martini.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		07A6A6852EC9A272002C8EB9 /* MartiniApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MartiniApp.swift; sourceTree = "<group>"; };
 		07A6A6872EC9A272002C8EB9 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		07A6A68C2EC9A272002C8EB9 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		07ACD0013127F1D000000001 /* Martini.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Martini.entitlements; sourceTree = "<group>"; };
 		07C904AE2EDA7A48004EDBFA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		07C904AF2EDA8665004EDBFA /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
@@ -105,7 +103,6 @@
 				075456002EC9A6E100C45739 /* QRScannerView.swift */,
 				07F4E0012FF0AAAA00000001 /* RealtimeService.swift */,
 				07F4E0032FF0AAAA00000002 /* WebsocketCalls.swift */,
-				07A6A68B2EC9A272002C8EB9 /* Preview Content */,
 				07C904B52EDBAE73004EDBFA /* FrameView.swift */,
 				0730F3E42EF6E788000B598F /* FullscreenMediaView.swift */,
 				07C904B82FE2B5E9004EDBFA /* FrameLayout.swift */,
@@ -118,14 +115,6 @@
 				0730F3E62EFC14E3000B598F /* Config.swift */,
 			);
 			path = Martini;
-			sourceTree = "<group>";
-		};
-		07A6A68B2EC9A272002C8EB9 /* Preview Content */ = {
-			isa = PBXGroup;
-			children = (
-				07A6A68C2EC9A272002C8EB9 /* Preview Assets.xcassets */,
-			);
-			path = "Preview Content";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -186,7 +175,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				07A6A68D2EC9A272002C8EB9 /* Preview Assets.xcassets in Resources */,
 				075456082EC9AA2100C45739 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

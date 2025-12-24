@@ -1907,17 +1907,19 @@ struct SettingsView: View {
                     }
                 }
 
-                Section("Boards") {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Done Cross Thickness")
+                Section("Markers") {
+                    VStack(alignment: .leading) {
+                        Text("Crosses Thickness")
                         HStack {
-                            Image(systemName: "line.diagonal")
-                            Spacer()
+                            //Image(systemName: "line.diagonal")
+                            //Spacer()
                             Slider(value: $doneCrossLineWidth, in: 1...12, step: 0.5)
-                            Spacer()
-                            Image(systemName: "line.diagonal.arrow")
+                            //Spacer()
+                            //Image(systemName: "line.diagonal.arrow")
                         }
-                        Toggle("Show Done Crosses", isOn: $showDoneCrosses)
+                    }
+                    VStack(alignment: .leading) {
+                        Toggle("Show Crosses", isOn: $showDoneCrosses)
                     }
                 }
 
