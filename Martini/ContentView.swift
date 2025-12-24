@@ -428,28 +428,30 @@ struct MainView: View {
                 }
                 .fullScreenCover(item: $selectedFrame) { frame in
                     let navigation = navigationContext(for: frame)
-                    FrameView(
-                        frame: frame,
-                        assetOrder: assetOrderBinding(for: frame),
-                        onClose: { selectedFrame = nil },
-                        hasPreviousFrame: navigation.previous != nil,
-                        hasNextFrame: navigation.next != nil,
-                        onNavigate: { direction in
-                            switch direction {
-                            case .previous:
-                                if let previous = navigationContext(for: frame).previous {
-                                    selectedFrame = previous
+                    NavigationStack {
+                        FrameView(
+                            frame: frame,
+                            assetOrder: assetOrderBinding(for: frame),
+                            onClose: { selectedFrame = nil },
+                            hasPreviousFrame: navigation.previous != nil,
+                            hasNextFrame: navigation.next != nil,
+                            onNavigate: { direction in
+                                switch direction {
+                                case .previous:
+                                    if let previous = navigationContext(for: frame).previous {
+                                        selectedFrame = previous
+                                    }
+                                case .next:
+                                    if let next = navigationContext(for: frame).next {
+                                        selectedFrame = next
+                                    }
                                 }
-                            case .next:
-                                if let next = navigationContext(for: frame).next {
-                                    selectedFrame = next
-                                }
+                            },
+                            onStatusSelected: { updatedFrame, _ in
+                                applyLocalStatusUpdate(updatedFrame)
                             }
-                        },
-                        onStatusSelected: { updatedFrame, _ in
-                            applyLocalStatusUpdate(updatedFrame)
-                        }
-                    )
+                        )
+                    }
                     .interactiveDismissDisabled(false)
                 }
                 .sheet(isPresented: $isShowingSettings) {

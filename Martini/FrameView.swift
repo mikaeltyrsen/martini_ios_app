@@ -61,72 +61,70 @@ struct FrameView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            contentView
-                .navigationTitle("Frame \(frame.frameNumber > 0 ? String(frame.frameNumber) : "")")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    topToolbar
-                    bottomToolbar
-                }
-        }
-        .alert(
-            "Unable to Update Status",
-            isPresented: Binding(
-                get: { statusUpdateError != nil },
-                set: { if !$0 { statusUpdateError = nil } }
-            )
-        ) {
-            Button("OK", role: .cancel) { statusUpdateError = nil }
-        } message: {
-            Text(statusUpdateError ?? "An unknown error occurred.")
-        }
-        .sheet(isPresented: $showingFiles) {
-            FilesSheet(
-                frame: frame,
-                clips: $clips,
-                isLoading: $isLoadingClips,
-                errorMessage: $clipsError,
-                onReload: { await loadClips(force: true) }
-            )
-            .presentationDetents([.fraction(0.25), .medium, .large])
-            .presentationDragIndicator(.visible)
-        }
-        .onChange(of: assetOrder) { (newOrder: [FrameAssetKind]) in
-            let newStack: [FrameAssetItem] = FrameView.orderedAssets(for: frame, order: newOrder)
-            assetStack = newStack
-            if visibleAssetID == nil { visibleAssetID = newStack.first?.id }
-        }
-        .onChange(of: assetStack) { (newStack: [FrameAssetItem]) in
-            assetOrder = newStack.map(\.kind)
-            let newIDs = Set(newStack.map(\.id))
-            if let currentID = visibleAssetID, !newIDs.contains(currentID) {
-                visibleAssetID = newStack.first?.id
-            } else if visibleAssetID == nil, let first: FrameAssetItem.ID = newStack.first?.id {
-                visibleAssetID = first
+        contentView
+            .navigationTitle("Frame \(frame.frameNumber > 0 ? String(frame.frameNumber) : "")")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                topToolbar
+                bottomToolbar
             }
-        }
-        .task {
-            await loadClips(force: false)
-        }
-        .onChange(of: providedFrame.id) { _ in
-            syncWithProvidedFrame()
-        }
-        .onReceive(authService.$frames) { frames in
-            guard let updated = frames.first(where: { $0.id == frame.id }) else { return }
-            frame = updated
-            selectedStatus = updated.statusEnum
-
-            let newStack: [FrameAssetItem] = FrameView.orderedAssets(for: updated, order: assetOrder)
-            if assetStack.map(\.id) != newStack.map(\.id) {
+            .alert(
+                "Unable to Update Status",
+                isPresented: Binding(
+                    get: { statusUpdateError != nil },
+                    set: { if !$0 { statusUpdateError = nil } }
+                )
+            ) {
+                Button("OK", role: .cancel) { statusUpdateError = nil }
+            } message: {
+                Text(statusUpdateError ?? "An unknown error occurred.")
+            }
+            .sheet(isPresented: $showingFiles) {
+                FilesSheet(
+                    frame: frame,
+                    clips: $clips,
+                    isLoading: $isLoadingClips,
+                    errorMessage: $clipsError,
+                    onReload: { await loadClips(force: true) }
+                )
+                .presentationDetents([.fraction(0.25), .medium, .large])
+                .presentationDragIndicator(.visible)
+            }
+            .onChange(of: assetOrder) { (newOrder: [FrameAssetKind]) in
+                let newStack: [FrameAssetItem] = FrameView.orderedAssets(for: frame, order: newOrder)
                 assetStack = newStack
                 if visibleAssetID == nil { visibleAssetID = newStack.first?.id }
             }
-        }
-        .overlay(alignment: .center) {
-            fullscreenOverlay
-        }
-        .animation(.easeInOut(duration: 0.25), value: fullscreenCoordinator?.configuration?.id)
+            .onChange(of: assetStack) { (newStack: [FrameAssetItem]) in
+                assetOrder = newStack.map(\.kind)
+                let newIDs = Set(newStack.map(\.id))
+                if let currentID = visibleAssetID, !newIDs.contains(currentID) {
+                    visibleAssetID = newStack.first?.id
+                } else if visibleAssetID == nil, let first: FrameAssetItem.ID = newStack.first?.id {
+                    visibleAssetID = first
+                }
+            }
+            .task {
+                await loadClips(force: false)
+            }
+            .onChange(of: providedFrame.id) { _ in
+                syncWithProvidedFrame()
+            }
+            .onReceive(authService.$frames) { frames in
+                guard let updated = frames.first(where: { $0.id == frame.id }) else { return }
+                frame = updated
+                selectedStatus = updated.statusEnum
+
+                let newStack: [FrameAssetItem] = FrameView.orderedAssets(for: updated, order: assetOrder)
+                if assetStack.map(\.id) != newStack.map(\.id) {
+                    assetStack = newStack
+                    if visibleAssetID == nil { visibleAssetID = newStack.first?.id }
+                }
+            }
+            .overlay(alignment: .center) {
+                fullscreenOverlay
+            }
+            .animation(.easeInOut(duration: 0.25), value: fullscreenCoordinator?.configuration?.id)
     }
 
     @ToolbarContentBuilder
