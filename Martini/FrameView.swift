@@ -290,7 +290,7 @@ struct FrameView: View {
             if showingStatusSheet {
                 // Dimmer (gentle, native)
                 Color.black
-                    .opacity(sheetVisible ? 0.45 : 0)
+                    .opacity(sheetVisible ? 0.7 : 0)
                     .ignoresSafeArea()
                     .animation(dimmerAnim, value: sheetVisible)
                     .onTapGesture {
@@ -304,30 +304,30 @@ struct FrameView: View {
                     .padding(.bottom, 12)
                     .offset(y: sheetVisible ? 0 : 420)
                     .animation(sheetAnim, value: sheetVisible)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 100)
             }
         }
     }
 
     private var sheetContent: some View {
-        VStack(spacing: 0) {
-            VStack(spacing: 0) {
-                statusSelectionButton(for: .here)
+        HStack(spacing: 0) {
+            statusSelectionButton(for: .here)
+            Divider()
+            statusSelectionButton(for: .next)
+            Divider()
+            statusSelectionButton(for: .done)
+            Divider()
+            statusSelectionButton(for: .omit)
+            if selectedStatus != .none {
                 Divider()
-                statusSelectionButton(for: .next)
-                Divider()
-                statusSelectionButton(for: .done)
-                Divider()
-                statusSelectionButton(for: .omit)
-                Divider()
-                if selectedStatus != .none {
-                    statusSelectionButton(for: .none)
-                }
+                statusSelectionButton(for: .none)
             }
         }
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color.black.opacity(0.88))
+                .fill(Color(.markerPopup).opacity(1))
         )
     }
 
@@ -577,27 +577,26 @@ struct FrameView: View {
         Button {
             updateStatus(to: status)
         } label: {
-            HStack(spacing: 12) {
+            VStack(spacing: 12) {
                 Group {
                     if isLoading {
                         ProgressView()
                             .tint(status.markerBackgroundColor)
                     } else {
                         Image(systemName: status.systemImageName)
+                            .font(.system(size: 25, weight: .semibold))
                             .foregroundStyle(status.markerBackgroundColor)
                     }
                 }
-                .frame(width: 20)
-
+                .frame(width: 40, height: 40)
+                //.background(RoundedRectangle(cornerRadius: 12).fill(Color.white))
                 Text(status.displayName)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.primary)
-
-                Spacer()
             }
             .padding(.vertical, 18)
-            .padding(.horizontal, 25)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 10)
+            .frame(maxWidth: .infinity, alignment: .center)
 //            .background(
 //                RoundedRectangle(cornerRadius: 12)
 //                    .fill(Color(.secondarySystemBackground))

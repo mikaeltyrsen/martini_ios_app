@@ -3,10 +3,10 @@ import SwiftUI
 enum AppConfig {
     enum MarkerIcons {
         static let done = "xmark"
-        static let here = "video"
-        static let next = "forward"
-        static let omit = "minus"
-        static let none = "photo"
+        static let here = "video.fill"
+        static let next = "forward.fill"
+        static let omit = "video.slash.fill"
+        static let none = "photo.fill"
 
         static func systemImageName(for status: FrameStatus) -> String {
             switch status {
