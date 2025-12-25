@@ -468,6 +468,16 @@ final class LocalDatabase {
                 sortOrder: item.sortOrder
             )
         }
+
+        let cameras = fetchCameras()
+        let lenses = fetchLenses()
+        print("🧪 Pack SQL check: \(cameras.count) cameras, \(lenses.count) lenses, \(countRows(in: "camera_modes")) modes")
+        for camera in cameras.prefix(5) {
+            print("  🎥 \(camera.brand) \(camera.model)")
+        }
+        for lens in lenses.prefix(5) {
+            print("  🔭 \(lens.brand) \(lens.series) \(lens.focalLengthMinMm)–\(lens.focalLengthMaxMm)mm")
+        }
     }
 
     private func upsertPack(id: String, name: String, revision: Int) {
