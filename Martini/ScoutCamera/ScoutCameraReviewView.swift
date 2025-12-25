@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct ScoutCameraReviewView: View {
     let image: UIImage
@@ -7,6 +8,7 @@ struct ScoutCameraReviewView: View {
     let onCancel: () -> Void
 
     @State private var isUploading = false
+    @State private var isShareSheetPresented = false
 
     var body: some View {
         ZStack {
@@ -30,6 +32,11 @@ struct ScoutCameraReviewView: View {
                     }
                     .buttonStyle(.bordered)
 
+                    Button("Save/Share") {
+                        isShareSheetPresented = true
+                    }
+                    .buttonStyle(.bordered)
+
                     Button {
                         Task {
                             isUploading = true
@@ -48,5 +55,19 @@ struct ScoutCameraReviewView: View {
                 .padding(.bottom, 24)
             }
         }
+        .sheet(isPresented: $isShareSheetPresented) {
+            ActivityView(activityItems: [image])
+        }
     }
+}
+
+private struct ActivityView: UIViewControllerRepresentable {
+    let activityItems: [Any]
+    var applicationActivities: [UIActivity]? = nil
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: applicationActivities)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
