@@ -33,6 +33,7 @@ struct FrameView: View {
     @State private var showingStatusSheet: Bool = false
     @State private var sheetVisible: Bool = false
     @State private var statusBeingUpdated: FrameStatus?
+    @State private var showingScoutCamera: Bool = false
 
     private let minDescriptionRatio: CGFloat = 0.35
     private let dimmerAnim = Animation.easeInOut(duration: 0.28)
@@ -133,6 +134,16 @@ struct FrameView: View {
                 statusSheetOverlay
             }
             .animation(.easeInOut(duration: 0.25), value: fullscreenCoordinator?.configuration?.id)
+            .fullScreenCover(isPresented: $showingScoutCamera) {
+                if let projectId = authService.projectId {
+                    ScoutCameraView(
+                        projectId: projectId,
+                        frameId: frame.id,
+                        targetAspectRatio: frameAspectRatio
+                    )
+                    .environmentObject(authService)
+                }
+            }
     }
 
     @ToolbarContentBuilder
@@ -355,7 +366,10 @@ struct FrameView: View {
                 frame: frame,
                 assetStack: assetStack,
                 visibleAssetID: $visibleAssetID,
-                primaryText: primaryText
+                primaryText: primaryText,
+                takePictureAction: {
+                    showingScoutCamera = true
+                }
             )
 
             boardCarouselTabs
@@ -640,6 +654,31 @@ struct FrameView: View {
 private extension FrameView {
     private var isDescriptionExpanded: Bool {
         descriptionHeightRatio > 0.75
+    }
+
+    private var frameAspectRatio: CGFloat {
+        parseAspectRatio(frame.creativeAspectRatio)
+    }
+
+    private func parseAspectRatio(_ ratio: String?) -> CGFloat {
+        guard let ratio else { return 16.0 / 9.0 }
+        let cleaned = ratio.lowercased().replacingOccurrences(of: " ", with: "")
+        if cleaned.contains(":") {
+            let parts = cleaned.split(separator: ":")
+            if parts.count == 2, let w = Double(parts[0]), let h = Double(parts[1]), h != 0 {
+                return CGFloat(w / h)
+            }
+        }
+        if cleaned.contains("x") {
+            let parts = cleaned.split(separator: "x")
+            if parts.count == 2, let w = Double(parts[0]), let h = Double(parts[1]), h != 0 {
+                return CGFloat(w / h)
+            }
+        }
+        if let value = Double(cleaned), value > 0 {
+            return CGFloat(value)
+        }
+        return 16.0 / 9.0
     }
 
     @ViewBuilder
@@ -1188,6 +1227,7 @@ private struct StackedAssetScroller: View {
     let assetStack: [FrameAssetItem]
     @Binding var visibleAssetID: FrameAssetItem.ID?
     let primaryText: String?
+    let takePictureAction: (() -> Void)?
 
     var body: some View {
         GeometryReader { proxy in
@@ -1209,6 +1249,13 @@ private struct StackedAssetScroller: View {
                         .frame(maxWidth: .infinity, alignment: .center)
                         .containerRelativeFrame(.horizontal, alignment: .center)
                         .id(asset.id)
+                    }
+
+                    if let takePictureAction {
+                        TakePictureCardView(cardWidth: cardWidth, action: takePictureAction)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .containerRelativeFrame(.horizontal, alignment: .center)
+                            .id("take-picture")
                     }
                 }
                 .scrollTargetLayout()
@@ -1241,6 +1288,32 @@ private struct AssetCardView: View {
         .padding(.vertical, 16)
         .applyHorizontalScrollTransition()
         .shadow(radius: 10, x: 0, y: 10)
+    }
+}
+
+private struct TakePictureCardView: View {
+    let cardWidth: CGFloat
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color.secondary.opacity(0.15))
+                VStack(spacing: 12) {
+                    Image(systemName: "camera")
+                        .font(.system(size: 32, weight: .semibold))
+                        .foregroundStyle(Color.primary)
+                    Text("Take picture")
+                        .font(.headline)
+                        .foregroundStyle(Color.primary)
+                }
+            }
+            .frame(width: cardWidth)
+            .padding(.vertical, 16)
+            .shadow(radius: 10, x: 0, y: 10)
+        }
+        .buttonStyle(.plain)
     }
 }
 //

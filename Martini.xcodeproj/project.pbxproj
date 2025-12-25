@@ -29,6 +29,23 @@
 		07F4E0052FF0AAAA00000002 /* WebsocketCalls.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07F4E0032FF0AAAA00000002 /* WebsocketCalls.swift */; };
 		57E214BA1EC84898ABC8A8A6 /* SchedulesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 477F863DD3304428A7C610C5 /* SchedulesView.swift */; };
 		F501C2E32028424CABAFBC56 /* ScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60C91863CD124D159734FD1B /* ScheduleView.swift */; };
+		13952330E1EF424FADD563ED /* ScoutCameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F825837CC9D4A3C884F0F59 /* ScoutCameraView.swift */; };
+		B9D8650A752F4255AD620B9B /* ScoutCameraReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0187390DAD5C4818AD9A0A1B /* ScoutCameraReviewView.swift */; };
+		212769B0E99B412F8D9C27E8 /* ScoutCameraViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30240C00983A4B208F56B246 /* ScoutCameraViewModel.swift */; };
+		B97E51D7EFDA491EBD6C974C /* CaptureSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B50BC0CE2AA4639AE6F9264 /* CaptureSessionManager.swift */; };
+		F8C07B4A4CB449BDB50BE3BB /* CameraDeviceSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20AFBDAA8904AB283618CF2 /* CameraDeviceSelector.swift */; };
+		3953947E4AE944899289AFFB /* PhotoCaptureProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D1703649E3D46839E5BEC80 /* PhotoCaptureProcessor.swift */; };
+		2C5B05456FA04ED5ACD63C85 /* FOVEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = C451CF6B5C97405C841E3067 /* FOVEngine.swift */; };
+		C0E3AD0331584BB39C1BE6BA /* FOVMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10F9CB29EE71481EB424475E /* FOVMath.swift */; };
+		835B9B20D9AC43568A59A541 /* IPhoneCameraModelResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ABA9E17746C42B581652DB2 /* IPhoneCameraModelResolver.swift */; };
+		971BF5F118754777A65B3907 /* PhotoProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 107AD8B89F4A441698E034E1 /* PhotoProcessor.swift */; };
+		F68A334CA80744519CE56708 /* DBMigrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30A8FA89F044C81AA6CC527 /* DBMigrations.swift */; };
+		7F251D3597AB4FAA834B4741 /* DBModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBF9DC5BE38645D481011359 /* DBModels.swift */; };
+		6AACDCA4869546ECA6573BD2 /* PackImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 899DC3F02B574ABEACC3A921 /* PackImporter.swift */; };
+		A20BFC6DBE0A4BE787093136 /* LensIdBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E139F7C1B514E45AFA3A6A2 /* LensIdBuilder.swift */; };
+		CB0A92282BEE469EB696343F /* ProjectKitSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83E0E90984D6471FA90532C0 /* ProjectKitSettingsView.swift */; };
+		DA0A67A443A94D11B57C5EC6 /* ProjectKitStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 988E7BC68EFE4E89B6ADC548 /* ProjectKitStore.swift */; };
+		853E13C7EDA840E285F30AE0 /* FrameUploadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C15BCD3610C14777916BDDA9 /* FrameUploadService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -57,6 +74,23 @@
 		07F4E0032FF0AAAA00000002 /* WebsocketCalls.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebsocketCalls.swift; sourceTree = "<group>"; };
 		477F863DD3304428A7C610C5 /* SchedulesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchedulesView.swift; sourceTree = "<group>"; };
 		60C91863CD124D159734FD1B /* ScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleView.swift; sourceTree = "<group>"; };
+		2F825837CC9D4A3C884F0F59 /* ScoutCameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/ScoutCameraView.swift; sourceTree = "<group>"; };
+		0187390DAD5C4818AD9A0A1B /* ScoutCameraReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/ScoutCameraReviewView.swift; sourceTree = "<group>"; };
+		30240C00983A4B208F56B246 /* ScoutCameraViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/ScoutCameraViewModel.swift; sourceTree = "<group>"; };
+		6B50BC0CE2AA4639AE6F9264 /* CaptureSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/CameraKit/CaptureSessionManager.swift; sourceTree = "<group>"; };
+		A20AFBDAA8904AB283618CF2 /* CameraDeviceSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/CameraKit/CameraDeviceSelector.swift; sourceTree = "<group>"; };
+		6D1703649E3D46839E5BEC80 /* PhotoCaptureProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/CameraKit/PhotoCaptureProcessor.swift; sourceTree = "<group>"; };
+		C451CF6B5C97405C841E3067 /* FOVEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/FOV/FOVEngine.swift; sourceTree = "<group>"; };
+		10F9CB29EE71481EB424475E /* FOVMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/FOV/FOVMath.swift; sourceTree = "<group>"; };
+		7ABA9E17746C42B581652DB2 /* IPhoneCameraModelResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/FOV/IPhoneCameraModelResolver.swift; sourceTree = "<group>"; };
+		107AD8B89F4A441698E034E1 /* PhotoProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/Processing/PhotoProcessor.swift; sourceTree = "<group>"; };
+		C30A8FA89F044C81AA6CC527 /* DBMigrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalDatabase/DBMigrations.swift; sourceTree = "<group>"; };
+		EBF9DC5BE38645D481011359 /* DBModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalDatabase/DBModels.swift; sourceTree = "<group>"; };
+		899DC3F02B574ABEACC3A921 /* PackImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalDatabase/PackImporter.swift; sourceTree = "<group>"; };
+		8E139F7C1B514E45AFA3A6A2 /* LensIdBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalDatabase/LensIdBuilder.swift; sourceTree = "<group>"; };
+		83E0E90984D6471FA90532C0 /* ProjectKitSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectKit/ProjectKitSettingsView.swift; sourceTree = "<group>"; };
+		988E7BC68EFE4E89B6ADC548 /* ProjectKitStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectKit/ProjectKitStore.swift; sourceTree = "<group>"; };
+		C15BCD3610C14777916BDDA9 /* FrameUploadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking/FrameUploadService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -113,6 +147,23 @@
 				477F863DD3304428A7C610C5 /* SchedulesView.swift */,
 				60C91863CD124D159734FD1B /* ScheduleView.swift */,
 				0730F3E62EFC14E3000B598F /* Config.swift */,
+				2F825837CC9D4A3C884F0F59 /* ScoutCameraView.swift */,
+				0187390DAD5C4818AD9A0A1B /* ScoutCameraReviewView.swift */,
+				30240C00983A4B208F56B246 /* ScoutCameraViewModel.swift */,
+				6B50BC0CE2AA4639AE6F9264 /* CaptureSessionManager.swift */,
+				A20AFBDAA8904AB283618CF2 /* CameraDeviceSelector.swift */,
+				6D1703649E3D46839E5BEC80 /* PhotoCaptureProcessor.swift */,
+				C451CF6B5C97405C841E3067 /* FOVEngine.swift */,
+				10F9CB29EE71481EB424475E /* FOVMath.swift */,
+				7ABA9E17746C42B581652DB2 /* IPhoneCameraModelResolver.swift */,
+				107AD8B89F4A441698E034E1 /* PhotoProcessor.swift */,
+				C30A8FA89F044C81AA6CC527 /* DBMigrations.swift */,
+				EBF9DC5BE38645D481011359 /* DBModels.swift */,
+				899DC3F02B574ABEACC3A921 /* PackImporter.swift */,
+				8E139F7C1B514E45AFA3A6A2 /* LensIdBuilder.swift */,
+				83E0E90984D6471FA90532C0 /* ProjectKitSettingsView.swift */,
+				988E7BC68EFE4E89B6ADC548 /* ProjectKitStore.swift */,
+				C15BCD3610C14777916BDDA9 /* FrameUploadService.swift */,
 			);
 			path = Martini;
 			sourceTree = "<group>";
@@ -207,6 +258,23 @@
 				07C904B02EDA8665004EDBFA /* Models.swift in Sources */,
 				07A6A6862EC9A272002C8EB9 /* MartiniApp.swift in Sources */,
 				075456042EC9A6E200C45739 /* QRScannerView.swift in Sources */,
+				13952330E1EF424FADD563ED /* ScoutCameraView.swift in Sources */,
+				B9D8650A752F4255AD620B9B /* ScoutCameraReviewView.swift in Sources */,
+				212769B0E99B412F8D9C27E8 /* ScoutCameraViewModel.swift in Sources */,
+				B97E51D7EFDA491EBD6C974C /* CaptureSessionManager.swift in Sources */,
+				F8C07B4A4CB449BDB50BE3BB /* CameraDeviceSelector.swift in Sources */,
+				3953947E4AE944899289AFFB /* PhotoCaptureProcessor.swift in Sources */,
+				2C5B05456FA04ED5ACD63C85 /* FOVEngine.swift in Sources */,
+				C0E3AD0331584BB39C1BE6BA /* FOVMath.swift in Sources */,
+				835B9B20D9AC43568A59A541 /* IPhoneCameraModelResolver.swift in Sources */,
+				971BF5F118754777A65B3907 /* PhotoProcessor.swift in Sources */,
+				F68A334CA80744519CE56708 /* DBMigrations.swift in Sources */,
+				7F251D3597AB4FAA834B4741 /* DBModels.swift in Sources */,
+				6AACDCA4869546ECA6573BD2 /* PackImporter.swift in Sources */,
+				A20BFC6DBE0A4BE787093136 /* LensIdBuilder.swift in Sources */,
+				CB0A92282BEE469EB696343F /* ProjectKitSettingsView.swift in Sources */,
+				DA0A67A443A94D11B57C5EC6 /* ProjectKitStore.swift in Sources */,
+				853E13C7EDA840E285F30AE0 /* FrameUploadService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1,0 +1,46 @@
+import Foundation
+import Combine
+
+@MainActor
+final class ProjectKitStore: ObservableObject {
+    @Published private(set) var availableCameras: [DBCamera] = []
+    @Published private(set) var availableLenses: [DBLens] = []
+    @Published var selectedCameraIds: Set<String> = []
+    @Published var selectedLensIds: Set<String> = []
+
+    private let database = LocalDatabase.shared
+
+    func load(for projectId: String?) {
+        PackImporter.importPackIfNeeded()
+        availableCameras = database.fetchCameras()
+        availableLenses = database.fetchLenses()
+
+        guard let projectId else { return }
+        selectedCameraIds = Set(database.fetchProjectCameraIds(projectId: projectId))
+        selectedLensIds = Set(database.fetchProjectLensIds(projectId: projectId))
+    }
+
+    func toggleCamera(_ camera: DBCamera, projectId: String?) {
+        if selectedCameraIds.contains(camera.id) {
+            selectedCameraIds.remove(camera.id)
+        } else {
+            selectedCameraIds.insert(camera.id)
+        }
+        persist(projectId: projectId)
+    }
+
+    func toggleLens(_ lens: DBLens, projectId: String?) {
+        if selectedLensIds.contains(lens.id) {
+            selectedLensIds.remove(lens.id)
+        } else {
+            selectedLensIds.insert(lens.id)
+        }
+        persist(projectId: projectId)
+    }
+
+    func persist(projectId: String?) {
+        guard let projectId else { return }
+        database.updateProjectCameras(projectId: projectId, cameraIds: Array(selectedCameraIds))
+        database.updateProjectLenses(projectId: projectId, lensIds: Array(selectedLensIds))
+    }
+}
