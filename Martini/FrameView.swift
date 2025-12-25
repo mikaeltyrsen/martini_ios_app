@@ -979,6 +979,7 @@ private struct FilesSheet: View {
 private struct ClipRow: View {
     let clip: Clip
     let onPreview: () -> Void
+    @State private var shareItem: ShareItem?
 
     var body: some View {
         HStack(spacing: 12) {
@@ -1012,8 +1013,10 @@ private struct ClipRow: View {
             Menu {
                 Button("Preview") { onPreview() }
                 if let url = clip.fileURL {
-                    ShareLink(item: url) {
-                        Label("Download", systemImage: "arrow.down.circle")
+                    Button {
+                        shareClip(url: url)
+                    } label: {
+                        Label("Share/Save", systemImage: "square.and.arrow.up")
                     }
                 }
                 if clip.isImage || clip.isVideo {
@@ -1030,6 +1033,9 @@ private struct ClipRow: View {
         }
         .contentShape(Rectangle())
         .onTapGesture { onPreview() }
+        .sheet(item: $shareItem) { item in
+            ActivityView(activityItems: [item.url])
+        }
     }
 
     private func saveToPhotos(clip: Clip) {
@@ -1049,6 +1055,30 @@ private struct ClipRow: View {
                 }
             } catch {
                 print("Failed to save to temporary file: \(error)")
+            }
+        }
+        task.resume()
+    }
+
+    private func shareClip(url: URL) {
+        let task = URLSession.shared.downloadTask(with: url) { tempURL, _, error in
+            guard let tempURL else {
+                if let error {
+                    print("Failed to download clip for sharing: \(error)")
+                }
+                return
+            }
+            let destinationURL = FileManager.default.temporaryDirectory.appendingPathComponent(url.lastPathComponent)
+            do {
+                if FileManager.default.fileExists(atPath: destinationURL.path) {
+                    try FileManager.default.removeItem(at: destinationURL)
+                }
+                try FileManager.default.copyItem(at: tempURL, to: destinationURL)
+                DispatchQueue.main.async {
+                    shareItem = ShareItem(url: destinationURL)
+                }
+            } catch {
+                print("Failed to prepare clip for sharing: \(error)")
             }
         }
         task.resume()
@@ -1102,6 +1132,22 @@ private struct ClipPreviewView: View {
         }
         .padding()
     }
+}
+
+private struct ShareItem: Identifiable {
+    let id = UUID()
+    let url: URL
+}
+
+private struct ActivityView: UIViewControllerRepresentable {
+    let activityItems: [Any]
+    var applicationActivities: [UIActivity]? = nil
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: applicationActivities)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 private struct VideoPlayerContainer: UIViewControllerRepresentable {
