@@ -9,8 +9,10 @@ final class ProjectKitStore: ObservableObject {
     @Published var selectedLensIds: Set<String> = []
 
     private let database = LocalDatabase.shared
+    private var currentProjectId: String?
 
     func load(for projectId: String?) {
+        currentProjectId = projectId
         PackImporter.importPackIfNeeded(using: database)
         availableCameras = Self.deduplicate(
             database.fetchCameras()
@@ -23,7 +25,11 @@ final class ProjectKitStore: ObservableObject {
                 .filter { !$0.series.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
         )
 
-        guard let projectId else { return }
+        guard let projectId else {
+            selectedCameraIds = []
+            selectedLensIds = []
+            return
+        }
         selectedCameraIds = Set(database.fetchProjectCameraIds(projectId: projectId))
         selectedLensIds = Set(database.fetchProjectLensIds(projectId: projectId))
     }
@@ -34,31 +40,31 @@ final class ProjectKitStore: ObservableObject {
         } else {
             selectedCameraIds.insert(camera.id)
         }
-        persist(projectId: projectId)
+        persist(projectId: projectId ?? currentProjectId)
     }
 
     func addCameras(ids: [String], projectId: String?) {
         selectedCameraIds = selectedCameraIds.union(ids)
-        persist(projectId: projectId)
+        persist(projectId: projectId ?? currentProjectId)
     }
 
     func addLenses(ids: [String], projectId: String?) {
         selectedLensIds = selectedLensIds.union(ids)
-        persist(projectId: projectId)
+        persist(projectId: projectId ?? currentProjectId)
     }
 
     func removeCamera(id: String, projectId: String?) {
         var updated = selectedCameraIds
         updated.remove(id)
         selectedCameraIds = updated
-        persist(projectId: projectId)
+        persist(projectId: projectId ?? currentProjectId)
     }
 
     func removeLens(id: String, projectId: String?) {
         var updated = selectedLensIds
         updated.remove(id)
         selectedLensIds = updated
-        persist(projectId: projectId)
+        persist(projectId: projectId ?? currentProjectId)
     }
 
     func toggleLens(_ lens: DBLens, projectId: String?) {
@@ -67,7 +73,7 @@ final class ProjectKitStore: ObservableObject {
         } else {
             selectedLensIds.insert(lens.id)
         }
-        persist(projectId: projectId)
+        persist(projectId: projectId ?? currentProjectId)
     }
 
     func persist(projectId: String?) {
