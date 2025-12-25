@@ -46,6 +46,12 @@ struct ProjectKitCameraSelectionView: View {
         .navigationTitle("Add Camera")
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always))
+        .onAppear {
+            store.load(for: authService.projectId)
+        }
+        .onChange(of: authService.projectId) { _ in
+            store.load(for: authService.projectId)
+        }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 if !selectedIds.isEmpty {
@@ -122,6 +128,12 @@ struct ProjectKitLensSelectionView: View {
         .navigationTitle("Add Lens")
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always))
+        .onAppear {
+            store.load(for: authService.projectId)
+        }
+        .onChange(of: authService.projectId) { _ in
+            store.load(for: authService.projectId)
+        }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 if !selectedIds.isEmpty {
