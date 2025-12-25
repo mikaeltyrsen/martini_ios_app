@@ -113,8 +113,40 @@ struct ProjectKitLensSelectionView: View {
         }.sorted { "\($0.brand) \($0.series)" < "\($1.brand) \($1.series)" }
     }
 
+    private var availableLensPacks: [ProjectKitStore.LensPackGroup] {
+        let packs = store.availableLensPacks()
+        guard !searchText.isEmpty else { return packs }
+        let query = searchText.lowercased()
+        return packs.filter { $0.displayName.lowercased().contains(query) }
+    }
+
     var body: some View {
         List {
+            if !availableLensPacks.isEmpty {
+                Section("Lens Packs") {
+                    ForEach(availableLensPacks) { pack in
+                        NavigationLink {
+                            LensPackDetailView(
+                                pack: pack,
+                                selectedIds: $selectedIds,
+                                onAdd: addSelectedLenses
+                            )
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(pack.displayName)
+                                    Text("\(pack.lenses.count) lenses")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                            }
+                        }
+                    }
+                }
+            }
+
+            Section("All Lenses") {
             ForEach(availableLenses) { lens in
                 Button {
                     toggleSelection(id: lens.id)
@@ -134,6 +166,7 @@ struct ProjectKitLensSelectionView: View {
                     }
                 }
             }
+            }
         }
         .navigationTitle("Add Lens")
         .navigationBarTitleDisplayMode(.inline)
@@ -148,12 +181,7 @@ struct ProjectKitLensSelectionView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 if !selectedIds.isEmpty {
                     Button("Add") {
-                        guard authService.projectId != nil else {
-                            showingProjectAlert = true
-                            return
-                        }
-                        store.addLenses(ids: Array(selectedIds), projectId: authService.projectId)
-                        dismiss()
+                        addSelectedLenses()
                     }
                 }
             }
@@ -162,6 +190,84 @@ struct ProjectKitLensSelectionView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text("Please log into a project before adding lenses.")
+        }
+    }
+
+    private func toggleSelection(id: String) {
+        if selectedIds.contains(id) {
+            selectedIds.remove(id)
+        } else {
+            selectedIds.insert(id)
+        }
+    }
+
+    private func addSelectedLenses() {
+        guard authService.projectId != nil else {
+            showingProjectAlert = true
+            return
+        }
+        store.addLenses(ids: Array(selectedIds), projectId: authService.projectId)
+        dismiss()
+    }
+
+    private func lensLabel(for lens: DBLens) -> String {
+        if lens.isZoom, let min = lens.focalLengthMinMm, let max = lens.focalLengthMaxMm {
+            return "\(Int(min))–\(Int(max))mm T\(lens.maxTStop)"
+        }
+        if let focal = lens.focalLengthMm ?? lens.focalLengthMinMm {
+            return "\(Int(focal))mm T\(lens.maxTStop)"
+        }
+        return "T\(lens.maxTStop)"
+    }
+
+}
+
+private struct LensPackDetailView: View {
+    let pack: ProjectKitStore.LensPackGroup
+    @Binding var selectedIds: Set<String>
+    let onAdd: () -> Void
+
+    var body: some View {
+        List {
+            if !pack.lenses.isEmpty {
+                Section {
+                    Button("Select All") {
+                        selectedIds.formUnion(pack.lenses.map(\.id))
+                    }
+                }
+            }
+            Section {
+                ForEach(pack.lenses) { lens in
+                    Button {
+                        toggleSelection(id: lens.id)
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text("\(lens.brand) \(lens.series)")
+                                Text(lensLabel(for: lens))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            if selectedIds.contains(lens.id) {
+                                Image(systemName: "checkmark")
+                                    .foregroundStyle(Color.accentColor)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .navigationTitle(pack.displayName)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                if !selectedIds.isEmpty {
+                    Button("Add") {
+                        onAdd()
+                    }
+                }
+            }
         }
     }
 
@@ -182,5 +288,4 @@ struct ProjectKitLensSelectionView: View {
         }
         return "T\(lens.maxTStop)"
     }
-
 }

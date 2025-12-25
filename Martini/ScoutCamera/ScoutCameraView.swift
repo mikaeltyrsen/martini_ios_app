@@ -146,7 +146,8 @@ struct ScoutCameraView: View {
                             items: viewModel.availableCameras,
                             selectedId: viewModel.selectedCamera?.id,
                             title: "Camera",
-                            rowTitle: { "\($0.brand) \($0.model)" }
+                            rowTitle: { "\($0.brand) \($0.model)" },
+                            rowSubtitle: { _ in nil }
                         ) { camera in
                             viewModel.selectedCamera = camera
                         }
@@ -161,7 +162,8 @@ struct ScoutCameraView: View {
                             items: viewModel.availableModes,
                             selectedId: viewModel.selectedMode?.id,
                             title: "Mode",
-                            rowTitle: { $0.name }
+                            rowTitle: { $0.name },
+                            rowSubtitle: { modeResolutionLabel(for: $0) }
                         ) { mode in
                             viewModel.selectedMode = mode
                         }
@@ -176,7 +178,8 @@ struct ScoutCameraView: View {
                             items: viewModel.availableLenses,
                             selectedId: viewModel.selectedLens?.id,
                             title: "Lens",
-                            rowTitle: { "\($0.brand) \($0.series)" }
+                            rowTitle: { "\($0.brand) \($0.series)" },
+                            rowSubtitle: { lensFocalLabel(for: $0) }
                         ) { lens in
                             viewModel.selectedLens = lens
                         }
@@ -191,7 +194,8 @@ struct ScoutCameraView: View {
                             items: FrameLineOption.allCases,
                             selectedId: viewModel.selectedFrameLine.id,
                             title: "Frame Lines",
-                            rowTitle: { $0.rawValue }
+                            rowTitle: { $0.rawValue },
+                            rowSubtitle: { _ in nil }
                         ) { option in
                             viewModel.selectedFrameLine = option
                         }
@@ -253,12 +257,40 @@ struct ScoutCameraView: View {
         return "\(lens.brand) \(lens.series)"
     }
 
+    private func lensFocalLabel(for lens: DBLens) -> String? {
+        if lens.isZoom, let min = lens.focalLengthMinMm, let max = lens.focalLengthMaxMm {
+            return "\(Int(min))–\(Int(max)) mm"
+        }
+        if let focal = lens.focalLengthMm ?? lens.focalLengthMinMm {
+            return "\(Int(focal)) mm"
+        }
+        return nil
+    }
+
+    private func modeResolutionLabel(for mode: DBCameraMode) -> String? {
+        guard let resolution = mode.resolution, !resolution.isEmpty else {
+            return nil
+        }
+        return "\(formattedResolution(resolution)) px"
+    }
+
+    private func formattedResolution(_ resolution: String) -> String {
+        let trimmed = resolution.replacingOccurrences(of: " ", with: "")
+        let separators = CharacterSet(charactersIn: "xX×")
+        let components = trimmed.components(separatedBy: separators).filter { !$0.isEmpty }
+        if components.count == 2 {
+            return "\(components[0])×\(components[1])"
+        }
+        return resolution
+    }
+
     private struct SelectionList<Item: Identifiable>: View {
         @Environment(\.dismiss) private var dismiss
         let items: [Item]
         let selectedId: Item.ID?
         let title: String
         let rowTitle: (Item) -> String
+        let rowSubtitle: ((Item) -> String?)?
         let onSelect: (Item) -> Void
 
         var body: some View {
@@ -268,7 +300,14 @@ struct ScoutCameraView: View {
                     dismiss()
                 } label: {
                     HStack {
-                        Text(rowTitle(item))
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(rowTitle(item))
+                            if let subtitle = rowSubtitle?(item) {
+                                Text(subtitle)
+                                    .font(.caption)
+                                    .foregroundStyle(.white.opacity(0.7))
+                            }
+                        }
                         Spacer()
                         if selectedId == item.id {
                             Image(systemName: "checkmark")

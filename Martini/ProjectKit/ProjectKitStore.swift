@@ -3,6 +3,16 @@ import Combine
 
 @MainActor
 final class ProjectKitStore: ObservableObject {
+    struct LensPackGroup: Identifiable, Hashable {
+        let id: String
+        let pack: PackLensPack
+        let lenses: [DBLens]
+
+        var displayName: String {
+            "\(pack.brand) \(pack.name)"
+        }
+    }
+
     @Published private(set) var availableCameras: [DBCamera] = []
     @Published private(set) var availableLenses: [DBLens] = []
     @Published var selectedCameraIds: Set<String> = []
@@ -82,6 +92,19 @@ final class ProjectKitStore: ObservableObject {
     func selectedLenses() -> [DBLens] {
         availableLenses.filter { selectedLensIds.contains($0.id) }
             .sorted { "\($0.brand) \($0.series)" < "\($1.brand) \($1.series)" }
+    }
+
+    func availableLensPacks() -> [LensPackGroup] {
+        let lensLookup = Dictionary(uniqueKeysWithValues: availableLenses.map { ($0.id, $0) })
+        let itemsByPack = Dictionary(grouping: dataStore.lensPackItems, by: \.packId)
+        let packs = dataStore.lensPacks.compactMap { pack -> LensPackGroup? in
+            let sortedItems = (itemsByPack[pack.id] ?? []).sorted { $0.sortOrder < $1.sortOrder }
+            let lenses = sortedItems.compactMap { lensLookup[$0.lensId] }
+                .filter { !selectedLensIds.contains($0.id) }
+            guard !lenses.isEmpty else { return nil }
+            return LensPackGroup(id: pack.id, pack: pack, lenses: lenses)
+        }
+        return packs.sorted { $0.displayName < $1.displayName }
     }
 
     private static func deduplicate<T: Identifiable>(_ items: [T]) -> [T] where T.ID: Hashable {
