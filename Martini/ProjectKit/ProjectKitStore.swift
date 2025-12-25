@@ -74,6 +74,7 @@ final class ProjectKitStore: ObservableObject {
         guard let projectId else { return }
         database.updateProjectCameras(projectId: projectId, cameraIds: Array(selectedCameraIds))
         database.updateProjectLenses(projectId: projectId, lensIds: Array(selectedLensIds))
+        reloadSelections(projectId: projectId)
     }
 
     func selectedCameras() -> [DBCamera] {
@@ -93,5 +94,10 @@ final class ProjectKitStore: ObservableObject {
             seen.insert(item.id)
             return true
         }
+    }
+
+    private func reloadSelections(projectId: String) {
+        selectedCameraIds = Set(database.fetchProjectCameraIds(projectId: projectId))
+        selectedLensIds = Set(database.fetchProjectLensIds(projectId: projectId))
     }
 }

@@ -497,6 +497,24 @@ struct FrameView: View {
                         .buttonStyle(.plain)
                         .id(asset.id)
                     }
+
+                    Button {
+                        showingScoutCamera = true
+                    } label: {
+                        Text("Add Photo")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Color.primary)
+                            .lineLimit(1)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
+                            .frame(minWidth: 100)
+                            .background(
+                                Capsule()
+                                    .fill(Color.secondary.opacity(0.15))
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .id(takePictureCardID)
                 }
                 .padding(.horizontal, 20)
                 .frame(maxWidth: .infinity, alignment: .center)
