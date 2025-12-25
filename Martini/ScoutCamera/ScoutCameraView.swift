@@ -248,9 +248,10 @@ struct ScoutCameraView: View {
 
     private var previewPanel: some View {
         GeometryReader { proxy in
+            let previewAspectRatio = viewModel.sensorAspectRatio ?? targetAspectRatio
             ZStack {
                 CameraPreviewView(session: viewModel.captureManager.session)
-                    .aspectRatio(targetAspectRatio, contentMode: .fit)
+                    .aspectRatio(previewAspectRatio, contentMode: .fit)
                     .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
                     .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
 
@@ -260,7 +261,7 @@ struct ScoutCameraView: View {
                 }
             }
         }
-        .aspectRatio(targetAspectRatio, contentMode: .fit)
+        .aspectRatio(viewModel.sensorAspectRatio ?? targetAspectRatio, contentMode: .fit)
     }
 
     private func handleImport() async {
