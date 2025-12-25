@@ -416,7 +416,7 @@ final class LocalDatabase {
             }
         }
 
-        for pack in payload.lensPacks {
+        for pack in payload.lensPacks ?? [] {
             upsertLensPack(
                 id: pack.id,
                 brand: pack.brand,
@@ -459,7 +459,7 @@ final class LocalDatabase {
             )
         }
 
-        for item in payload.lensPackItems {
+        for item in payload.lensPackItems ?? [] {
             let itemId = "\(item.packId)__\(item.lensId)"
             upsertLensPackItem(
                 id: itemId,

@@ -4,9 +4,9 @@ struct PackPayload: Codable {
     let dbVersion: String
     let pack: PackInfo
     let cameras: [PackCamera]
-    let lensPacks: [PackLensPack]
+    let lensPacks: [PackLensPack]?
     let lenses: [PackLens]
-    let lensPackItems: [PackLensPackItem]
+    let lensPackItems: [PackLensPackItem]?
 
     enum CodingKeys: String, CodingKey {
         case dbVersion = "db_version"
