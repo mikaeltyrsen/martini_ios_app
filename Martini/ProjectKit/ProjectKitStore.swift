@@ -12,8 +12,16 @@ final class ProjectKitStore: ObservableObject {
 
     func load(for projectId: String?) {
         PackImporter.importPackIfNeeded()
-        availableCameras = database.fetchCameras()
-        availableLenses = database.fetchLenses()
+        availableCameras = Self.deduplicate(
+            database.fetchCameras()
+                .filter { !$0.brand.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+                .filter { !$0.model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        )
+        availableLenses = Self.deduplicate(
+            database.fetchLenses()
+                .filter { !$0.brand.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+                .filter { !$0.series.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        )
 
         guard let projectId else { return }
         selectedCameraIds = Set(database.fetchProjectCameraIds(projectId: projectId))
@@ -72,5 +80,14 @@ final class ProjectKitStore: ObservableObject {
     func selectedLenses() -> [DBLens] {
         availableLenses.filter { selectedLensIds.contains($0.id) }
             .sorted { "\($0.brand) \($0.series)" < "\($1.brand) \($1.series)" }
+    }
+
+    private static func deduplicate<T: Identifiable>(_ items: [T]) -> [T] where T.ID: Hashable {
+        var seen: Set<T.ID> = []
+        return items.filter { item in
+            if seen.contains(item.id) { return false }
+            seen.insert(item.id)
+            return true
+        }
     }
 }
