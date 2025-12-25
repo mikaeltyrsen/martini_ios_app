@@ -42,13 +42,14 @@ struct PhotoProcessor {
             baseImage.draw(in: CGRect(origin: imageOrigin, size: scaledSize))
 
             if let frameLineAspectRatio {
+                let frameContainer = CGRect(origin: imageOrigin, size: scaledSize)
                 let frameRect = frameLineRect(
-                    container: CGRect(x: 0, y: 0, width: canvasWidth, height: availableHeight),
+                    container: frameContainer,
                     aspectRatio: frameLineAspectRatio
                 )
                 let framePath = UIBezierPath(rect: frameRect)
                 UIColor.white.withAlphaComponent(0.8).setStroke()
-                framePath.lineWidth = 2
+                framePath.lineWidth = 3
                 framePath.stroke()
             }
 
