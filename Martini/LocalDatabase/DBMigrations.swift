@@ -16,7 +16,7 @@ final class LocalDatabase {
         migrateIfNeeded()
         seedIfNeeded()
         PackImporter.importPackIfNeeded(using: self)
-        print("📦 Pack import summary: \(countRows(in: \"cameras\")) cameras, \(countRows(in: \"lenses\")) lenses, \(countRows(in: \"camera_modes\")) modes")
+        print("📦 Pack import summary: \(countRows(in: "cameras")) cameras, \(countRows(in: "lenses")) lenses, \(countRows(in: "camera_modes")) modes")
     }
 
     deinit {

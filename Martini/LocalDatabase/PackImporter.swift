@@ -14,7 +14,7 @@ struct PackImporter {
             print("📦 Pack decode success: \(payload.cameras.count) cameras, \(payload.lenses.count) lenses, \(payload.lensPacks?.count ?? 0) lens packs, \(payload.lensPackItems?.count ?? 0) pack items")
             database.importPack(payload)
             print("✅ Pack import finished")
-            print("📦 Pack import summary: \(database.countRows(in: \"cameras\")) cameras, \(database.countRows(in: \"lenses\")) lenses, \(database.countRows(in: \"camera_modes\")) modes")
+            print("📦 Pack import summary: \(database.countRows(in: "cameras")) cameras, \(database.countRows(in: "lenses")) lenses, \(database.countRows(in: "camera_modes")) modes")
         } catch {
             print("❌ Pack import failed: \(error)")
         }
