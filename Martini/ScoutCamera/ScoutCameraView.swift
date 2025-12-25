@@ -9,6 +9,7 @@ struct ScoutCameraView: View {
     @StateObject private var motionManager = MotionHeadingManager()
     private let targetAspectRatio: CGFloat
     @State private var isSettingsOpen = false
+    @State private var expandedSections: Set<SettingsSection> = [.camera]
 
     init(projectId: String, frameId: String, targetAspectRatio: CGFloat) {
         self.targetAspectRatio = targetAspectRatio
@@ -146,35 +147,63 @@ struct ScoutCameraView: View {
             .foregroundStyle(.white)
 
             List {
-                Section("Camera") {
-                    Picker("Camera", selection: $viewModel.selectedCamera) {
+                Section {
+                    DisclosureGroup(isExpanded: expandedBinding(for: .camera)) {
                         ForEach(viewModel.availableCameras, id: \.id) { camera in
-                            Text("\(camera.brand) \(camera.model)").tag(Optional(camera))
+                            selectionRow(
+                                title: "\(camera.brand) \(camera.model)",
+                                isSelected: viewModel.selectedCamera?.id == camera.id
+                            ) {
+                                viewModel.selectedCamera = camera
+                            }
                         }
+                    } label: {
+                        settingsSectionLabel(title: "Camera", value: selectedCameraLabel)
                     }
                 }
 
-                Section("Mode") {
-                    Picker("Mode", selection: $viewModel.selectedMode) {
+                Section {
+                    DisclosureGroup(isExpanded: expandedBinding(for: .mode)) {
                         ForEach(viewModel.availableModes, id: \.id) { mode in
-                            Text(mode.name).tag(Optional(mode))
+                            selectionRow(
+                                title: mode.name,
+                                isSelected: viewModel.selectedMode?.id == mode.id
+                            ) {
+                                viewModel.selectedMode = mode
+                            }
                         }
+                    } label: {
+                        settingsSectionLabel(title: "Mode", value: selectedModeLabel)
                     }
                 }
 
-                Section("Lens") {
-                    Picker("Lens", selection: $viewModel.selectedLens) {
+                Section {
+                    DisclosureGroup(isExpanded: expandedBinding(for: .lens)) {
                         ForEach(viewModel.availableLenses, id: \.id) { lens in
-                            Text("\(lens.brand) \(lens.series)").tag(Optional(lens))
+                            selectionRow(
+                                title: "\(lens.brand) \(lens.series)",
+                                isSelected: viewModel.selectedLens?.id == lens.id
+                            ) {
+                                viewModel.selectedLens = lens
+                            }
                         }
+                    } label: {
+                        settingsSectionLabel(title: "Lens", value: selectedLensLabel)
                     }
                 }
 
-                Section("Frame Lines") {
-                    Picker("Frame Lines", selection: $viewModel.selectedFrameLine) {
+                Section {
+                    DisclosureGroup(isExpanded: expandedBinding(for: .frameLines)) {
                         ForEach(FrameLineOption.allCases) { option in
-                            Text(option.rawValue).tag(option)
+                            selectionRow(
+                                title: option.rawValue,
+                                isSelected: viewModel.selectedFrameLine == option
+                            ) {
+                                viewModel.selectedFrameLine = option
+                            }
                         }
+                    } label: {
+                        settingsSectionLabel(title: "Frame Lines", value: viewModel.selectedFrameLine.rawValue)
                     }
                 }
 
@@ -199,6 +228,69 @@ struct ScoutCameraView: View {
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .padding(.trailing, 16)
         .padding(.vertical, 16)
+    }
+
+    private var selectedCameraLabel: String {
+        guard let camera = viewModel.selectedCamera else {
+            return "None"
+        }
+        return "\(camera.brand) \(camera.model)"
+    }
+
+    private var selectedModeLabel: String {
+        viewModel.selectedMode?.name ?? "None"
+    }
+
+    private var selectedLensLabel: String {
+        guard let lens = viewModel.selectedLens else {
+            return "None"
+        }
+        return "\(lens.brand) \(lens.series)"
+    }
+
+    private func settingsSectionLabel(title: String, value: String) -> some View {
+        HStack {
+            Text(title)
+            Spacer()
+            Text(value)
+                .foregroundStyle(.white.opacity(0.7))
+        }
+    }
+
+    private func selectionRow(title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack {
+                Text(title)
+                Spacer()
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.caption.weight(.semibold))
+                }
+            }
+            .contentShape(Rectangle())
+            .padding(.vertical, 4)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func expandedBinding(for section: SettingsSection) -> Binding<Bool> {
+        Binding(
+            get: { expandedSections.contains(section) },
+            set: { isExpanded in
+                if isExpanded {
+                    expandedSections.insert(section)
+                } else {
+                    expandedSections.remove(section)
+                }
+            }
+        )
+    }
+
+    private enum SettingsSection: Hashable {
+        case camera
+        case mode
+        case lens
+        case frameLines
     }
 
     private var captureBar: some View {
