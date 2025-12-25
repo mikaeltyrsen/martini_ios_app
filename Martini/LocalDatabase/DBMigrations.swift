@@ -154,12 +154,7 @@ final class LocalDatabase {
     }
 
     func seedIfNeeded() {
-        guard countRows(in: "cameras") == 0 else { return }
-        execute("INSERT OR REPLACE INTO packs (id, name, revision) VALUES ('core_pack', 'Core Pack', 1)")
-        execute("INSERT OR REPLACE INTO cameras (id, brand, model, sensor_width_mm, sensor_height_mm) VALUES ('alexa_35', 'ARRI', 'ALEXA 35', 27.99, 19.22)")
-        execute("INSERT OR REPLACE INTO camera_modes (id, camera_id, name, sensor_width_mm, sensor_height_mm) VALUES ('alexa_35_opengate', 'alexa_35', 'Open Gate 4.6K', 27.99, 19.22)")
-        execute("INSERT OR REPLACE INTO lenses (id, brand, series, focal_min_mm, focal_max_mm, t_stop, squeeze, is_zoom) VALUES ('cooke_s4_i__35mm__t2_0__1x', 'Cooke', 'S4/i', 35, 35, 2.0, 1.0, 0)")
-        execute("INSERT OR REPLACE INTO lenses (id, brand, series, focal_min_mm, focal_max_mm, t_stop, squeeze, is_zoom) VALUES ('angenieux_optimo__24-290mm__t2_8__1x', 'Angenieux', 'Optimo', 24, 290, 2.8, 1.0, 1)")
+        guard countRows(in: "iphone_cameras") == 0 else { return }
         execute("INSERT OR REPLACE INTO iphone_cameras (id, iphone_model, camera_role, native_hfov_deg, min_zoom, max_zoom) VALUES ('iphone_15_pro_ultra', 'iPhone 15 Pro', 'ultra', 120.0, 0.5, 1.0)")
         execute("INSERT OR REPLACE INTO iphone_cameras (id, iphone_model, camera_role, native_hfov_deg, min_zoom, max_zoom) VALUES ('iphone_15_pro_main', 'iPhone 15 Pro', 'main', 80.0, 1.0, 2.0)")
         execute("INSERT OR REPLACE INTO iphone_cameras (id, iphone_model, camera_role, native_hfov_deg, min_zoom, max_zoom) VALUES ('iphone_15_pro_tele', 'iPhone 15 Pro', 'tele', 40.0, 2.0, 6.0)")

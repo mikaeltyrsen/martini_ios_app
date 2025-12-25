@@ -13,7 +13,6 @@ final class ProjectKitStore: ObservableObject {
 
     func load(for projectId: String?) {
         currentProjectId = projectId
-        PackImporter.importPackIfNeeded(using: database)
         availableCameras = Self.deduplicate(
             database.fetchCameras()
                 .filter { !$0.brand.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
