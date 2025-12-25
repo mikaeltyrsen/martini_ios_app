@@ -16,6 +16,7 @@ final class LocalDatabase {
         migrateIfNeeded()
         seedIfNeeded()
         PackImporter.importPackIfNeeded(using: self)
+        print("📦 Pack import summary: \(countRows(in: \"cameras\")) cameras, \(countRows(in: \"lenses\")) lenses, \(countRows(in: \"camera_modes\")) modes")
     }
 
     deinit {
@@ -154,13 +155,10 @@ final class LocalDatabase {
     }
 
     func seedIfNeeded() {
-        guard countRows(in: "iphone_cameras") == 0 else { return }
-        execute("INSERT OR REPLACE INTO iphone_cameras (id, iphone_model, camera_role, native_hfov_deg, min_zoom, max_zoom) VALUES ('iphone_15_pro_ultra', 'iPhone 15 Pro', 'ultra', 120.0, 0.5, 1.0)")
-        execute("INSERT OR REPLACE INTO iphone_cameras (id, iphone_model, camera_role, native_hfov_deg, min_zoom, max_zoom) VALUES ('iphone_15_pro_main', 'iPhone 15 Pro', 'main', 80.0, 1.0, 2.0)")
-        execute("INSERT OR REPLACE INTO iphone_cameras (id, iphone_model, camera_role, native_hfov_deg, min_zoom, max_zoom) VALUES ('iphone_15_pro_tele', 'iPhone 15 Pro', 'tele', 40.0, 2.0, 6.0)")
+        return
     }
 
-    private func countRows(in table: String) -> Int {
+    func countRows(in table: String) -> Int {
         let query = "SELECT COUNT(*) FROM \(table)"
         var statement: OpaquePointer?
         var count = 0
