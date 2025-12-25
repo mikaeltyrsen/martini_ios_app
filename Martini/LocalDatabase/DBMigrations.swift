@@ -163,6 +163,29 @@ final class LocalDatabase {
         return results
     }
 
+    func fetchCameras(ids: [String]) -> [DBCamera] {
+        guard !ids.isEmpty else { return [] }
+        let placeholders = ids.map { _ in "?" }.joined(separator: ",")
+        let query = "SELECT id, brand, model, sensor_width_mm, sensor_height_mm FROM cameras WHERE id IN (\(placeholders)) ORDER BY brand, model"
+        var statement: OpaquePointer?
+        var results: [DBCamera] = []
+        if sqlite3_prepare_v2(db, query, -1, &statement, nil) == SQLITE_OK {
+            for (index, id) in ids.enumerated() {
+                sqlite3_bind_text(statement, Int32(index + 1), id, -1, nil)
+            }
+            while sqlite3_step(statement) == SQLITE_ROW {
+                let id = String(cString: sqlite3_column_text(statement, 0))
+                let brand = String(cString: sqlite3_column_text(statement, 1))
+                let model = String(cString: sqlite3_column_text(statement, 2))
+                let width = sqlite3_column_double(statement, 3)
+                let height = sqlite3_column_double(statement, 4)
+                results.append(DBCamera(id: id, brand: brand, model: model, sensorWidthMm: width, sensorHeightMm: height))
+            }
+        }
+        sqlite3_finalize(statement)
+        return results
+    }
+
     func fetchCameraModes(cameraId: String) -> [DBCameraMode] {
         let query = "SELECT id, camera_id, name, sensor_width_mm, sensor_height_mm FROM camera_modes WHERE camera_id = ? ORDER BY name"
         var statement: OpaquePointer?
@@ -187,6 +210,32 @@ final class LocalDatabase {
         var statement: OpaquePointer?
         var results: [DBLens] = []
         if sqlite3_prepare_v2(db, query, -1, &statement, nil) == SQLITE_OK {
+            while sqlite3_step(statement) == SQLITE_ROW {
+                let id = String(cString: sqlite3_column_text(statement, 0))
+                let brand = String(cString: sqlite3_column_text(statement, 1))
+                let series = String(cString: sqlite3_column_text(statement, 2))
+                let focalMin = sqlite3_column_double(statement, 3)
+                let focalMax = sqlite3_column_double(statement, 4)
+                let tStop = sqlite3_column_double(statement, 5)
+                let squeeze = sqlite3_column_double(statement, 6)
+                let isZoom = sqlite3_column_int(statement, 7) == 1
+                results.append(DBLens(id: id, brand: brand, series: series, focalLengthMinMm: focalMin, focalLengthMaxMm: focalMax, tStop: tStop, squeeze: squeeze, isZoom: isZoom))
+            }
+        }
+        sqlite3_finalize(statement)
+        return results
+    }
+
+    func fetchLenses(ids: [String]) -> [DBLens] {
+        guard !ids.isEmpty else { return [] }
+        let placeholders = ids.map { _ in "?" }.joined(separator: ",")
+        let query = "SELECT id, brand, series, focal_min_mm, focal_max_mm, t_stop, squeeze, is_zoom FROM lenses WHERE id IN (\(placeholders)) ORDER BY brand, series"
+        var statement: OpaquePointer?
+        var results: [DBLens] = []
+        if sqlite3_prepare_v2(db, query, -1, &statement, nil) == SQLITE_OK {
+            for (index, id) in ids.enumerated() {
+                sqlite3_bind_text(statement, Int32(index + 1), id, -1, nil)
+            }
             while sqlite3_step(statement) == SQLITE_ROW {
                 let id = String(cString: sqlite3_column_text(statement, 0))
                 let brand = String(cString: sqlite3_column_text(statement, 1))

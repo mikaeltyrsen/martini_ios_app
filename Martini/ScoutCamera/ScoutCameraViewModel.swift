@@ -33,8 +33,14 @@ final class ScoutCameraViewModel: ObservableObject {
     }
 
     func loadData() {
-        availableCameras = database.fetchCameras()
-        availableLenses = database.fetchLenses()
+        let projectCameraIds = database.fetchProjectCameraIds(projectId: projectId)
+        let projectLensIds = database.fetchProjectLensIds(projectId: projectId)
+        availableCameras = projectCameraIds.isEmpty
+            ? []
+            : database.fetchCameras(ids: projectCameraIds)
+        availableLenses = projectLensIds.isEmpty
+            ? []
+            : database.fetchLenses(ids: projectLensIds)
         selectedCamera = availableCameras.first
         selectedLens = availableLenses.first
         refreshModes()
@@ -60,6 +66,22 @@ final class ScoutCameraViewModel: ObservableObject {
     }
 
     func updateCaptureConfiguration() async {
+        let authStatus = AVCaptureDevice.authorizationStatus(for: .video)
+        if authStatus == .notDetermined {
+            let granted = await AVCaptureDevice.requestAccess(for: .video)
+            if granted {
+                await updateCaptureConfiguration()
+            } else {
+                errorMessage = "Camera access is required to use Scout Camera."
+            }
+            return
+        }
+
+        guard authStatus == .authorized else {
+            errorMessage = "Camera access is denied. Enable it in Settings."
+            return
+        }
+
         guard let mode = selectedMode, let lens = selectedLens else { return }
         let focal = currentFocalLength()
         let targetHFOV = FOVMath.horizontalFOV(sensorWidthMm: mode.sensorWidthMm, focalLengthMm: focal, squeeze: lens.squeeze)
