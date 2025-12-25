@@ -15,6 +15,8 @@
 		075456082EC9AA2100C45739 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 075456072EC9AA2100C45739 /* Assets.xcassets */; };
 		07A6A6862EC9A272002C8EB9 /* MartiniApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07A6A6852EC9A272002C8EB9 /* MartiniApp.swift */; };
 		07A6A6882EC9A272002C8EB9 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07A6A6872EC9A272002C8EB9 /* ContentView.swift */; };
+		DAB09D58B6A74211960FDCD9 /* PackModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38B088F6DDD94E12A8B7997C /* PackModels.swift */; };
+		EB690597D64040D0AF45694D /* martini_core_pack.json in Resources */ = {isa = PBXBuildFile; fileRef = B25D2D8C220E4A7CAE24D403 /* martini_core_pack.json */; };
 		07C904B02EDA8665004EDBFA /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C904AF2EDA8665004EDBFA /* Models.swift */; };
 		07C904B22EDB92DB004EDBFA /* playground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C904B12EDB92D8004EDBFA /* playground.swift */; };
 		07C904B42EDB9F3D004EDBFA /* Uiplayground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C904B32EDB9F3D004EDBFA /* Uiplayground.swift */; };
@@ -56,6 +58,8 @@
 		075456002EC9A6E100C45739 /* QRScannerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
 		075456072EC9AA2100C45739 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		07A6A6822EC9A272002C8EB9 /* Martini.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Martini.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		38B088F6DDD94E12A8B7997C /* PackModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalDatabase/PackModels.swift; sourceTree = "<group>"; };
+		B25D2D8C220E4A7CAE24D403 /* martini_core_pack.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = LocalDatabase/Seed/martini_core_pack.json; sourceTree = "<group>"; };
 		07A6A6852EC9A272002C8EB9 /* MartiniApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MartiniApp.swift; sourceTree = "<group>"; };
 		07A6A6872EC9A272002C8EB9 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		07ACD0013127F1D000000001 /* Martini.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Martini.entitlements; sourceTree = "<group>"; };
@@ -147,6 +151,8 @@
 				477F863DD3304428A7C610C5 /* SchedulesView.swift */,
 				60C91863CD124D159734FD1B /* ScheduleView.swift */,
 				0730F3E62EFC14E3000B598F /* Config.swift */,
+				38B088F6DDD94E12A8B7997C /* PackModels.swift */,
+				B25D2D8C220E4A7CAE24D403 /* martini_core_pack.json */,
 				2F825837CC9D4A3C884F0F59 /* ScoutCameraView.swift */,
 				0187390DAD5C4818AD9A0A1B /* ScoutCameraReviewView.swift */,
 				30240C00983A4B208F56B246 /* ScoutCameraViewModel.swift */,
@@ -227,6 +233,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				075456082EC9AA2100C45739 /* Assets.xcassets in Resources */,
+				EB690597D64040D0AF45694D /* martini_core_pack.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -247,6 +254,7 @@
 				07D1C1052FF0BBBB00000002 /* ScheduleCache.swift in Sources */,
 				07A6A6882EC9A272002C8EB9 /* ContentView.swift in Sources */,
 				0730F3E52EF6E788000B598F /* FullscreenMediaView.swift in Sources */,
+				DAB09D58B6A74211960FDCD9 /* PackModels.swift in Sources */,
 				0730F3E72EFC14E3000B598F /* Config.swift in Sources */,
 				07C904BE2FF4B4A4004EDBFA /* FullscreenMediaCoordinator.swift in Sources */,
 				07F4E0022FF0AAAA00000001 /* RealtimeService.swift in Sources */,
