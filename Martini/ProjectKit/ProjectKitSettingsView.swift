@@ -21,7 +21,7 @@ struct ProjectKitSettingsView: View {
                     ForEach(selected) { camera in
                         VStack(alignment: .leading) {
                             Text("\(camera.brand) \(camera.model)")
-                            Text("Sensor \(camera.sensorWidthMm, specifier: \"%.2f\") × \(camera.sensorHeightMm, specifier: \"%.2f\") mm")
+                            Text("Sensor \(camera.sensorWidthMm, specifier: "%.2f") × \(camera.sensorHeightMm, specifier: "%.2f") mm")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
