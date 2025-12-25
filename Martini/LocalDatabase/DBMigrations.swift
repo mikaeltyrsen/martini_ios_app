@@ -15,6 +15,7 @@ final class LocalDatabase {
         openDatabase()
         migrateIfNeeded()
         seedIfNeeded()
+        PackImporter.importPackIfNeeded(using: self)
     }
 
     deinit {

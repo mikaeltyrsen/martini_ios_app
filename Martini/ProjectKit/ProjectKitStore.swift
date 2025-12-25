@@ -11,7 +11,7 @@ final class ProjectKitStore: ObservableObject {
     private let database = LocalDatabase.shared
 
     func load(for projectId: String?) {
-        PackImporter.importPackIfNeeded()
+        PackImporter.importPackIfNeeded(using: database)
         availableCameras = Self.deduplicate(
             database.fetchCameras()
                 .filter { !$0.brand.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }

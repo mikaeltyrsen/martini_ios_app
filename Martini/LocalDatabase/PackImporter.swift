@@ -1,8 +1,7 @@
 import Foundation
 
 struct PackImporter {
-    static func importPackIfNeeded() {
-        let database = LocalDatabase.shared
+    static func importPackIfNeeded(using database: LocalDatabase) {
         guard let url = Bundle.main.url(forResource: "martini_core_pack", withExtension: "json") else {
             return
         }
