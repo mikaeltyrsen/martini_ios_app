@@ -95,13 +95,9 @@ final class ProjectKitStore: ObservableObject {
     private func loadAvailableKit() {
         availableCameras = Self.deduplicate(
             database.fetchCameras()
-                .filter { !$0.brand.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-                .filter { !$0.model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
         )
         availableLenses = Self.deduplicate(
             database.fetchLenses()
-                .filter { !$0.brand.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-                .filter { !$0.series.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
         )
     }
 

@@ -391,6 +391,9 @@ final class LocalDatabase {
         upsertPack(id: payload.pack.packId, name: payload.pack.description, revision: payload.pack.revision)
 
         for camera in payload.cameras {
+            if camera.id == payload.cameras.first?.id {
+                print("📦 Pack camera sample: \(camera.brand) \(camera.model)")
+            }
             guard let primaryMode = camera.modes.first else { continue }
             upsertCamera(
                 id: camera.id,
@@ -427,6 +430,9 @@ final class LocalDatabase {
         }
 
         for lens in payload.lenses {
+            if lens.id == payload.lenses.first?.id {
+                print("📦 Pack lens sample: \(lens.brand) \(lens.series)")
+            }
             let isZoom = lens.type.lowercased() == "zoom" || lens.focalLengthMmMin != nil || lens.focalLengthMmMax != nil
             let focalMin = lens.focalLengthMmMin ?? lens.focalLengthMm ?? 0
             let focalMax = lens.focalLengthMmMax ?? lens.focalLengthMm ?? focalMin
