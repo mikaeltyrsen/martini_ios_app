@@ -29,6 +29,26 @@ final class ProjectKitStore: ObservableObject {
         persist(projectId: projectId)
     }
 
+    func addCameras(ids: [String], projectId: String?) {
+        selectedCameraIds.formUnion(ids)
+        persist(projectId: projectId)
+    }
+
+    func addLenses(ids: [String], projectId: String?) {
+        selectedLensIds.formUnion(ids)
+        persist(projectId: projectId)
+    }
+
+    func removeCamera(id: String, projectId: String?) {
+        selectedCameraIds.remove(id)
+        persist(projectId: projectId)
+    }
+
+    func removeLens(id: String, projectId: String?) {
+        selectedLensIds.remove(id)
+        persist(projectId: projectId)
+    }
+
     func toggleLens(_ lens: DBLens, projectId: String?) {
         if selectedLensIds.contains(lens.id) {
             selectedLensIds.remove(lens.id)
@@ -42,5 +62,15 @@ final class ProjectKitStore: ObservableObject {
         guard let projectId else { return }
         database.updateProjectCameras(projectId: projectId, cameraIds: Array(selectedCameraIds))
         database.updateProjectLenses(projectId: projectId, lensIds: Array(selectedLensIds))
+    }
+
+    func selectedCameras() -> [DBCamera] {
+        availableCameras.filter { selectedCameraIds.contains($0.id) }
+            .sorted { "\($0.brand) \($0.model)" < "\($1.brand) \($1.model)" }
+    }
+
+    func selectedLenses() -> [DBLens] {
+        availableLenses.filter { selectedLensIds.contains($0.id) }
+            .sorted { "\($0.brand) \($0.series)" < "\($1.brand) \($1.series)" }
     }
 }
