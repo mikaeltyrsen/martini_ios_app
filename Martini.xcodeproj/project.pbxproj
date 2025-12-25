@@ -38,6 +38,7 @@
 		B97E51D7EFDA491EBD6C974C /* CaptureSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B50BC0CE2AA4639AE6F9264 /* CaptureSessionManager.swift */; };
 		F8C07B4A4CB449BDB50BE3BB /* CameraDeviceSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20AFBDAA8904AB283618CF2 /* CameraDeviceSelector.swift */; };
 		3953947E4AE944899289AFFB /* PhotoCaptureProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D1703649E3D46839E5BEC80 /* PhotoCaptureProcessor.swift */; };
+		4F6E5CDE7B934DF1A75F1C1F /* MotionHeadingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F6E5CDD7B934DF1A75F1C1F /* MotionHeadingManager.swift */; };
 		2C5B05456FA04ED5ACD63C85 /* FOVEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = C451CF6B5C97405C841E3067 /* FOVEngine.swift */; };
 		C0E3AD0331584BB39C1BE6BA /* FOVMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10F9CB29EE71481EB424475E /* FOVMath.swift */; };
 		835B9B20D9AC43568A59A541 /* IPhoneCameraModelResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ABA9E17746C42B581652DB2 /* IPhoneCameraModelResolver.swift */; };
@@ -85,6 +86,7 @@
 		6B50BC0CE2AA4639AE6F9264 /* CaptureSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/CameraKit/CaptureSessionManager.swift; sourceTree = "<group>"; };
 		A20AFBDAA8904AB283618CF2 /* CameraDeviceSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/CameraKit/CameraDeviceSelector.swift; sourceTree = "<group>"; };
 		6D1703649E3D46839E5BEC80 /* PhotoCaptureProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/CameraKit/PhotoCaptureProcessor.swift; sourceTree = "<group>"; };
+		4F6E5CDD7B934DF1A75F1C1F /* MotionHeadingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/CameraKit/MotionHeadingManager.swift; sourceTree = "<group>"; };
 		C451CF6B5C97405C841E3067 /* FOVEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/FOV/FOVEngine.swift; sourceTree = "<group>"; };
 		10F9CB29EE71481EB424475E /* FOVMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/FOV/FOVMath.swift; sourceTree = "<group>"; };
 		7ABA9E17746C42B581652DB2 /* IPhoneCameraModelResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/FOV/IPhoneCameraModelResolver.swift; sourceTree = "<group>"; };
@@ -162,6 +164,7 @@
 				6B50BC0CE2AA4639AE6F9264 /* CaptureSessionManager.swift */,
 				A20AFBDAA8904AB283618CF2 /* CameraDeviceSelector.swift */,
 				6D1703649E3D46839E5BEC80 /* PhotoCaptureProcessor.swift */,
+				4F6E5CDD7B934DF1A75F1C1F /* MotionHeadingManager.swift */,
 				C451CF6B5C97405C841E3067 /* FOVEngine.swift */,
 				10F9CB29EE71481EB424475E /* FOVMath.swift */,
 				7ABA9E17746C42B581652DB2 /* IPhoneCameraModelResolver.swift */,
@@ -273,6 +276,7 @@
 				B97E51D7EFDA491EBD6C974C /* CaptureSessionManager.swift in Sources */,
 				F8C07B4A4CB449BDB50BE3BB /* CameraDeviceSelector.swift in Sources */,
 				3953947E4AE944899289AFFB /* PhotoCaptureProcessor.swift in Sources */,
+				4F6E5CDE7B934DF1A75F1C1F /* MotionHeadingManager.swift in Sources */,
 				2C5B05456FA04ED5ACD63C85 /* FOVEngine.swift in Sources */,
 				C0E3AD0331584BB39C1BE6BA /* FOVMath.swift in Sources */,
 				835B9B20D9AC43568A59A541 /* IPhoneCameraModelResolver.swift in Sources */,

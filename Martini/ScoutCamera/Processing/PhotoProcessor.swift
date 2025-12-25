@@ -13,7 +13,8 @@ struct PhotoProcessor {
         capturedImage: UIImage,
         targetAspectRatio: CGFloat,
         metadata: ScoutPhotoMetadata,
-        logoImage: UIImage?
+        logoImage: UIImage?,
+        frameLineAspectRatio: CGFloat?
     ) -> UIImage? {
         let inputSize = capturedImage.size
         guard inputSize.width > 0, inputSize.height > 0 else { return nil }
@@ -37,6 +38,17 @@ struct PhotoProcessor {
             context.fill(CGRect(origin: .zero, size: canvasSize))
 
             capturedImage.draw(in: CGRect(origin: imageOrigin, size: scaledSize))
+
+            if let frameLineAspectRatio {
+                let frameRect = frameLineRect(
+                    container: CGRect(x: 0, y: 0, width: canvasWidth, height: availableHeight),
+                    aspectRatio: frameLineAspectRatio
+                )
+                let framePath = UIBezierPath(rect: frameRect)
+                UIColor.white.withAlphaComponent(0.8).setStroke()
+                framePath.lineWidth = 2
+                framePath.stroke()
+            }
 
             let stripRect = CGRect(x: 0, y: availableHeight, width: canvasWidth, height: stripHeight)
             UIColor.white.setFill()
@@ -83,5 +95,24 @@ struct PhotoProcessor {
             )
             lensLine.draw(in: lensLineRect, withAttributes: detailAttributes)
         }
+    }
+
+    private static func frameLineRect(container: CGRect, aspectRatio: CGFloat) -> CGRect {
+        let containerAspect = container.width / max(container.height, 1)
+        let width: CGFloat
+        let height: CGFloat
+        if containerAspect > aspectRatio {
+            height = container.height
+            width = height * aspectRatio
+        } else {
+            width = container.width
+            height = width / aspectRatio
+        }
+        return CGRect(
+            x: container.midX - width / 2,
+            y: container.midY - height / 2,
+            width: width,
+            height: height
+        )
     }
 }

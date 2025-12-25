@@ -12,6 +12,7 @@ final class ScoutCameraViewModel: ObservableObject {
     @Published var selectedMode: DBCameraMode?
     @Published var selectedLens: DBLens?
     @Published var focalLengthMm: Double = 35
+    @Published var selectedFrameLine: FrameLineOption = .none
 
     @Published var matchResult: FOVMatchResult?
     @Published var capturedImage: UIImage?
@@ -136,7 +137,8 @@ final class ScoutCameraViewModel: ObservableObject {
             capturedImage: image,
             targetAspectRatio: targetAspectRatio,
             metadata: metadata,
-            logoImage: logo
+            logoImage: logo,
+            frameLineAspectRatio: selectedFrameLine.aspectRatio
         )
     }
 
@@ -175,5 +177,36 @@ final class ScoutCameraViewModel: ObservableObject {
             return "\(Int(focal))mm"
         }
         return "\(Int(focalLengthMm))mm"
+    }
+}
+
+enum FrameLineOption: String, CaseIterable, Identifiable {
+    case none = "Off"
+    case ratio1_33 = "1.33"
+    case ratio1_66 = "1.66"
+    case ratio1_78 = "1.78"
+    case ratio1_85 = "1.85"
+    case ratio2_0 = "2.00"
+    case ratio2_39 = "2.39"
+
+    var id: String { rawValue }
+
+    var aspectRatio: CGFloat? {
+        switch self {
+        case .none:
+            return nil
+        case .ratio1_33:
+            return 1.33
+        case .ratio1_66:
+            return 1.66
+        case .ratio1_78:
+            return 1.78
+        case .ratio1_85:
+            return 1.85
+        case .ratio2_0:
+            return 2.0
+        case .ratio2_39:
+            return 2.39
+        }
     }
 }

@@ -1,10 +1,12 @@
 import SwiftUI
 import AVFoundation
+import UIKit
 
 struct ScoutCameraView: View {
     @EnvironmentObject private var authService: AuthService
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: ScoutCameraViewModel
+    @StateObject private var motionManager = MotionHeadingManager()
     private let targetAspectRatio: CGFloat
 
     init(projectId: String, frameId: String, targetAspectRatio: CGFloat) {
@@ -15,20 +17,24 @@ struct ScoutCameraView: View {
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            GeometryReader { proxy in
-                CameraPreviewView(session: viewModel.captureManager.session)
-                    .aspectRatio(targetAspectRatio, contentMode: .fit)
-                    .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
-                    .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
-            }
 
-            VStack {
+            VStack(spacing: 16) {
                 topBar
-                Spacer()
+                headingBar
+                previewPanel
                 selectorPanel
                 captureBar
             }
-            .padding()
+            .padding(.horizontal, 24)
+            .padding(.top, 12)
+            .padding(.bottom, 24)
+        }
+        .onAppear {
+            UIDevice.current.setValue(UIInterfaceOrientation.landscapeRight.rawValue, forKey: "orientation")
+            motionManager.start()
+        }
+        .onDisappear {
+            motionManager.stop()
         }
         .onChange(of: viewModel.selectedCamera) { _ in
             viewModel.refreshModes()
@@ -125,6 +131,17 @@ struct ScoutCameraView: View {
                 .pickerStyle(.menu)
             }
 
+            HStack {
+                Text("Frame Lines")
+                Spacer()
+                Picker("Frame Lines", selection: $viewModel.selectedFrameLine) {
+                    ForEach(FrameLineOption.allCases) { option in
+                        Text(option.rawValue).tag(option)
+                    }
+                }
+                .pickerStyle(.menu)
+            }
+
             if let lens = viewModel.selectedLens, lens.isZoom,
                let minFocal = lens.focalLengthMinMm, let maxFocal = lens.focalLengthMaxMm {
                 VStack(alignment: .leading) {
@@ -159,6 +176,34 @@ struct ScoutCameraView: View {
         .padding(.bottom, 24)
     }
 
+    private var headingBar: some View {
+        HStack {
+            Text("\(motionManager.headingText) \(Int(motionManager.headingDegrees))°")
+            Spacer()
+            Text("Tilt \(Int(motionManager.tiltDegrees))°")
+        }
+        .font(.caption)
+        .foregroundStyle(.white)
+        .padding(.horizontal)
+    }
+
+    private var previewPanel: some View {
+        GeometryReader { proxy in
+            ZStack {
+                CameraPreviewView(session: viewModel.captureManager.session)
+                    .aspectRatio(targetAspectRatio, contentMode: .fit)
+                    .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
+                    .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+
+                if let frameLineAspect = viewModel.selectedFrameLine.aspectRatio {
+                    FrameLineOverlay(aspectRatio: frameLineAspect)
+                        .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
+                }
+            }
+        }
+        .aspectRatio(targetAspectRatio, contentMode: .fit)
+    }
+
     private func handleImport() async {
         let success = await viewModel.uploadProcessedImage(token: authService.currentBearerToken())
         if success {
@@ -191,6 +236,35 @@ private struct CameraPreviewView: UIViewRepresentable {
 
     final class Coordinator {
         var previewLayer: AVCaptureVideoPreviewLayer?
+    }
+}
+
+private struct FrameLineOverlay: View {
+    let aspectRatio: CGFloat
+
+    var body: some View {
+        GeometryReader { proxy in
+            let rect = frameRect(in: proxy.size)
+            Path { path in
+                path.addRect(rect)
+            }
+            .stroke(.white.opacity(0.8), lineWidth: 2)
+        }
+        .allowsHitTesting(false)
+    }
+
+    private func frameRect(in size: CGSize) -> CGRect {
+        let containerAspect = size.width / max(size.height, 1)
+        let width: CGFloat
+        let height: CGFloat
+        if containerAspect > aspectRatio {
+            height = size.height
+            width = height * aspectRatio
+        } else {
+            width = size.width
+            height = width / aspectRatio
+        }
+        return CGRect(x: (size.width - width) / 2, y: (size.height - height) / 2, width: width, height: height)
     }
 }
 
