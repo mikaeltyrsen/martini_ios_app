@@ -1,0 +1,157 @@
+{
+  "db_version": "2.0.0",
+  "pack": {
+    "pack_id": "martini_example_db",
+    "revision": 1,
+    "created_at": "2025-01-01",
+    "description": "Example layout for Martini local camera database"
+  },
+  "apple_devices": [
+    {
+      "hardware_id": "iPhone16,1",
+      "family": "iphone",
+      "model": "iPhone 15 Pro"
+    },
+    {
+      "hardware_id": "iPad16,5",
+      "family": "ipad",
+      "model": "iPad Pro 13-inch (M4)"
+    }
+  ],
+  "device_camera_profiles": [
+    {
+      "profile_id": "iphone_ultra_main_tele_3x",
+      "notes": "Typical iPhone Pro triple camera",
+      "modules": [
+        {
+          "role": "ultra",
+          "equiv_focal_length_mm": 13,
+          "native_hfov_deg": 120.0,
+          "min_zoom": 1.0,
+          "max_zoom": 2.0
+        },
+        {
+          "role": "main",
+          "equiv_focal_length_mm": 24,
+          "native_hfov_deg": null,
+          "min_zoom": 1.0,
+          "max_zoom": 6.0
+        },
+        {
+          "role": "tele",
+          "equiv_focal_length_mm": 77,
+          "native_hfov_deg": null,
+          "min_zoom": 1.0,
+          "max_zoom": 3.0
+        }
+      ]
+    },
+    {
+      "profile_id": "ipad_front_ultra_center_stage",
+      "notes": "iPad front ultra-wide (Center Stage)",
+      "modules": [
+        {
+          "role": "front_ultra",
+          "native_hfov_deg": 120.0,
+          "min_zoom": 1.0,
+          "max_zoom": 2.0
+        },
+        {
+          "role": "rear_wide",
+          "native_hfov_deg": 75.0,
+          "min_zoom": 1.0,
+          "max_zoom": 6.0
+        }
+      ]
+    }
+  ],
+  "device_camera_profile_rules": [
+    {
+      "match": {
+        "family": "iphone",
+        "model_regex": ".*Pro.*"
+      },
+      "profile_id": "iphone_ultra_main_tele_3x"
+    },
+    {
+      "match": {
+        "family": "ipad",
+        "model_regex": ".*Pro.*"
+      },
+      "profile_id": "ipad_front_ultra_center_stage"
+    }
+  ],
+  "cameras": [
+    {
+      "id": "arri_alexa_35",
+      "brand": "ARRI",
+      "model": "Alexa 35",
+      "sensor_type": "Super 35",
+      "mount": "LPL",
+      "modes": [
+        {
+          "id": "arri_alexa_35__open_gate",
+          "name": "Open Gate 4.6K",
+          "sensor_width_mm": 27.99,
+          "sensor_height_mm": 19.22,
+          "resolution": "4608x3164",
+          "aspect_ratio": "1.46:1"
+        },
+        {
+          "id": "arri_alexa_35__239",
+          "name": "4K 2.39",
+          "sensor_width_mm": 27.99,
+          "sensor_height_mm": 11.74,
+          "resolution": "4096x1716",
+          "aspect_ratio": "2.39:1"
+        }
+      ]
+    }
+  ],
+  "lens_packs": [
+    {
+      "id": "cooke_s4_i",
+      "brand": "Cooke",
+      "name": "S4/i",
+      "type": "prime",
+      "format": "S35",
+      "description": "Cooke S4/i prime set"
+    }
+  ],
+  "lenses": [
+    {
+      "id": "cooke_s4_i__25mm__t2_0__1x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "S4/i",
+      "format": "S35",
+      "mounts": ["PL"],
+      "focal_length_mm": 25,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "cooke_s4_i__50mm__t2_0__1x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "S4/i",
+      "format": "S35",
+      "mounts": ["PL"],
+      "focal_length_mm": 50,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    }
+  ],
+  "lens_pack_items": [
+    {
+      "pack_id": "cooke_s4_i",
+      "lens_id": "cooke_s4_i__25mm__t2_0__1x",
+      "sort_order": 25
+    },
+    {
+      "pack_id": "cooke_s4_i",
+      "lens_id": "cooke_s4_i__50mm__t2_0__1x",
+      "sort_order": 50
+    }
+  ]
+}

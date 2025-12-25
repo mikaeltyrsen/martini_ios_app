@@ -1,0 +1,4217 @@
+{
+  "db_version": "2.0.0",
+  "pack": {
+    "pack_id": "martini_master_offline_db",
+    "revision": 1,
+    "created_at": "2025-12-25",
+    "description": "All iPhone & iPad identifiers + device camera profiles + common commercial/cinema cameras and widely used lenses"
+  },
+  "apple_devices": [
+    {
+      "hardware_id": "iPad1,1",
+      "family": "ipad",
+      "model": "iPad"
+    },
+    {
+      "hardware_id": "iPad1,2",
+      "family": "ipad",
+      "model": "iPad"
+    },
+    {
+      "hardware_id": "iPad2,1",
+      "family": "ipad",
+      "model": "iPad 2"
+    },
+    {
+      "hardware_id": "iPad2,2",
+      "family": "ipad",
+      "model": "iPad 2"
+    },
+    {
+      "hardware_id": "iPad2,3",
+      "family": "ipad",
+      "model": "iPad 2"
+    },
+    {
+      "hardware_id": "iPad2,4",
+      "family": "ipad",
+      "model": "iPad 2"
+    },
+    {
+      "hardware_id": "iPad2,5",
+      "family": "ipad",
+      "model": "iPad mini"
+    },
+    {
+      "hardware_id": "iPad2,6",
+      "family": "ipad",
+      "model": "iPad mini"
+    },
+    {
+      "hardware_id": "iPad2,7",
+      "family": "ipad",
+      "model": "iPad mini"
+    },
+    {
+      "hardware_id": "iPad3,1",
+      "family": "ipad",
+      "model": "iPad (3rd generation)"
+    },
+    {
+      "hardware_id": "iPad3,2",
+      "family": "ipad",
+      "model": "iPad (3rd generation)"
+    },
+    {
+      "hardware_id": "iPad3,3",
+      "family": "ipad",
+      "model": "iPad (3rd generation)"
+    },
+    {
+      "hardware_id": "iPad3,4",
+      "family": "ipad",
+      "model": "iPad (4th generation)"
+    },
+    {
+      "hardware_id": "iPad3,5",
+      "family": "ipad",
+      "model": "iPad (4th generation)"
+    },
+    {
+      "hardware_id": "iPad3,6",
+      "family": "ipad",
+      "model": "iPad (4th generation)"
+    },
+    {
+      "hardware_id": "iPad4,1",
+      "family": "ipad",
+      "model": "iPad Air"
+    },
+    {
+      "hardware_id": "iPad4,2",
+      "family": "ipad",
+      "model": "iPad Air"
+    },
+    {
+      "hardware_id": "iPad4,3",
+      "family": "ipad",
+      "model": "iPad Air"
+    },
+    {
+      "hardware_id": "iPad4,4",
+      "family": "ipad",
+      "model": "iPad mini 2"
+    },
+    {
+      "hardware_id": "iPad4,5",
+      "family": "ipad",
+      "model": "iPad mini 2"
+    },
+    {
+      "hardware_id": "iPad4,6",
+      "family": "ipad",
+      "model": "iPad mini 2"
+    },
+    {
+      "hardware_id": "iPad4,7",
+      "family": "ipad",
+      "model": "iPad mini 3"
+    },
+    {
+      "hardware_id": "iPad4,8",
+      "family": "ipad",
+      "model": "iPad mini 3"
+    },
+    {
+      "hardware_id": "iPad4,9",
+      "family": "ipad",
+      "model": "iPad mini 3"
+    },
+    {
+      "hardware_id": "iPad5,1",
+      "family": "ipad",
+      "model": "iPad mini 4"
+    },
+    {
+      "hardware_id": "iPad5,2",
+      "family": "ipad",
+      "model": "iPad mini 4"
+    },
+    {
+      "hardware_id": "iPad5,3",
+      "family": "ipad",
+      "model": "iPad Air 2"
+    },
+    {
+      "hardware_id": "iPad5,4",
+      "family": "ipad",
+      "model": "iPad Air 2"
+    },
+    {
+      "hardware_id": "iPad6,3",
+      "family": "ipad",
+      "model": "iPad Pro (9.7-inch)"
+    },
+    {
+      "hardware_id": "iPad6,4",
+      "family": "ipad",
+      "model": "iPad Pro (9.7-inch)"
+    },
+    {
+      "hardware_id": "iPad6,7",
+      "family": "ipad",
+      "model": "iPad Pro (12.9-inch)"
+    },
+    {
+      "hardware_id": "iPad6,8",
+      "family": "ipad",
+      "model": "iPad Pro (12.9-inch)"
+    },
+    {
+      "hardware_id": "iPad6,11",
+      "family": "ipad",
+      "model": "iPad (5th generation)"
+    },
+    {
+      "hardware_id": "iPad6,12",
+      "family": "ipad",
+      "model": "iPad (5th generation)"
+    },
+    {
+      "hardware_id": "iPad7,1",
+      "family": "ipad",
+      "model": "iPad Pro (12.9-inch) (2nd generation)"
+    },
+    {
+      "hardware_id": "iPad7,2",
+      "family": "ipad",
+      "model": "iPad Pro (12.9-inch) (2nd generation)"
+    },
+    {
+      "hardware_id": "iPad7,3",
+      "family": "ipad",
+      "model": "iPad Pro (10.5-inch)"
+    },
+    {
+      "hardware_id": "iPad7,4",
+      "family": "ipad",
+      "model": "iPad Pro (10.5-inch)"
+    },
+    {
+      "hardware_id": "iPad7,5",
+      "family": "ipad",
+      "model": "iPad (6th generation)"
+    },
+    {
+      "hardware_id": "iPad7,6",
+      "family": "ipad",
+      "model": "iPad (6th generation)"
+    },
+    {
+      "hardware_id": "iPad7,11",
+      "family": "ipad",
+      "model": "iPad (7th generation)"
+    },
+    {
+      "hardware_id": "iPad7,12",
+      "family": "ipad",
+      "model": "iPad (7th generation)"
+    },
+    {
+      "hardware_id": "iPad8,1",
+      "family": "ipad",
+      "model": "iPad Pro (11-inch)"
+    },
+    {
+      "hardware_id": "iPad8,2",
+      "family": "ipad",
+      "model": "iPad Pro (11-inch)"
+    },
+    {
+      "hardware_id": "iPad8,3",
+      "family": "ipad",
+      "model": "iPad Pro (11-inch)"
+    },
+    {
+      "hardware_id": "iPad8,4",
+      "family": "ipad",
+      "model": "iPad Pro (11-inch)"
+    },
+    {
+      "hardware_id": "iPad8,5",
+      "family": "ipad",
+      "model": "iPad Pro (12.9-inch) (3rd generation)"
+    },
+    {
+      "hardware_id": "iPad8,6",
+      "family": "ipad",
+      "model": "iPad Pro (12.9-inch) (3rd generation)"
+    },
+    {
+      "hardware_id": "iPad8,7",
+      "family": "ipad",
+      "model": "iPad Pro (12.9-inch) (3rd generation)"
+    },
+    {
+      "hardware_id": "iPad8,8",
+      "family": "ipad",
+      "model": "iPad Pro (12.9-inch) (3rd generation)"
+    },
+    {
+      "hardware_id": "iPad8,9",
+      "family": "ipad",
+      "model": "iPad Pro (11-inch) (2nd generation)"
+    },
+    {
+      "hardware_id": "iPad8,10",
+      "family": "ipad",
+      "model": "iPad Pro (11-inch) (2nd generation)"
+    },
+    {
+      "hardware_id": "iPad8,11",
+      "family": "ipad",
+      "model": "iPad Pro (12.9-inch) (4th generation)"
+    },
+    {
+      "hardware_id": "iPad8,12",
+      "family": "ipad",
+      "model": "iPad Pro (12.9-inch) (4th generation)"
+    },
+    {
+      "hardware_id": "iPad11,1",
+      "family": "ipad",
+      "model": "iPad mini (5th generation)"
+    },
+    {
+      "hardware_id": "iPad11,2",
+      "family": "ipad",
+      "model": "iPad mini (5th generation)"
+    },
+    {
+      "hardware_id": "iPad11,3",
+      "family": "ipad",
+      "model": "iPad Air (3rd generation)"
+    },
+    {
+      "hardware_id": "iPad11,4",
+      "family": "ipad",
+      "model": "iPad Air (3rd generation)"
+    },
+    {
+      "hardware_id": "iPad11,6",
+      "family": "ipad",
+      "model": "iPad (8th generation)"
+    },
+    {
+      "hardware_id": "iPad11,7",
+      "family": "ipad",
+      "model": "iPad (8th generation)"
+    },
+    {
+      "hardware_id": "iPad12,1",
+      "family": "ipad",
+      "model": "iPad (9th generation)"
+    },
+    {
+      "hardware_id": "iPad12,2",
+      "family": "ipad",
+      "model": "iPad (9th generation)"
+    },
+    {
+      "hardware_id": "iPad13,1",
+      "family": "ipad",
+      "model": "iPad Air (4th generation)"
+    },
+    {
+      "hardware_id": "iPad13,2",
+      "family": "ipad",
+      "model": "iPad Air (4th generation)"
+    },
+    {
+      "hardware_id": "iPad13,4",
+      "family": "ipad",
+      "model": "iPad Pro (11-inch) (3rd generation)"
+    },
+    {
+      "hardware_id": "iPad13,5",
+      "family": "ipad",
+      "model": "iPad Pro (11-inch) (3rd generation)"
+    },
+    {
+      "hardware_id": "iPad13,6",
+      "family": "ipad",
+      "model": "iPad Pro (11-inch) (3rd generation)"
+    },
+    {
+      "hardware_id": "iPad13,7",
+      "family": "ipad",
+      "model": "iPad Pro (11-inch) (3rd generation)"
+    },
+    {
+      "hardware_id": "iPad13,8",
+      "family": "ipad",
+      "model": "iPad Pro (12.9-inch) (5th generation)"
+    },
+    {
+      "hardware_id": "iPad13,9",
+      "family": "ipad",
+      "model": "iPad Pro (12.9-inch) (5th generation)"
+    },
+    {
+      "hardware_id": "iPad13,10",
+      "family": "ipad",
+      "model": "iPad Pro (12.9-inch) (5th generation)"
+    },
+    {
+      "hardware_id": "iPad13,11",
+      "family": "ipad",
+      "model": "iPad Pro (12.9-inch) (5th generation)"
+    },
+    {
+      "hardware_id": "iPad13,16",
+      "family": "ipad",
+      "model": "iPad Air (5th generation)"
+    },
+    {
+      "hardware_id": "iPad13,17",
+      "family": "ipad",
+      "model": "iPad Air (5th generation)"
+    },
+    {
+      "hardware_id": "iPad13,18",
+      "family": "ipad",
+      "model": "iPad (10th generation)"
+    },
+    {
+      "hardware_id": "iPad13,19",
+      "family": "ipad",
+      "model": "iPad (10th generation)"
+    },
+    {
+      "hardware_id": "iPad14,1",
+      "family": "ipad",
+      "model": "iPad mini (6th generation)"
+    },
+    {
+      "hardware_id": "iPad14,2",
+      "family": "ipad",
+      "model": "iPad mini (6th generation)"
+    },
+    {
+      "hardware_id": "iPad14,3",
+      "family": "ipad",
+      "model": "iPad Pro (11-inch) (4th generation)"
+    },
+    {
+      "hardware_id": "iPad14,4",
+      "family": "ipad",
+      "model": "iPad Pro (11-inch) (4th generation)"
+    },
+    {
+      "hardware_id": "iPad14,5",
+      "family": "ipad",
+      "model": "iPad Pro (12.9-inch) (6th generation)"
+    },
+    {
+      "hardware_id": "iPad14,6",
+      "family": "ipad",
+      "model": "iPad Pro (12.9-inch) (6th generation)"
+    },
+    {
+      "hardware_id": "iPad14,8",
+      "family": "ipad",
+      "model": "iPad Air 11-inch (M2)"
+    },
+    {
+      "hardware_id": "iPad14,9",
+      "family": "ipad",
+      "model": "iPad Air 11-inch (M2)"
+    },
+    {
+      "hardware_id": "iPad14,10",
+      "family": "ipad",
+      "model": "iPad Air 13-inch (M2)"
+    },
+    {
+      "hardware_id": "iPad14,11",
+      "family": "ipad",
+      "model": "iPad Air 13-inch (M2)"
+    },
+    {
+      "hardware_id": "iPad15,3",
+      "family": "ipad",
+      "model": "iPad Air 11-inch (M3)"
+    },
+    {
+      "hardware_id": "iPad15,4",
+      "family": "ipad",
+      "model": "iPad Air 11-inch (M3)"
+    },
+    {
+      "hardware_id": "iPad15,5",
+      "family": "ipad",
+      "model": "iPad Air 13-inch (M3)"
+    },
+    {
+      "hardware_id": "iPad15,6",
+      "family": "ipad",
+      "model": "iPad Air 13-inch (M3)"
+    },
+    {
+      "hardware_id": "iPad15,7",
+      "family": "ipad",
+      "model": "iPad (A16)"
+    },
+    {
+      "hardware_id": "iPad15,8",
+      "family": "ipad",
+      "model": "iPad (A16)"
+    },
+    {
+      "hardware_id": "iPad16,1",
+      "family": "ipad",
+      "model": "iPad mini (A17 Pro)"
+    },
+    {
+      "hardware_id": "iPad16,2",
+      "family": "ipad",
+      "model": "iPad mini (A17 Pro)"
+    },
+    {
+      "hardware_id": "iPad16,3",
+      "family": "ipad",
+      "model": "iPad Pro 11-inch (M4)"
+    },
+    {
+      "hardware_id": "iPad16,4",
+      "family": "ipad",
+      "model": "iPad Pro 11-inch (M4)"
+    },
+    {
+      "hardware_id": "iPad16,5",
+      "family": "ipad",
+      "model": "iPad Pro 13-inch (M4)"
+    },
+    {
+      "hardware_id": "iPad16,6",
+      "family": "ipad",
+      "model": "iPad Pro 13-inch (M4)"
+    },
+    {
+      "hardware_id": "iPad17,1",
+      "family": "ipad",
+      "model": "iPad Pro 11-inch (M5)"
+    },
+    {
+      "hardware_id": "iPad17,2",
+      "family": "ipad",
+      "model": "iPad Pro 11-inch (M5)"
+    },
+    {
+      "hardware_id": "iPad17,3",
+      "family": "ipad",
+      "model": "iPad Pro 13-inch (M5)"
+    },
+    {
+      "hardware_id": "iPad17,4",
+      "family": "ipad",
+      "model": "iPad Pro 13-inch (M5)"
+    },
+    {
+      "hardware_id": "iPhone1,1",
+      "family": "iphone",
+      "model": "iPhone"
+    },
+    {
+      "hardware_id": "iPhone1,2",
+      "family": "iphone",
+      "model": "iPhone 3G"
+    },
+    {
+      "hardware_id": "iPhone2,1",
+      "family": "iphone",
+      "model": "iPhone 3GS"
+    },
+    {
+      "hardware_id": "iPhone3,1",
+      "family": "iphone",
+      "model": "iPhone 4"
+    },
+    {
+      "hardware_id": "iPhone3,2",
+      "family": "iphone",
+      "model": "iPhone 4"
+    },
+    {
+      "hardware_id": "iPhone3,3",
+      "family": "iphone",
+      "model": "iPhone 4"
+    },
+    {
+      "hardware_id": "iPhone4,1",
+      "family": "iphone",
+      "model": "iPhone 4s"
+    },
+    {
+      "hardware_id": "iPhone5,1",
+      "family": "iphone",
+      "model": "iPhone 5"
+    },
+    {
+      "hardware_id": "iPhone5,2",
+      "family": "iphone",
+      "model": "iPhone 5"
+    },
+    {
+      "hardware_id": "iPhone5,3",
+      "family": "iphone",
+      "model": "iPhone 5c"
+    },
+    {
+      "hardware_id": "iPhone5,4",
+      "family": "iphone",
+      "model": "iPhone 5c"
+    },
+    {
+      "hardware_id": "iPhone6,1",
+      "family": "iphone",
+      "model": "iPhone 5s"
+    },
+    {
+      "hardware_id": "iPhone6,2",
+      "family": "iphone",
+      "model": "iPhone 5s"
+    },
+    {
+      "hardware_id": "iPhone7,1",
+      "family": "iphone",
+      "model": "iPhone 6 Plus"
+    },
+    {
+      "hardware_id": "iPhone7,2",
+      "family": "iphone",
+      "model": "iPhone 6"
+    },
+    {
+      "hardware_id": "iPhone8,1",
+      "family": "iphone",
+      "model": "iPhone 6s"
+    },
+    {
+      "hardware_id": "iPhone8,2",
+      "family": "iphone",
+      "model": "iPhone 6s Plus"
+    },
+    {
+      "hardware_id": "iPhone8,4",
+      "family": "iphone",
+      "model": "iPhone SE (1st generation)"
+    },
+    {
+      "hardware_id": "iPhone9,1",
+      "family": "iphone",
+      "model": "iPhone 7"
+    },
+    {
+      "hardware_id": "iPhone9,2",
+      "family": "iphone",
+      "model": "iPhone 7 Plus"
+    },
+    {
+      "hardware_id": "iPhone9,3",
+      "family": "iphone",
+      "model": "iPhone 7"
+    },
+    {
+      "hardware_id": "iPhone9,4",
+      "family": "iphone",
+      "model": "iPhone 7 Plus"
+    },
+    {
+      "hardware_id": "iPhone10,1",
+      "family": "iphone",
+      "model": "iPhone 8"
+    },
+    {
+      "hardware_id": "iPhone10,2",
+      "family": "iphone",
+      "model": "iPhone 8 Plus"
+    },
+    {
+      "hardware_id": "iPhone10,3",
+      "family": "iphone",
+      "model": "iPhone X"
+    },
+    {
+      "hardware_id": "iPhone10,4",
+      "family": "iphone",
+      "model": "iPhone 8"
+    },
+    {
+      "hardware_id": "iPhone10,5",
+      "family": "iphone",
+      "model": "iPhone 8 Plus"
+    },
+    {
+      "hardware_id": "iPhone10,6",
+      "family": "iphone",
+      "model": "iPhone X"
+    },
+    {
+      "hardware_id": "iPhone11,2",
+      "family": "iphone",
+      "model": "iPhone XS"
+    },
+    {
+      "hardware_id": "iPhone11,4",
+      "family": "iphone",
+      "model": "iPhone XS Max"
+    },
+    {
+      "hardware_id": "iPhone11,6",
+      "family": "iphone",
+      "model": "iPhone XS Max"
+    },
+    {
+      "hardware_id": "iPhone11,8",
+      "family": "iphone",
+      "model": "iPhone XR"
+    },
+    {
+      "hardware_id": "iPhone12,1",
+      "family": "iphone",
+      "model": "iPhone 11"
+    },
+    {
+      "hardware_id": "iPhone12,3",
+      "family": "iphone",
+      "model": "iPhone 11 Pro"
+    },
+    {
+      "hardware_id": "iPhone12,5",
+      "family": "iphone",
+      "model": "iPhone 11 Pro Max"
+    },
+    {
+      "hardware_id": "iPhone12,8",
+      "family": "iphone",
+      "model": "iPhone SE (2nd generation)"
+    },
+    {
+      "hardware_id": "iPhone13,1",
+      "family": "iphone",
+      "model": "iPhone 12 mini"
+    },
+    {
+      "hardware_id": "iPhone13,2",
+      "family": "iphone",
+      "model": "iPhone 12"
+    },
+    {
+      "hardware_id": "iPhone13,3",
+      "family": "iphone",
+      "model": "iPhone 12 Pro"
+    },
+    {
+      "hardware_id": "iPhone13,4",
+      "family": "iphone",
+      "model": "iPhone 12 Pro Max"
+    },
+    {
+      "hardware_id": "iPhone14,2",
+      "family": "iphone",
+      "model": "iPhone 13 Pro"
+    },
+    {
+      "hardware_id": "iPhone14,3",
+      "family": "iphone",
+      "model": "iPhone 13 Pro Max"
+    },
+    {
+      "hardware_id": "iPhone14,4",
+      "family": "iphone",
+      "model": "iPhone 13 mini"
+    },
+    {
+      "hardware_id": "iPhone14,5",
+      "family": "iphone",
+      "model": "iPhone 13"
+    },
+    {
+      "hardware_id": "iPhone14,6",
+      "family": "iphone",
+      "model": "iPhone SE (3rd generation)"
+    },
+    {
+      "hardware_id": "iPhone14,7",
+      "family": "iphone",
+      "model": "iPhone 14"
+    },
+    {
+      "hardware_id": "iPhone14,8",
+      "family": "iphone",
+      "model": "iPhone 14 Plus"
+    },
+    {
+      "hardware_id": "iPhone15,2",
+      "family": "iphone",
+      "model": "iPhone 14 Pro"
+    },
+    {
+      "hardware_id": "iPhone15,3",
+      "family": "iphone",
+      "model": "iPhone 14 Pro Max"
+    },
+    {
+      "hardware_id": "iPhone15,4",
+      "family": "iphone",
+      "model": "iPhone 15"
+    },
+    {
+      "hardware_id": "iPhone15,5",
+      "family": "iphone",
+      "model": "iPhone 15 Plus"
+    },
+    {
+      "hardware_id": "iPhone16,1",
+      "family": "iphone",
+      "model": "iPhone 15 Pro"
+    },
+    {
+      "hardware_id": "iPhone16,2",
+      "family": "iphone",
+      "model": "iPhone 15 Pro Max"
+    },
+    {
+      "hardware_id": "iPhone17,1",
+      "family": "iphone",
+      "model": "iPhone 16 Pro"
+    },
+    {
+      "hardware_id": "iPhone17,2",
+      "family": "iphone",
+      "model": "iPhone 16 Pro Max"
+    },
+    {
+      "hardware_id": "iPhone17,3",
+      "family": "iphone",
+      "model": "iPhone 16"
+    },
+    {
+      "hardware_id": "iPhone17,4",
+      "family": "iphone",
+      "model": "iPhone 16 Plus"
+    },
+    {
+      "hardware_id": "iPhone17,5",
+      "family": "iphone",
+      "model": "iPhone 16e"
+    },
+    {
+      "hardware_id": "iPhone18,1",
+      "family": "iphone",
+      "model": "iPhone 17 Pro"
+    },
+    {
+      "hardware_id": "iPhone18,2",
+      "family": "iphone",
+      "model": "iPhone 17 Pro Max"
+    },
+    {
+      "hardware_id": "iPhone18,3",
+      "family": "iphone",
+      "model": "iPhone 17"
+    },
+    {
+      "hardware_id": "iPhone18,4",
+      "family": "iphone",
+      "model": "iPhone Air"
+    }
+  ],
+  "device_camera_profiles": [
+    {
+      "profile_id": "iphone_ultra_main_tele_3x",
+      "notes": "Typical iPhone Pro/Pro Max (3x era) profile. HFOV derived from 13mm/24mm/77mm equiv focal lengths.",
+      "modules": [
+        {
+          "role": "ultra",
+          "equiv_focal_length_mm": 13,
+          "native_hfov_deg": 120.0,
+          "min_zoom": 1.0,
+          "max_zoom": 2.0
+        },
+        {
+          "role": "main",
+          "equiv_focal_length_mm": 24,
+          "native_hfov_deg": null,
+          "min_zoom": 1.0,
+          "max_zoom": 6.0
+        },
+        {
+          "role": "tele",
+          "equiv_focal_length_mm": 77,
+          "native_hfov_deg": null,
+          "min_zoom": 1.0,
+          "max_zoom": 3.0
+        }
+      ]
+    },
+    {
+      "profile_id": "iphone_ultra_main_tele_5x",
+      "notes": "Typical iPhone Pro Max (5x era) profile. HFOV derived from 13mm/24mm/120mm equiv focal lengths.",
+      "modules": [
+        {
+          "role": "ultra",
+          "equiv_focal_length_mm": 13,
+          "native_hfov_deg": 120.0,
+          "min_zoom": 1.0,
+          "max_zoom": 2.0
+        },
+        {
+          "role": "main",
+          "equiv_focal_length_mm": 24,
+          "native_hfov_deg": null,
+          "min_zoom": 1.0,
+          "max_zoom": 6.0
+        },
+        {
+          "role": "tele",
+          "equiv_focal_length_mm": 120,
+          "native_hfov_deg": null,
+          "min_zoom": 1.0,
+          "max_zoom": 5.0
+        }
+      ]
+    },
+    {
+      "profile_id": "iphone_ultra_main",
+      "notes": "Typical non-Pro iPhone profile (Ultra + Main). HFOV derived from 13mm/26mm equiv focal lengths (approx).",
+      "modules": [
+        {
+          "role": "ultra",
+          "equiv_focal_length_mm": 13,
+          "native_hfov_deg": 120.0,
+          "min_zoom": 1.0,
+          "max_zoom": 2.0
+        },
+        {
+          "role": "main",
+          "equiv_focal_length_mm": 26,
+          "native_hfov_deg": null,
+          "min_zoom": 1.0,
+          "max_zoom": 8.0
+        }
+      ]
+    },
+    {
+      "profile_id": "iphone_main_only",
+      "notes": "Single-camera iPhone / SE profile.",
+      "modules": [
+        {
+          "role": "main",
+          "equiv_focal_length_mm": 28,
+          "native_hfov_deg": null,
+          "min_zoom": 1.0,
+          "max_zoom": 6.0
+        }
+      ]
+    },
+    {
+      "profile_id": "ipad_front_ultra_center_stage",
+      "notes": "iPad models with Center Stage-style front ultra wide (often advertised as 12MP Ultra Wide front camera). Use 120° as default.",
+      "modules": [
+        {
+          "role": "front_ultra",
+          "native_hfov_deg": 120.0,
+          "equiv_focal_length_mm": null,
+          "min_zoom": 1.0,
+          "max_zoom": 2.0
+        },
+        {
+          "role": "rear_wide",
+          "native_hfov_deg": 75.0,
+          "equiv_focal_length_mm": null,
+          "min_zoom": 1.0,
+          "max_zoom": 6.0
+        }
+      ]
+    },
+    {
+      "profile_id": "ipad_generic",
+      "notes": "Fallback iPad camera profile when exact HFOV is unknown. Uses conservative defaults; can be calibrated per device later.",
+      "modules": [
+        {
+          "role": "front_wide",
+          "native_hfov_deg": 70.0,
+          "equiv_focal_length_mm": null,
+          "min_zoom": 1.0,
+          "max_zoom": 4.0
+        },
+        {
+          "role": "rear_wide",
+          "native_hfov_deg": 75.0,
+          "equiv_focal_length_mm": null,
+          "min_zoom": 1.0,
+          "max_zoom": 6.0
+        }
+      ]
+    }
+  ],
+  "device_camera_profile_rules": [
+    {
+      "match": {
+        "family": "iphone",
+        "model_regex": ".*SE.*"
+      },
+      "profile_id": "iphone_main_only"
+    },
+    {
+      "match": {
+        "family": "iphone",
+        "model_regex": ".*Pro Max.*(15|16|17).*"
+      },
+      "profile_id": "iphone_ultra_main_tele_5x"
+    },
+    {
+      "match": {
+        "family": "iphone",
+        "model_regex": ".*Pro Max.*"
+      },
+      "profile_id": "iphone_ultra_main_tele_3x"
+    },
+    {
+      "match": {
+        "family": "iphone",
+        "model_regex": ".*Pro.*"
+      },
+      "profile_id": "iphone_ultra_main_tele_3x"
+    },
+    {
+      "match": {
+        "family": "iphone",
+        "model_regex": ".*(mini|Plus|Air|\\\\biPhone\\\\s\\\\d+).*"
+      },
+      "profile_id": "iphone_ultra_main"
+    },
+    {
+      "match": {
+        "family": "iphone",
+        "model_regex": ".*"
+      },
+      "profile_id": "iphone_main_only"
+    },
+    {
+      "match": {
+        "family": "ipad",
+        "model_regex": ".*(Pro|Air|mini \\\\(6th generation\\\\)|mini \\\\(A17 Pro\\\\)|\\\\(10th generation\\\\)|\\\\(A16\\\\)).*"
+      },
+      "profile_id": "ipad_front_ultra_center_stage"
+    },
+    {
+      "match": {
+        "family": "ipad",
+        "model_regex": ".*"
+      },
+      "profile_id": "ipad_generic"
+    }
+  ],
+  "cameras": [
+    {
+      "id": "arri_alexa_35",
+      "brand": "ARRI",
+      "model": "Alexa 35",
+      "sensor_type": "Super 35",
+      "mount": "LPL",
+      "modes": [
+        {
+          "id": "arri_alexa_35__open_gate_4_6k",
+          "name": "Open Gate 4.6K",
+          "sensor_width_mm": 27.99,
+          "sensor_height_mm": 19.22,
+          "resolution": "4608x3164",
+          "aspect_ratio": "1.46:1"
+        },
+        {
+          "id": "arri_alexa_35__4k_2_39",
+          "name": "4K 2.39",
+          "sensor_width_mm": 27.99,
+          "sensor_height_mm": 11.74,
+          "resolution": "4096x1716",
+          "aspect_ratio": "2.39:1"
+        }
+      ]
+    },
+    {
+      "id": "arri_alexa_mini_lf",
+      "brand": "ARRI",
+      "model": "Alexa Mini LF",
+      "sensor_type": "Large Format",
+      "mount": "LPL",
+      "modes": [
+        {
+          "id": "arri_alexa_mini_lf__open_gate_4_5k",
+          "name": "Open Gate 4.5K",
+          "sensor_width_mm": 36.7,
+          "sensor_height_mm": 25.54,
+          "resolution": "4448x3096",
+          "aspect_ratio": "1.44:1"
+        },
+        {
+          "id": "arri_alexa_mini_lf__4_5k_2_39",
+          "name": "4.5K 2.39",
+          "sensor_width_mm": 36.7,
+          "sensor_height_mm": 15.36,
+          "resolution": "4448x1856",
+          "aspect_ratio": "2.39:1"
+        }
+      ]
+    },
+    {
+      "id": "arri_alexa_lf",
+      "brand": "ARRI",
+      "model": "Alexa LF",
+      "sensor_type": "Large Format",
+      "mount": "LPL",
+      "modes": [
+        {
+          "id": "arri_alexa_lf__open_gate_4_5k",
+          "name": "Open Gate 4.5K",
+          "sensor_width_mm": 36.7,
+          "sensor_height_mm": 25.54,
+          "resolution": "4448x3096",
+          "aspect_ratio": "1.44:1"
+        },
+        {
+          "id": "arri_alexa_lf__lf_2_39",
+          "name": "LF 2.39",
+          "sensor_width_mm": 36.7,
+          "sensor_height_mm": 15.36,
+          "resolution": "4448x1856",
+          "aspect_ratio": "2.39:1"
+        }
+      ]
+    },
+    {
+      "id": "arri_alexa_mini",
+      "brand": "ARRI",
+      "model": "Alexa Mini",
+      "sensor_type": "Super 35",
+      "mount": "PL",
+      "modes": [
+        {
+          "id": "arri_alexa_mini__open_gate_3_4k",
+          "name": "Open Gate 3.4K",
+          "sensor_width_mm": 28.17,
+          "sensor_height_mm": 18.13,
+          "resolution": "3424x2202",
+          "aspect_ratio": "1.55:1"
+        },
+        {
+          "id": "arri_alexa_mini__2k_2_39",
+          "name": "2K 2.39",
+          "sensor_width_mm": 28.17,
+          "sensor_height_mm": 11.79,
+          "resolution": "2048x858",
+          "aspect_ratio": "2.39:1"
+        }
+      ]
+    },
+    {
+      "id": "arri_amira",
+      "brand": "ARRI",
+      "model": "AMIRA",
+      "sensor_type": "Super 35",
+      "mount": "PL",
+      "modes": [
+        {
+          "id": "arri_amira__3_2k_16_9",
+          "name": "3.2K 16:9",
+          "sensor_width_mm": 28.17,
+          "sensor_height_mm": 15.84,
+          "resolution": "3200x1800",
+          "aspect_ratio": "16:9"
+        },
+        {
+          "id": "arri_amira__hd_16_9",
+          "name": "HD 16:9",
+          "sensor_width_mm": 28.17,
+          "sensor_height_mm": 15.84,
+          "resolution": "1920x1080",
+          "aspect_ratio": "16:9"
+        }
+      ]
+    },
+    {
+      "id": "sony_venice_2",
+      "brand": "Sony",
+      "model": "Venice 2",
+      "sensor_type": "Full Frame",
+      "mount": "PL",
+      "modes": [
+        {
+          "id": "sony_venice_2__8_6k_ff",
+          "name": "8.6K FF",
+          "sensor_width_mm": 36.0,
+          "sensor_height_mm": 24.0,
+          "resolution": "8640x5760",
+          "aspect_ratio": "3:2"
+        },
+        {
+          "id": "sony_venice_2__6k_s35",
+          "name": "6K S35",
+          "sensor_width_mm": 24.89,
+          "sensor_height_mm": 18.66,
+          "resolution": "6048x4032",
+          "aspect_ratio": "1.46:1"
+        }
+      ]
+    },
+    {
+      "id": "sony_venice",
+      "brand": "Sony",
+      "model": "Venice",
+      "sensor_type": "Full Frame",
+      "mount": "PL",
+      "modes": [
+        {
+          "id": "sony_venice__6k_ff",
+          "name": "6K FF",
+          "sensor_width_mm": 36.0,
+          "sensor_height_mm": 24.0,
+          "resolution": "6048x4032",
+          "aspect_ratio": "3:2"
+        },
+        {
+          "id": "sony_venice__4k_s35",
+          "name": "4K S35",
+          "sensor_width_mm": 24.0,
+          "sensor_height_mm": 13.5,
+          "resolution": "4096x2160",
+          "aspect_ratio": "1.90:1"
+        }
+      ]
+    },
+    {
+      "id": "sony_fx9",
+      "brand": "Sony",
+      "model": "FX9",
+      "sensor_type": "Full Frame",
+      "mount": "E",
+      "modes": [
+        {
+          "id": "sony_fx9__ff_6k_oversample_4k",
+          "name": "FF 6K (oversample 4K)",
+          "sensor_width_mm": 35.6,
+          "sensor_height_mm": 23.8,
+          "resolution": "6008x3168",
+          "aspect_ratio": "~1.90:1"
+        },
+        {
+          "id": "sony_fx9__s35_crop",
+          "name": "S35 Crop",
+          "sensor_width_mm": 26.0,
+          "sensor_height_mm": 14.6,
+          "resolution": "3840x2160",
+          "aspect_ratio": "16:9"
+        }
+      ]
+    },
+    {
+      "id": "sony_fx6",
+      "brand": "Sony",
+      "model": "FX6",
+      "sensor_type": "Full Frame",
+      "mount": "E",
+      "modes": [
+        {
+          "id": "sony_fx6__ff_4k",
+          "name": "FF 4K",
+          "sensor_width_mm": 35.6,
+          "sensor_height_mm": 23.8,
+          "resolution": "4264x2408",
+          "aspect_ratio": "16:9"
+        },
+        {
+          "id": "sony_fx6__s35_crop",
+          "name": "S35 Crop",
+          "sensor_width_mm": 26.0,
+          "sensor_height_mm": 14.6,
+          "resolution": "3840x2160",
+          "aspect_ratio": "16:9"
+        }
+      ]
+    },
+    {
+      "id": "sony_fx3",
+      "brand": "Sony",
+      "model": "FX3",
+      "sensor_type": "Full Frame",
+      "mount": "E",
+      "modes": [
+        {
+          "id": "sony_fx3__ff_4k",
+          "name": "FF 4K",
+          "sensor_width_mm": 35.6,
+          "sensor_height_mm": 23.8,
+          "resolution": "3840x2160",
+          "aspect_ratio": "16:9"
+        }
+      ]
+    },
+    {
+      "id": "red_v_raptor_8k_vv",
+      "brand": "RED",
+      "model": "V-Raptor 8K VV",
+      "sensor_type": "VistaVision",
+      "mount": "PL/RF",
+      "modes": [
+        {
+          "id": "red_v_raptor_8k_vv__8k_vv",
+          "name": "8K VV",
+          "sensor_width_mm": 40.96,
+          "sensor_height_mm": 21.6,
+          "resolution": "8192x4320",
+          "aspect_ratio": "1.90:1"
+        },
+        {
+          "id": "red_v_raptor_8k_vv__8k_2_39",
+          "name": "8K 2.39",
+          "sensor_width_mm": 40.96,
+          "sensor_height_mm": 17.15,
+          "resolution": "8192x3432",
+          "aspect_ratio": "2.39:1"
+        }
+      ]
+    },
+    {
+      "id": "red_komodo_x",
+      "brand": "RED",
+      "model": "Komodo-X",
+      "sensor_type": "Super 35",
+      "mount": "RF/PL",
+      "modes": [
+        {
+          "id": "red_komodo_x__6k_s35",
+          "name": "6K S35",
+          "sensor_width_mm": 27.03,
+          "sensor_height_mm": 14.26,
+          "resolution": "6144x3240",
+          "aspect_ratio": "1.90:1"
+        },
+        {
+          "id": "red_komodo_x__6k_2_39",
+          "name": "6K 2.39",
+          "sensor_width_mm": 27.03,
+          "sensor_height_mm": 11.32,
+          "resolution": "6144x2574",
+          "aspect_ratio": "2.39:1"
+        }
+      ]
+    },
+    {
+      "id": "red_monstro_8k_vv",
+      "brand": "RED",
+      "model": "Monstro 8K VV",
+      "sensor_type": "VistaVision",
+      "mount": "PL",
+      "modes": [
+        {
+          "id": "red_monstro_8k_vv__8k_vv",
+          "name": "8K VV",
+          "sensor_width_mm": 40.96,
+          "sensor_height_mm": 21.6,
+          "resolution": "8192x4320",
+          "aspect_ratio": "1.90:1"
+        }
+      ]
+    },
+    {
+      "id": "canon_c500_mark_ii",
+      "brand": "Canon",
+      "model": "C500 Mark II",
+      "sensor_type": "Full Frame",
+      "mount": "PL/EF",
+      "modes": [
+        {
+          "id": "canon_c500_mark_ii__ff_5_9k",
+          "name": "FF 5.9K",
+          "sensor_width_mm": 38.1,
+          "sensor_height_mm": 20.1,
+          "resolution": "5952x3140",
+          "aspect_ratio": "1.90:1"
+        },
+        {
+          "id": "canon_c500_mark_ii__s35_crop_4k_dci",
+          "name": "S35 Crop 4K DCI",
+          "sensor_width_mm": 24.6,
+          "sensor_height_mm": 13.8,
+          "resolution": "4096x2160",
+          "aspect_ratio": "1.90:1"
+        }
+      ]
+    },
+    {
+      "id": "canon_c300_mark_iii",
+      "brand": "Canon",
+      "model": "C300 Mark III",
+      "sensor_type": "Super 35",
+      "mount": "EF/PL",
+      "modes": [
+        {
+          "id": "canon_c300_mark_iii__4k_dci",
+          "name": "4K DCI",
+          "sensor_width_mm": 26.2,
+          "sensor_height_mm": 13.8,
+          "resolution": "4096x2160",
+          "aspect_ratio": "1.90:1"
+        },
+        {
+          "id": "canon_c300_mark_iii__2k_crop_2_39",
+          "name": "2K Crop 2.39",
+          "sensor_width_mm": 26.2,
+          "sensor_height_mm": 10.96,
+          "resolution": "2048x858",
+          "aspect_ratio": "2.39:1"
+        }
+      ]
+    },
+    {
+      "id": "canon_c70",
+      "brand": "Canon",
+      "model": "C70",
+      "sensor_type": "Super 35",
+      "mount": "RF",
+      "modes": [
+        {
+          "id": "canon_c70__4k_dci",
+          "name": "4K DCI",
+          "sensor_width_mm": 26.2,
+          "sensor_height_mm": 13.8,
+          "resolution": "4096x2160",
+          "aspect_ratio": "1.90:1"
+        },
+        {
+          "id": "canon_c70__uhd_16_9",
+          "name": "UHD 16:9",
+          "sensor_width_mm": 26.2,
+          "sensor_height_mm": 14.6,
+          "resolution": "3840x2160",
+          "aspect_ratio": "16:9"
+        }
+      ]
+    },
+    {
+      "id": "blackmagic_ursa_mini_pro_12k",
+      "brand": "Blackmagic",
+      "model": "URSA Mini Pro 12K",
+      "sensor_type": "Super 35",
+      "mount": "EF/PL",
+      "modes": [
+        {
+          "id": "blackmagic_ursa_mini_pro_12k__12k_16_9",
+          "name": "12K 16:9",
+          "sensor_width_mm": 27.03,
+          "sensor_height_mm": 14.25,
+          "resolution": "12288x6480",
+          "aspect_ratio": "16:9"
+        },
+        {
+          "id": "blackmagic_ursa_mini_pro_12k__8k_2_39",
+          "name": "8K 2.39",
+          "sensor_width_mm": 27.03,
+          "sensor_height_mm": 11.3,
+          "resolution": "8192x3424",
+          "aspect_ratio": "2.39:1"
+        }
+      ]
+    },
+    {
+      "id": "blackmagic_pocket_cinema_camera_6k_pro",
+      "brand": "Blackmagic",
+      "model": "Pocket Cinema Camera 6K Pro",
+      "sensor_type": "Super 35",
+      "mount": "EF",
+      "modes": [
+        {
+          "id": "blackmagic_pocket_cinema_camera_6k_pro__6k_16_9",
+          "name": "6K 16:9",
+          "sensor_width_mm": 23.1,
+          "sensor_height_mm": 12.99,
+          "resolution": "6144x3456",
+          "aspect_ratio": "16:9"
+        },
+        {
+          "id": "blackmagic_pocket_cinema_camera_6k_pro__6k_2_39",
+          "name": "6K 2.39",
+          "sensor_width_mm": 23.1,
+          "sensor_height_mm": 9.67,
+          "resolution": "6144x2560",
+          "aspect_ratio": "2.39:1"
+        }
+      ]
+    },
+    {
+      "id": "panasonic_varicam_35",
+      "brand": "Panasonic",
+      "model": "VariCam 35",
+      "sensor_type": "Super 35",
+      "mount": "PL",
+      "modes": [
+        {
+          "id": "panasonic_varicam_35__4k_dci",
+          "name": "4K DCI",
+          "sensor_width_mm": 27.5,
+          "sensor_height_mm": 14.5,
+          "resolution": "4096x2160",
+          "aspect_ratio": "1.90:1"
+        }
+      ]
+    },
+    {
+      "id": "panasonic_varicam_lt",
+      "brand": "Panasonic",
+      "model": "VariCam LT",
+      "sensor_type": "Super 35",
+      "mount": "EF/PL",
+      "modes": [
+        {
+          "id": "panasonic_varicam_lt__4k_dci",
+          "name": "4K DCI",
+          "sensor_width_mm": 27.5,
+          "sensor_height_mm": 14.5,
+          "resolution": "4096x2160",
+          "aspect_ratio": "1.90:1"
+        }
+      ]
+    },
+    {
+      "id": "dji_ronin_4d_6k",
+      "brand": "DJI",
+      "model": "Ronin 4D 6K",
+      "sensor_type": "Full Frame",
+      "mount": "DL",
+      "modes": [
+        {
+          "id": "dji_ronin_4d_6k__6k_16_9",
+          "name": "6K 16:9",
+          "sensor_width_mm": 36.0,
+          "sensor_height_mm": 20.25,
+          "resolution": "6144x3456",
+          "aspect_ratio": "16:9"
+        }
+      ]
+    },
+    {
+      "id": "phantom_flex4k",
+      "brand": "Phantom",
+      "model": "Flex4K",
+      "sensor_type": "Super 35",
+      "mount": "PL",
+      "modes": [
+        {
+          "id": "phantom_flex4k__4k_16_9",
+          "name": "4K 16:9",
+          "sensor_width_mm": 24.58,
+          "sensor_height_mm": 13.82,
+          "resolution": "4096x2304",
+          "aspect_ratio": "16:9"
+        }
+      ]
+    }
+  ],
+  "lens_packs": [
+    {
+      "id": "arri_signature_primes",
+      "brand": "ARRI",
+      "name": "Signature Primes",
+      "type": "prime",
+      "format": "LF",
+      "description": "ARRI Signature Prime (Large Format)"
+    },
+    {
+      "id": "zeiss_supreme_primes",
+      "brand": "ZEISS",
+      "name": "Supreme Primes",
+      "type": "prime",
+      "format": "LF",
+      "description": "ZEISS Supreme Prime (Large Format)"
+    },
+    {
+      "id": "arri_master_primes",
+      "brand": "ARRI/ZEISS",
+      "name": "Master Primes",
+      "type": "prime",
+      "format": "S35",
+      "description": "ARRI/ZEISS Master Prime (S35)"
+    },
+    {
+      "id": "zeiss_ultra_primes",
+      "brand": "ZEISS",
+      "name": "Ultra Primes",
+      "type": "prime",
+      "format": "S35",
+      "description": "ZEISS Ultra Prime (S35)"
+    },
+    {
+      "id": "cooke_s4_i",
+      "brand": "Cooke",
+      "name": "S4/i",
+      "type": "prime",
+      "format": "S35",
+      "description": "Cooke S4/i classic prime set"
+    },
+    {
+      "id": "cooke_s7_i",
+      "brand": "Cooke",
+      "name": "S7/i",
+      "type": "prime",
+      "format": "LF",
+      "description": "Cooke S7/i (Large Format)"
+    },
+    {
+      "id": "leica_summicron_c",
+      "brand": "Leica",
+      "name": "Summicron-C",
+      "type": "prime",
+      "format": "S35",
+      "description": "Leica Summicron-C primes"
+    },
+    {
+      "id": "canon_sumire_primes",
+      "brand": "Canon",
+      "name": "Sumire Primes",
+      "type": "prime",
+      "format": "FF",
+      "description": "Canon Sumire primes (FF)"
+    },
+    {
+      "id": "sigma_cine_ff_hs",
+      "brand": "Sigma",
+      "name": "Cine FF High Speed",
+      "type": "prime",
+      "format": "FF",
+      "description": "Sigma Cine FF High Speed primes"
+    },
+    {
+      "id": "angenieux_optimo",
+      "brand": "Angenieux",
+      "name": "Optimo",
+      "type": "zoom",
+      "format": "S35",
+      "description": "Angenieux Optimo zooms"
+    },
+    {
+      "id": "angenieux_ez",
+      "brand": "Angenieux",
+      "name": "EZ",
+      "type": "zoom",
+      "format": "FF/S35",
+      "description": "Angenieux EZ zooms"
+    },
+    {
+      "id": "fujinon_cabrio",
+      "brand": "Fujinon",
+      "name": "Cabrio",
+      "type": "zoom",
+      "format": "S35",
+      "description": "Fujinon Cabrio zooms"
+    },
+    {
+      "id": "fujinon_premista",
+      "brand": "Fujinon",
+      "name": "Premista",
+      "type": "zoom",
+      "format": "LF",
+      "description": "Fujinon Premista zooms"
+    },
+    {
+      "id": "cooke_varotal",
+      "brand": "Cooke",
+      "name": "Varotal",
+      "type": "zoom",
+      "format": "S35",
+      "description": "Cooke Varotal zooms"
+    },
+    {
+      "id": "cooke_anamorphic_i_2x",
+      "brand": "Cooke",
+      "name": "Anamorphic/i (2x)",
+      "type": "anamorphic",
+      "format": "S35",
+      "description": "Cooke Anamorphic/i 2x squeeze"
+    },
+    {
+      "id": "arri_master_anamorphic_2x",
+      "brand": "ARRI/ZEISS",
+      "name": "Master Anamorphic (2x)",
+      "type": "anamorphic",
+      "format": "S35",
+      "description": "ARRI/ZEISS Master Anamorphic 2x"
+    },
+    {
+      "id": "atlas_orion_2x",
+      "brand": "Atlas",
+      "name": "Orion (2x)",
+      "type": "anamorphic",
+      "format": "S35",
+      "description": "Atlas Orion 2x anamorphic"
+    },
+    {
+      "id": "hawk_v_lite_2x",
+      "brand": "Hawk",
+      "name": "V-Lite (2x)",
+      "type": "anamorphic",
+      "format": "S35",
+      "description": "Hawk V-Lite 2x anamorphic (common rental)"
+    }
+  ],
+  "lenses": [
+    {
+      "id": "arri_signature_prime__12mm__t1_8__1x",
+      "type": "prime",
+      "brand": "ARRI",
+      "series": "Signature Prime",
+      "format": "LF",
+      "mounts": [
+        "LPL",
+        "PL"
+      ],
+      "focal_length_mm": 12,
+      "max_t_stop": 1.8,
+      "squeeze": 1.0
+    },
+    {
+      "id": "arri_signature_prime__15mm__t1_8__1x",
+      "type": "prime",
+      "brand": "ARRI",
+      "series": "Signature Prime",
+      "format": "LF",
+      "mounts": [
+        "LPL",
+        "PL"
+      ],
+      "focal_length_mm": 15,
+      "max_t_stop": 1.8,
+      "squeeze": 1.0
+    },
+    {
+      "id": "arri_signature_prime__18mm__t1_8__1x",
+      "type": "prime",
+      "brand": "ARRI",
+      "series": "Signature Prime",
+      "format": "LF",
+      "mounts": [
+        "LPL",
+        "PL"
+      ],
+      "focal_length_mm": 18,
+      "max_t_stop": 1.8,
+      "squeeze": 1.0
+    },
+    {
+      "id": "arri_signature_prime__21mm__t1_8__1x",
+      "type": "prime",
+      "brand": "ARRI",
+      "series": "Signature Prime",
+      "format": "LF",
+      "mounts": [
+        "LPL",
+        "PL"
+      ],
+      "focal_length_mm": 21,
+      "max_t_stop": 1.8,
+      "squeeze": 1.0
+    },
+    {
+      "id": "arri_signature_prime__25mm__t1_8__1x",
+      "type": "prime",
+      "brand": "ARRI",
+      "series": "Signature Prime",
+      "format": "LF",
+      "mounts": [
+        "LPL",
+        "PL"
+      ],
+      "focal_length_mm": 25,
+      "max_t_stop": 1.8,
+      "squeeze": 1.0
+    },
+    {
+      "id": "arri_signature_prime__29mm__t1_8__1x",
+      "type": "prime",
+      "brand": "ARRI",
+      "series": "Signature Prime",
+      "format": "LF",
+      "mounts": [
+        "LPL",
+        "PL"
+      ],
+      "focal_length_mm": 29,
+      "max_t_stop": 1.8,
+      "squeeze": 1.0
+    },
+    {
+      "id": "arri_signature_prime__35mm__t1_8__1x",
+      "type": "prime",
+      "brand": "ARRI",
+      "series": "Signature Prime",
+      "format": "LF",
+      "mounts": [
+        "LPL",
+        "PL"
+      ],
+      "focal_length_mm": 35,
+      "max_t_stop": 1.8,
+      "squeeze": 1.0
+    },
+    {
+      "id": "arri_signature_prime__40mm__t1_8__1x",
+      "type": "prime",
+      "brand": "ARRI",
+      "series": "Signature Prime",
+      "format": "LF",
+      "mounts": [
+        "LPL",
+        "PL"
+      ],
+      "focal_length_mm": 40,
+      "max_t_stop": 1.8,
+      "squeeze": 1.0
+    },
+    {
+      "id": "arri_signature_prime__47mm__t1_8__1x",
+      "type": "prime",
+      "brand": "ARRI",
+      "series": "Signature Prime",
+      "format": "LF",
+      "mounts": [
+        "LPL",
+        "PL"
+      ],
+      "focal_length_mm": 47,
+      "max_t_stop": 1.8,
+      "squeeze": 1.0
+    },
+    {
+      "id": "arri_signature_prime__58mm__t1_8__1x",
+      "type": "prime",
+      "brand": "ARRI",
+      "series": "Signature Prime",
+      "format": "LF",
+      "mounts": [
+        "LPL",
+        "PL"
+      ],
+      "focal_length_mm": 58,
+      "max_t_stop": 1.8,
+      "squeeze": 1.0
+    },
+    {
+      "id": "arri_signature_prime__75mm__t1_8__1x",
+      "type": "prime",
+      "brand": "ARRI",
+      "series": "Signature Prime",
+      "format": "LF",
+      "mounts": [
+        "LPL",
+        "PL"
+      ],
+      "focal_length_mm": 75,
+      "max_t_stop": 1.8,
+      "squeeze": 1.0
+    },
+    {
+      "id": "arri_signature_prime__95mm__t1_8__1x",
+      "type": "prime",
+      "brand": "ARRI",
+      "series": "Signature Prime",
+      "format": "LF",
+      "mounts": [
+        "LPL",
+        "PL"
+      ],
+      "focal_length_mm": 95,
+      "max_t_stop": 1.8,
+      "squeeze": 1.0
+    },
+    {
+      "id": "arri_signature_prime__125mm__t1_8__1x",
+      "type": "prime",
+      "brand": "ARRI",
+      "series": "Signature Prime",
+      "format": "LF",
+      "mounts": [
+        "LPL",
+        "PL"
+      ],
+      "focal_length_mm": 125,
+      "max_t_stop": 1.8,
+      "squeeze": 1.0
+    },
+    {
+      "id": "arri_zeiss_master_anamorphic__25mm__t1_9__2x",
+      "type": "prime",
+      "brand": "ARRI/ZEISS",
+      "series": "Master Anamorphic",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 25,
+      "max_t_stop": 1.9,
+      "squeeze": 2.0
+    },
+    {
+      "id": "arri_zeiss_master_anamorphic__32mm__t1_9__2x",
+      "type": "prime",
+      "brand": "ARRI/ZEISS",
+      "series": "Master Anamorphic",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 32,
+      "max_t_stop": 1.9,
+      "squeeze": 2.0
+    },
+    {
+      "id": "arri_zeiss_master_anamorphic__40mm__t1_9__2x",
+      "type": "prime",
+      "brand": "ARRI/ZEISS",
+      "series": "Master Anamorphic",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 40,
+      "max_t_stop": 1.9,
+      "squeeze": 2.0
+    },
+    {
+      "id": "arri_zeiss_master_anamorphic__50mm__t1_9__2x",
+      "type": "prime",
+      "brand": "ARRI/ZEISS",
+      "series": "Master Anamorphic",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 50,
+      "max_t_stop": 1.9,
+      "squeeze": 2.0
+    },
+    {
+      "id": "arri_zeiss_master_anamorphic__75mm__t1_9__2x",
+      "type": "prime",
+      "brand": "ARRI/ZEISS",
+      "series": "Master Anamorphic",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 75,
+      "max_t_stop": 1.9,
+      "squeeze": 2.0
+    },
+    {
+      "id": "arri_zeiss_master_anamorphic__100mm__t1_9__2x",
+      "type": "prime",
+      "brand": "ARRI/ZEISS",
+      "series": "Master Anamorphic",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 100,
+      "max_t_stop": 1.9,
+      "squeeze": 2.0
+    },
+    {
+      "id": "arri_zeiss_master_prime__14mm__t1_3__1x",
+      "type": "prime",
+      "brand": "ARRI/ZEISS",
+      "series": "Master Prime",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 14,
+      "max_t_stop": 1.3,
+      "squeeze": 1.0
+    },
+    {
+      "id": "arri_zeiss_master_prime__16mm__t1_3__1x",
+      "type": "prime",
+      "brand": "ARRI/ZEISS",
+      "series": "Master Prime",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 16,
+      "max_t_stop": 1.3,
+      "squeeze": 1.0
+    },
+    {
+      "id": "arri_zeiss_master_prime__18mm__t1_3__1x",
+      "type": "prime",
+      "brand": "ARRI/ZEISS",
+      "series": "Master Prime",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 18,
+      "max_t_stop": 1.3,
+      "squeeze": 1.0
+    },
+    {
+      "id": "arri_zeiss_master_prime__21mm__t1_3__1x",
+      "type": "prime",
+      "brand": "ARRI/ZEISS",
+      "series": "Master Prime",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 21,
+      "max_t_stop": 1.3,
+      "squeeze": 1.0
+    },
+    {
+      "id": "arri_zeiss_master_prime__25mm__t1_3__1x",
+      "type": "prime",
+      "brand": "ARRI/ZEISS",
+      "series": "Master Prime",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 25,
+      "max_t_stop": 1.3,
+      "squeeze": 1.0
+    },
+    {
+      "id": "arri_zeiss_master_prime__27mm__t1_3__1x",
+      "type": "prime",
+      "brand": "ARRI/ZEISS",
+      "series": "Master Prime",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 27,
+      "max_t_stop": 1.3,
+      "squeeze": 1.0
+    },
+    {
+      "id": "arri_zeiss_master_prime__32mm__t1_3__1x",
+      "type": "prime",
+      "brand": "ARRI/ZEISS",
+      "series": "Master Prime",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 32,
+      "max_t_stop": 1.3,
+      "squeeze": 1.0
+    },
+    {
+      "id": "arri_zeiss_master_prime__35mm__t1_3__1x",
+      "type": "prime",
+      "brand": "ARRI/ZEISS",
+      "series": "Master Prime",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 35,
+      "max_t_stop": 1.3,
+      "squeeze": 1.0
+    },
+    {
+      "id": "arri_zeiss_master_prime__40mm__t1_3__1x",
+      "type": "prime",
+      "brand": "ARRI/ZEISS",
+      "series": "Master Prime",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 40,
+      "max_t_stop": 1.3,
+      "squeeze": 1.0
+    },
+    {
+      "id": "arri_zeiss_master_prime__50mm__t1_3__1x",
+      "type": "prime",
+      "brand": "ARRI/ZEISS",
+      "series": "Master Prime",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 50,
+      "max_t_stop": 1.3,
+      "squeeze": 1.0
+    },
+    {
+      "id": "arri_zeiss_master_prime__65mm__t1_3__1x",
+      "type": "prime",
+      "brand": "ARRI/ZEISS",
+      "series": "Master Prime",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 65,
+      "max_t_stop": 1.3,
+      "squeeze": 1.0
+    },
+    {
+      "id": "arri_zeiss_master_prime__75mm__t1_3__1x",
+      "type": "prime",
+      "brand": "ARRI/ZEISS",
+      "series": "Master Prime",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 75,
+      "max_t_stop": 1.3,
+      "squeeze": 1.0
+    },
+    {
+      "id": "arri_zeiss_master_prime__100mm__t1_3__1x",
+      "type": "prime",
+      "brand": "ARRI/ZEISS",
+      "series": "Master Prime",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 100,
+      "max_t_stop": 1.3,
+      "squeeze": 1.0
+    },
+    {
+      "id": "arri_zeiss_master_prime__135mm__t1_3__1x",
+      "type": "prime",
+      "brand": "ARRI/ZEISS",
+      "series": "Master Prime",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 135,
+      "max_t_stop": 1.3,
+      "squeeze": 1.0
+    },
+    {
+      "id": "angenieux_ez__15-40mm__t2__1x",
+      "type": "zoom",
+      "brand": "Angenieux",
+      "series": "EZ",
+      "format": "FF/S35",
+      "mounts": [
+        "PL",
+        "EF"
+      ],
+      "focal_length_mm_min": 15,
+      "focal_length_mm_max": 40,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "angenieux_ez__30-90mm__t2__1x",
+      "type": "zoom",
+      "brand": "Angenieux",
+      "series": "EZ",
+      "format": "FF/S35",
+      "mounts": [
+        "PL",
+        "EF"
+      ],
+      "focal_length_mm_min": 30,
+      "focal_length_mm_max": 90,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "angenieux_optimo__15-40mm__t2_6__1x",
+      "type": "zoom",
+      "brand": "Angenieux",
+      "series": "Optimo",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm_min": 15,
+      "focal_length_mm_max": 40,
+      "max_t_stop": 2.6,
+      "squeeze": 1.0
+    },
+    {
+      "id": "angenieux_optimo__24-290mm__t2_8__1x",
+      "type": "zoom",
+      "brand": "Angenieux",
+      "series": "Optimo",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm_min": 24,
+      "focal_length_mm_max": 290,
+      "max_t_stop": 2.8,
+      "squeeze": 1.0
+    },
+    {
+      "id": "angenieux_optimo__28-76mm__t2_6__1x",
+      "type": "zoom",
+      "brand": "Angenieux",
+      "series": "Optimo",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm_min": 28,
+      "focal_length_mm_max": 76,
+      "max_t_stop": 2.6,
+      "squeeze": 1.0
+    },
+    {
+      "id": "atlas_orion__32mm__t2__2x",
+      "type": "prime",
+      "brand": "Atlas",
+      "series": "Orion",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 32,
+      "max_t_stop": 2.0,
+      "squeeze": 2.0
+    },
+    {
+      "id": "atlas_orion__40mm__t2__2x",
+      "type": "prime",
+      "brand": "Atlas",
+      "series": "Orion",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 40,
+      "max_t_stop": 2.0,
+      "squeeze": 2.0
+    },
+    {
+      "id": "atlas_orion__50mm__t2__2x",
+      "type": "prime",
+      "brand": "Atlas",
+      "series": "Orion",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 50,
+      "max_t_stop": 2.0,
+      "squeeze": 2.0
+    },
+    {
+      "id": "atlas_orion__65mm__t2__2x",
+      "type": "prime",
+      "brand": "Atlas",
+      "series": "Orion",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 65,
+      "max_t_stop": 2.0,
+      "squeeze": 2.0
+    },
+    {
+      "id": "atlas_orion__80mm__t2__2x",
+      "type": "prime",
+      "brand": "Atlas",
+      "series": "Orion",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 80,
+      "max_t_stop": 2.0,
+      "squeeze": 2.0
+    },
+    {
+      "id": "atlas_orion__100mm__t2__2x",
+      "type": "prime",
+      "brand": "Atlas",
+      "series": "Orion",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 100,
+      "max_t_stop": 2.0,
+      "squeeze": 2.0
+    },
+    {
+      "id": "canon_sumire_prime__14mm__t1_3__1x",
+      "type": "prime",
+      "brand": "Canon",
+      "series": "Sumire Prime",
+      "format": "FF",
+      "mounts": [
+        "PL",
+        "EF"
+      ],
+      "focal_length_mm": 14,
+      "max_t_stop": 1.3,
+      "squeeze": 1.0
+    },
+    {
+      "id": "canon_sumire_prime__20mm__t1_3__1x",
+      "type": "prime",
+      "brand": "Canon",
+      "series": "Sumire Prime",
+      "format": "FF",
+      "mounts": [
+        "PL",
+        "EF"
+      ],
+      "focal_length_mm": 20,
+      "max_t_stop": 1.3,
+      "squeeze": 1.0
+    },
+    {
+      "id": "canon_sumire_prime__24mm__t1_3__1x",
+      "type": "prime",
+      "brand": "Canon",
+      "series": "Sumire Prime",
+      "format": "FF",
+      "mounts": [
+        "PL",
+        "EF"
+      ],
+      "focal_length_mm": 24,
+      "max_t_stop": 1.3,
+      "squeeze": 1.0
+    },
+    {
+      "id": "canon_sumire_prime__35mm__t1_3__1x",
+      "type": "prime",
+      "brand": "Canon",
+      "series": "Sumire Prime",
+      "format": "FF",
+      "mounts": [
+        "PL",
+        "EF"
+      ],
+      "focal_length_mm": 35,
+      "max_t_stop": 1.3,
+      "squeeze": 1.0
+    },
+    {
+      "id": "canon_sumire_prime__50mm__t1_3__1x",
+      "type": "prime",
+      "brand": "Canon",
+      "series": "Sumire Prime",
+      "format": "FF",
+      "mounts": [
+        "PL",
+        "EF"
+      ],
+      "focal_length_mm": 50,
+      "max_t_stop": 1.3,
+      "squeeze": 1.0
+    },
+    {
+      "id": "canon_sumire_prime__85mm__t1_3__1x",
+      "type": "prime",
+      "brand": "Canon",
+      "series": "Sumire Prime",
+      "format": "FF",
+      "mounts": [
+        "PL",
+        "EF"
+      ],
+      "focal_length_mm": 85,
+      "max_t_stop": 1.3,
+      "squeeze": 1.0
+    },
+    {
+      "id": "canon_sumire_prime__135mm__t1_3__1x",
+      "type": "prime",
+      "brand": "Canon",
+      "series": "Sumire Prime",
+      "format": "FF",
+      "mounts": [
+        "PL",
+        "EF"
+      ],
+      "focal_length_mm": 135,
+      "max_t_stop": 1.3,
+      "squeeze": 1.0
+    },
+    {
+      "id": "cooke_anamorphic_i__25mm__t2_3__2x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "Anamorphic/i",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 25,
+      "max_t_stop": 2.3,
+      "squeeze": 2.0
+    },
+    {
+      "id": "cooke_anamorphic_i__32mm__t2_3__2x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "Anamorphic/i",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 32,
+      "max_t_stop": 2.3,
+      "squeeze": 2.0
+    },
+    {
+      "id": "cooke_anamorphic_i__40mm__t2_3__2x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "Anamorphic/i",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 40,
+      "max_t_stop": 2.3,
+      "squeeze": 2.0
+    },
+    {
+      "id": "cooke_anamorphic_i__50mm__t2_3__2x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "Anamorphic/i",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 50,
+      "max_t_stop": 2.3,
+      "squeeze": 2.0
+    },
+    {
+      "id": "cooke_anamorphic_i__75mm__t2_3__2x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "Anamorphic/i",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 75,
+      "max_t_stop": 2.3,
+      "squeeze": 2.0
+    },
+    {
+      "id": "cooke_anamorphic_i__100mm__t2_3__2x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "Anamorphic/i",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 100,
+      "max_t_stop": 2.3,
+      "squeeze": 2.0
+    },
+    {
+      "id": "cooke_s4_i__12mm__t2__1x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "S4/i",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 12,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "cooke_s4_i__14mm__t2__1x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "S4/i",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 14,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "cooke_s4_i__16mm__t2__1x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "S4/i",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 16,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "cooke_s4_i__18mm__t2__1x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "S4/i",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 18,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "cooke_s4_i__21mm__t2__1x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "S4/i",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 21,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "cooke_s4_i__25mm__t2__1x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "S4/i",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 25,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "cooke_s4_i__27mm__t2__1x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "S4/i",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 27,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "cooke_s4_i__32mm__t2__1x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "S4/i",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 32,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "cooke_s4_i__40mm__t2__1x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "S4/i",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 40,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "cooke_s4_i__50mm__t2__1x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "S4/i",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 50,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "cooke_s4_i__65mm__t2__1x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "S4/i",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 65,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "cooke_s4_i__75mm__t2__1x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "S4/i",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 75,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "cooke_s4_i__100mm__t2__1x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "S4/i",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 100,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "cooke_s7_i__16mm__t2__1x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "S7/i",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 16,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "cooke_s7_i__18mm__t2__1x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "S7/i",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 18,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "cooke_s7_i__21mm__t2__1x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "S7/i",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 21,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "cooke_s7_i__25mm__t2__1x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "S7/i",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 25,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "cooke_s7_i__27mm__t2__1x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "S7/i",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 27,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "cooke_s7_i__32mm__t2__1x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "S7/i",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 32,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "cooke_s7_i__40mm__t2__1x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "S7/i",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 40,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "cooke_s7_i__50mm__t2__1x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "S7/i",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 50,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "cooke_s7_i__65mm__t2__1x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "S7/i",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 65,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "cooke_s7_i__75mm__t2__1x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "S7/i",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 75,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "cooke_s7_i__100mm__t2__1x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "S7/i",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 100,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "cooke_s7_i__135mm__t2__1x",
+      "type": "prime",
+      "brand": "Cooke",
+      "series": "S7/i",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 135,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "cooke_varotal__20-60mm__t2_9__1x",
+      "type": "zoom",
+      "brand": "Cooke",
+      "series": "Varotal",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm_min": 20,
+      "focal_length_mm_max": 60,
+      "max_t_stop": 2.9,
+      "squeeze": 1.0
+    },
+    {
+      "id": "cooke_varotal__25-250mm__t3_7__1x",
+      "type": "zoom",
+      "brand": "Cooke",
+      "series": "Varotal",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm_min": 25,
+      "focal_length_mm_max": 250,
+      "max_t_stop": 3.7,
+      "squeeze": 1.0
+    },
+    {
+      "id": "fujinon_cabrio__19-90mm__t2_9__1x",
+      "type": "zoom",
+      "brand": "Fujinon",
+      "series": "Cabrio",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm_min": 19,
+      "focal_length_mm_max": 90,
+      "max_t_stop": 2.9,
+      "squeeze": 1.0
+    },
+    {
+      "id": "fujinon_cabrio__85-300mm__t2_9__1x",
+      "type": "zoom",
+      "brand": "Fujinon",
+      "series": "Cabrio",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm_min": 85,
+      "focal_length_mm_max": 300,
+      "max_t_stop": 2.9,
+      "squeeze": 1.0
+    },
+    {
+      "id": "fujinon_premista__28-100mm__t2_9__1x",
+      "type": "zoom",
+      "brand": "Fujinon",
+      "series": "Premista",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm_min": 28,
+      "focal_length_mm_max": 100,
+      "max_t_stop": 2.9,
+      "squeeze": 1.0
+    },
+    {
+      "id": "fujinon_premista__80-250mm__t2_9__1x",
+      "type": "zoom",
+      "brand": "Fujinon",
+      "series": "Premista",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm_min": 80,
+      "focal_length_mm_max": 250,
+      "max_t_stop": 2.9,
+      "squeeze": 1.0
+    },
+    {
+      "id": "hawk_v_lite__28mm__t2_2__2x",
+      "type": "prime",
+      "brand": "Hawk",
+      "series": "V-Lite",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 28,
+      "max_t_stop": 2.2,
+      "squeeze": 2.0
+    },
+    {
+      "id": "hawk_v_lite__35mm__t2_2__2x",
+      "type": "prime",
+      "brand": "Hawk",
+      "series": "V-Lite",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 35,
+      "max_t_stop": 2.2,
+      "squeeze": 2.0
+    },
+    {
+      "id": "hawk_v_lite__45mm__t2_2__2x",
+      "type": "prime",
+      "brand": "Hawk",
+      "series": "V-Lite",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 45,
+      "max_t_stop": 2.2,
+      "squeeze": 2.0
+    },
+    {
+      "id": "hawk_v_lite__55mm__t2_2__2x",
+      "type": "prime",
+      "brand": "Hawk",
+      "series": "V-Lite",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 55,
+      "max_t_stop": 2.2,
+      "squeeze": 2.0
+    },
+    {
+      "id": "hawk_v_lite__75mm__t2_2__2x",
+      "type": "prime",
+      "brand": "Hawk",
+      "series": "V-Lite",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 75,
+      "max_t_stop": 2.2,
+      "squeeze": 2.0
+    },
+    {
+      "id": "hawk_v_lite__100mm__t2_2__2x",
+      "type": "prime",
+      "brand": "Hawk",
+      "series": "V-Lite",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 100,
+      "max_t_stop": 2.2,
+      "squeeze": 2.0
+    },
+    {
+      "id": "leica_summicron_c__15mm__t2__1x",
+      "type": "prime",
+      "brand": "Leica",
+      "series": "Summicron-C",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 15,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "leica_summicron_c__18mm__t2__1x",
+      "type": "prime",
+      "brand": "Leica",
+      "series": "Summicron-C",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 18,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "leica_summicron_c__21mm__t2__1x",
+      "type": "prime",
+      "brand": "Leica",
+      "series": "Summicron-C",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 21,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "leica_summicron_c__25mm__t2__1x",
+      "type": "prime",
+      "brand": "Leica",
+      "series": "Summicron-C",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 25,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "leica_summicron_c__29mm__t2__1x",
+      "type": "prime",
+      "brand": "Leica",
+      "series": "Summicron-C",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 29,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "leica_summicron_c__35mm__t2__1x",
+      "type": "prime",
+      "brand": "Leica",
+      "series": "Summicron-C",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 35,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "leica_summicron_c__40mm__t2__1x",
+      "type": "prime",
+      "brand": "Leica",
+      "series": "Summicron-C",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 40,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "leica_summicron_c__50mm__t2__1x",
+      "type": "prime",
+      "brand": "Leica",
+      "series": "Summicron-C",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 50,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "leica_summicron_c__75mm__t2__1x",
+      "type": "prime",
+      "brand": "Leica",
+      "series": "Summicron-C",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 75,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "leica_summicron_c__90mm__t2__1x",
+      "type": "prime",
+      "brand": "Leica",
+      "series": "Summicron-C",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 90,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "leica_summicron_c__135mm__t2__1x",
+      "type": "prime",
+      "brand": "Leica",
+      "series": "Summicron-C",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 135,
+      "max_t_stop": 2.0,
+      "squeeze": 1.0
+    },
+    {
+      "id": "sigma_cine_ff_high_speed__14mm__t1_5__1x",
+      "type": "prime",
+      "brand": "Sigma",
+      "series": "Cine FF High Speed",
+      "format": "FF",
+      "mounts": [
+        "PL",
+        "EF"
+      ],
+      "focal_length_mm": 14,
+      "max_t_stop": 1.5,
+      "squeeze": 1.0
+    },
+    {
+      "id": "sigma_cine_ff_high_speed__20mm__t1_5__1x",
+      "type": "prime",
+      "brand": "Sigma",
+      "series": "Cine FF High Speed",
+      "format": "FF",
+      "mounts": [
+        "PL",
+        "EF"
+      ],
+      "focal_length_mm": 20,
+      "max_t_stop": 1.5,
+      "squeeze": 1.0
+    },
+    {
+      "id": "sigma_cine_ff_high_speed__24mm__t1_5__1x",
+      "type": "prime",
+      "brand": "Sigma",
+      "series": "Cine FF High Speed",
+      "format": "FF",
+      "mounts": [
+        "PL",
+        "EF"
+      ],
+      "focal_length_mm": 24,
+      "max_t_stop": 1.5,
+      "squeeze": 1.0
+    },
+    {
+      "id": "sigma_cine_ff_high_speed__28mm__t1_5__1x",
+      "type": "prime",
+      "brand": "Sigma",
+      "series": "Cine FF High Speed",
+      "format": "FF",
+      "mounts": [
+        "PL",
+        "EF"
+      ],
+      "focal_length_mm": 28,
+      "max_t_stop": 1.5,
+      "squeeze": 1.0
+    },
+    {
+      "id": "sigma_cine_ff_high_speed__35mm__t1_5__1x",
+      "type": "prime",
+      "brand": "Sigma",
+      "series": "Cine FF High Speed",
+      "format": "FF",
+      "mounts": [
+        "PL",
+        "EF"
+      ],
+      "focal_length_mm": 35,
+      "max_t_stop": 1.5,
+      "squeeze": 1.0
+    },
+    {
+      "id": "sigma_cine_ff_high_speed__40mm__t1_5__1x",
+      "type": "prime",
+      "brand": "Sigma",
+      "series": "Cine FF High Speed",
+      "format": "FF",
+      "mounts": [
+        "PL",
+        "EF"
+      ],
+      "focal_length_mm": 40,
+      "max_t_stop": 1.5,
+      "squeeze": 1.0
+    },
+    {
+      "id": "sigma_cine_ff_high_speed__50mm__t1_5__1x",
+      "type": "prime",
+      "brand": "Sigma",
+      "series": "Cine FF High Speed",
+      "format": "FF",
+      "mounts": [
+        "PL",
+        "EF"
+      ],
+      "focal_length_mm": 50,
+      "max_t_stop": 1.5,
+      "squeeze": 1.0
+    },
+    {
+      "id": "sigma_cine_ff_high_speed__85mm__t1_5__1x",
+      "type": "prime",
+      "brand": "Sigma",
+      "series": "Cine FF High Speed",
+      "format": "FF",
+      "mounts": [
+        "PL",
+        "EF"
+      ],
+      "focal_length_mm": 85,
+      "max_t_stop": 1.5,
+      "squeeze": 1.0
+    },
+    {
+      "id": "sigma_cine_ff_high_speed__105mm__t1_5__1x",
+      "type": "prime",
+      "brand": "Sigma",
+      "series": "Cine FF High Speed",
+      "format": "FF",
+      "mounts": [
+        "PL",
+        "EF"
+      ],
+      "focal_length_mm": 105,
+      "max_t_stop": 1.5,
+      "squeeze": 1.0
+    },
+    {
+      "id": "sigma_cine_ff_high_speed__135mm__t1_5__1x",
+      "type": "prime",
+      "brand": "Sigma",
+      "series": "Cine FF High Speed",
+      "format": "FF",
+      "mounts": [
+        "PL",
+        "EF"
+      ],
+      "focal_length_mm": 135,
+      "max_t_stop": 1.5,
+      "squeeze": 1.0
+    },
+    {
+      "id": "zeiss_supreme_prime__15mm__t1_5__1x",
+      "type": "prime",
+      "brand": "ZEISS",
+      "series": "Supreme Prime",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 15,
+      "max_t_stop": 1.5,
+      "squeeze": 1.0
+    },
+    {
+      "id": "zeiss_supreme_prime__18mm__t1_5__1x",
+      "type": "prime",
+      "brand": "ZEISS",
+      "series": "Supreme Prime",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 18,
+      "max_t_stop": 1.5,
+      "squeeze": 1.0
+    },
+    {
+      "id": "zeiss_supreme_prime__21mm__t1_5__1x",
+      "type": "prime",
+      "brand": "ZEISS",
+      "series": "Supreme Prime",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 21,
+      "max_t_stop": 1.5,
+      "squeeze": 1.0
+    },
+    {
+      "id": "zeiss_supreme_prime__25mm__t1_5__1x",
+      "type": "prime",
+      "brand": "ZEISS",
+      "series": "Supreme Prime",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 25,
+      "max_t_stop": 1.5,
+      "squeeze": 1.0
+    },
+    {
+      "id": "zeiss_supreme_prime__29mm__t1_5__1x",
+      "type": "prime",
+      "brand": "ZEISS",
+      "series": "Supreme Prime",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 29,
+      "max_t_stop": 1.5,
+      "squeeze": 1.0
+    },
+    {
+      "id": "zeiss_supreme_prime__35mm__t1_5__1x",
+      "type": "prime",
+      "brand": "ZEISS",
+      "series": "Supreme Prime",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 35,
+      "max_t_stop": 1.5,
+      "squeeze": 1.0
+    },
+    {
+      "id": "zeiss_supreme_prime__40mm__t1_5__1x",
+      "type": "prime",
+      "brand": "ZEISS",
+      "series": "Supreme Prime",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 40,
+      "max_t_stop": 1.5,
+      "squeeze": 1.0
+    },
+    {
+      "id": "zeiss_supreme_prime__50mm__t1_5__1x",
+      "type": "prime",
+      "brand": "ZEISS",
+      "series": "Supreme Prime",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 50,
+      "max_t_stop": 1.5,
+      "squeeze": 1.0
+    },
+    {
+      "id": "zeiss_supreme_prime__65mm__t1_5__1x",
+      "type": "prime",
+      "brand": "ZEISS",
+      "series": "Supreme Prime",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 65,
+      "max_t_stop": 1.5,
+      "squeeze": 1.0
+    },
+    {
+      "id": "zeiss_supreme_prime__85mm__t1_5__1x",
+      "type": "prime",
+      "brand": "ZEISS",
+      "series": "Supreme Prime",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 85,
+      "max_t_stop": 1.5,
+      "squeeze": 1.0
+    },
+    {
+      "id": "zeiss_supreme_prime__100mm__t1_5__1x",
+      "type": "prime",
+      "brand": "ZEISS",
+      "series": "Supreme Prime",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 100,
+      "max_t_stop": 1.5,
+      "squeeze": 1.0
+    },
+    {
+      "id": "zeiss_supreme_prime__135mm__t1_5__1x",
+      "type": "prime",
+      "brand": "ZEISS",
+      "series": "Supreme Prime",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 135,
+      "max_t_stop": 1.5,
+      "squeeze": 1.0
+    },
+    {
+      "id": "zeiss_ultra_prime__12mm__t1_9__1x",
+      "type": "prime",
+      "brand": "ZEISS",
+      "series": "Ultra Prime",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 12,
+      "max_t_stop": 1.9,
+      "squeeze": 1.0
+    },
+    {
+      "id": "zeiss_ultra_prime__14mm__t1_9__1x",
+      "type": "prime",
+      "brand": "ZEISS",
+      "series": "Ultra Prime",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 14,
+      "max_t_stop": 1.9,
+      "squeeze": 1.0
+    },
+    {
+      "id": "zeiss_ultra_prime__16mm__t1_9__1x",
+      "type": "prime",
+      "brand": "ZEISS",
+      "series": "Ultra Prime",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 16,
+      "max_t_stop": 1.9,
+      "squeeze": 1.0
+    },
+    {
+      "id": "zeiss_ultra_prime__20mm__t1_9__1x",
+      "type": "prime",
+      "brand": "ZEISS",
+      "series": "Ultra Prime",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 20,
+      "max_t_stop": 1.9,
+      "squeeze": 1.0
+    },
+    {
+      "id": "zeiss_ultra_prime__24mm__t1_9__1x",
+      "type": "prime",
+      "brand": "ZEISS",
+      "series": "Ultra Prime",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 24,
+      "max_t_stop": 1.9,
+      "squeeze": 1.0
+    },
+    {
+      "id": "zeiss_ultra_prime__28mm__t1_9__1x",
+      "type": "prime",
+      "brand": "ZEISS",
+      "series": "Ultra Prime",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 28,
+      "max_t_stop": 1.9,
+      "squeeze": 1.0
+    },
+    {
+      "id": "zeiss_ultra_prime__32mm__t1_9__1x",
+      "type": "prime",
+      "brand": "ZEISS",
+      "series": "Ultra Prime",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 32,
+      "max_t_stop": 1.9,
+      "squeeze": 1.0
+    },
+    {
+      "id": "zeiss_ultra_prime__40mm__t1_9__1x",
+      "type": "prime",
+      "brand": "ZEISS",
+      "series": "Ultra Prime",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 40,
+      "max_t_stop": 1.9,
+      "squeeze": 1.0
+    },
+    {
+      "id": "zeiss_ultra_prime__50mm__t1_9__1x",
+      "type": "prime",
+      "brand": "ZEISS",
+      "series": "Ultra Prime",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 50,
+      "max_t_stop": 1.9,
+      "squeeze": 1.0
+    },
+    {
+      "id": "zeiss_ultra_prime__85mm__t1_9__1x",
+      "type": "prime",
+      "brand": "ZEISS",
+      "series": "Ultra Prime",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 85,
+      "max_t_stop": 1.9,
+      "squeeze": 1.0
+    },
+    {
+      "id": "zeiss_ultra_prime__100mm__t1_9__1x",
+      "type": "prime",
+      "brand": "ZEISS",
+      "series": "Ultra Prime",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 100,
+      "max_t_stop": 1.9,
+      "squeeze": 1.0
+    },
+    {
+      "id": "zeiss_ultra_prime__135mm__t1_9__1x",
+      "type": "prime",
+      "brand": "ZEISS",
+      "series": "Ultra Prime",
+      "format": "S35",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 135,
+      "max_t_stop": 1.9,
+      "squeeze": 1.0
+    }
+  ],
+  "lens_pack_items": [
+    {
+      "pack_id": "arri_signature_primes",
+      "lens_id": "arri_signature_prime__12mm__t1_8__1x",
+      "sort_order": 12
+    },
+    {
+      "pack_id": "arri_signature_primes",
+      "lens_id": "arri_signature_prime__15mm__t1_8__1x",
+      "sort_order": 15
+    },
+    {
+      "pack_id": "arri_signature_primes",
+      "lens_id": "arri_signature_prime__18mm__t1_8__1x",
+      "sort_order": 18
+    },
+    {
+      "pack_id": "arri_signature_primes",
+      "lens_id": "arri_signature_prime__21mm__t1_8__1x",
+      "sort_order": 21
+    },
+    {
+      "pack_id": "arri_signature_primes",
+      "lens_id": "arri_signature_prime__25mm__t1_8__1x",
+      "sort_order": 25
+    },
+    {
+      "pack_id": "arri_signature_primes",
+      "lens_id": "arri_signature_prime__29mm__t1_8__1x",
+      "sort_order": 29
+    },
+    {
+      "pack_id": "arri_signature_primes",
+      "lens_id": "arri_signature_prime__35mm__t1_8__1x",
+      "sort_order": 35
+    },
+    {
+      "pack_id": "arri_signature_primes",
+      "lens_id": "arri_signature_prime__40mm__t1_8__1x",
+      "sort_order": 40
+    },
+    {
+      "pack_id": "arri_signature_primes",
+      "lens_id": "arri_signature_prime__47mm__t1_8__1x",
+      "sort_order": 47
+    },
+    {
+      "pack_id": "arri_signature_primes",
+      "lens_id": "arri_signature_prime__58mm__t1_8__1x",
+      "sort_order": 58
+    },
+    {
+      "pack_id": "arri_signature_primes",
+      "lens_id": "arri_signature_prime__75mm__t1_8__1x",
+      "sort_order": 75
+    },
+    {
+      "pack_id": "arri_signature_primes",
+      "lens_id": "arri_signature_prime__95mm__t1_8__1x",
+      "sort_order": 95
+    },
+    {
+      "pack_id": "arri_signature_primes",
+      "lens_id": "arri_signature_prime__125mm__t1_8__1x",
+      "sort_order": 125
+    },
+    {
+      "pack_id": "zeiss_supreme_primes",
+      "lens_id": "zeiss_supreme_prime__15mm__t1_5__1x",
+      "sort_order": 15
+    },
+    {
+      "pack_id": "zeiss_supreme_primes",
+      "lens_id": "zeiss_supreme_prime__18mm__t1_5__1x",
+      "sort_order": 18
+    },
+    {
+      "pack_id": "zeiss_supreme_primes",
+      "lens_id": "zeiss_supreme_prime__21mm__t1_5__1x",
+      "sort_order": 21
+    },
+    {
+      "pack_id": "zeiss_supreme_primes",
+      "lens_id": "zeiss_supreme_prime__25mm__t1_5__1x",
+      "sort_order": 25
+    },
+    {
+      "pack_id": "zeiss_supreme_primes",
+      "lens_id": "zeiss_supreme_prime__29mm__t1_5__1x",
+      "sort_order": 29
+    },
+    {
+      "pack_id": "zeiss_supreme_primes",
+      "lens_id": "zeiss_supreme_prime__35mm__t1_5__1x",
+      "sort_order": 35
+    },
+    {
+      "pack_id": "zeiss_supreme_primes",
+      "lens_id": "zeiss_supreme_prime__40mm__t1_5__1x",
+      "sort_order": 40
+    },
+    {
+      "pack_id": "zeiss_supreme_primes",
+      "lens_id": "zeiss_supreme_prime__50mm__t1_5__1x",
+      "sort_order": 50
+    },
+    {
+      "pack_id": "zeiss_supreme_primes",
+      "lens_id": "zeiss_supreme_prime__65mm__t1_5__1x",
+      "sort_order": 65
+    },
+    {
+      "pack_id": "zeiss_supreme_primes",
+      "lens_id": "zeiss_supreme_prime__85mm__t1_5__1x",
+      "sort_order": 85
+    },
+    {
+      "pack_id": "zeiss_supreme_primes",
+      "lens_id": "zeiss_supreme_prime__100mm__t1_5__1x",
+      "sort_order": 100
+    },
+    {
+      "pack_id": "zeiss_supreme_primes",
+      "lens_id": "zeiss_supreme_prime__135mm__t1_5__1x",
+      "sort_order": 135
+    },
+    {
+      "pack_id": "arri_master_primes",
+      "lens_id": "arri_zeiss_master_prime__14mm__t1_3__1x",
+      "sort_order": 14
+    },
+    {
+      "pack_id": "arri_master_primes",
+      "lens_id": "arri_zeiss_master_prime__16mm__t1_3__1x",
+      "sort_order": 16
+    },
+    {
+      "pack_id": "arri_master_primes",
+      "lens_id": "arri_zeiss_master_prime__18mm__t1_3__1x",
+      "sort_order": 18
+    },
+    {
+      "pack_id": "arri_master_primes",
+      "lens_id": "arri_zeiss_master_prime__21mm__t1_3__1x",
+      "sort_order": 21
+    },
+    {
+      "pack_id": "arri_master_primes",
+      "lens_id": "arri_zeiss_master_prime__25mm__t1_3__1x",
+      "sort_order": 25
+    },
+    {
+      "pack_id": "arri_master_primes",
+      "lens_id": "arri_zeiss_master_prime__27mm__t1_3__1x",
+      "sort_order": 27
+    },
+    {
+      "pack_id": "arri_master_primes",
+      "lens_id": "arri_zeiss_master_prime__32mm__t1_3__1x",
+      "sort_order": 32
+    },
+    {
+      "pack_id": "arri_master_primes",
+      "lens_id": "arri_zeiss_master_prime__35mm__t1_3__1x",
+      "sort_order": 35
+    },
+    {
+      "pack_id": "arri_master_primes",
+      "lens_id": "arri_zeiss_master_prime__40mm__t1_3__1x",
+      "sort_order": 40
+    },
+    {
+      "pack_id": "arri_master_primes",
+      "lens_id": "arri_zeiss_master_prime__50mm__t1_3__1x",
+      "sort_order": 50
+    },
+    {
+      "pack_id": "arri_master_primes",
+      "lens_id": "arri_zeiss_master_prime__65mm__t1_3__1x",
+      "sort_order": 65
+    },
+    {
+      "pack_id": "arri_master_primes",
+      "lens_id": "arri_zeiss_master_prime__75mm__t1_3__1x",
+      "sort_order": 75
+    },
+    {
+      "pack_id": "arri_master_primes",
+      "lens_id": "arri_zeiss_master_prime__100mm__t1_3__1x",
+      "sort_order": 100
+    },
+    {
+      "pack_id": "arri_master_primes",
+      "lens_id": "arri_zeiss_master_prime__135mm__t1_3__1x",
+      "sort_order": 135
+    },
+    {
+      "pack_id": "zeiss_ultra_primes",
+      "lens_id": "zeiss_ultra_prime__12mm__t1_9__1x",
+      "sort_order": 12
+    },
+    {
+      "pack_id": "zeiss_ultra_primes",
+      "lens_id": "zeiss_ultra_prime__14mm__t1_9__1x",
+      "sort_order": 14
+    },
+    {
+      "pack_id": "zeiss_ultra_primes",
+      "lens_id": "zeiss_ultra_prime__16mm__t1_9__1x",
+      "sort_order": 16
+    },
+    {
+      "pack_id": "zeiss_ultra_primes",
+      "lens_id": "zeiss_ultra_prime__20mm__t1_9__1x",
+      "sort_order": 20
+    },
+    {
+      "pack_id": "zeiss_ultra_primes",
+      "lens_id": "zeiss_ultra_prime__24mm__t1_9__1x",
+      "sort_order": 24
+    },
+    {
+      "pack_id": "zeiss_ultra_primes",
+      "lens_id": "zeiss_ultra_prime__28mm__t1_9__1x",
+      "sort_order": 28
+    },
+    {
+      "pack_id": "zeiss_ultra_primes",
+      "lens_id": "zeiss_ultra_prime__32mm__t1_9__1x",
+      "sort_order": 32
+    },
+    {
+      "pack_id": "zeiss_ultra_primes",
+      "lens_id": "zeiss_ultra_prime__40mm__t1_9__1x",
+      "sort_order": 40
+    },
+    {
+      "pack_id": "zeiss_ultra_primes",
+      "lens_id": "zeiss_ultra_prime__50mm__t1_9__1x",
+      "sort_order": 50
+    },
+    {
+      "pack_id": "zeiss_ultra_primes",
+      "lens_id": "zeiss_ultra_prime__85mm__t1_9__1x",
+      "sort_order": 85
+    },
+    {
+      "pack_id": "zeiss_ultra_primes",
+      "lens_id": "zeiss_ultra_prime__100mm__t1_9__1x",
+      "sort_order": 100
+    },
+    {
+      "pack_id": "zeiss_ultra_primes",
+      "lens_id": "zeiss_ultra_prime__135mm__t1_9__1x",
+      "sort_order": 135
+    },
+    {
+      "pack_id": "cooke_s4_i",
+      "lens_id": "cooke_s4_i__12mm__t2__1x",
+      "sort_order": 12
+    },
+    {
+      "pack_id": "cooke_s4_i",
+      "lens_id": "cooke_s4_i__14mm__t2__1x",
+      "sort_order": 14
+    },
+    {
+      "pack_id": "cooke_s4_i",
+      "lens_id": "cooke_s4_i__16mm__t2__1x",
+      "sort_order": 16
+    },
+    {
+      "pack_id": "cooke_s4_i",
+      "lens_id": "cooke_s4_i__18mm__t2__1x",
+      "sort_order": 18
+    },
+    {
+      "pack_id": "cooke_s4_i",
+      "lens_id": "cooke_s4_i__21mm__t2__1x",
+      "sort_order": 21
+    },
+    {
+      "pack_id": "cooke_s4_i",
+      "lens_id": "cooke_s4_i__25mm__t2__1x",
+      "sort_order": 25
+    },
+    {
+      "pack_id": "cooke_s4_i",
+      "lens_id": "cooke_s4_i__27mm__t2__1x",
+      "sort_order": 27
+    },
+    {
+      "pack_id": "cooke_s4_i",
+      "lens_id": "cooke_s4_i__32mm__t2__1x",
+      "sort_order": 32
+    },
+    {
+      "pack_id": "cooke_s4_i",
+      "lens_id": "cooke_s4_i__40mm__t2__1x",
+      "sort_order": 40
+    },
+    {
+      "pack_id": "cooke_s4_i",
+      "lens_id": "cooke_s4_i__50mm__t2__1x",
+      "sort_order": 50
+    },
+    {
+      "pack_id": "cooke_s4_i",
+      "lens_id": "cooke_s4_i__65mm__t2__1x",
+      "sort_order": 65
+    },
+    {
+      "pack_id": "cooke_s4_i",
+      "lens_id": "cooke_s4_i__75mm__t2__1x",
+      "sort_order": 75
+    },
+    {
+      "pack_id": "cooke_s4_i",
+      "lens_id": "cooke_s4_i__100mm__t2__1x",
+      "sort_order": 100
+    },
+    {
+      "pack_id": "cooke_s7_i",
+      "lens_id": "cooke_s7_i__16mm__t2__1x",
+      "sort_order": 16
+    },
+    {
+      "pack_id": "cooke_s7_i",
+      "lens_id": "cooke_s7_i__18mm__t2__1x",
+      "sort_order": 18
+    },
+    {
+      "pack_id": "cooke_s7_i",
+      "lens_id": "cooke_s7_i__21mm__t2__1x",
+      "sort_order": 21
+    },
+    {
+      "pack_id": "cooke_s7_i",
+      "lens_id": "cooke_s7_i__25mm__t2__1x",
+      "sort_order": 25
+    },
+    {
+      "pack_id": "cooke_s7_i",
+      "lens_id": "cooke_s7_i__27mm__t2__1x",
+      "sort_order": 27
+    },
+    {
+      "pack_id": "cooke_s7_i",
+      "lens_id": "cooke_s7_i__32mm__t2__1x",
+      "sort_order": 32
+    },
+    {
+      "pack_id": "cooke_s7_i",
+      "lens_id": "cooke_s7_i__40mm__t2__1x",
+      "sort_order": 40
+    },
+    {
+      "pack_id": "cooke_s7_i",
+      "lens_id": "cooke_s7_i__50mm__t2__1x",
+      "sort_order": 50
+    },
+    {
+      "pack_id": "cooke_s7_i",
+      "lens_id": "cooke_s7_i__65mm__t2__1x",
+      "sort_order": 65
+    },
+    {
+      "pack_id": "cooke_s7_i",
+      "lens_id": "cooke_s7_i__75mm__t2__1x",
+      "sort_order": 75
+    },
+    {
+      "pack_id": "cooke_s7_i",
+      "lens_id": "cooke_s7_i__100mm__t2__1x",
+      "sort_order": 100
+    },
+    {
+      "pack_id": "cooke_s7_i",
+      "lens_id": "cooke_s7_i__135mm__t2__1x",
+      "sort_order": 135
+    },
+    {
+      "pack_id": "leica_summicron_c",
+      "lens_id": "leica_summicron_c__15mm__t2__1x",
+      "sort_order": 15
+    },
+    {
+      "pack_id": "leica_summicron_c",
+      "lens_id": "leica_summicron_c__18mm__t2__1x",
+      "sort_order": 18
+    },
+    {
+      "pack_id": "leica_summicron_c",
+      "lens_id": "leica_summicron_c__21mm__t2__1x",
+      "sort_order": 21
+    },
+    {
+      "pack_id": "leica_summicron_c",
+      "lens_id": "leica_summicron_c__25mm__t2__1x",
+      "sort_order": 25
+    },
+    {
+      "pack_id": "leica_summicron_c",
+      "lens_id": "leica_summicron_c__29mm__t2__1x",
+      "sort_order": 29
+    },
+    {
+      "pack_id": "leica_summicron_c",
+      "lens_id": "leica_summicron_c__35mm__t2__1x",
+      "sort_order": 35
+    },
+    {
+      "pack_id": "leica_summicron_c",
+      "lens_id": "leica_summicron_c__40mm__t2__1x",
+      "sort_order": 40
+    },
+    {
+      "pack_id": "leica_summicron_c",
+      "lens_id": "leica_summicron_c__50mm__t2__1x",
+      "sort_order": 50
+    },
+    {
+      "pack_id": "leica_summicron_c",
+      "lens_id": "leica_summicron_c__75mm__t2__1x",
+      "sort_order": 75
+    },
+    {
+      "pack_id": "leica_summicron_c",
+      "lens_id": "leica_summicron_c__90mm__t2__1x",
+      "sort_order": 90
+    },
+    {
+      "pack_id": "leica_summicron_c",
+      "lens_id": "leica_summicron_c__135mm__t2__1x",
+      "sort_order": 135
+    },
+    {
+      "pack_id": "canon_sumire_primes",
+      "lens_id": "canon_sumire_prime__14mm__t1_3__1x",
+      "sort_order": 14
+    },
+    {
+      "pack_id": "canon_sumire_primes",
+      "lens_id": "canon_sumire_prime__20mm__t1_3__1x",
+      "sort_order": 20
+    },
+    {
+      "pack_id": "canon_sumire_primes",
+      "lens_id": "canon_sumire_prime__24mm__t1_3__1x",
+      "sort_order": 24
+    },
+    {
+      "pack_id": "canon_sumire_primes",
+      "lens_id": "canon_sumire_prime__35mm__t1_3__1x",
+      "sort_order": 35
+    },
+    {
+      "pack_id": "canon_sumire_primes",
+      "lens_id": "canon_sumire_prime__50mm__t1_3__1x",
+      "sort_order": 50
+    },
+    {
+      "pack_id": "canon_sumire_primes",
+      "lens_id": "canon_sumire_prime__85mm__t1_3__1x",
+      "sort_order": 85
+    },
+    {
+      "pack_id": "canon_sumire_primes",
+      "lens_id": "canon_sumire_prime__135mm__t1_3__1x",
+      "sort_order": 135
+    },
+    {
+      "pack_id": "sigma_cine_ff_hs",
+      "lens_id": "sigma_cine_ff_high_speed__14mm__t1_5__1x",
+      "sort_order": 14
+    },
+    {
+      "pack_id": "sigma_cine_ff_hs",
+      "lens_id": "sigma_cine_ff_high_speed__20mm__t1_5__1x",
+      "sort_order": 20
+    },
+    {
+      "pack_id": "sigma_cine_ff_hs",
+      "lens_id": "sigma_cine_ff_high_speed__24mm__t1_5__1x",
+      "sort_order": 24
+    },
+    {
+      "pack_id": "sigma_cine_ff_hs",
+      "lens_id": "sigma_cine_ff_high_speed__28mm__t1_5__1x",
+      "sort_order": 28
+    },
+    {
+      "pack_id": "sigma_cine_ff_hs",
+      "lens_id": "sigma_cine_ff_high_speed__35mm__t1_5__1x",
+      "sort_order": 35
+    },
+    {
+      "pack_id": "sigma_cine_ff_hs",
+      "lens_id": "sigma_cine_ff_high_speed__40mm__t1_5__1x",
+      "sort_order": 40
+    },
+    {
+      "pack_id": "sigma_cine_ff_hs",
+      "lens_id": "sigma_cine_ff_high_speed__50mm__t1_5__1x",
+      "sort_order": 50
+    },
+    {
+      "pack_id": "sigma_cine_ff_hs",
+      "lens_id": "sigma_cine_ff_high_speed__85mm__t1_5__1x",
+      "sort_order": 85
+    },
+    {
+      "pack_id": "sigma_cine_ff_hs",
+      "lens_id": "sigma_cine_ff_high_speed__105mm__t1_5__1x",
+      "sort_order": 105
+    },
+    {
+      "pack_id": "sigma_cine_ff_hs",
+      "lens_id": "sigma_cine_ff_high_speed__135mm__t1_5__1x",
+      "sort_order": 135
+    },
+    {
+      "pack_id": "angenieux_optimo",
+      "lens_id": "angenieux_optimo__15-40mm__t2_6__1x",
+      "sort_order": 15040
+    },
+    {
+      "pack_id": "angenieux_optimo",
+      "lens_id": "angenieux_optimo__24-290mm__t2_8__1x",
+      "sort_order": 24290
+    },
+    {
+      "pack_id": "angenieux_optimo",
+      "lens_id": "angenieux_optimo__28-76mm__t2_6__1x",
+      "sort_order": 28076
+    },
+    {
+      "pack_id": "angenieux_ez",
+      "lens_id": "angenieux_ez__15-40mm__t2__1x",
+      "sort_order": 15040
+    },
+    {
+      "pack_id": "angenieux_ez",
+      "lens_id": "angenieux_ez__30-90mm__t2__1x",
+      "sort_order": 30090
+    },
+    {
+      "pack_id": "fujinon_cabrio",
+      "lens_id": "fujinon_cabrio__19-90mm__t2_9__1x",
+      "sort_order": 19090
+    },
+    {
+      "pack_id": "fujinon_cabrio",
+      "lens_id": "fujinon_cabrio__85-300mm__t2_9__1x",
+      "sort_order": 85300
+    },
+    {
+      "pack_id": "fujinon_premista",
+      "lens_id": "fujinon_premista__28-100mm__t2_9__1x",
+      "sort_order": 28100
+    },
+    {
+      "pack_id": "fujinon_premista",
+      "lens_id": "fujinon_premista__80-250mm__t2_9__1x",
+      "sort_order": 80250
+    },
+    {
+      "pack_id": "cooke_varotal",
+      "lens_id": "cooke_varotal__20-60mm__t2_9__1x",
+      "sort_order": 20060
+    },
+    {
+      "pack_id": "cooke_varotal",
+      "lens_id": "cooke_varotal__25-250mm__t3_7__1x",
+      "sort_order": 25250
+    },
+    {
+      "pack_id": "cooke_anamorphic_i_2x",
+      "lens_id": "cooke_anamorphic_i__25mm__t2_3__2x",
+      "sort_order": 25
+    },
+    {
+      "pack_id": "cooke_anamorphic_i_2x",
+      "lens_id": "cooke_anamorphic_i__32mm__t2_3__2x",
+      "sort_order": 32
+    },
+    {
+      "pack_id": "cooke_anamorphic_i_2x",
+      "lens_id": "cooke_anamorphic_i__40mm__t2_3__2x",
+      "sort_order": 40
+    },
+    {
+      "pack_id": "cooke_anamorphic_i_2x",
+      "lens_id": "cooke_anamorphic_i__50mm__t2_3__2x",
+      "sort_order": 50
+    },
+    {
+      "pack_id": "cooke_anamorphic_i_2x",
+      "lens_id": "cooke_anamorphic_i__75mm__t2_3__2x",
+      "sort_order": 75
+    },
+    {
+      "pack_id": "cooke_anamorphic_i_2x",
+      "lens_id": "cooke_anamorphic_i__100mm__t2_3__2x",
+      "sort_order": 100
+    },
+    {
+      "pack_id": "arri_master_anamorphic_2x",
+      "lens_id": "arri_zeiss_master_anamorphic__25mm__t1_9__2x",
+      "sort_order": 25
+    },
+    {
+      "pack_id": "arri_master_anamorphic_2x",
+      "lens_id": "arri_zeiss_master_anamorphic__32mm__t1_9__2x",
+      "sort_order": 32
+    },
+    {
+      "pack_id": "arri_master_anamorphic_2x",
+      "lens_id": "arri_zeiss_master_anamorphic__40mm__t1_9__2x",
+      "sort_order": 40
+    },
+    {
+      "pack_id": "arri_master_anamorphic_2x",
+      "lens_id": "arri_zeiss_master_anamorphic__50mm__t1_9__2x",
+      "sort_order": 50
+    },
+    {
+      "pack_id": "arri_master_anamorphic_2x",
+      "lens_id": "arri_zeiss_master_anamorphic__75mm__t1_9__2x",
+      "sort_order": 75
+    },
+    {
+      "pack_id": "arri_master_anamorphic_2x",
+      "lens_id": "arri_zeiss_master_anamorphic__100mm__t1_9__2x",
+      "sort_order": 100
+    },
+    {
+      "pack_id": "atlas_orion_2x",
+      "lens_id": "atlas_orion__32mm__t2__2x",
+      "sort_order": 32
+    },
+    {
+      "pack_id": "atlas_orion_2x",
+      "lens_id": "atlas_orion__40mm__t2__2x",
+      "sort_order": 40
+    },
+    {
+      "pack_id": "atlas_orion_2x",
+      "lens_id": "atlas_orion__50mm__t2__2x",
+      "sort_order": 50
+    },
+    {
+      "pack_id": "atlas_orion_2x",
+      "lens_id": "atlas_orion__65mm__t2__2x",
+      "sort_order": 65
+    },
+    {
+      "pack_id": "atlas_orion_2x",
+      "lens_id": "atlas_orion__80mm__t2__2x",
+      "sort_order": 80
+    },
+    {
+      "pack_id": "atlas_orion_2x",
+      "lens_id": "atlas_orion__100mm__t2__2x",
+      "sort_order": 100
+    },
+    {
+      "pack_id": "hawk_v_lite_2x",
+      "lens_id": "hawk_v_lite__28mm__t2_2__2x",
+      "sort_order": 28
+    },
+    {
+      "pack_id": "hawk_v_lite_2x",
+      "lens_id": "hawk_v_lite__35mm__t2_2__2x",
+      "sort_order": 35
+    },
+    {
+      "pack_id": "hawk_v_lite_2x",
+      "lens_id": "hawk_v_lite__45mm__t2_2__2x",
+      "sort_order": 45
+    },
+    {
+      "pack_id": "hawk_v_lite_2x",
+      "lens_id": "hawk_v_lite__55mm__t2_2__2x",
+      "sort_order": 55
+    },
+    {
+      "pack_id": "hawk_v_lite_2x",
+      "lens_id": "hawk_v_lite__75mm__t2_2__2x",
+      "sort_order": 75
+    },
+    {
+      "pack_id": "hawk_v_lite_2x",
+      "lens_id": "hawk_v_lite__100mm__t2_2__2x",
+      "sort_order": 100
+    }
+  ]
+}

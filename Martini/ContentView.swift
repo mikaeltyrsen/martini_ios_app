@@ -1921,6 +1921,8 @@ struct SettingsView: View {
                     }
                 }
 
+                ProjectKitSettingsView()
+
                 Section("Account") {
                     Button(role: .destructive) {
                         authService.logout()
