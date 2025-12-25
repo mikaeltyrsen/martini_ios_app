@@ -2,7 +2,7 @@ import SwiftUI
 import AVFoundation
 import UIKit
 
-struct ScoutCameraView: View {
+struct ScoutCameraLayout: View {
     @EnvironmentObject private var authService: AuthService
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: ScoutCameraViewModel

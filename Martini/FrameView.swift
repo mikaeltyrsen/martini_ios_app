@@ -137,7 +137,7 @@ struct FrameView: View {
             .animation(.easeInOut(duration: 0.25), value: fullscreenCoordinator?.configuration?.id)
             .fullScreenCover(isPresented: $showingScoutCamera) {
                 if let projectId = authService.projectId {
-                    ScoutCameraView(
+                    ScoutCameraLayout(
                         projectId: projectId,
                         frameId: frame.id,
                         targetAspectRatio: frameAspectRatio

@@ -17,7 +17,7 @@ struct PhotoProcessor {
         logoImage: UIImage?,
         frameLineAspectRatio: CGFloat?
     ) -> UIImage? {
-        ScoutPhotoLayout.render(
+        ScoutCameraPhotoLayout.render(
             capturedImage: capturedImage,
             targetAspectRatio: targetAspectRatio,
             sensorAspectRatio: sensorAspectRatio,
