@@ -37,6 +37,10 @@ struct ScoutCameraView: View {
                 settingsDrawer
                     .transition(.move(edge: .trailing))
             }
+
+            if viewModel.isCapturing {
+                captureOverlay
+            }
         }
         .animation(.easeInOut(duration: 0.2), value: isSettingsOpen)
         .onAppear {
@@ -383,6 +387,29 @@ struct ScoutCameraView: View {
             }
         }
         .aspectRatio(viewModel.sensorAspectRatio ?? targetAspectRatio, contentMode: .fit)
+    }
+
+    private var captureOverlay: some View {
+        ZStack {
+            if let image = viewModel.capturedImage {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.black)
+            }
+            Color.black.opacity(viewModel.capturedImage == nil ? 0.85 : 0.6)
+                .ignoresSafeArea()
+            VStack(spacing: 12) {
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                Text("Rendering photo…")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white)
+            }
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(true)
     }
 
     private func handleImport() async {

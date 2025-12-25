@@ -18,6 +18,7 @@ final class ScoutCameraViewModel: ObservableObject {
     @Published var debugInfo: ScoutCameraDebugInfo?
     @Published var capturedImage: UIImage?
     @Published var processedImage: UIImage?
+    @Published var isCapturing: Bool = false
     @Published var errorMessage: String?
 
     let captureManager = CaptureSessionManager()
@@ -116,15 +117,20 @@ final class ScoutCameraViewModel: ObservableObject {
     }
 
     func capturePhoto() {
+        guard !isCapturing else { return }
+        isCapturing = true
         captureManager.capturePhoto { [weak self] image in
             guard let self else { return }
             Task { @MainActor in
                 guard let image else {
                     self.errorMessage = "Failed to capture photo."
+                    self.capturedImage = nil
+                    self.isCapturing = false
                     return
                 }
                 self.capturedImage = image
                 self.processedImage = await self.processImage(image)
+                self.isCapturing = false
             }
         }
     }
