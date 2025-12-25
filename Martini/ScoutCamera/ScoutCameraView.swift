@@ -9,7 +9,6 @@ struct ScoutCameraView: View {
     @StateObject private var motionManager = MotionHeadingManager()
     private let targetAspectRatio: CGFloat
     @State private var isSettingsOpen = false
-    @State private var expandedSections: Set<SettingsSection> = [.camera]
 
     init(projectId: String, frameId: String, targetAspectRatio: CGFloat) {
         self.targetAspectRatio = targetAspectRatio
@@ -139,9 +138,11 @@ struct ScoutCameraView: View {
             List {
                 Section {
                     NavigationLink {
-                        CameraSelectionList(
-                            cameras: viewModel.availableCameras,
-                            selectedCameraId: viewModel.selectedCamera?.id
+                        SelectionList(
+                            items: viewModel.availableCameras,
+                            selectedId: viewModel.selectedCamera?.id,
+                            title: "Camera",
+                            rowTitle: { "\($0.brand) \($0.model)" }
                         ) { camera in
                             viewModel.selectedCamera = camera
                         }
@@ -151,14 +152,14 @@ struct ScoutCameraView: View {
                 }
 
                 Section {
-                    DisclosureGroup(isExpanded: expandedBinding(for: .mode)) {
-                        ForEach(viewModel.availableModes, id: \.id) { mode in
-                            selectionRow(
-                                title: mode.name,
-                                isSelected: viewModel.selectedMode?.id == mode.id
-                            ) {
-                                viewModel.selectedMode = mode
-                            }
+                    NavigationLink {
+                        SelectionList(
+                            items: viewModel.availableModes,
+                            selectedId: viewModel.selectedMode?.id,
+                            title: "Mode",
+                            rowTitle: { $0.name }
+                        ) { mode in
+                            viewModel.selectedMode = mode
                         }
                     } label: {
                         settingsSectionLabel(title: "Mode", value: selectedModeLabel)
@@ -166,14 +167,14 @@ struct ScoutCameraView: View {
                 }
 
                 Section {
-                    DisclosureGroup(isExpanded: expandedBinding(for: .lens)) {
-                        ForEach(viewModel.availableLenses, id: \.id) { lens in
-                            selectionRow(
-                                title: "\(lens.brand) \(lens.series)",
-                                isSelected: viewModel.selectedLens?.id == lens.id
-                            ) {
-                                viewModel.selectedLens = lens
-                            }
+                    NavigationLink {
+                        SelectionList(
+                            items: viewModel.availableLenses,
+                            selectedId: viewModel.selectedLens?.id,
+                            title: "Lens",
+                            rowTitle: { "\($0.brand) \($0.series)" }
+                        ) { lens in
+                            viewModel.selectedLens = lens
                         }
                     } label: {
                         settingsSectionLabel(title: "Lens", value: selectedLensLabel)
@@ -181,14 +182,14 @@ struct ScoutCameraView: View {
                 }
 
                 Section {
-                    DisclosureGroup(isExpanded: expandedBinding(for: .frameLines)) {
-                        ForEach(FrameLineOption.allCases) { option in
-                            selectionRow(
-                                title: option.rawValue,
-                                isSelected: viewModel.selectedFrameLine == option
-                            ) {
-                                viewModel.selectedFrameLine = option
-                            }
+                    NavigationLink {
+                        SelectionList(
+                            items: FrameLineOption.allCases,
+                            selectedId: viewModel.selectedFrameLine.id,
+                            title: "Frame Lines",
+                            rowTitle: { $0.rawValue }
+                        ) { option in
+                            viewModel.selectedFrameLine = option
                         }
                     } label: {
                         settingsSectionLabel(title: "Frame Lines", value: viewModel.selectedFrameLine.rawValue)
@@ -248,22 +249,24 @@ struct ScoutCameraView: View {
         return "\(lens.brand) \(lens.series)"
     }
 
-    private struct CameraSelectionList: View {
+    private struct SelectionList<Item: Identifiable>: View {
         @Environment(\.dismiss) private var dismiss
-        let cameras: [DBCamera]
-        let selectedCameraId: String?
-        let onSelect: (DBCamera) -> Void
+        let items: [Item]
+        let selectedId: Item.ID?
+        let title: String
+        let rowTitle: (Item) -> String
+        let onSelect: (Item) -> Void
 
         var body: some View {
-            List(cameras, id: \.id) { camera in
+            List(items) { item in
                 Button {
-                    onSelect(camera)
+                    onSelect(item)
                     dismiss()
                 } label: {
                     HStack {
-                        Text("\(camera.brand) \(camera.model)")
+                        Text(rowTitle(item))
                         Spacer()
-                        if selectedCameraId == camera.id {
+                        if selectedId == item.id {
                             Image(systemName: "checkmark")
                                 .font(.caption.weight(.semibold))
                         }
@@ -276,7 +279,7 @@ struct ScoutCameraView: View {
             .scrollContentBackground(.hidden)
             .background(Color.black.opacity(0.6))
             .foregroundStyle(.white)
-            .navigationTitle("Camera")
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
         }
     }
@@ -288,42 +291,6 @@ struct ScoutCameraView: View {
             Text(value)
                 .foregroundStyle(.white.opacity(0.7))
         }
-    }
-
-    private func selectionRow(title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack {
-                Text(title)
-                Spacer()
-                if isSelected {
-                    Image(systemName: "checkmark")
-                        .font(.caption.weight(.semibold))
-                }
-            }
-            .contentShape(Rectangle())
-            .padding(.vertical, 4)
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func expandedBinding(for section: SettingsSection) -> Binding<Bool> {
-        Binding(
-            get: { expandedSections.contains(section) },
-            set: { isExpanded in
-                if isExpanded {
-                    expandedSections.insert(section)
-                } else {
-                    expandedSections.remove(section)
-                }
-            }
-        )
-    }
-
-    private enum SettingsSection: Hashable {
-        case camera
-        case mode
-        case lens
-        case frameLines
     }
 
     private var captureBar: some View {
