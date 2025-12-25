@@ -80,6 +80,16 @@ struct ProjectKitCameraSelectionView: View {
             selectedIds.insert(id)
         }
     }
+
+    private func cameraSensorLabel(_ camera: DBCamera) -> String {
+        if let width = camera.sensorWidthMm, let height = camera.sensorHeightMm {
+            return "Sensor \(String(format: "%.2f", width)) × \(String(format: "%.2f", height)) mm"
+        }
+        if let sensorType = camera.sensorType, !sensorType.isEmpty {
+            return "Sensor \(sensorType)"
+        }
+        return "Sensor size unavailable"
+    }
 }
 
 struct ProjectKitLensSelectionView: View {
@@ -173,13 +183,4 @@ struct ProjectKitLensSelectionView: View {
         return "T\(lens.maxTStop)"
     }
 
-    private func cameraSensorLabel(_ camera: DBCamera) -> String {
-        if let width = camera.sensorWidthMm, let height = camera.sensorHeightMm {
-            return "Sensor \(String(format: "%.2f", width)) × \(String(format: "%.2f", height)) mm"
-        }
-        if let sensorType = camera.sensorType, !sensorType.isEmpty {
-            return "Sensor \(sensorType)"
-        }
-        return "Sensor size unavailable"
-    }
 }
