@@ -75,6 +75,32 @@ final class ScoutCameraViewModel: ObservableObject {
         focalLengthMm = lens.focalLengthMm ?? lens.focalLengthMinMm ?? focalLengthMm
     }
 
+    var activeFocalLengthMm: Double {
+        currentFocalLength()
+    }
+
+    func selectNextLens() {
+        guard let selectedLens,
+              let currentIndex = availableLenses.firstIndex(where: { $0.id == selectedLens.id }) else {
+            return
+        }
+        let nextIndex = min(currentIndex + 1, availableLenses.count - 1)
+        if nextIndex != currentIndex {
+            self.selectedLens = availableLenses[nextIndex]
+        }
+    }
+
+    func selectPreviousLens() {
+        guard let selectedLens,
+              let currentIndex = availableLenses.firstIndex(where: { $0.id == selectedLens.id }) else {
+            return
+        }
+        let previousIndex = max(currentIndex - 1, 0)
+        if previousIndex != currentIndex {
+            self.selectedLens = availableLenses[previousIndex]
+        }
+    }
+
     func updateCaptureConfiguration() async {
         let authStatus = AVCaptureDevice.authorizationStatus(for: .video)
         if authStatus == .notDetermined {

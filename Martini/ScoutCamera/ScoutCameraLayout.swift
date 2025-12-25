@@ -7,8 +7,10 @@ struct ScoutCameraLayout: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: ScoutCameraViewModel
     @StateObject private var motionManager = MotionHeadingManager()
+    @StateObject private var volumeObserver = VolumeButtonObserver()
     private let targetAspectRatio: CGFloat
     @State private var isSettingsOpen = false
+    private let previewMargin: CGFloat = 80
 
     init(projectId: String, frameId: String, targetAspectRatio: CGFloat) {
         self.targetAspectRatio = targetAspectRatio
@@ -19,18 +21,38 @@ struct ScoutCameraLayout: View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            VStack(spacing: 16) {
-                topBar
-                headingBar
-                if AppConfig.debugMode {
-                    debugBar
+            GeometryReader { proxy in
+                let previewWidth = max(proxy.size.width - previewMargin * 2, 0)
+                let previewHeight = max(proxy.size.height - previewMargin * 2, 0)
+                ZStack {
+                    previewPanel
+                        .frame(width: previewWidth, height: previewHeight)
+                        .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+                        .gesture(lensSwipeGesture)
+
+                    VStack(spacing: 12) {
+                        topInfoBar
+                        if AppConfig.debugMode {
+                            debugBar
+                        }
+                        Spacer()
+                        bottomControlBar
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 12)
+                    .padding(.bottom, 24)
+
+                    HStack {
+                        Spacer()
+                        VStack {
+                            Spacer()
+                            settingsButton
+                            Spacer()
+                        }
+                    }
+                    .padding(.trailing, 24)
                 }
-                previewPanel
-                captureBar
             }
-            .padding(.horizontal, 24)
-            .padding(.top, 12)
-            .padding(.bottom, 24)
 
             if isSettingsOpen {
                 settingsDrawer
@@ -47,11 +69,14 @@ struct ScoutCameraLayout: View {
             UIDevice.current.setValue(UIInterfaceOrientation.landscapeRight.rawValue, forKey: "orientation")
             UIViewController.attemptRotationToDeviceOrientation()
             motionManager.start()
+            volumeObserver.onVolumeChange = { viewModel.capturePhoto() }
+            volumeObserver.start()
         }
         .onDisappear {
             motionManager.stop()
             AppDelegate.orientationLock = .all
             UIViewController.attemptRotationToDeviceOrientation()
+            volumeObserver.stop()
         }
         .onChange(of: viewModel.selectedCamera) { _ in
             viewModel.refreshModes()
@@ -97,28 +122,52 @@ struct ScoutCameraLayout: View {
         }
     }
 
-    private var topBar: some View {
+    private var topInfoBar: some View {
         HStack {
-            Button("Cancel") {
-                dismiss()
+            VStack(alignment: .leading, spacing: 6) {
+                Button("Cancel") {
+                    dismiss()
+                }
+                .foregroundStyle(.white)
+                .font(.caption.weight(.semibold))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(selectedCameraLabel)
+                    Text(selectedModeLabel)
+                        .foregroundStyle(.white.opacity(0.7))
+                }
+                .font(.caption)
+                .foregroundStyle(.white)
             }
+            Spacer()
+            VStack(spacing: 4) {
+                Text("\(motionManager.headingText) \(Int(motionManager.headingDegrees))°")
+                Text("Tilt \(Int(motionManager.tiltDegrees))°")
+            }
+            .font(.caption.weight(.semibold))
             .foregroundStyle(.white)
             Spacer()
-            if let match = viewModel.matchResult {
-                Text("\(match.cameraRole.uppercased()) • \(String(format: "%.2fx", match.zoomFactor))")
+            VStack(alignment: .trailing, spacing: 4) {
+                Text("Lens")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.7))
+                Text(selectedLensLabel)
                     .font(.caption)
                     .foregroundStyle(.white)
             }
-            Button {
-                isSettingsOpen.toggle()
-            } label: {
-                Image(systemName: "slider.horizontal.3")
-                    .font(.system(size: 18, weight: .semibold))
-            }
-            .foregroundStyle(.white)
-            .padding(.leading, 12)
         }
-        .padding(.horizontal)
+    }
+
+    private var settingsButton: some View {
+        Button {
+            isSettingsOpen.toggle()
+        } label: {
+            Image(systemName: "slider.horizontal.3")
+                .font(.system(size: 20, weight: .semibold))
+                .padding(12)
+                .background(Color.white.opacity(0.12))
+                .clipShape(Circle())
+        }
+        .foregroundStyle(.white)
     }
 
     private var settingsDrawer: some View {
@@ -336,8 +385,27 @@ struct ScoutCameraLayout: View {
         }
     }
 
-    private var captureBar: some View {
+    private var bottomControlBar: some View {
         HStack {
+            Spacer()
+            Button {
+                viewModel.selectPreviousLens()
+            } label: {
+                Image(systemName: "minus.circle")
+                    .font(.system(size: 24, weight: .semibold))
+            }
+            .foregroundStyle(.white)
+            Spacer()
+            VStack(spacing: 4) {
+                Text(lensInfoText)
+                    .font(.headline.weight(.semibold))
+                if let match = viewModel.matchResult {
+                    Text("\(match.cameraRole.uppercased()) • \(String(format: "%.2fx", match.zoomFactor))")
+                        .font(.caption2)
+                        .foregroundStyle(.white.opacity(0.7))
+                }
+            }
+            .foregroundStyle(.white)
             Spacer()
             Button {
                 viewModel.capturePhoto()
@@ -351,19 +419,15 @@ struct ScoutCameraLayout: View {
                     )
             }
             Spacer()
-        }
-        .padding(.bottom, 24)
-    }
-
-    private var headingBar: some View {
-        HStack {
-            Text("\(motionManager.headingText) \(Int(motionManager.headingDegrees))°")
+            Button {
+                viewModel.selectNextLens()
+            } label: {
+                Image(systemName: "plus.circle")
+                    .font(.system(size: 24, weight: .semibold))
+            }
+            .foregroundStyle(.white)
             Spacer()
-            Text("Tilt \(Int(motionManager.tiltDegrees))°")
         }
-        .font(.caption)
-        .foregroundStyle(.white)
-        .padding(.horizontal)
     }
 
     private var debugBar: some View {
@@ -397,6 +461,28 @@ struct ScoutCameraLayout: View {
             }
         }
         .aspectRatio(viewModel.sensorAspectRatio ?? targetAspectRatio, contentMode: .fit)
+    }
+
+    private var lensInfoText: String {
+        let focalText = "\(Int(viewModel.activeFocalLengthMm))mm"
+        if let targetHFOV = viewModel.debugInfo?.targetHFOVDegrees {
+            return "\(focalText) • \(Int(targetHFOV.rounded()))°"
+        }
+        return focalText
+    }
+
+    private var lensSwipeGesture: some Gesture {
+        DragGesture(minimumDistance: 20)
+            .onEnded { value in
+                let vertical = value.translation.height
+                let horizontal = value.translation.width
+                guard abs(vertical) > abs(horizontal), abs(vertical) > 30 else { return }
+                if vertical < 0 {
+                    viewModel.selectNextLens()
+                } else {
+                    viewModel.selectPreviousLens()
+                }
+            }
     }
 
     private var captureOverlay: some View {
@@ -503,5 +589,36 @@ private final class PreviewView: UIView {
     func setVideoOrientation(_ orientation: AVCaptureVideoOrientation) {
         guard let connection = videoPreviewLayer.connection, connection.isVideoOrientationSupported else { return }
         connection.videoOrientation = orientation
+    }
+}
+
+private final class VolumeButtonObserver: ObservableObject {
+    var onVolumeChange: (() -> Void)?
+    private var observation: NSKeyValueObservation?
+    private var lastVolume: Float = AVAudioSession.sharedInstance().outputVolume
+
+    func start() {
+        let session = AVAudioSession.sharedInstance()
+        do {
+            try session.setCategory(.ambient, options: [.mixWithOthers])
+            try session.setActive(true)
+        } catch {
+            return
+        }
+        lastVolume = session.outputVolume
+        observation = session.observe(\.outputVolume, options: [.new]) { [weak self] session, change in
+            guard let self else { return }
+            let newVolume = change.newValue ?? session.outputVolume
+            guard abs(newVolume - self.lastVolume) > 0.001 else { return }
+            self.lastVolume = newVolume
+            DispatchQueue.main.async {
+                self.onVolumeChange?()
+            }
+        }
+    }
+
+    func stop() {
+        observation?.invalidate()
+        observation = nil
     }
 }
