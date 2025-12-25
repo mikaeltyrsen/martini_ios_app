@@ -45,6 +45,8 @@ final class ScoutCameraViewModel: ObservableObject {
             : dataStore.fetchLenses(ids: projectLensIds)
         if availableCameras.isEmpty || availableLenses.isEmpty {
             errorMessage = "Select cameras and lenses in Project Kit to use Scout Camera."
+        } else {
+            errorMessage = nil
         }
         selectedCamera = availableCameras.first
         selectedLens = availableLenses.first
@@ -99,6 +101,7 @@ final class ScoutCameraViewModel: ObservableObject {
         do {
             try captureManager.configureSession(with: role, zoomFactor: zoom)
             captureManager.start()
+            errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
         }
