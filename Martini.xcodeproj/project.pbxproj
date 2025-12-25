@@ -28,7 +28,8 @@
 		07E1A0033B7A111100000001 /* ConnectionMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07E1A0023B7A111100000001 /* ConnectionMonitor.swift */; };
 		07F4E0022FF0AAAA00000001 /* RealtimeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07F4E0012FF0AAAA00000001 /* RealtimeService.swift */; };
 		07F4E0052FF0AAAA00000002 /* WebsocketCalls.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07F4E0032FF0AAAA00000002 /* WebsocketCalls.swift */; };
-		13952330E1EF424FADD563ED /* ScoutCamera/ScoutCameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F825837CC9D4A3C884F0F59 /* ScoutCamera/ScoutCameraView.swift */; };
+		13952330E1EF424FADD563ED /* ScoutCamera/ScoutCameraLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F825837CC9D4A3C884F0F59 /* ScoutCamera/ScoutCameraLayout.swift */; };
+		A1B2C3D4E5F60718293A4B5C /* ScoutCamera/ScoutCameraPhotoLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F60718293A4B5CA1B2C3 /* ScoutCamera/ScoutCameraPhotoLayout.swift */; };
 		212769B0E99B412F8D9C27E8 /* ScoutCamera/ScoutCameraViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30240C00983A4B208F56B246 /* ScoutCamera/ScoutCameraViewModel.swift */; };
 		2A4CC88C8D6C4B3EB1AF6B93 /* ProjectKit/ProjectKitSelectionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A4CC88B8D6C4B3EB1AF6B93 /* ProjectKit/ProjectKitSelectionStore.swift */; };
 		2C5B05456FA04ED5ACD63C85 /* ScoutCamera/FOV/FOVEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = C451CF6B5C97405C841E3067 /* ScoutCamera/FOV/FOVEngine.swift */; };
@@ -82,7 +83,8 @@
 		10F9CB29EE71481EB424475E /* ScoutCamera/FOV/FOVMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/FOV/FOVMath.swift; sourceTree = "<group>"; };
 		2644D6ACDD4A4DC1A33D228A /* ProjectKit/ProjectKitSelectionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectKit/ProjectKitSelectionViews.swift; sourceTree = "<group>"; };
 		2A4CC88B8D6C4B3EB1AF6B93 /* ProjectKit/ProjectKitSelectionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectKit/ProjectKitSelectionStore.swift; sourceTree = "<group>"; };
-		2F825837CC9D4A3C884F0F59 /* ScoutCamera/ScoutCameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/ScoutCameraView.swift; sourceTree = "<group>"; };
+		2F825837CC9D4A3C884F0F59 /* ScoutCamera/ScoutCameraLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/ScoutCameraLayout.swift; sourceTree = "<group>"; };
+		D4E5F60718293A4B5CA1B2C3 /* ScoutCamera/ScoutCameraPhotoLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/ScoutCameraPhotoLayout.swift; sourceTree = "<group>"; };
 		30240C00983A4B208F56B246 /* ScoutCamera/ScoutCameraViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/ScoutCameraViewModel.swift; sourceTree = "<group>"; };
 		38B088F6DDD94E12A8B7997C /* LocalData/PackModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalData/PackModels.swift; sourceTree = "<group>"; };
 		477F863DD3304428A7C610C5 /* SchedulesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchedulesView.swift; sourceTree = "<group>"; };
@@ -161,7 +163,8 @@
 				5C6E43A0C4B1418B89DCD0E8 /* LocalData/LocalJSONStore.swift */,
 				B25D2D8C220E4A7CAE24D403 /* LocalData/Seed/martini_example_db.json */,
 				2644D6ACDD4A4DC1A33D228A /* ProjectKit/ProjectKitSelectionViews.swift */,
-				2F825837CC9D4A3C884F0F59 /* ScoutCamera/ScoutCameraView.swift */,
+				2F825837CC9D4A3C884F0F59 /* ScoutCamera/ScoutCameraLayout.swift */,
+				D4E5F60718293A4B5CA1B2C3 /* ScoutCamera/ScoutCameraPhotoLayout.swift */,
 				0187390DAD5C4818AD9A0A1B /* ScoutCamera/ScoutCameraReviewView.swift */,
 				30240C00983A4B208F56B246 /* ScoutCamera/ScoutCameraViewModel.swift */,
 				6B50BC0CE2AA4639AE6F9264 /* ScoutCamera/CameraKit/CaptureSessionManager.swift */,
@@ -274,7 +277,8 @@
 				07C904B02EDA8665004EDBFA /* Models.swift in Sources */,
 				07A6A6862EC9A272002C8EB9 /* MartiniApp.swift in Sources */,
 				075456042EC9A6E200C45739 /* QRScannerView.swift in Sources */,
-				13952330E1EF424FADD563ED /* ScoutCamera/ScoutCameraView.swift in Sources */,
+				13952330E1EF424FADD563ED /* ScoutCamera/ScoutCameraLayout.swift in Sources */,
+				A1B2C3D4E5F60718293A4B5C /* ScoutCamera/ScoutCameraPhotoLayout.swift in Sources */,
 				B9D8650A752F4255AD620B9B /* ScoutCamera/ScoutCameraReviewView.swift in Sources */,
 				212769B0E99B412F8D9C27E8 /* ScoutCamera/ScoutCameraViewModel.swift in Sources */,
 				B97E51D7EFDA491EBD6C974C /* ScoutCamera/CameraKit/CaptureSessionManager.swift in Sources */,

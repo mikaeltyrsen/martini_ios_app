@@ -1,6 +1,6 @@
 import UIKit
 
-struct ScoutPhotoLayout {
+struct ScoutCameraPhotoLayout {
     static func render(
         capturedImage: UIImage,
         targetAspectRatio: CGFloat,
