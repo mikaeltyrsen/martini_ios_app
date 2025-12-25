@@ -42,6 +42,9 @@ final class ScoutCameraViewModel: ObservableObject {
         availableLenses = projectLensIds.isEmpty
             ? []
             : database.fetchLenses(ids: projectLensIds)
+        if availableCameras.isEmpty || availableLenses.isEmpty {
+            errorMessage = "Select cameras and lenses in Project Kit to use Scout Camera."
+        }
         selectedCamera = availableCameras.first
         selectedLens = availableLenses.first
         refreshModes()

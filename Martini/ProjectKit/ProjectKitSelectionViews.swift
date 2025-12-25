@@ -6,6 +6,7 @@ struct ProjectKitCameraSelectionView: View {
     @ObservedObject var store: ProjectKitStore
     @State private var searchText = ""
     @State private var selectedIds: Set<String> = []
+    @State private var showingProjectAlert = false
 
     private var availableCameras: [DBCamera] {
         let filtered = store.availableCameras.filter { camera in
@@ -49,11 +50,20 @@ struct ProjectKitCameraSelectionView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 if !selectedIds.isEmpty {
                     Button("Add") {
+                        guard authService.projectId != nil else {
+                            showingProjectAlert = true
+                            return
+                        }
                         store.addCameras(ids: Array(selectedIds), projectId: authService.projectId)
                         dismiss()
                     }
                 }
             }
+        }
+        .alert("Project unavailable", isPresented: $showingProjectAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Please log into a project before adding cameras.")
         }
     }
 
@@ -72,6 +82,7 @@ struct ProjectKitLensSelectionView: View {
     @ObservedObject var store: ProjectKitStore
     @State private var searchText = ""
     @State private var selectedIds: Set<String> = []
+    @State private var showingProjectAlert = false
 
     private var availableLenses: [DBLens] {
         let filtered = store.availableLenses.filter { lens in
@@ -115,11 +126,20 @@ struct ProjectKitLensSelectionView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 if !selectedIds.isEmpty {
                     Button("Add") {
+                        guard authService.projectId != nil else {
+                            showingProjectAlert = true
+                            return
+                        }
                         store.addLenses(ids: Array(selectedIds), projectId: authService.projectId)
                         dismiss()
                     }
                 }
             }
+        }
+        .alert("Project unavailable", isPresented: $showingProjectAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Please log into a project before adding lenses.")
         }
     }
 

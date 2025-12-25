@@ -1,10 +1,10 @@
 {
-  "db_version": "1.0.0",
+  "db_version": "1.2.0",
   "pack": {
     "pack_id": "martini_core_cameras_lenses",
-    "revision": 1,
+    "revision": 3,
     "created_at": "2025-01-01",
-    "description": "Common commercial & film cameras and lenses"
+    "description": "Common commercial & film cameras + normalized lenses + lens packs (relationship-based, not nested)"
   },
   "cameras": [
     {
@@ -132,7 +132,7 @@
       "mount": "PL / EF",
       "modes": [
         {
-          "id": "canon_c500__ff",
+          "id": "canon_c500_mk2__ff_5_9k",
           "name": "Full Frame 5.9K",
           "sensor_width_mm": 38.1,
           "sensor_height_mm": 20.1,
@@ -149,8 +149,8 @@
       "mount": "EF",
       "modes": [
         {
-          "id": "bmpcc_6k__open_gate",
-          "name": "6K Open Gate",
+          "id": "bmpcc_6k_pro__6k_16_9",
+          "name": "6K 16:9",
           "sensor_width_mm": 23.1,
           "sensor_height_mm": 12.99,
           "resolution": "6144x3456",
@@ -159,186 +159,150 @@
       ]
     }
   ],
-  "lenses": [
+  "lens_packs": [
     {
-      "id": "arri_signature_prime__18mm__t1_8__1x",
-      "type": "prime",
+      "id": "arri_signature_primes",
       "brand": "ARRI",
-      "series": "Signature Prime",
+      "name": "Signature Primes",
+      "type": "prime",
       "format": "LF",
-      "mounts": ["LPL", "PL"],
-      "focal_length_mm": 18,
-      "max_t_stop": 1.8,
-      "squeeze": 1.0
+      "description": "ARRI Signature Prime (Large Format)"
     },
     {
-      "id": "arri_signature_prime__25mm__t1_8__1x",
-      "type": "prime",
-      "brand": "ARRI",
-      "series": "Signature Prime",
-      "format": "LF",
-      "mounts": ["LPL", "PL"],
-      "focal_length_mm": 25,
-      "max_t_stop": 1.8,
-      "squeeze": 1.0
-    },
-    {
-      "id": "arri_signature_prime__35mm__t1_8__1x",
-      "type": "prime",
-      "brand": "ARRI",
-      "series": "Signature Prime",
-      "format": "LF",
-      "mounts": ["LPL", "PL"],
-      "focal_length_mm": 35,
-      "max_t_stop": 1.8,
-      "squeeze": 1.0
-    },
-    {
-      "id": "arri_signature_prime__50mm__t1_8__1x",
-      "type": "prime",
-      "brand": "ARRI",
-      "series": "Signature Prime",
-      "format": "LF",
-      "mounts": ["LPL", "PL"],
-      "focal_length_mm": 50,
-      "max_t_stop": 1.8,
-      "squeeze": 1.0
-    },
-    {
-      "id": "cooke_s4_i__25mm__t2_0__1x",
-      "type": "prime",
+      "id": "cooke_s4_i",
       "brand": "Cooke",
-      "series": "S4/i",
+      "name": "S4/i",
+      "type": "prime",
       "format": "S35",
-      "mounts": ["PL"],
-      "focal_length_mm": 25,
-      "max_t_stop": 2.0,
-      "squeeze": 1.0
+      "description": "Cooke S4/i classic prime set"
     },
     {
-      "id": "cooke_s4_i__32mm__t2_0__1x",
-      "type": "prime",
-      "brand": "Cooke",
-      "series": "S4/i",
-      "format": "S35",
-      "mounts": ["PL"],
-      "focal_length_mm": 32,
-      "max_t_stop": 2.0,
-      "squeeze": 1.0
-    },
-    {
-      "id": "cooke_s4_i__50mm__t2_0__1x",
-      "type": "prime",
-      "brand": "Cooke",
-      "series": "S4/i",
-      "format": "S35",
-      "mounts": ["PL"],
-      "focal_length_mm": 50,
-      "max_t_stop": 2.0,
-      "squeeze": 1.0
-    },
-    {
-      "id": "zeiss_cp3__35mm__t2_1__1x",
-      "type": "prime",
+      "id": "zeiss_cp3",
       "brand": "ZEISS",
-      "series": "CP.3",
-      "format": "FF",
-      "mounts": ["PL", "EF", "E"],
-      "focal_length_mm": 35,
-      "max_t_stop": 2.1,
-      "squeeze": 1.0
-    },
-    {
-      "id": "zeiss_cp3__50mm__t2_1__1x",
+      "name": "CP.3",
       "type": "prime",
-      "brand": "ZEISS",
-      "series": "CP.3",
       "format": "FF",
-      "mounts": ["PL", "EF", "E"],
-      "focal_length_mm": 50,
-      "max_t_stop": 2.1,
-      "squeeze": 1.0
+      "description": "ZEISS CP.3 full-frame cinema primes"
     },
     {
-      "id": "angenieux_optimo__15-40mm__t2_6__1x",
-      "type": "zoom",
+      "id": "angenieux_optimo",
       "brand": "Angenieux",
-      "series": "Optimo",
+      "name": "Optimo",
+      "type": "zoom",
       "format": "S35",
-      "mounts": ["PL"],
-      "focal_length_mm_min": 15,
-      "focal_length_mm_max": 40,
-      "max_t_stop": 2.6,
-      "squeeze": 1.0
+      "description": "Angenieux Optimo cinema zooms"
     },
     {
-      "id": "angenieux_optimo__24-290mm__t2_8__1x",
-      "type": "zoom",
-      "brand": "Angenieux",
-      "series": "Optimo",
-      "format": "S35",
-      "mounts": ["PL"],
-      "focal_length_mm_min": 24,
-      "focal_length_mm_max": 290,
-      "max_t_stop": 2.8,
-      "squeeze": 1.0
-    },
-    {
-      "id": "fujinon_cabrio__19-90mm__t2_9__1x",
-      "type": "zoom",
+      "id": "fujinon_cabrio",
       "brand": "Fujinon",
-      "series": "Cabrio",
-      "format": "S35",
-      "mounts": ["PL"],
-      "focal_length_mm_min": 19,
-      "focal_length_mm_max": 90,
-      "max_t_stop": 2.9,
-      "squeeze": 1.0
-    },
-    {
-      "id": "sigma_cine_zoom__18-35mm__t1_8__1x",
+      "name": "Cabrio",
       "type": "zoom",
+      "format": "S35",
+      "description": "Fujinon Cabrio cinema zooms"
+    },
+    {
+      "id": "sigma_cine_primes_ff",
       "brand": "Sigma",
-      "series": "Cine Zoom",
-      "format": "S35",
-      "mounts": ["PL", "EF"],
-      "focal_length_mm_min": 18,
-      "focal_length_mm_max": 35,
-      "max_t_stop": 1.8,
-      "squeeze": 1.0
+      "name": "Cine FF High Speed",
+      "type": "prime",
+      "format": "FF",
+      "description": "Sigma Cine full-frame high-speed primes"
     },
     {
-      "id": "cooke_anamorphic_i__40mm__t2_3__2x",
-      "type": "prime",
+      "id": "sigma_cine_zooms",
+      "brand": "Sigma",
+      "name": "Cine Zooms",
+      "type": "zoom",
+      "format": "S35/FF",
+      "description": "Sigma Cine zoom lenses"
+    },
+    {
+      "id": "cooke_anamorphic_i",
       "brand": "Cooke",
-      "series": "Anamorphic/i",
+      "name": "Anamorphic/i (2x)",
+      "type": "anamorphic",
       "format": "S35",
-      "mounts": ["PL"],
-      "focal_length_mm": 40,
-      "max_t_stop": 2.3,
-      "squeeze": 2.0
+      "description": "Cooke Anamorphic/i 2x squeeze lenses"
     },
     {
-      "id": "cooke_anamorphic_i__50mm__t2_3__2x",
-      "type": "prime",
-      "brand": "Cooke",
-      "series": "Anamorphic/i",
-      "format": "S35",
-      "mounts": ["PL"],
-      "focal_length_mm": 50,
-      "max_t_stop": 2.3,
-      "squeeze": 2.0
-    },
-    {
-      "id": "atlas_orion__50mm__t2_0__2x",
-      "type": "prime",
+      "id": "atlas_orion",
       "brand": "Atlas",
-      "series": "Orion",
+      "name": "Orion (2x)",
+      "type": "anamorphic",
       "format": "S35",
-      "mounts": ["PL"],
-      "focal_length_mm": 50,
-      "max_t_stop": 2.0,
-      "squeeze": 2.0
+      "description": "Atlas Orion 2x anamorphic primes"
     }
+  ],
+  "lenses": [
+    { "id": "arri_signature_prime__18mm__t1_8__1x", "type": "prime", "brand": "ARRI", "series": "Signature Prime", "format": "LF", "mounts": ["LPL", "PL"], "focal_length_mm": 18, "max_t_stop": 1.8, "squeeze": 1.0 },
+    { "id": "arri_signature_prime__25mm__t1_8__1x", "type": "prime", "brand": "ARRI", "series": "Signature Prime", "format": "LF", "mounts": ["LPL", "PL"], "focal_length_mm": 25, "max_t_stop": 1.8, "squeeze": 1.0 },
+    { "id": "arri_signature_prime__35mm__t1_8__1x", "type": "prime", "brand": "ARRI", "series": "Signature Prime", "format": "LF", "mounts": ["LPL", "PL"], "focal_length_mm": 35, "max_t_stop": 1.8, "squeeze": 1.0 },
+    { "id": "arri_signature_prime__50mm__t1_8__1x", "type": "prime", "brand": "ARRI", "series": "Signature Prime", "format": "LF", "mounts": ["LPL", "PL"], "focal_length_mm": 50, "max_t_stop": 1.8, "squeeze": 1.0 },
+    { "id": "cooke_s4_i__18mm__t2_0__1x", "type": "prime", "brand": "Cooke", "series": "S4/i", "format": "S35", "mounts": ["PL"], "focal_length_mm": 18, "max_t_stop": 2.0, "squeeze": 1.0 },
+    { "id": "cooke_s4_i__25mm__t2_0__1x", "type": "prime", "brand": "Cooke", "series": "S4/i", "format": "S35", "mounts": ["PL"], "focal_length_mm": 25, "max_t_stop": 2.0, "squeeze": 1.0 },
+    { "id": "cooke_s4_i__32mm__t2_0__1x", "type": "prime", "brand": "Cooke", "series": "S4/i", "format": "S35", "mounts": ["PL"], "focal_length_mm": 32, "max_t_stop": 2.0, "squeeze": 1.0 },
+    { "id": "cooke_s4_i__40mm__t2_0__1x", "type": "prime", "brand": "Cooke", "series": "S4/i", "format": "S35", "mounts": ["PL"], "focal_length_mm": 40, "max_t_stop": 2.0, "squeeze": 1.0 },
+    { "id": "cooke_s4_i__50mm__t2_0__1x", "type": "prime", "brand": "Cooke", "series": "S4/i", "format": "S35", "mounts": ["PL"], "focal_length_mm": 50, "max_t_stop": 2.0, "squeeze": 1.0 },
+    { "id": "cooke_s4_i__75mm__t2_0__1x", "type": "prime", "brand": "Cooke", "series": "S4/i", "format": "S35", "mounts": ["PL"], "focal_length_mm": 75, "max_t_stop": 2.0, "squeeze": 1.0 },
+    { "id": "zeiss_cp3__25mm__t2_1__1x", "type": "prime", "brand": "ZEISS", "series": "CP.3", "format": "FF", "mounts": ["PL", "EF", "E"], "focal_length_mm": 25, "max_t_stop": 2.1, "squeeze": 1.0 },
+    { "id": "zeiss_cp3__35mm__t2_1__1x", "type": "prime", "brand": "ZEISS", "series": "CP.3", "format": "FF", "mounts": ["PL", "EF", "E"], "focal_length_mm": 35, "max_t_stop": 2.1, "squeeze": 1.0 },
+    { "id": "zeiss_cp3__50mm__t2_1__1x", "type": "prime", "brand": "ZEISS", "series": "CP.3", "format": "FF", "mounts": ["PL", "EF", "E"], "focal_length_mm": 50, "max_t_stop": 2.1, "squeeze": 1.0 },
+    { "id": "zeiss_cp3__85mm__t2_1__1x", "type": "prime", "brand": "ZEISS", "series": "CP.3", "format": "FF", "mounts": ["PL", "EF", "E"], "focal_length_mm": 85, "max_t_stop": 2.1, "squeeze": 1.0 },
+    { "id": "angenieux_optimo__15-40mm__t2_6__1x", "type": "zoom", "brand": "Angenieux", "series": "Optimo", "format": "S35", "mounts": ["PL"], "focal_length_mm_min": 15, "focal_length_mm_max": 40, "max_t_stop": 2.6, "squeeze": 1.0 },
+    { "id": "angenieux_optimo__28-76mm__t2_6__1x", "type": "zoom", "brand": "Angenieux", "series": "Optimo", "format": "S35", "mounts": ["PL"], "focal_length_mm_min": 28, "focal_length_mm_max": 76, "max_t_stop": 2.6, "squeeze": 1.0 },
+    { "id": "angenieux_optimo__24-290mm__t2_8__1x", "type": "zoom", "brand": "Angenieux", "series": "Optimo", "format": "S35", "mounts": ["PL"], "focal_length_mm_min": 24, "focal_length_mm_max": 290, "max_t_stop": 2.8, "squeeze": 1.0 },
+    { "id": "fujinon_cabrio__19-90mm__t2_9__1x", "type": "zoom", "brand": "Fujinon", "series": "Cabrio", "format": "S35", "mounts": ["PL"], "focal_length_mm_min": 19, "focal_length_mm_max": 90, "max_t_stop": 2.9, "squeeze": 1.0 },
+    { "id": "fujinon_cabrio__85-300mm__t2_9__1x", "type": "zoom", "brand": "Fujinon", "series": "Cabrio", "format": "S35", "mounts": ["PL"], "focal_length_mm_min": 85, "focal_length_mm_max": 300, "max_t_stop": 2.9, "squeeze": 1.0 },
+    { "id": "sigma_cine_ff__20mm__t1_5__1x", "type": "prime", "brand": "Sigma", "series": "Cine FF High Speed", "format": "FF", "mounts": ["PL", "EF"], "focal_length_mm": 20, "max_t_stop": 1.5, "squeeze": 1.0 },
+    { "id": "sigma_cine_ff__24mm__t1_5__1x", "type": "prime", "brand": "Sigma", "series": "Cine FF High Speed", "format": "FF", "mounts": ["PL", "EF"], "focal_length_mm": 24, "max_t_stop": 1.5, "squeeze": 1.0 },
+    { "id": "sigma_cine_ff__35mm__t1_5__1x", "type": "prime", "brand": "Sigma", "series": "Cine FF High Speed", "format": "FF", "mounts": ["PL", "EF"], "focal_length_mm": 35, "max_t_stop": 1.5, "squeeze": 1.0 },
+    { "id": "sigma_cine_ff__50mm__t1_5__1x", "type": "prime", "brand": "Sigma", "series": "Cine FF High Speed", "format": "FF", "mounts": ["PL", "EF"], "focal_length_mm": 50, "max_t_stop": 1.5, "squeeze": 1.0 },
+    { "id": "sigma_cine_ff__85mm__t1_5__1x", "type": "prime", "brand": "Sigma", "series": "Cine FF High Speed", "format": "FF", "mounts": ["PL", "EF"], "focal_length_mm": 85, "max_t_stop": 1.5, "squeeze": 1.0 },
+    { "id": "sigma_cine_zoom__18-35mm__t1_8__1x", "type": "zoom", "brand": "Sigma", "series": "Cine Zoom", "format": "S35", "mounts": ["PL", "EF"], "focal_length_mm_min": 18, "focal_length_mm_max": 35, "max_t_stop": 1.8, "squeeze": 1.0 },
+    { "id": "sigma_cine_zoom__50-100mm__t1_8__1x", "type": "zoom", "brand": "Sigma", "series": "Cine Zoom", "format": "S35", "mounts": ["PL", "EF"], "focal_length_mm_min": 50, "focal_length_mm_max": 100, "max_t_stop": 1.8, "squeeze": 1.0 },
+    { "id": "cooke_anamorphic_i__32mm__t2_3__2x", "type": "prime", "brand": "Cooke", "series": "Anamorphic/i", "format": "S35", "mounts": ["PL"], "focal_length_mm": 32, "max_t_stop": 2.3, "squeeze": 2.0 },
+    { "id": "cooke_anamorphic_i__40mm__t2_3__2x", "type": "prime", "brand": "Cooke", "series": "Anamorphic/i", "format": "S35", "mounts": ["PL"], "focal_length_mm": 40, "max_t_stop": 2.3, "squeeze": 2.0 },
+    { "id": "cooke_anamorphic_i__50mm__t2_3__2x", "type": "prime", "brand": "Cooke", "series": "Anamorphic/i", "format": "S35", "mounts": ["PL"], "focal_length_mm": 50, "max_t_stop": 2.3, "squeeze": 2.0 },
+    { "id": "cooke_anamorphic_i__75mm__t2_3__2x", "type": "prime", "brand": "Cooke", "series": "Anamorphic/i", "format": "S35", "mounts": ["PL"], "focal_length_mm": 75, "max_t_stop": 2.3, "squeeze": 2.0 },
+    { "id": "atlas_orion__32mm__t2_0__2x", "type": "prime", "brand": "Atlas", "series": "Orion", "format": "S35", "mounts": ["PL"], "focal_length_mm": 32, "max_t_stop": 2.0, "squeeze": 2.0 },
+    { "id": "atlas_orion__40mm__t2_0__2x", "type": "prime", "brand": "Atlas", "series": "Orion", "format": "S35", "mounts": ["PL"], "focal_length_mm": 40, "max_t_stop": 2.0, "squeeze": 2.0 },
+    { "id": "atlas_orion__50mm__t2_0__2x", "type": "prime", "brand": "Atlas", "series": "Orion", "format": "S35", "mounts": ["PL"], "focal_length_mm": 50, "max_t_stop": 2.0, "squeeze": 2.0 },
+    { "id": "atlas_orion__65mm__t2_0__2x", "type": "prime", "brand": "Atlas", "series": "Orion", "format": "S35", "mounts": ["PL"], "focal_length_mm": 65, "max_t_stop": 2.0, "squeeze": 2.0 }
+  ],
+  "lens_pack_items": [
+    { "pack_id": "arri_signature_primes", "lens_id": "arri_signature_prime__18mm__t1_8__1x", "sort_order": 18 },
+    { "pack_id": "arri_signature_primes", "lens_id": "arri_signature_prime__25mm__t1_8__1x", "sort_order": 25 },
+    { "pack_id": "arri_signature_primes", "lens_id": "arri_signature_prime__35mm__t1_8__1x", "sort_order": 35 },
+    { "pack_id": "arri_signature_primes", "lens_id": "arri_signature_prime__50mm__t1_8__1x", "sort_order": 50 },
+    { "pack_id": "cooke_s4_i", "lens_id": "cooke_s4_i__18mm__t2_0__1x", "sort_order": 18 },
+    { "pack_id": "cooke_s4_i", "lens_id": "cooke_s4_i__25mm__t2_0__1x", "sort_order": 25 },
+    { "pack_id": "cooke_s4_i", "lens_id": "cooke_s4_i__32mm__t2_0__1x", "sort_order": 32 },
+    { "pack_id": "cooke_s4_i", "lens_id": "cooke_s4_i__40mm__t2_0__1x", "sort_order": 40 },
+    { "pack_id": "cooke_s4_i", "lens_id": "cooke_s4_i__50mm__t2_0__1x", "sort_order": 50 },
+    { "pack_id": "cooke_s4_i", "lens_id": "cooke_s4_i__75mm__t2_0__1x", "sort_order": 75 },
+    { "pack_id": "zeiss_cp3", "lens_id": "zeiss_cp3__25mm__t2_1__1x", "sort_order": 25 },
+    { "pack_id": "zeiss_cp3", "lens_id": "zeiss_cp3__35mm__t2_1__1x", "sort_order": 35 },
+    { "pack_id": "zeiss_cp3", "lens_id": "zeiss_cp3__50mm__t2_1__1x", "sort_order": 50 },
+    { "pack_id": "zeiss_cp3", "lens_id": "zeiss_cp3__85mm__t2_1__1x", "sort_order": 85 },
+    { "pack_id": "angenieux_optimo", "lens_id": "angenieux_optimo__15-40mm__t2_6__1x", "sort_order": 1540 },
+    { "pack_id": "angenieux_optimo", "lens_id": "angenieux_optimo__28-76mm__t2_6__1x", "sort_order": 2876 },
+    { "pack_id": "angenieux_optimo", "lens_id": "angenieux_optimo__24-290mm__t2_8__1x", "sort_order": 24290 },
+    { "pack_id": "fujinon_cabrio", "lens_id": "fujinon_cabrio__19-90mm__t2_9__1x", "sort_order": 1990 },
+    { "pack_id": "fujinon_cabrio", "lens_id": "fujinon_cabrio__85-300mm__t2_9__1x", "sort_order": 85300 },
+    { "pack_id": "sigma_cine_primes_ff", "lens_id": "sigma_cine_ff__20mm__t1_5__1x", "sort_order": 20 },
+    { "pack_id": "sigma_cine_primes_ff", "lens_id": "sigma_cine_ff__24mm__t1_5__1x", "sort_order": 24 },
+    { "pack_id": "sigma_cine_primes_ff", "lens_id": "sigma_cine_ff__35mm__t1_5__1x", "sort_order": 35 },
+    { "pack_id": "sigma_cine_primes_ff", "lens_id": "sigma_cine_ff__50mm__t1_5__1x", "sort_order": 50 },
+    { "pack_id": "sigma_cine_primes_ff", "lens_id": "sigma_cine_ff__85mm__t1_5__1x", "sort_order": 85 },
+    { "pack_id": "sigma_cine_zooms", "lens_id": "sigma_cine_zoom__18-35mm__t1_8__1x", "sort_order": 1835 },
+    { "pack_id": "sigma_cine_zooms", "lens_id": "sigma_cine_zoom__50-100mm__t1_8__1x", "sort_order": 50100 },
+    { "pack_id": "cooke_anamorphic_i", "lens_id": "cooke_anamorphic_i__32mm__t2_3__2x", "sort_order": 32 },
+    { "pack_id": "cooke_anamorphic_i", "lens_id": "cooke_anamorphic_i__40mm__t2_3__2x", "sort_order": 40 },
+    { "pack_id": "cooke_anamorphic_i", "lens_id": "cooke_anamorphic_i__50mm__t2_3__2x", "sort_order": 50 },
+    { "pack_id": "cooke_anamorphic_i", "lens_id": "cooke_anamorphic_i__75mm__t2_3__2x", "sort_order": 75 },
+    { "pack_id": "atlas_orion", "lens_id": "atlas_orion__32mm__t2_0__2x", "sort_order": 32 },
+    { "pack_id": "atlas_orion", "lens_id": "atlas_orion__40mm__t2_0__2x", "sort_order": 40 },
+    { "pack_id": "atlas_orion__50mm__t2_0__2x", "sort_order": 50 },
+    { "pack_id": "atlas_orion__65mm__t2_0__2x", "sort_order": 65 }
   ]
 }

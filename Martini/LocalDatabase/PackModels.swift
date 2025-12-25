@@ -4,13 +4,17 @@ struct PackPayload: Codable {
     let dbVersion: String
     let pack: PackInfo
     let cameras: [PackCamera]
+    let lensPacks: [PackLensPack]
     let lenses: [PackLens]
+    let lensPackItems: [PackLensPackItem]
 
     enum CodingKeys: String, CodingKey {
         case dbVersion = "db_version"
         case pack
         case cameras
+        case lensPacks = "lens_packs"
         case lenses
+        case lensPackItems = "lens_pack_items"
     }
 }
 
@@ -61,6 +65,27 @@ struct PackCameraMode: Codable {
         case sensorHeightMm = "sensor_height_mm"
         case resolution
         case aspectRatio = "aspect_ratio"
+    }
+}
+
+struct PackLensPack: Codable {
+    let id: String
+    let brand: String
+    let name: String
+    let type: String
+    let format: String
+    let description: String
+}
+
+struct PackLensPackItem: Codable {
+    let packId: String
+    let lensId: String
+    let sortOrder: Int
+
+    enum CodingKeys: String, CodingKey {
+        case packId = "pack_id"
+        case lensId = "lens_id"
+        case sortOrder = "sort_order"
     }
 }
 

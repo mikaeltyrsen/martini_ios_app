@@ -56,7 +56,9 @@ final class LocalDatabase {
             brand TEXT NOT NULL,
             model TEXT NOT NULL,
             sensor_width_mm REAL NOT NULL,
-            sensor_height_mm REAL NOT NULL
+            sensor_height_mm REAL NOT NULL,
+            sensor_type TEXT,
+            mount TEXT
         );
         """
         let createCameraModes = """
@@ -66,6 +68,8 @@ final class LocalDatabase {
             name TEXT NOT NULL,
             sensor_width_mm REAL NOT NULL,
             sensor_height_mm REAL NOT NULL,
+            resolution TEXT,
+            aspect_ratio TEXT,
             FOREIGN KEY(camera_id) REFERENCES cameras(id)
         );
         """
@@ -78,7 +82,29 @@ final class LocalDatabase {
             focal_max_mm REAL NOT NULL,
             t_stop REAL NOT NULL,
             squeeze REAL NOT NULL,
-            is_zoom INTEGER NOT NULL
+            is_zoom INTEGER NOT NULL,
+            format TEXT,
+            mounts TEXT
+        );
+        """
+        let createLensPacks = """
+        CREATE TABLE IF NOT EXISTS lens_packs (
+            id TEXT PRIMARY KEY,
+            brand TEXT NOT NULL,
+            name TEXT NOT NULL,
+            type TEXT NOT NULL,
+            format TEXT NOT NULL,
+            description TEXT
+        );
+        """
+        let createLensPackItems = """
+        CREATE TABLE IF NOT EXISTS lens_pack_items (
+            id TEXT PRIMARY KEY,
+            pack_id TEXT NOT NULL,
+            lens_id TEXT NOT NULL,
+            sort_order INTEGER NOT NULL,
+            FOREIGN KEY(pack_id) REFERENCES lens_packs(id),
+            FOREIGN KEY(lens_id) REFERENCES lenses(id)
         );
         """
         let createLensPrefs = """
@@ -116,8 +142,15 @@ final class LocalDatabase {
         );
         """
 
-        [createPacks, createCameras, createCameraModes, createLenses, createLensPrefs, createIphoneCameras, createProjectCameras, createProjectLenses]
+        [createPacks, createCameras, createCameraModes, createLenses, createLensPrefs, createIphoneCameras, createProjectCameras, createProjectLenses, createLensPacks, createLensPackItems]
             .forEach(execute)
+
+        ensureColumn(table: "cameras", column: "sensor_type", type: "TEXT")
+        ensureColumn(table: "cameras", column: "mount", type: "TEXT")
+        ensureColumn(table: "camera_modes", column: "resolution", type: "TEXT")
+        ensureColumn(table: "camera_modes", column: "aspect_ratio", type: "TEXT")
+        ensureColumn(table: "lenses", column: "format", type: "TEXT")
+        ensureColumn(table: "lenses", column: "mounts", type: "TEXT")
     }
 
     func seedIfNeeded() {
@@ -273,19 +306,41 @@ final class LocalDatabase {
     }
 
     func updateProjectCameras(projectId: String, cameraIds: [String]) {
+        execute("BEGIN TRANSACTION")
         execute("DELETE FROM project_cameras WHERE project_id = '\(projectId)'")
-        for cameraId in cameraIds {
-            let id = "\(projectId)_\(cameraId)"
-            execute("INSERT OR REPLACE INTO project_cameras (id, project_id, camera_id) VALUES ('\(id)', '\(projectId)', '\(cameraId)')")
+        let sql = "INSERT OR REPLACE INTO project_cameras (id, project_id, camera_id) VALUES (?, ?, ?)"
+        var statement: OpaquePointer?
+        if sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK {
+            for cameraId in cameraIds {
+                let id = "\(projectId)_\(cameraId)"
+                sqlite3_bind_text(statement, 1, id, -1, nil)
+                sqlite3_bind_text(statement, 2, projectId, -1, nil)
+                sqlite3_bind_text(statement, 3, cameraId, -1, nil)
+                _ = sqlite3_step(statement)
+                sqlite3_reset(statement)
+            }
         }
+        sqlite3_finalize(statement)
+        execute("COMMIT")
     }
 
     func updateProjectLenses(projectId: String, lensIds: [String]) {
+        execute("BEGIN TRANSACTION")
         execute("DELETE FROM project_lenses WHERE project_id = '\(projectId)'")
-        for lensId in lensIds {
-            let id = "\(projectId)_\(lensId)"
-            execute("INSERT OR REPLACE INTO project_lenses (id, project_id, lens_id) VALUES ('\(id)', '\(projectId)', '\(lensId)')")
+        let sql = "INSERT OR REPLACE INTO project_lenses (id, project_id, lens_id) VALUES (?, ?, ?)"
+        var statement: OpaquePointer?
+        if sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK {
+            for lensId in lensIds {
+                let id = "\(projectId)_\(lensId)"
+                sqlite3_bind_text(statement, 1, id, -1, nil)
+                sqlite3_bind_text(statement, 2, projectId, -1, nil)
+                sqlite3_bind_text(statement, 3, lensId, -1, nil)
+                _ = sqlite3_step(statement)
+                sqlite3_reset(statement)
+            }
         }
+        sqlite3_finalize(statement)
+        execute("COMMIT")
     }
 
     func fetchProjectCameraIds(projectId: String) -> [String] {
@@ -343,7 +398,9 @@ final class LocalDatabase {
                 brand: camera.brand,
                 model: camera.model,
                 sensorWidthMm: primaryMode.sensorWidthMm,
-                sensorHeightMm: primaryMode.sensorHeightMm
+                sensorHeightMm: primaryMode.sensorHeightMm,
+                sensorType: camera.sensorType,
+                mount: camera.mount
             )
 
             for mode in camera.modes {
@@ -352,9 +409,22 @@ final class LocalDatabase {
                     cameraId: camera.id,
                     name: mode.name,
                     sensorWidthMm: mode.sensorWidthMm,
-                    sensorHeightMm: mode.sensorHeightMm
+                    sensorHeightMm: mode.sensorHeightMm,
+                    resolution: mode.resolution,
+                    aspectRatio: mode.aspectRatio
                 )
             }
+        }
+
+        for pack in payload.lensPacks {
+            upsertLensPack(
+                id: pack.id,
+                brand: pack.brand,
+                name: pack.name,
+                type: pack.type,
+                format: pack.format,
+                description: pack.description
+            )
         }
 
         for lens in payload.lenses {
@@ -383,7 +453,19 @@ final class LocalDatabase {
                 focalMaxMm: focalMax,
                 tStop: lens.maxTStop,
                 squeeze: lens.squeeze,
-                isZoom: isZoom
+                isZoom: isZoom,
+                format: lens.format,
+                mounts: lens.mounts
+            )
+        }
+
+        for item in payload.lensPackItems {
+            let itemId = "\(item.packId)__\(item.lensId)"
+            upsertLensPackItem(
+                id: itemId,
+                packId: item.packId,
+                lensId: item.lensId,
+                sortOrder: item.sortOrder
             )
         }
     }
@@ -400,8 +482,8 @@ final class LocalDatabase {
         sqlite3_finalize(statement)
     }
 
-    private func upsertCamera(id: String, brand: String, model: String, sensorWidthMm: Double, sensorHeightMm: Double) {
-        let sql = "INSERT OR REPLACE INTO cameras (id, brand, model, sensor_width_mm, sensor_height_mm) VALUES (?, ?, ?, ?, ?)"
+    private func upsertCamera(id: String, brand: String, model: String, sensorWidthMm: Double, sensorHeightMm: Double, sensorType: String?, mount: String?) {
+        let sql = "INSERT OR REPLACE INTO cameras (id, brand, model, sensor_width_mm, sensor_height_mm, sensor_type, mount) VALUES (?, ?, ?, ?, ?, ?, ?)"
         var statement: OpaquePointer?
         if sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK {
             sqlite3_bind_text(statement, 1, id, -1, nil)
@@ -409,13 +491,15 @@ final class LocalDatabase {
             sqlite3_bind_text(statement, 3, model, -1, nil)
             sqlite3_bind_double(statement, 4, sensorWidthMm)
             sqlite3_bind_double(statement, 5, sensorHeightMm)
+            sqlite3_bind_text(statement, 6, sensorType ?? "", -1, nil)
+            sqlite3_bind_text(statement, 7, mount ?? "", -1, nil)
             _ = sqlite3_step(statement)
         }
         sqlite3_finalize(statement)
     }
 
-    private func upsertCameraMode(id: String, cameraId: String, name: String, sensorWidthMm: Double, sensorHeightMm: Double) {
-        let sql = "INSERT OR REPLACE INTO camera_modes (id, camera_id, name, sensor_width_mm, sensor_height_mm) VALUES (?, ?, ?, ?, ?)"
+    private func upsertCameraMode(id: String, cameraId: String, name: String, sensorWidthMm: Double, sensorHeightMm: Double, resolution: String?, aspectRatio: String?) {
+        let sql = "INSERT OR REPLACE INTO camera_modes (id, camera_id, name, sensor_width_mm, sensor_height_mm, resolution, aspect_ratio) VALUES (?, ?, ?, ?, ?, ?, ?)"
         var statement: OpaquePointer?
         if sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK {
             sqlite3_bind_text(statement, 1, id, -1, nil)
@@ -423,13 +507,15 @@ final class LocalDatabase {
             sqlite3_bind_text(statement, 3, name, -1, nil)
             sqlite3_bind_double(statement, 4, sensorWidthMm)
             sqlite3_bind_double(statement, 5, sensorHeightMm)
+            sqlite3_bind_text(statement, 6, resolution ?? "", -1, nil)
+            sqlite3_bind_text(statement, 7, aspectRatio ?? "", -1, nil)
             _ = sqlite3_step(statement)
         }
         sqlite3_finalize(statement)
     }
 
-    private func upsertLens(id: String, brand: String, series: String, focalMinMm: Double, focalMaxMm: Double, tStop: Double, squeeze: Double, isZoom: Bool) {
-        let sql = "INSERT OR REPLACE INTO lenses (id, brand, series, focal_min_mm, focal_max_mm, t_stop, squeeze, is_zoom) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    private func upsertLens(id: String, brand: String, series: String, focalMinMm: Double, focalMaxMm: Double, tStop: Double, squeeze: Double, isZoom: Bool, format: String?, mounts: [String]?) {
+        let sql = "INSERT OR REPLACE INTO lenses (id, brand, series, focal_min_mm, focal_max_mm, t_stop, squeeze, is_zoom, format, mounts) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         var statement: OpaquePointer?
         if sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK {
             sqlite3_bind_text(statement, 1, id, -1, nil)
@@ -440,8 +526,57 @@ final class LocalDatabase {
             sqlite3_bind_double(statement, 6, tStop)
             sqlite3_bind_double(statement, 7, squeeze)
             sqlite3_bind_int(statement, 8, isZoom ? 1 : 0)
+            sqlite3_bind_text(statement, 9, format ?? "", -1, nil)
+            let mountsValue = mounts?.joined(separator: ",") ?? ""
+            sqlite3_bind_text(statement, 10, mountsValue, -1, nil)
             _ = sqlite3_step(statement)
         }
         sqlite3_finalize(statement)
+    }
+
+    private func upsertLensPack(id: String, brand: String, name: String, type: String, format: String, description: String) {
+        let sql = "INSERT OR REPLACE INTO lens_packs (id, brand, name, type, format, description) VALUES (?, ?, ?, ?, ?, ?)"
+        var statement: OpaquePointer?
+        if sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK {
+            sqlite3_bind_text(statement, 1, id, -1, nil)
+            sqlite3_bind_text(statement, 2, brand, -1, nil)
+            sqlite3_bind_text(statement, 3, name, -1, nil)
+            sqlite3_bind_text(statement, 4, type, -1, nil)
+            sqlite3_bind_text(statement, 5, format, -1, nil)
+            sqlite3_bind_text(statement, 6, description, -1, nil)
+            _ = sqlite3_step(statement)
+        }
+        sqlite3_finalize(statement)
+    }
+
+    private func upsertLensPackItem(id: String, packId: String, lensId: String, sortOrder: Int) {
+        let sql = "INSERT OR REPLACE INTO lens_pack_items (id, pack_id, lens_id, sort_order) VALUES (?, ?, ?, ?)"
+        var statement: OpaquePointer?
+        if sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK {
+            sqlite3_bind_text(statement, 1, id, -1, nil)
+            sqlite3_bind_text(statement, 2, packId, -1, nil)
+            sqlite3_bind_text(statement, 3, lensId, -1, nil)
+            sqlite3_bind_int(statement, 4, Int32(sortOrder))
+            _ = sqlite3_step(statement)
+        }
+        sqlite3_finalize(statement)
+    }
+
+    private func ensureColumn(table: String, column: String, type: String) {
+        let query = "PRAGMA table_info(\(table))"
+        var statement: OpaquePointer?
+        var exists = false
+        if sqlite3_prepare_v2(db, query, -1, &statement, nil) == SQLITE_OK {
+            while sqlite3_step(statement) == SQLITE_ROW {
+                let name = String(cString: sqlite3_column_text(statement, 1))
+                if name == column {
+                    exists = true
+                    break
+                }
+            }
+        }
+        sqlite3_finalize(statement)
+        guard !exists else { return }
+        execute("ALTER TABLE \(table) ADD COLUMN \(column) \(type)")
     }
 }
