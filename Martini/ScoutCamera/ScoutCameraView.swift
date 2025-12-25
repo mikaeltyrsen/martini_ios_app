@@ -165,17 +165,15 @@ private struct CameraPreviewView: UIViewRepresentable {
     let session: AVCaptureSession
 
     func makeUIView(context: Context) -> UIView {
-        let view = UIView(frame: .zero)
-        let previewLayer = AVCaptureVideoPreviewLayer(session: session)
-        previewLayer.videoGravity = .resizeAspectFill
-        previewLayer.frame = view.bounds
-        view.layer.addSublayer(previewLayer)
-        context.coordinator.previewLayer = previewLayer
+        let view = PreviewView()
+        view.videoPreviewLayer.session = session
+        view.videoPreviewLayer.videoGravity = .resizeAspectFill
         return view
     }
 
     func updateUIView(_ uiView: UIView, context: Context) {
-        context.coordinator.previewLayer?.frame = uiView.bounds
+        guard let previewView = uiView as? PreviewView else { return }
+        previewView.videoPreviewLayer.session = session
     }
 
     func makeCoordinator() -> Coordinator {
@@ -184,5 +182,15 @@ private struct CameraPreviewView: UIViewRepresentable {
 
     final class Coordinator {
         var previewLayer: AVCaptureVideoPreviewLayer?
+    }
+}
+
+private final class PreviewView: UIView {
+    override class var layerClass: AnyClass {
+        AVCaptureVideoPreviewLayer.self
+    }
+
+    var videoPreviewLayer: AVCaptureVideoPreviewLayer {
+        layer as? AVCaptureVideoPreviewLayer ?? AVCaptureVideoPreviewLayer()
     }
 }
