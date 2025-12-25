@@ -5,15 +5,22 @@ struct ScoutCameraView: View {
     @EnvironmentObject private var authService: AuthService
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: ScoutCameraViewModel
+    private let targetAspectRatio: CGFloat
 
     init(projectId: String, frameId: String, targetAspectRatio: CGFloat) {
+        self.targetAspectRatio = targetAspectRatio
         _viewModel = StateObject(wrappedValue: ScoutCameraViewModel(projectId: projectId, frameId: frameId, targetAspectRatio: targetAspectRatio))
     }
 
     var body: some View {
         ZStack {
-            CameraPreviewView(session: viewModel.captureManager.session)
-                .ignoresSafeArea()
+            Color.black.ignoresSafeArea()
+            GeometryReader { proxy in
+                CameraPreviewView(session: viewModel.captureManager.session)
+                    .aspectRatio(targetAspectRatio, contentMode: .fit)
+                    .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
+                    .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+            }
 
             VStack {
                 topBar
@@ -168,12 +175,14 @@ private struct CameraPreviewView: UIViewRepresentable {
         let view = PreviewView()
         view.videoPreviewLayer.session = session
         view.videoPreviewLayer.videoGravity = .resizeAspectFill
+        view.setVideoOrientation(.landscapeRight)
         return view
     }
 
     func updateUIView(_ uiView: UIView, context: Context) {
         guard let previewView = uiView as? PreviewView else { return }
         previewView.videoPreviewLayer.session = session
+        previewView.setVideoOrientation(.landscapeRight)
     }
 
     func makeCoordinator() -> Coordinator {
@@ -192,5 +201,15 @@ private final class PreviewView: UIView {
 
     var videoPreviewLayer: AVCaptureVideoPreviewLayer {
         layer as? AVCaptureVideoPreviewLayer ?? AVCaptureVideoPreviewLayer()
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        setVideoOrientation(.landscapeRight)
+    }
+
+    func setVideoOrientation(_ orientation: AVCaptureVideoOrientation) {
+        guard let connection = videoPreviewLayer.connection, connection.isVideoOrientationSupported else { return }
+        connection.videoOrientation = orientation
     }
 }

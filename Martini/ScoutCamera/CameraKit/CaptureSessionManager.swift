@@ -35,6 +35,10 @@ final class CaptureSessionManager: ObservableObject {
 
         session.commitConfiguration()
 
+        if let connection = photoOutput.connection(with: .video), connection.isVideoOrientationSupported {
+            connection.videoOrientation = .landscapeRight
+        }
+
         try device.lockForConfiguration()
         let clampedZoom = min(max(zoomFactor, device.minAvailableVideoZoomFactor), device.maxAvailableVideoZoomFactor)
         device.videoZoomFactor = CGFloat(clampedZoom)
