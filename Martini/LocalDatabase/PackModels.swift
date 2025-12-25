@@ -79,7 +79,7 @@ struct PackLensPack: Codable {
 
 struct PackLensPackItem: Codable {
     let packId: String
-    let lensId: String
+    let lensId: String?
     let sortOrder: Int
 
     enum CodingKeys: String, CodingKey {

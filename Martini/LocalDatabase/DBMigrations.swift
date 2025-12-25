@@ -460,11 +460,12 @@ final class LocalDatabase {
         }
 
         for item in payload.lensPackItems ?? [] {
-            let itemId = "\(item.packId)__\(item.lensId)"
+            guard let lensId = item.lensId, !lensId.isEmpty else { continue }
+            let itemId = "\(item.packId)__\(lensId)"
             upsertLensPackItem(
                 id: itemId,
                 packId: item.packId,
-                lensId: item.lensId,
+                lensId: lensId,
                 sortOrder: item.sortOrder
             )
         }
