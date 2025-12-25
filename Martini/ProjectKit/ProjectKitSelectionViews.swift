@@ -175,7 +175,7 @@ struct ProjectKitLensSelectionView: View {
 
     private func cameraSensorLabel(_ camera: DBCamera) -> String {
         if let width = camera.sensorWidthMm, let height = camera.sensorHeightMm {
-            return "Sensor \(width, specifier: "%.2f") × \(height, specifier: "%.2f") mm"
+            return "Sensor \(String(format: "%.2f", width)) × \(String(format: "%.2f", height)) mm"
         }
         if let sensorType = camera.sensorType, !sensorType.isEmpty {
             return "Sensor \(sensorType)"
