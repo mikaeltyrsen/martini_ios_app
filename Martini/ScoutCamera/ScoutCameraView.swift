@@ -131,31 +131,15 @@ struct ScoutCameraView: View {
     }
 
     private var settingsPanel: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text("Camera Settings")
-                    .font(.headline)
-                Spacer()
-                Button {
-                    isSettingsOpen = false
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 20, weight: .semibold))
-                }
-            }
-            .padding(16)
-            .foregroundStyle(.white)
-
+        NavigationStack {
             List {
                 Section {
-                    DisclosureGroup(isExpanded: expandedBinding(for: .camera)) {
-                        ForEach(viewModel.availableCameras, id: \.id) { camera in
-                            selectionRow(
-                                title: "\(camera.brand) \(camera.model)",
-                                isSelected: viewModel.selectedCamera?.id == camera.id
-                            ) {
-                                viewModel.selectedCamera = camera
-                            }
+                    NavigationLink {
+                        CameraSelectionList(
+                            cameras: viewModel.availableCameras,
+                            selectedCameraId: viewModel.selectedCamera?.id
+                        ) { camera in
+                            viewModel.selectedCamera = camera
                         }
                     } label: {
                         settingsSectionLabel(title: "Camera", value: selectedCameraLabel)
@@ -224,6 +208,18 @@ struct ScoutCameraView: View {
             .background(Color.black.opacity(0.6))
             .foregroundStyle(.white)
         }
+        .navigationTitle("Camera Settings")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    isSettingsOpen = false
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 20, weight: .semibold))
+                }
+            }
+        }
         .background(Color.black.opacity(0.85))
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .padding(.trailing, 16)
@@ -246,6 +242,39 @@ struct ScoutCameraView: View {
             return "None"
         }
         return "\(lens.brand) \(lens.series)"
+    }
+
+    private struct CameraSelectionList: View {
+        @Environment(\.dismiss) private var dismiss
+        let cameras: [DBCamera]
+        let selectedCameraId: String?
+        let onSelect: (DBCamera) -> Void
+
+        var body: some View {
+            List(cameras, id: \.id) { camera in
+                Button {
+                    onSelect(camera)
+                    dismiss()
+                } label: {
+                    HStack {
+                        Text("\(camera.brand) \(camera.model)")
+                        Spacer()
+                        if selectedCameraId == camera.id {
+                            Image(systemName: "checkmark")
+                                .font(.caption.weight(.semibold))
+                        }
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+            .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+            .background(Color.black.opacity(0.6))
+            .foregroundStyle(.white)
+            .navigationTitle("Camera")
+            .navigationBarTitleDisplayMode(.inline)
+        }
     }
 
     private func settingsSectionLabel(title: String, value: String) -> some View {
