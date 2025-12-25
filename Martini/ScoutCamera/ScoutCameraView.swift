@@ -43,11 +43,15 @@ struct ScoutCameraView: View {
         }
         .animation(.easeInOut(duration: 0.2), value: isSettingsOpen)
         .onAppear {
+            AppDelegate.orientationLock = .landscape
             UIDevice.current.setValue(UIInterfaceOrientation.landscapeRight.rawValue, forKey: "orientation")
+            UIViewController.attemptRotationToDeviceOrientation()
             motionManager.start()
         }
         .onDisappear {
             motionManager.stop()
+            AppDelegate.orientationLock = .all
+            UIViewController.attemptRotationToDeviceOrientation()
         }
         .onChange(of: viewModel.selectedCamera) { _ in
             viewModel.refreshModes()

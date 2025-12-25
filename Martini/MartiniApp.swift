@@ -10,6 +10,7 @@ import SwiftUI
 
 @main
 struct MartiniApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var authService: AuthService
     @StateObject private var realtimeService: RealtimeService
     @StateObject private var connectionMonitor: ConnectionMonitor
