@@ -11,6 +11,14 @@ final class ProjectKitStore: ObservableObject {
         var displayName: String {
             "\(pack.brand) \(pack.name)"
         }
+
+        static func == (lhs: LensPackGroup, rhs: LensPackGroup) -> Bool {
+            lhs.id == rhs.id
+        }
+
+        func hash(into hasher: inout Hasher) {
+            hasher.combine(id)
+        }
     }
 
     @Published private(set) var availableCameras: [DBCamera] = []
