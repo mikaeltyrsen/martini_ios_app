@@ -143,6 +143,7 @@ final class ScoutCameraViewModel: ObservableObject {
         return PhotoProcessor.composeFinalImage(
             capturedImage: image,
             targetAspectRatio: targetAspectRatio,
+            sensorAspectRatio: sensorAspectRatio,
             metadata: metadata,
             logoImage: logo,
             frameLineAspectRatio: selectedFrameLine.aspectRatio
@@ -184,6 +185,35 @@ final class ScoutCameraViewModel: ObservableObject {
             return "\(Int(focal))mm"
         }
         return "\(Int(focalLengthMm))mm"
+    }
+
+    var sensorAspectRatio: CGFloat? {
+        guard let mode = selectedMode else { return nil }
+        if mode.sensorWidthMm > 0, mode.sensorHeightMm > 0 {
+            return CGFloat(mode.sensorWidthMm / mode.sensorHeightMm)
+        }
+        return parseAspectRatio(mode.aspectRatio)
+    }
+
+    private func parseAspectRatio(_ ratio: String?) -> CGFloat? {
+        guard let ratio else { return nil }
+        let cleaned = ratio.lowercased().replacingOccurrences(of: " ", with: "")
+        if cleaned.contains(":") {
+            let parts = cleaned.split(separator: ":")
+            if parts.count == 2, let w = Double(parts[0]), let h = Double(parts[1]), h != 0 {
+                return CGFloat(w / h)
+            }
+        }
+        if cleaned.contains("x") {
+            let parts = cleaned.split(separator: "x")
+            if parts.count == 2, let w = Double(parts[0]), let h = Double(parts[1]), h != 0 {
+                return CGFloat(w / h)
+            }
+        }
+        if let value = Double(cleaned), value > 0 {
+            return CGFloat(value)
+        }
+        return nil
     }
 
     private func buildDebugInfo(

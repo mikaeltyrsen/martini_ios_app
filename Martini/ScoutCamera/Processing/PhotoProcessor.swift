@@ -12,11 +12,13 @@ struct PhotoProcessor {
     static func composeFinalImage(
         capturedImage: UIImage,
         targetAspectRatio: CGFloat,
+        sensorAspectRatio: CGFloat?,
         metadata: ScoutPhotoMetadata,
         logoImage: UIImage?,
         frameLineAspectRatio: CGFloat?
     ) -> UIImage? {
-        let inputSize = capturedImage.size
+        let baseImage = cropImage(capturedImage, to: sensorAspectRatio)
+        let inputSize = baseImage.size
         guard inputSize.width > 0, inputSize.height > 0 else { return nil }
 
         let canvasWidth = inputSize.width
@@ -37,7 +39,7 @@ struct PhotoProcessor {
             UIColor.white.setFill()
             context.fill(CGRect(origin: .zero, size: canvasSize))
 
-            capturedImage.draw(in: CGRect(origin: imageOrigin, size: scaledSize))
+            baseImage.draw(in: CGRect(origin: imageOrigin, size: scaledSize))
 
             if let frameLineAspectRatio {
                 let frameRect = frameLineRect(
@@ -114,5 +116,28 @@ struct PhotoProcessor {
             width: width,
             height: height
         )
+    }
+
+    private static func cropImage(_ image: UIImage, to aspectRatio: CGFloat?) -> UIImage {
+        guard let aspectRatio, aspectRatio > 0 else { return image }
+        guard let cgImage = image.cgImage else { return image }
+        let width = CGFloat(cgImage.width)
+        let height = CGFloat(cgImage.height)
+        guard width > 0, height > 0 else { return image }
+
+        let currentRatio = width / height
+        let cropRect: CGRect
+        if currentRatio > aspectRatio {
+            let targetWidth = height * aspectRatio
+            let x = (width - targetWidth) / 2
+            cropRect = CGRect(x: x, y: 0, width: targetWidth, height: height)
+        } else {
+            let targetHeight = width / aspectRatio
+            let y = (height - targetHeight) / 2
+            cropRect = CGRect(x: 0, y: y, width: width, height: targetHeight)
+        }
+
+        guard let cropped = cgImage.cropping(to: cropRect.integral) else { return image }
+        return UIImage(cgImage: cropped, scale: image.scale, orientation: image.imageOrientation)
     }
 }
