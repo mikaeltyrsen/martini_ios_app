@@ -13,16 +13,11 @@ final class ProjectKitStore: ObservableObject {
 
     func load(for projectId: String?) {
         currentProjectId = projectId
-        availableCameras = Self.deduplicate(
-            database.fetchCameras()
-                .filter { !$0.brand.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-                .filter { !$0.model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-        )
-        availableLenses = Self.deduplicate(
-            database.fetchLenses()
-                .filter { !$0.brand.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-                .filter { !$0.series.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-        )
+        loadAvailableKit()
+        if availableCameras.isEmpty || availableLenses.isEmpty {
+            PackImporter.importPackIfNeeded(using: database)
+            loadAvailableKit()
+        }
 
         guard let projectId else {
             selectedCameraIds = []
@@ -99,6 +94,19 @@ final class ProjectKitStore: ObservableObject {
             seen.insert(item.id)
             return true
         }
+    }
+
+    private func loadAvailableKit() {
+        availableCameras = Self.deduplicate(
+            database.fetchCameras()
+                .filter { !$0.brand.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+                .filter { !$0.model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        )
+        availableLenses = Self.deduplicate(
+            database.fetchLenses()
+                .filter { !$0.brand.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+                .filter { !$0.series.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        )
     }
 
     private func reloadSelections(projectId: String) {
