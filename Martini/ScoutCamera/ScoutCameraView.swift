@@ -8,6 +8,7 @@ struct ScoutCameraView: View {
     @StateObject private var viewModel: ScoutCameraViewModel
     @StateObject private var motionManager = MotionHeadingManager()
     private let targetAspectRatio: CGFloat
+    @State private var isSettingsOpen = false
 
     init(projectId: String, frameId: String, targetAspectRatio: CGFloat) {
         self.targetAspectRatio = targetAspectRatio
@@ -25,13 +26,18 @@ struct ScoutCameraView: View {
                     debugBar
                 }
                 previewPanel
-                selectorPanel
                 captureBar
             }
             .padding(.horizontal, 24)
             .padding(.top, 12)
             .padding(.bottom, 24)
+
+            if isSettingsOpen {
+                settingsDrawer
+                    .transition(.move(edge: .trailing))
+            }
         }
+        .animation(.easeInOut(duration: 0.2), value: isSettingsOpen)
         .onAppear {
             UIDevice.current.setValue(UIInterfaceOrientation.landscapeRight.rawValue, forKey: "orientation")
             motionManager.start()
@@ -95,69 +101,104 @@ struct ScoutCameraView: View {
                     .font(.caption)
                     .foregroundStyle(.white)
             }
+            Button {
+                isSettingsOpen.toggle()
+            } label: {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.system(size: 18, weight: .semibold))
+            }
+            .foregroundStyle(.white)
+            .padding(.leading, 12)
         }
         .padding(.horizontal)
     }
 
-    private var selectorPanel: some View {
-        VStack(spacing: 12) {
-            HStack {
-                Text("Camera")
-                Spacer()
-                Picker("Camera", selection: $viewModel.selectedCamera) {
-                    ForEach(viewModel.availableCameras, id: \.id) { camera in
-                        Text("\(camera.brand) \(camera.model)").tag(Optional(camera))
+    private var settingsDrawer: some View {
+        GeometryReader { proxy in
+            ZStack(alignment: .trailing) {
+                Color.black.opacity(0.45)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        isSettingsOpen = false
                     }
-                }
-                .pickerStyle(.menu)
-            }
 
-            HStack {
-                Text("Mode")
-                Spacer()
-                Picker("Mode", selection: $viewModel.selectedMode) {
-                    ForEach(viewModel.availableModes, id: \.id) { mode in
-                        Text(mode.name).tag(Optional(mode))
-                    }
-                }
-                .pickerStyle(.menu)
-            }
-
-            HStack {
-                Text("Lens")
-                Spacer()
-                Picker("Lens", selection: $viewModel.selectedLens) {
-                    ForEach(viewModel.availableLenses, id: \.id) { lens in
-                        Text("\(lens.brand) \(lens.series)").tag(Optional(lens))
-                    }
-                }
-                .pickerStyle(.menu)
-            }
-
-            HStack {
-                Text("Frame Lines")
-                Spacer()
-                Picker("Frame Lines", selection: $viewModel.selectedFrameLine) {
-                    ForEach(FrameLineOption.allCases) { option in
-                        Text(option.rawValue).tag(option)
-                    }
-                }
-                .pickerStyle(.menu)
-            }
-
-            if let lens = viewModel.selectedLens, lens.isZoom,
-               let minFocal = lens.focalLengthMinMm, let maxFocal = lens.focalLengthMaxMm {
-                VStack(alignment: .leading) {
-                    Text("Focal Length: \(Int(viewModel.focalLengthMm))mm")
-                        .foregroundStyle(.white)
-                    Slider(value: $viewModel.focalLengthMm, in: minFocal...maxFocal, step: 1)
-                }
+                settingsPanel
+                    .frame(width: min(360, proxy.size.width * 0.6))
+                    .transition(.move(edge: .trailing))
             }
         }
-        .padding()
-        .background(.black.opacity(0.4))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .foregroundStyle(.white)
+    }
+
+    private var settingsPanel: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("Camera Settings")
+                    .font(.headline)
+                Spacer()
+                Button {
+                    isSettingsOpen = false
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 20, weight: .semibold))
+                }
+            }
+            .padding(16)
+            .foregroundStyle(.white)
+
+            List {
+                Section("Camera") {
+                    Picker("Camera", selection: $viewModel.selectedCamera) {
+                        ForEach(viewModel.availableCameras, id: \.id) { camera in
+                            Text("\(camera.brand) \(camera.model)").tag(Optional(camera))
+                        }
+                    }
+                }
+
+                Section("Mode") {
+                    Picker("Mode", selection: $viewModel.selectedMode) {
+                        ForEach(viewModel.availableModes, id: \.id) { mode in
+                            Text(mode.name).tag(Optional(mode))
+                        }
+                    }
+                }
+
+                Section("Lens") {
+                    Picker("Lens", selection: $viewModel.selectedLens) {
+                        ForEach(viewModel.availableLenses, id: \.id) { lens in
+                            Text("\(lens.brand) \(lens.series)").tag(Optional(lens))
+                        }
+                    }
+                }
+
+                Section("Frame Lines") {
+                    Picker("Frame Lines", selection: $viewModel.selectedFrameLine) {
+                        ForEach(FrameLineOption.allCases) { option in
+                            Text(option.rawValue).tag(option)
+                        }
+                    }
+                }
+
+                if let lens = viewModel.selectedLens, lens.isZoom,
+                   let minFocal = lens.focalLengthMinMm, let maxFocal = lens.focalLengthMaxMm {
+                    Section("Focal Length") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("\(Int(viewModel.focalLengthMm))mm")
+                                .font(.headline)
+                            Slider(value: $viewModel.focalLengthMm, in: minFocal...maxFocal, step: 1)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+            }
+            .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+            .background(Color.black.opacity(0.6))
+            .foregroundStyle(.white)
+        }
+        .background(Color.black.opacity(0.85))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .padding(.trailing, 16)
+        .padding(.vertical, 16)
     }
 
     private var captureBar: some View {
