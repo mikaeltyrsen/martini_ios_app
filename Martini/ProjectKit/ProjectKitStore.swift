@@ -38,22 +38,26 @@ final class ProjectKitStore: ObservableObject {
     }
 
     func addCameras(ids: [String], projectId: String?) {
-        selectedCameraIds.formUnion(ids)
+        selectedCameraIds = selectedCameraIds.union(ids)
         persist(projectId: projectId)
     }
 
     func addLenses(ids: [String], projectId: String?) {
-        selectedLensIds.formUnion(ids)
+        selectedLensIds = selectedLensIds.union(ids)
         persist(projectId: projectId)
     }
 
     func removeCamera(id: String, projectId: String?) {
-        selectedCameraIds.remove(id)
+        var updated = selectedCameraIds
+        updated.remove(id)
+        selectedCameraIds = updated
         persist(projectId: projectId)
     }
 
     func removeLens(id: String, projectId: String?) {
-        selectedLensIds.remove(id)
+        var updated = selectedLensIds
+        updated.remove(id)
+        selectedLensIds = updated
         persist(projectId: projectId)
     }
 

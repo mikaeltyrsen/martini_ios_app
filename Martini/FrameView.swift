@@ -38,6 +38,7 @@ struct FrameView: View {
     private let minDescriptionRatio: CGFloat = 0.35
     private let dimmerAnim = Animation.easeInOut(duration: 0.28)
     private let sheetAnim = Animation.spring(response: 0.42, dampingFraction: 0.92, blendDuration: 0.20)
+    private let takePictureCardID = "take-picture"
 
     init(
         frame: Frame,
@@ -104,7 +105,7 @@ struct FrameView: View {
             .onChange(of: assetStack) { (newStack: [FrameAssetItem]) in
                 assetOrder = newStack.map(\.kind)
                 let newIDs = Set(newStack.map(\.id))
-                if let currentID = visibleAssetID, !newIDs.contains(currentID) {
+                if let currentID = visibleAssetID, !newIDs.contains(currentID), currentID != takePictureCardID {
                     visibleAssetID = newStack.first?.id
                 } else if visibleAssetID == nil, let first: FrameAssetItem.ID = newStack.first?.id {
                     visibleAssetID = first
@@ -367,6 +368,7 @@ struct FrameView: View {
                 assetStack: assetStack,
                 visibleAssetID: $visibleAssetID,
                 primaryText: primaryText,
+                takePictureID: takePictureCardID,
                 takePictureAction: {
                     showingScoutCamera = true
                 }
@@ -1227,6 +1229,7 @@ private struct StackedAssetScroller: View {
     let assetStack: [FrameAssetItem]
     @Binding var visibleAssetID: FrameAssetItem.ID?
     let primaryText: String?
+    let takePictureID: String
     let takePictureAction: (() -> Void)?
 
     var body: some View {
@@ -1255,7 +1258,7 @@ private struct StackedAssetScroller: View {
                         TakePictureCardView(cardWidth: cardWidth, action: takePictureAction)
                             .frame(maxWidth: .infinity, alignment: .center)
                             .containerRelativeFrame(.horizontal, alignment: .center)
-                            .id("take-picture")
+                            .id(takePictureID)
                     }
                 }
                 .scrollTargetLayout()
