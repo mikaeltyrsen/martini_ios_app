@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import AVFoundation
 
 @MainActor
 final class ScoutCameraViewModel: ObservableObject {
