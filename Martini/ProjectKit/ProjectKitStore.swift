@@ -8,7 +8,8 @@ final class ProjectKitStore: ObservableObject {
     @Published var selectedCameraIds: Set<String> = []
     @Published var selectedLensIds: Set<String> = []
 
-    private let database = LocalDatabase.shared
+    private let dataStore = LocalJSONStore.shared
+    private let selectionStore = ProjectKitSelectionStore.shared
     private var currentProjectId: String?
 
     func load(for projectId: String?) {
@@ -20,8 +21,8 @@ final class ProjectKitStore: ObservableObject {
             selectedLensIds = []
             return
         }
-        selectedCameraIds = Set(database.fetchProjectCameraIds(projectId: projectId))
-        selectedLensIds = Set(database.fetchProjectLensIds(projectId: projectId))
+        selectedCameraIds = Set(selectionStore.cameraIds(for: projectId))
+        selectedLensIds = Set(selectionStore.lensIds(for: projectId))
     }
 
     func toggleCamera(_ camera: DBCamera, projectId: String?) {
@@ -68,8 +69,8 @@ final class ProjectKitStore: ObservableObject {
 
     func persist(projectId: String?) {
         guard let projectId else { return }
-        database.updateProjectCameras(projectId: projectId, cameraIds: Array(selectedCameraIds))
-        database.updateProjectLenses(projectId: projectId, lensIds: Array(selectedLensIds))
+        selectionStore.saveCameraIds(Array(selectedCameraIds), for: projectId)
+        selectionStore.saveLensIds(Array(selectedLensIds), for: projectId)
         reloadSelections(projectId: projectId)
     }
 
@@ -93,16 +94,12 @@ final class ProjectKitStore: ObservableObject {
     }
 
     private func loadAvailableKit() {
-        availableCameras = Self.deduplicate(
-            database.fetchCameras()
-        )
-        availableLenses = Self.deduplicate(
-            database.fetchLenses()
-        )
+        availableCameras = Self.deduplicate(dataStore.fetchCameras())
+        availableLenses = Self.deduplicate(dataStore.fetchLenses())
     }
 
     private func reloadSelections(projectId: String) {
-        selectedCameraIds = Set(database.fetchProjectCameraIds(projectId: projectId))
-        selectedLensIds = Set(database.fetchProjectLensIds(projectId: projectId))
+        selectedCameraIds = Set(selectionStore.cameraIds(for: projectId))
+        selectedLensIds = Set(selectionStore.lensIds(for: projectId))
     }
 }

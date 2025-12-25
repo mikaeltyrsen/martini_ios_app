@@ -16,7 +16,7 @@
 		07A6A6862EC9A272002C8EB9 /* MartiniApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07A6A6852EC9A272002C8EB9 /* MartiniApp.swift */; };
 		07A6A6882EC9A272002C8EB9 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07A6A6872EC9A272002C8EB9 /* ContentView.swift */; };
 		DAB09D58B6A74211960FDCD9 /* PackModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38B088F6DDD94E12A8B7997C /* PackModels.swift */; };
-		EB690597D64040D0AF45694D /* martini_core_pack.json in Resources */ = {isa = PBXBuildFile; fileRef = B25D2D8C220E4A7CAE24D403 /* martini_core_pack.json */; };
+		EB690597D64040D0AF45694D /* martini_example_db.json in Resources */ = {isa = PBXBuildFile; fileRef = B25D2D8C220E4A7CAE24D403 /* martini_example_db.json */; };
 		64BD7D501E7D4DA38DFEBBC4 /* ProjectKitSelectionViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2644D6ACDD4A4DC1A33D228A /* ProjectKitSelectionViews.swift */; };
 		07C904B02EDA8665004EDBFA /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C904AF2EDA8665004EDBFA /* Models.swift */; };
 		07C904B22EDB92DB004EDBFA /* playground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C904B12EDB92D8004EDBFA /* playground.swift */; };
@@ -42,10 +42,9 @@
 		C0E3AD0331584BB39C1BE6BA /* FOVMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10F9CB29EE71481EB424475E /* FOVMath.swift */; };
 		835B9B20D9AC43568A59A541 /* IPhoneCameraModelResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ABA9E17746C42B581652DB2 /* IPhoneCameraModelResolver.swift */; };
 		971BF5F118754777A65B3907 /* PhotoProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 107AD8B89F4A441698E034E1 /* PhotoProcessor.swift */; };
-		F68A334CA80744519CE56708 /* DBMigrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30A8FA89F044C81AA6CC527 /* DBMigrations.swift */; };
 		7F251D3597AB4FAA834B4741 /* DBModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBF9DC5BE38645D481011359 /* DBModels.swift */; };
-		6AACDCA4869546ECA6573BD2 /* PackImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 899DC3F02B574ABEACC3A921 /* PackImporter.swift */; };
-		A20BFC6DBE0A4BE787093136 /* LensIdBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E139F7C1B514E45AFA3A6A2 /* LensIdBuilder.swift */; };
+		5C6E43A1C4B1418B89DCD0E8 /* LocalJSONStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C6E43A0C4B1418B89DCD0E8 /* LocalJSONStore.swift */; };
+		2A4CC88C8D6C4B3EB1AF6B93 /* ProjectKitSelectionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A4CC88B8D6C4B3EB1AF6B93 /* ProjectKitSelectionStore.swift */; };
 		CB0A92282BEE469EB696343F /* ProjectKitSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83E0E90984D6471FA90532C0 /* ProjectKitSettingsView.swift */; };
 		DA0A67A443A94D11B57C5EC6 /* ProjectKitStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 988E7BC68EFE4E89B6ADC548 /* ProjectKitStore.swift */; };
 		853E13C7EDA840E285F30AE0 /* FrameUploadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C15BCD3610C14777916BDDA9 /* FrameUploadService.swift */; };
@@ -59,8 +58,8 @@
 		075456002EC9A6E100C45739 /* QRScannerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
 		075456072EC9AA2100C45739 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		07A6A6822EC9A272002C8EB9 /* Martini.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Martini.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		38B088F6DDD94E12A8B7997C /* PackModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalDatabase/PackModels.swift; sourceTree = "<group>"; };
-		B25D2D8C220E4A7CAE24D403 /* martini_core_pack.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = LocalDatabase/Seed/martini_core_pack.json; sourceTree = "<group>"; };
+		38B088F6DDD94E12A8B7997C /* PackModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalData/PackModels.swift; sourceTree = "<group>"; };
+		B25D2D8C220E4A7CAE24D403 /* martini_example_db.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = LocalData/Seed/martini_example_db.json; sourceTree = "<group>"; };
 		2644D6ACDD4A4DC1A33D228A /* ProjectKitSelectionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectKit/ProjectKitSelectionViews.swift; sourceTree = "<group>"; };
 		07A6A6852EC9A272002C8EB9 /* MartiniApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MartiniApp.swift; sourceTree = "<group>"; };
 		07A6A6872EC9A272002C8EB9 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -90,10 +89,9 @@
 		10F9CB29EE71481EB424475E /* FOVMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/FOV/FOVMath.swift; sourceTree = "<group>"; };
 		7ABA9E17746C42B581652DB2 /* IPhoneCameraModelResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/FOV/IPhoneCameraModelResolver.swift; sourceTree = "<group>"; };
 		107AD8B89F4A441698E034E1 /* PhotoProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/Processing/PhotoProcessor.swift; sourceTree = "<group>"; };
-		C30A8FA89F044C81AA6CC527 /* DBMigrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalDatabase/DBMigrations.swift; sourceTree = "<group>"; };
-		EBF9DC5BE38645D481011359 /* DBModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalDatabase/DBModels.swift; sourceTree = "<group>"; };
-		899DC3F02B574ABEACC3A921 /* PackImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalDatabase/PackImporter.swift; sourceTree = "<group>"; };
-		8E139F7C1B514E45AFA3A6A2 /* LensIdBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalDatabase/LensIdBuilder.swift; sourceTree = "<group>"; };
+		EBF9DC5BE38645D481011359 /* DBModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalData/DBModels.swift; sourceTree = "<group>"; };
+		5C6E43A0C4B1418B89DCD0E8 /* LocalJSONStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalData/LocalJSONStore.swift; sourceTree = "<group>"; };
+		2A4CC88B8D6C4B3EB1AF6B93 /* ProjectKitSelectionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectKit/ProjectKitSelectionStore.swift; sourceTree = "<group>"; };
 		83E0E90984D6471FA90532C0 /* ProjectKitSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectKit/ProjectKitSettingsView.swift; sourceTree = "<group>"; };
 		988E7BC68EFE4E89B6ADC548 /* ProjectKitStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectKit/ProjectKitStore.swift; sourceTree = "<group>"; };
 		C15BCD3610C14777916BDDA9 /* FrameUploadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking/FrameUploadService.swift; sourceTree = "<group>"; };
@@ -154,7 +152,9 @@
 				60C91863CD124D159734FD1B /* ScheduleView.swift */,
 				0730F3E62EFC14E3000B598F /* Config.swift */,
 				38B088F6DDD94E12A8B7997C /* PackModels.swift */,
-				B25D2D8C220E4A7CAE24D403 /* martini_core_pack.json */,
+				EBF9DC5BE38645D481011359 /* DBModels.swift */,
+				5C6E43A0C4B1418B89DCD0E8 /* LocalJSONStore.swift */,
+				B25D2D8C220E4A7CAE24D403 /* martini_example_db.json */,
 				2644D6ACDD4A4DC1A33D228A /* ProjectKitSelectionViews.swift */,
 				2F825837CC9D4A3C884F0F59 /* ScoutCameraView.swift */,
 				0187390DAD5C4818AD9A0A1B /* ScoutCameraReviewView.swift */,
@@ -166,12 +166,9 @@
 				10F9CB29EE71481EB424475E /* FOVMath.swift */,
 				7ABA9E17746C42B581652DB2 /* IPhoneCameraModelResolver.swift */,
 				107AD8B89F4A441698E034E1 /* PhotoProcessor.swift */,
-				C30A8FA89F044C81AA6CC527 /* DBMigrations.swift */,
-				EBF9DC5BE38645D481011359 /* DBModels.swift */,
-				899DC3F02B574ABEACC3A921 /* PackImporter.swift */,
-				8E139F7C1B514E45AFA3A6A2 /* LensIdBuilder.swift */,
 				83E0E90984D6471FA90532C0 /* ProjectKitSettingsView.swift */,
 				988E7BC68EFE4E89B6ADC548 /* ProjectKitStore.swift */,
+				2A4CC88B8D6C4B3EB1AF6B93 /* ProjectKitSelectionStore.swift */,
 				C15BCD3610C14777916BDDA9 /* FrameUploadService.swift */,
 			);
 			path = Martini;
@@ -236,7 +233,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				075456082EC9AA2100C45739 /* Assets.xcassets in Resources */,
-				EB690597D64040D0AF45694D /* martini_core_pack.json in Resources */,
+				EB690597D64040D0AF45694D /* martini_example_db.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -280,12 +277,11 @@
 				C0E3AD0331584BB39C1BE6BA /* FOVMath.swift in Sources */,
 				835B9B20D9AC43568A59A541 /* IPhoneCameraModelResolver.swift in Sources */,
 				971BF5F118754777A65B3907 /* PhotoProcessor.swift in Sources */,
-				F68A334CA80744519CE56708 /* DBMigrations.swift in Sources */,
 				7F251D3597AB4FAA834B4741 /* DBModels.swift in Sources */,
-				6AACDCA4869546ECA6573BD2 /* PackImporter.swift in Sources */,
-				A20BFC6DBE0A4BE787093136 /* LensIdBuilder.swift in Sources */,
+				5C6E43A1C4B1418B89DCD0E8 /* LocalJSONStore.swift in Sources */,
 				CB0A92282BEE469EB696343F /* ProjectKitSettingsView.swift in Sources */,
 				DA0A67A443A94D11B57C5EC6 /* ProjectKitStore.swift in Sources */,
+				2A4CC88C8D6C4B3EB1AF6B93 /* ProjectKitSelectionStore.swift in Sources */,
 				853E13C7EDA840E285F30AE0 /* FrameUploadService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

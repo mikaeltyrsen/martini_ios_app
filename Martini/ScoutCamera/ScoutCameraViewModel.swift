@@ -23,7 +23,8 @@ final class ScoutCameraViewModel: ObservableObject {
     private let projectId: String
     private let frameId: String
     private let targetAspectRatio: CGFloat
-    private let database = LocalDatabase.shared
+    private let dataStore = LocalJSONStore.shared
+    private let selectionStore = ProjectKitSelectionStore.shared
     private let uploadService = FrameUploadService()
 
     init(projectId: String, frameId: String, targetAspectRatio: CGFloat) {
@@ -34,14 +35,14 @@ final class ScoutCameraViewModel: ObservableObject {
     }
 
     func loadData() {
-        let projectCameraIds = database.fetchProjectCameraIds(projectId: projectId)
-        let projectLensIds = database.fetchProjectLensIds(projectId: projectId)
+        let projectCameraIds = selectionStore.cameraIds(for: projectId)
+        let projectLensIds = selectionStore.lensIds(for: projectId)
         availableCameras = projectCameraIds.isEmpty
             ? []
-            : database.fetchCameras(ids: projectCameraIds)
+            : dataStore.fetchCameras(ids: projectCameraIds)
         availableLenses = projectLensIds.isEmpty
             ? []
-            : database.fetchLenses(ids: projectLensIds)
+            : dataStore.fetchLenses(ids: projectLensIds)
         if availableCameras.isEmpty || availableLenses.isEmpty {
             errorMessage = "Select cameras and lenses in Project Kit to use Scout Camera."
         }
@@ -60,7 +61,7 @@ final class ScoutCameraViewModel: ObservableObject {
             selectedMode = nil
             return
         }
-        availableModes = database.fetchCameraModes(cameraId: selectedCamera.id)
+        availableModes = dataStore.fetchCameraModes(cameraId: selectedCamera.id)
         selectedMode = availableModes.first
     }
 
@@ -89,8 +90,7 @@ final class ScoutCameraViewModel: ObservableObject {
         guard let mode = selectedMode, let lens = selectedLens else { return }
         let focal = currentFocalLength()
         let targetHFOV = FOVMath.horizontalFOV(sensorWidthMm: mode.sensorWidthMm, focalLengthMm: focal, squeeze: lens.squeeze)
-        let iphoneModel = IPhoneCameraModelResolver.currentModelName()
-        let iphoneCameras = database.fetchIPhoneCameras(model: iphoneModel)
+        let iphoneCameras = dataStore.fetchIPhoneCameras()
         let match = FOVEngine.matchIPhoneModule(targetHFOVRadians: targetHFOV, iphoneCameras: iphoneCameras)
         matchResult = match
 
