@@ -413,9 +413,7 @@ class AuthService: ObservableObject {
                 throw AuthError.requestFailed(statusCode: httpResponse.statusCode)
             }
             
-            let responseJSON = String(data: data, encoding: .utf8) ?? "Unable to decode"
-            print("📥 Response received (\(httpResponse.statusCode)):")
-            print(responseJSON)
+            print("📥 Creatives response received (\(httpResponse.statusCode))")
             
             let decoder = JSONDecoder()
             let creativesResponse = try decoder.decode(CreativesResponse.self, from: data)
@@ -487,9 +485,7 @@ class AuthService: ObservableObject {
             throw AuthError.requestFailed(statusCode: httpResponse.statusCode)
         }
 
-        let responseJSON = String(data: data, encoding: .utf8) ?? "Unable to decode"
-        print("📥 Frames response received (\(httpResponse.statusCode)):")
-        print(responseJSON)
+        print("📥 Frames response received (\(httpResponse.statusCode))")
 
         let decoder = JSONDecoder()
         let framesResponse = try decoder.decode(FramesResponse.self, from: data)
@@ -599,9 +595,7 @@ class AuthService: ObservableObject {
                 throw AuthError.requestFailed(statusCode: httpResponse.statusCode)
             }
 
-            let responseJSON = String(data: data, encoding: .utf8) ?? "Unable to decode"
-            print("📥 Project response received (\(httpResponse.statusCode)):")
-            print(responseJSON)
+            print("📥 Project response received (\(httpResponse.statusCode))")
 
             let decoder = JSONDecoder()
             let projectResponse = try decoder.decode(ProjectDetails.self, from: data)

@@ -1,6 +1,8 @@
 import SwiftUI
 
 enum AppConfig {
+    static let debugMode = false
+
     enum MarkerIcons {
         static let done = "xmark"
         static let here = "video.fill"
