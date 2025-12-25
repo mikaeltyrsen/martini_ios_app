@@ -66,7 +66,7 @@ final class ScoutCameraViewModel: ObservableObject {
 
     func updateFocalLength() {
         guard let lens = selectedLens else { return }
-        focalLengthMm = lens.focalLengthMinMm
+        focalLengthMm = lens.focalLengthMm ?? lens.focalLengthMinMm ?? focalLengthMm
     }
 
     func updateCaptureConfiguration() async {
@@ -120,7 +120,7 @@ final class ScoutCameraViewModel: ObservableObject {
 
     func processImage(_ image: UIImage) async -> UIImage? {
         guard let camera = selectedCamera, let mode = selectedMode, let lens = selectedLens else { return nil }
-        let focalLabel = lens.isZoom ? "\(Int(lens.focalLengthMinMm))–\(Int(lens.focalLengthMaxMm))mm @ \(Int(focalLengthMm))mm" : "\(Int(focalLengthMm))mm"
+        let focalLabel = lensFocalLabel(lens: lens, focalLengthMm: focalLengthMm)
         let metadata = ScoutPhotoMetadata(
             cameraName: "\(camera.model)",
             cameraModeName: mode.name,
@@ -155,9 +155,22 @@ final class ScoutCameraViewModel: ObservableObject {
     }
 
     private func currentFocalLength() -> Double {
-        if let lens = selectedLens, lens.isZoom {
+        guard let lens = selectedLens else {
             return focalLengthMm
         }
-        return selectedLens?.focalLengthMinMm ?? focalLengthMm
+        if lens.isZoom {
+            return focalLengthMm
+        }
+        return lens.focalLengthMm ?? lens.focalLengthMinMm ?? focalLengthMm
+    }
+
+    private func lensFocalLabel(lens: DBLens, focalLengthMm: Double) -> String {
+        if lens.isZoom, let min = lens.focalLengthMinMm, let max = lens.focalLengthMaxMm {
+            return "\(Int(min))–\(Int(max))mm @ \(Int(focalLengthMm))mm"
+        }
+        if let focal = lens.focalLengthMm ?? lens.focalLengthMinMm {
+            return "\(Int(focal))mm"
+        }
+        return "\(Int(focalLengthMm))mm"
     }
 }

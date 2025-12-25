@@ -10,8 +10,10 @@ struct DBCamera: Identifiable, Hashable {
     let id: String
     let brand: String
     let model: String
-    let sensorWidthMm: Double
-    let sensorHeightMm: Double
+    let sensorType: String?
+    let mount: String?
+    let sensorWidthMm: Double?
+    let sensorHeightMm: Double?
 }
 
 struct DBCameraMode: Identifiable, Hashable {
@@ -20,23 +22,36 @@ struct DBCameraMode: Identifiable, Hashable {
     let name: String
     let sensorWidthMm: Double
     let sensorHeightMm: Double
+    let resolution: String?
+    let aspectRatio: String?
 }
 
 struct DBLens: Identifiable, Hashable {
     let id: String
+    let type: String
     let brand: String
     let series: String
-    let focalLengthMinMm: Double
-    let focalLengthMaxMm: Double
-    let tStop: Double
+    let format: String?
+    let mounts: [String]
+    let focalLengthMm: Double?
+    let focalLengthMinMm: Double?
+    let focalLengthMaxMm: Double?
+    let maxTStop: Double
     let squeeze: Double
-    let isZoom: Bool
+
+    var isZoom: Bool {
+        focalLengthMinMm != nil && focalLengthMaxMm != nil
+    }
 }
 
 struct DBLensUserPreference: Identifiable, Hashable {
-    let id: String
     let lensId: String
     let isFavorite: Bool
+    let userLabel: String?
+    let isHidden: Bool
+    let lastUsedAt: String?
+
+    var id: String { lensId }
 }
 
 struct DBIPhoneCamera: Identifiable, Hashable {

@@ -118,11 +118,12 @@ struct ScoutCameraView: View {
                 .pickerStyle(.menu)
             }
 
-            if let lens = viewModel.selectedLens, lens.isZoom {
+            if let lens = viewModel.selectedLens, lens.isZoom,
+               let minFocal = lens.focalLengthMinMm, let maxFocal = lens.focalLengthMaxMm {
                 VStack(alignment: .leading) {
                     Text("Focal Length: \(Int(viewModel.focalLengthMm))mm")
                         .foregroundStyle(.white)
-                    Slider(value: $viewModel.focalLengthMm, in: lens.focalLengthMinMm...lens.focalLengthMaxMm, step: 1)
+                    Slider(value: $viewModel.focalLengthMm, in: minFocal...maxFocal, step: 1)
                 }
             }
         }

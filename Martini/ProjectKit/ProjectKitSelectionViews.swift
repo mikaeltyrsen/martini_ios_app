@@ -30,7 +30,7 @@ struct ProjectKitCameraSelectionView: View {
                     HStack {
                         VStack(alignment: .leading) {
                             Text("\(camera.brand) \(camera.model)")
-                            Text("Sensor \(camera.sensorWidthMm, specifier: "%.2f") × \(camera.sensorHeightMm, specifier: "%.2f") mm")
+                            Text(cameraSensorLabel(camera))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -164,9 +164,22 @@ struct ProjectKitLensSelectionView: View {
     }
 
     private func lensLabel(for lens: DBLens) -> String {
-        if lens.isZoom {
-            return "\(Int(lens.focalLengthMinMm))–\(Int(lens.focalLengthMaxMm))mm T\(lens.tStop)"
+        if lens.isZoom, let min = lens.focalLengthMinMm, let max = lens.focalLengthMaxMm {
+            return "\(Int(min))–\(Int(max))mm T\(lens.maxTStop)"
         }
-        return "\(Int(lens.focalLengthMinMm))mm T\(lens.tStop)"
+        if let focal = lens.focalLengthMm ?? lens.focalLengthMinMm {
+            return "\(Int(focal))mm T\(lens.maxTStop)"
+        }
+        return "T\(lens.maxTStop)"
+    }
+
+    private func cameraSensorLabel(_ camera: DBCamera) -> String {
+        if let width = camera.sensorWidthMm, let height = camera.sensorHeightMm {
+            return "Sensor \(width, specifier: "%.2f") × \(height, specifier: "%.2f") mm"
+        }
+        if let sensorType = camera.sensorType, !sensorType.isEmpty {
+            return "Sensor \(sensorType)"
+        }
+        return "Sensor size unavailable"
     }
 }
