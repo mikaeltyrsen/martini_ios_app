@@ -14,10 +14,6 @@ final class ProjectKitStore: ObservableObject {
     func load(for projectId: String?) {
         currentProjectId = projectId
         loadAvailableKit()
-        if availableCameras.isEmpty || availableLenses.isEmpty {
-            PackImporter.importPackIfNeeded(using: database)
-            loadAvailableKit()
-        }
 
         guard let projectId else {
             selectedCameraIds = []

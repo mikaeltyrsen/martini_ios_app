@@ -16,7 +16,6 @@ final class LocalDatabase {
         migrateIfNeeded()
         seedIfNeeded()
         PackImporter.importPackIfNeeded(using: self)
-        print("📦 Pack import summary: \(countRows(in: "cameras")) cameras, \(countRows(in: "lenses")) lenses, \(countRows(in: "camera_modes")) modes")
     }
 
     deinit {
@@ -381,6 +380,13 @@ final class LocalDatabase {
     func importPack(_ payload: PackPayload) {
         execute("BEGIN TRANSACTION")
         defer { execute("COMMIT") }
+
+        execute("DELETE FROM lens_pack_items")
+        execute("DELETE FROM lens_packs")
+        execute("DELETE FROM camera_modes")
+        execute("DELETE FROM cameras")
+        execute("DELETE FROM lenses")
+        execute("DELETE FROM packs")
 
         upsertPack(id: payload.pack.packId, name: payload.pack.description, revision: payload.pack.revision)
 
