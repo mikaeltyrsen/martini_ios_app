@@ -15,7 +15,7 @@ final class LocalJSONStore {
     private(set) var deviceProfiles: [String: DeviceCameraProfile] = [:]
     private(set) var profileRules: [DeviceCameraProfileRule] = []
 
-    private let jsonResourceName = "martini_master_offline_db_v2"
+    private let jsonResourceName = "martini_master_offline_db_v5"
 
     private init() {
         load()
