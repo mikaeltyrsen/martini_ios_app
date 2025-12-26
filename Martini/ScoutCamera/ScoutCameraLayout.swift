@@ -791,14 +791,14 @@ private struct CameraPreviewView: UIViewRepresentable {
         let view = PreviewView()
         view.videoPreviewLayer.session = session
         view.videoPreviewLayer.videoGravity = .resizeAspectFill
-        view.setVideoOrientation(.landscapeRight)
+        view.configurePreviewConnection(orientation: .landscapeRight)
         return view
     }
 
     func updateUIView(_ uiView: UIView, context: Context) {
         guard let previewView = uiView as? PreviewView else { return }
         previewView.videoPreviewLayer.session = session
-        previewView.setVideoOrientation(.landscapeRight)
+        previewView.configurePreviewConnection(orientation: .landscapeRight)
     }
 
     func makeCoordinator() -> Coordinator {
@@ -940,12 +940,15 @@ private final class PreviewView: UIView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        setVideoOrientation(.landscapeRight)
+        configurePreviewConnection(orientation: .landscapeRight)
     }
 
-    func setVideoOrientation(_ orientation: AVCaptureVideoOrientation) {
+    func configurePreviewConnection(orientation: AVCaptureVideoOrientation) {
         guard let connection = videoPreviewLayer.connection, connection.isVideoOrientationSupported else { return }
         connection.videoOrientation = orientation
+        if connection.isVideoStabilizationSupported {
+            connection.preferredVideoStabilizationMode = .off
+        }
     }
 }
 
