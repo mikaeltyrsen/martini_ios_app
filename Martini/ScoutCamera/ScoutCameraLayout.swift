@@ -575,11 +575,18 @@ struct ScoutCameraLayout: View {
     }
 
     private var debugBar: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 6) {
             if let info = viewModel.debugInfo {
-                Text("HFOV Target \(String(format: "%.1f", info.targetHFOVDegrees))° • Achieved \(String(format: "%.1f", info.achievedHFOVDegrees))°")
-                Text("Error \(String(format: "%.2f", info.errorDegrees))° • \(info.cameraRole.uppercased()) @ \(String(format: "%.2fx", info.zoomFactor))")
+                Text("HFOV Target \(String(format: "%.2f", info.targetHFOVDegrees))° • Achieved \(String(format: "%.2f", info.achievedHFOVDegrees))°")
+                Text("Error \(String(format: "%.2f", info.errorDegrees))° • \(info.cameraRole.uppercased()) @ \(String(format: "%.3fx", info.zoomFactor))")
                 Text("Focal \(String(format: "%.1f", info.focalLengthMm))mm")
+                ForEach(info.candidates, id: \.cameraRole) { candidate in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(candidate.cameraRole.uppercased()) Native \(String(format: "%.2f", candidate.nativeHFOVDegrees))°")
+                        Text("Required \(String(format: "%.3fx", candidate.requiredZoom)) • Clamped \(String(format: "%.3fx", candidate.clampedZoom)) (min \(String(format: "%.2fx", candidate.minZoom)), max \(String(format: "%.2fx", candidate.maxZoom)))")
+                        Text("Achieved \(String(format: "%.2f", candidate.achievedHFOVDegrees))° • Error \(String(format: "%.2f", candidate.errorDegrees))°")
+                    }
+                }
             } else {
                 Text("HFOV matching unavailable")
             }
@@ -587,6 +594,9 @@ struct ScoutCameraLayout: View {
         .font(.caption2)
         .foregroundStyle(.white)
         .padding(.horizontal)
+        .padding(.vertical, 6)
+        .background(Color.black.opacity(0.4))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
     private var previewPanel: some View {
