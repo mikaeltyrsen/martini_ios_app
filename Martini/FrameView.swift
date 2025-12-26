@@ -42,6 +42,7 @@ struct FrameView: View {
     private let sheetAnim = Animation.spring(response: 0.42, dampingFraction: 0.92, blendDuration: 0.20)
     private let takePictureCardID = "take-picture"
     private let selectionStore = ProjectKitSelectionStore.shared
+    private let dataStore = LocalJSONStore.shared
 
     init(
         frame: Frame,
@@ -627,9 +628,11 @@ struct FrameView: View {
             showingScoutCamera = true
             return
         }
-        let hasCameras = !selectionStore.cameraIds(for: projectId).isEmpty
-        let hasLenses = !selectionStore.lensIds(for: projectId).isEmpty
-        guard hasCameras && hasLenses else {
+        let cameraIds = selectionStore.cameraIds(for: projectId)
+        let lensIds = selectionStore.lensIds(for: projectId)
+        let availableCameras = dataStore.fetchCameras(ids: cameraIds)
+        let availableLenses = dataStore.fetchLenses(ids: lensIds)
+        guard !availableCameras.isEmpty && !availableLenses.isEmpty else {
             showingScoutCameraWarning = true
             return
         }
@@ -793,6 +796,8 @@ private extension FrameView {
 }
 
 private struct ScoutCameraSettingsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
     var body: some View {
         NavigationStack {
             Form {
@@ -800,6 +805,16 @@ private struct ScoutCameraSettingsSheet: View {
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                    }
+                    .accessibilityLabel("Close settings")
+                }
+            }
         }
     }
 }
