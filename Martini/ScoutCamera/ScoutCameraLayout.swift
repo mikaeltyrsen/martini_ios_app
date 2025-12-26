@@ -9,7 +9,8 @@ struct ScoutCameraLayout: View {
     @StateObject private var motionManager = MotionHeadingManager()
     @StateObject private var volumeObserver = VolumeButtonObserver()
     private let targetAspectRatio: CGFloat
-    @State private var isCameraSettingsPresented = false
+    @State private var isCameraSelectionPresented = false
+    @State private var isFrameLineSettingsPresented = false
     @State private var isLensPackPresented = false
     @State private var lastCameraRole: String?
     @State private var lensToastMessage: String?
@@ -118,7 +119,10 @@ struct ScoutCameraLayout: View {
                 )
             }
         }
-        .sheet(isPresented: $isCameraSettingsPresented) {
+        .sheet(isPresented: $isCameraSelectionPresented) {
+            CameraSelectionSheet(viewModel: viewModel)
+        }
+        .sheet(isPresented: $isFrameLineSettingsPresented) {
             CameraSettingsSheet(viewModel: viewModel)
         }
         .sheet(isPresented: $isLensPackPresented) {
@@ -135,7 +139,7 @@ struct ScoutCameraLayout: View {
                 .foregroundStyle(.white)
                 .font(.caption.weight(.semibold))
                 Button {
-                    isCameraSettingsPresented = true
+                    isCameraSelectionPresented = true
                 } label: {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(selectedCameraLabel)
@@ -155,19 +159,33 @@ struct ScoutCameraLayout: View {
             .font(.caption.weight(.semibold))
             .foregroundStyle(.white)
             Spacer()
-            Button {
-                isLensPackPresented = true
-            } label: {
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("Lens Pack")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.7))
-                    Text(selectedLensPackLabel)
-                        .font(.caption)
-                        .foregroundStyle(.white)
+            VStack(alignment: .trailing, spacing: 10) {
+                Button {
+                    isLensPackPresented = true
+                } label: {
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text("Lens Pack")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.white.opacity(0.7))
+                        Text(selectedLensPackLabel)
+                            .font(.caption)
+                            .foregroundStyle(.white)
+                    }
                 }
+                .buttonStyle(.plain)
+
+                Button {
+                    isFrameLineSettingsPresented = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "slider.horizontal.3")
+                        Text("Settings")
+                    }
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.white)
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
         }
     }
 
@@ -273,6 +291,87 @@ struct ScoutCameraLayout: View {
                     }
                 }
             }
+        }
+    }
+
+    private struct CameraSelectionSheet: View {
+        @Environment(\.dismiss) private var dismiss
+        @ObservedObject var viewModel: ScoutCameraViewModel
+
+        var body: some View {
+            NavigationStack {
+                List {
+                    Section {
+                        NavigationLink {
+                            ScoutCameraLayout.SelectionList(
+                                items: viewModel.availableCameras,
+                                selectedId: viewModel.selectedCamera?.id,
+                                title: "Camera",
+                                rowTitle: { "\($0.brand) \($0.model)" },
+                                rowSubtitle: { cameraSensorLabel($0) }
+                            ) { camera in
+                                viewModel.selectedCamera = camera
+                            }
+                        } label: {
+                            SettingsSectionLabel(title: "Camera", value: selectedCameraLabel)
+                        }
+
+                        NavigationLink {
+                            ScoutCameraLayout.SelectionList(
+                                items: viewModel.availableModes,
+                                selectedId: viewModel.selectedMode?.id,
+                                title: "Mode",
+                                rowTitle: { $0.name },
+                                rowSubtitle: { modeSubtitle($0) }
+                            ) { mode in
+                                viewModel.selectedMode = mode
+                            }
+                        } label: {
+                            SettingsSectionLabel(title: "Mode", value: viewModel.selectedMode?.name ?? "None")
+                        }
+                    }
+                }
+                .navigationTitle("Camera Selection")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Done") {
+                            dismiss()
+                        }
+                    }
+                }
+            }
+        }
+
+        private var selectedCameraLabel: String {
+            guard let camera = viewModel.selectedCamera else {
+                return "None"
+            }
+            return "\(camera.brand) \(camera.model)"
+        }
+
+        private func cameraSensorLabel(_ camera: DBCamera) -> String? {
+            if let width = camera.sensorWidthMm, let height = camera.sensorHeightMm {
+                return "\(String(format: "%.1f", width)) × \(String(format: "%.1f", height)) mm"
+            }
+            if let sensorType = camera.sensorType, !sensorType.isEmpty {
+                return sensorType
+            }
+            return nil
+        }
+
+        private func modeSubtitle(_ mode: DBCameraMode) -> String? {
+            var parts: [String] = []
+            if let resolution = mode.resolution, !resolution.isEmpty {
+                parts.append(resolution)
+            }
+            if let aspect = mode.aspectRatio, !aspect.isEmpty {
+                parts.append(aspect)
+            }
+            if parts.isEmpty {
+                return "\(String(format: "%.1f", mode.sensorWidthMm)) × \(String(format: "%.1f", mode.sensorHeightMm)) mm"
+            }
+            return parts.joined(separator: " • ")
         }
     }
 
