@@ -1303,6 +1303,8 @@ private struct StackedAssetScroller: View {
             let availableHeight: CGFloat = proxy.size.height
             let maxHeight: CGFloat = availableHeight > 0 ? availableHeight * 0.92 : idealHeight
             let cardHeight: CGFloat = min(idealHeight, maxHeight)
+            let cardCornerRadius: CGFloat = 16
+            let aspectRatio: CGFloat = FrameLayout.aspectRatio(from: frame.creativeAspectRatio ?? "") ?? (16.0 / 9.0)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .center, spacing: 0) {
@@ -1319,7 +1321,12 @@ private struct StackedAssetScroller: View {
                     }
 
                     if let takePictureAction {
-                        TakePictureCardView(cardWidth: cardWidth, action: takePictureAction)
+                        TakePictureCardView(
+                            cardWidth: cardWidth,
+                            aspectRatio: aspectRatio,
+                            cornerRadius: cardCornerRadius,
+                            action: takePictureAction
+                        )
                             .frame(maxWidth: .infinity, alignment: .center)
                             .containerRelativeFrame(.horizontal, alignment: .center)
                             .id(takePictureID)
@@ -1340,6 +1347,7 @@ private struct AssetCardView: View {
     let asset: FrameAssetItem
     let cardWidth: CGFloat
     let primaryText: String?
+    private let cardCornerRadius: CGFloat = 16
 
     var body: some View {
         FrameLayout(
@@ -1349,7 +1357,7 @@ private struct AssetCardView: View {
             showStatusBadge: true,
             showFrameNumberOverlay: true,
             showTextBlock: false,
-            cornerRadius: 16
+            cornerRadius: cardCornerRadius
         )
         .frame(width: cardWidth)
         .padding(.vertical, 16)
@@ -1360,12 +1368,14 @@ private struct AssetCardView: View {
 
 private struct TakePictureCardView: View {
     let cardWidth: CGFloat
+    let aspectRatio: CGFloat
+    let cornerRadius: CGFloat
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             ZStack {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .fill(Color.secondary.opacity(0.15))
                 VStack(spacing: 12) {
                     Image(systemName: "camera")
@@ -1376,6 +1386,7 @@ private struct TakePictureCardView: View {
                         .foregroundStyle(Color.primary)
                 }
             }
+            .aspectRatio(aspectRatio, contentMode: .fit)
             .frame(width: cardWidth)
             .padding(.vertical, 16)
             .shadow(radius: 10, x: 0, y: 10)
