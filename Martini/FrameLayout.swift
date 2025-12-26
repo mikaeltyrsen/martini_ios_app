@@ -506,14 +506,14 @@ struct FrameLayout: View {
 
     private var placeholder: some View {
         VStack {
-            Image(systemName: "photo")
-                .font(.system(size: 40))
-                .foregroundColor(.gray.opacity(0.5))
-            if showFrameNumberOverlay, let frameNumberLabel {
-                Text(frameNumberLabel)
-                    .font(.caption)
-                    .foregroundColor(.gray)
-            }
+//            Image(systemName: "photo")
+//                .font(.system(size: 40))
+//                .foregroundColor(.gray.opacity(0.5))
+//            if showFrameNumberOverlay, let frameNumberLabel {
+//                Text(frameNumberLabel)
+//                    .font(.caption)
+//                    .foregroundColor(.gray)
+//            }
         }
     }
 
