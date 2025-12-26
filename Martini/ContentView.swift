@@ -898,7 +898,7 @@ struct MainView: View {
 
     private func handleGridMagnificationChange(_ value: CGFloat) {
         let delta = value / max(gridMagnification, 0.01)
-        let stepThreshold: CGFloat = 0.08
+        let stepThreshold: CGFloat = 0.2
 
         if delta > 1.0 + stepThreshold {
             adjustGridSize(increase: true)
