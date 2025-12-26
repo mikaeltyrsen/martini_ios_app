@@ -370,14 +370,46 @@ final class ScoutCameraViewModel: ObservableObject {
         let nativeHFOVDegrees = camera?.nativeHFOVDegrees ?? 0
         let achievedHFOVDegrees = match.zoomFactor > 0 ? nativeHFOVDegrees / match.zoomFactor : 0
         let errorDegrees = abs(achievedHFOVDegrees - targetHFOVDegrees)
+        let candidates = buildDebugCandidates(
+            iphoneCameras: iphoneCameras,
+            targetHFOVRadians: targetHFOVRadians,
+            targetHFOVDegrees: targetHFOVDegrees
+        )
         return ScoutCameraDebugInfo(
             targetHFOVDegrees: targetHFOVDegrees,
             achievedHFOVDegrees: achievedHFOVDegrees,
             errorDegrees: errorDegrees,
             cameraRole: match.cameraRole,
             zoomFactor: match.zoomFactor,
-            focalLengthMm: focalLengthMm
+            focalLengthMm: focalLengthMm,
+            candidates: candidates
         )
+    }
+
+    private func buildDebugCandidates(
+        iphoneCameras: [DBIPhoneCamera],
+        targetHFOVRadians: Double,
+        targetHFOVDegrees: Double
+    ) -> [ScoutCameraFOVCandidate] {
+        guard targetHFOVRadians > 0 else { return [] }
+        return iphoneCameras.map { camera in
+            let nativeHFOVRadians = FOVMath.degreesToRadians(camera.nativeHFOVDegrees)
+            let requiredZoom = nativeHFOVRadians / targetHFOVRadians
+            let clampedZoom = min(max(requiredZoom, camera.minZoom), camera.maxZoom)
+            let achievedHFOVDegrees = clampedZoom > 0 ? camera.nativeHFOVDegrees / clampedZoom : 0
+            let errorDegrees = abs(achievedHFOVDegrees - targetHFOVDegrees)
+            return ScoutCameraFOVCandidate(
+                cameraRole: camera.cameraRole,
+                nativeHFOVDegrees: camera.nativeHFOVDegrees,
+                requiredZoom: requiredZoom,
+                clampedZoom: clampedZoom,
+                minZoom: camera.minZoom,
+                maxZoom: camera.maxZoom,
+                achievedHFOVDegrees: achievedHFOVDegrees,
+                errorDegrees: errorDegrees
+            )
+        }
+        .sorted { $0.errorDegrees < $1.errorDegrees }
     }
 }
 
@@ -394,6 +426,18 @@ struct ScoutCameraDebugInfo: Equatable {
     let cameraRole: String
     let zoomFactor: Double
     let focalLengthMm: Double
+    let candidates: [ScoutCameraFOVCandidate]
+}
+
+struct ScoutCameraFOVCandidate: Equatable {
+    let cameraRole: String
+    let nativeHFOVDegrees: Double
+    let requiredZoom: Double
+    let clampedZoom: Double
+    let minZoom: Double
+    let maxZoom: Double
+    let achievedHFOVDegrees: Double
+    let errorDegrees: Double
 }
 
 enum FrameLineOption: String, CaseIterable, Identifiable {
