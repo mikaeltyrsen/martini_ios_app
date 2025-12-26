@@ -301,6 +301,11 @@ struct ScoutCameraLayout: View {
                             SettingsSectionLabel(title: "Frame Lines", value: viewModel.selectedFrameLine.rawValue)
                         }
                     }
+
+                    Section("Overlays") {
+                        Toggle("Crosshair", isOn: $viewModel.showCrosshair)
+                        Toggle("Grid", isOn: $viewModel.showGrid)
+                    }
                 }
                 .navigationTitle("Camera Settings")
                 .navigationBarTitleDisplayMode(.inline)
@@ -525,6 +530,16 @@ struct ScoutCameraLayout: View {
                     FrameLineOverlay(aspectRatio: frameLineAspect)
                         .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
                 }
+
+                if viewModel.showGrid {
+                    GridOverlay()
+                        .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
+                }
+
+                if viewModel.showCrosshair {
+                    CrosshairOverlay()
+                        .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
+                }
             }
         }
         .aspectRatio(viewModel.sensorAspectRatio ?? targetAspectRatio, contentMode: .fit)
@@ -681,6 +696,50 @@ private struct FrameLineOverlay: View {
             height = width / aspectRatio
         }
         return CGRect(x: (size.width - width) / 2, y: (size.height - height) / 2, width: width, height: height)
+    }
+}
+
+private struct GridOverlay: View {
+    var body: some View {
+        GeometryReader { proxy in
+            let width = proxy.size.width
+            let height = proxy.size.height
+            let oneThirdWidth = width / 3
+            let oneThirdHeight = height / 3
+            Path { path in
+                path.move(to: CGPoint(x: oneThirdWidth, y: 0))
+                path.addLine(to: CGPoint(x: oneThirdWidth, y: height))
+                path.move(to: CGPoint(x: oneThirdWidth * 2, y: 0))
+                path.addLine(to: CGPoint(x: oneThirdWidth * 2, y: height))
+
+                path.move(to: CGPoint(x: 0, y: oneThirdHeight))
+                path.addLine(to: CGPoint(x: width, y: oneThirdHeight))
+                path.move(to: CGPoint(x: 0, y: oneThirdHeight * 2))
+                path.addLine(to: CGPoint(x: width, y: oneThirdHeight * 2))
+            }
+            .stroke(.white.opacity(0.6), lineWidth: 1)
+        }
+        .allowsHitTesting(false)
+    }
+}
+
+private struct CrosshairOverlay: View {
+    var body: some View {
+        GeometryReader { proxy in
+            let width = proxy.size.width
+            let height = proxy.size.height
+            let centerX = width / 2
+            let centerY = height / 2
+            let length: CGFloat = min(width, height) * 0.08
+            Path { path in
+                path.move(to: CGPoint(x: centerX - length, y: centerY))
+                path.addLine(to: CGPoint(x: centerX + length, y: centerY))
+                path.move(to: CGPoint(x: centerX, y: centerY - length))
+                path.addLine(to: CGPoint(x: centerX, y: centerY + length))
+            }
+            .stroke(.white.opacity(0.8), lineWidth: 1.5)
+        }
+        .allowsHitTesting(false)
     }
 }
 
