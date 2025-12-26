@@ -279,11 +279,13 @@ struct MainView: View {
     }
 
     private var gridColumnCount: Int {
-        return adjustableColumnCount(for: gridSizeStep)
+        let step = (viewMode == .grid) ? 0 : gridSizeStep
+        return adjustableColumnCount(for: step)
     }
 
     private func adjustableColumnCount(for step: Int) -> Int {
         switch step { // Grid View adjustable
+        case 0: return isLandscape ? 6 : 5
         case 1: return isLandscape ? 5 : 4
         case 2: return isLandscape ? 4 : 3
         case 3: return isLandscape ? 3 : 2
