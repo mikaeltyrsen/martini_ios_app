@@ -725,7 +725,7 @@ struct FrameLayout: View {
         return parsedRatio
     }
 
-    private static func aspectRatio(from ratioString: String) -> CGFloat? {
+    static func aspectRatio(from ratioString: String) -> CGFloat? {
         let separators = CharacterSet(charactersIn: ":/xX").union(.whitespaces)
         let components = ratioString
             .split(whereSeparator: { separator in
