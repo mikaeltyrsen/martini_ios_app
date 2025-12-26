@@ -1621,22 +1621,21 @@ struct CreativeGridSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if section.showHeader {
-                HStack(){
+                VStack(){
                     TrackableHeader(id: section.id, title: section.title, coordSpace: coordinateSpaceName)
 
                     if let completed = section.completedFrames, let total = section.totalFrames {
                         VStack(alignment: .leading, spacing: 6) {
-                            ProgressView(value: Double(completed), total: Double(max(total, 1)))
-                                .tint(.martiniDefaultColor)
-                                .accessibilityLabel("\(completed) of \(total) frames complete")
-                                .animation(.timingCurve(0.2, 0.0, 0.0, 1.0, duration: 0.35), value: Double(completed))
+                            
 
-                            HStack {
+                            HStack(spacing: 4) {
                                 Text("\(completed) completed")
                                     .font(.footnote)
                                     .foregroundColor(.secondary)
 
-                                Spacer()
+                                Text("•")
+                                    .font(.footnote)
+                                    .foregroundColor(.secondary)
 
                                 Text("\(total) total")
                                     .font(.footnote)
@@ -1644,6 +1643,14 @@ struct CreativeGridSection: View {
                             }
                         }
                         .padding(.horizontal)
+                        
+                        HStack {
+                            ProgressView(value: Double(completed), total: Double(max(total, 1)))
+                                .tint(.martiniDefaultColor)
+                                .accessibilityLabel("\(completed) of \(total) frames complete")
+                                .animation(.timingCurve(0.2, 0.0, 0.0, 1.0, duration: 0.35), value: Double(completed))
+                        }
+                        .padding(.horizontal, 14)
                     }
                 }
             }

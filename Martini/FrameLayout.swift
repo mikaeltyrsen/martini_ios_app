@@ -224,9 +224,14 @@ struct FrameLayout: View {
                 RoundedRectangle(cornerRadius: cornerRadius)
                     .strokeBorder(borderColor, lineWidth: borderWidth)
             )
-            .shadow(color: borderColor.opacity(0.8), radius: 8, x: 0, y: 0)
-            .shadow(color: borderColor.opacity(0.5), radius: 40, x: 0, y: 0)
-            .shadow(color: borderColor.opacity(0.3), radius: 80, x: 0, y: 0)
+//            .shadow(color: borderColor.opacity(0.8), radius: 8, x: 0, y: 0)
+//            .shadow(color: borderColor.opacity(0.5), radius: 40, x: 0, y: 0)
+//            .shadow(color: borderColor.opacity(0.3), radius: 80, x: 0, y: 0)
+            .overlay {
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(borderColor.opacity(0.5), lineWidth: 10)
+                    .blur(radius: 10)
+            }
             .onAppear {
                 configureInitialStatusAnimation()
             }
