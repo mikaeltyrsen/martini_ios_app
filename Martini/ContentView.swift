@@ -597,7 +597,7 @@ struct MainView: View {
                     viewMode = (viewMode == .grid) ? .list : .grid
                 }
             }) {
-                Label(viewMode == .grid ? "Close Overview" : "Open Overview", systemImage: viewMode == .grid ? "xmark" : "square.grid.2x2")
+                Label(viewMode == .grid ? "Close Overview" : "Open Overview", systemImage: viewMode == .grid ? "square.grid.4x3.fill" : "eye")
                     .labelStyle(.titleAndIcon)
                     .font(.system(size: 17, weight: .semibold))
             }
@@ -1362,16 +1362,16 @@ private extension MainView {
                             .font(.system(size: 14, weight: .semibold))
                         }
 
-                        Button {
-                            withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
-                                isShowingFilters = false
-                            }
-                        } label: {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 14, weight: .bold))
-                                .padding(8)
-                                .background(Color(.systemGray5), in: Circle())
-                        }
+//                        Button {
+//                            withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
+//                                isShowingFilters = false
+//                            }
+//                        } label: {
+//                            Image(systemName: "xmark")
+//                                .font(.system(size: 14, weight: .bold))
+//                                .padding(8)
+//                                .background(Color(.systemGray5), in: Circle())
+//                        }
                     }
 
                     Divider()
@@ -1972,16 +1972,16 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                    }
-                    .accessibilityLabel("Close settings")
-                }
-            }
+//            .toolbar {
+//                ToolbarItem(placement: .topBarLeading) {
+//                    Button {
+//                        dismiss()
+//                    } label: {
+//                        Image(systemName: "xmark")
+//                    }
+//                    .accessibilityLabel("Close settings")
+//                }
+//            }
         }
     }
 
