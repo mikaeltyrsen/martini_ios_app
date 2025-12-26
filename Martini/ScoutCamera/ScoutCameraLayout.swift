@@ -409,7 +409,7 @@ struct ScoutCameraLayout: View {
                         } label: {
                             HStack(alignment: .top) {
                                 VStack(alignment: .leading, spacing: 6) {
-                                    Text(mode.name)
+                                    Text(modeDisplayName(mode))
                                     ModeMetadataChips(mode: mode)
                                 }
                                 Spacer()
@@ -428,6 +428,18 @@ struct ScoutCameraLayout: View {
             .navigationTitle("Mode")
             .navigationBarTitleDisplayMode(.inline)
         }
+
+        private func modeDisplayName(_ mode: DBCameraMode) -> String {
+            guard let camera = viewModel.selectedCamera else {
+                return mode.name
+            }
+            let cameraLabel = "\(camera.brand) \(camera.model)"
+            guard mode.name.hasPrefix(cameraLabel) else {
+                return mode.name
+            }
+            let trimmed = mode.name.dropFirst(cameraLabel.count).trimmingCharacters(in: .whitespaces)
+            return trimmed.isEmpty ? mode.name : trimmed
+        }
     }
 
     private struct ModeMetadataChips: View {
@@ -437,6 +449,9 @@ struct ScoutCameraLayout: View {
             var values: [String] = []
             if let captureGate = mode.captureGate, !captureGate.isEmpty {
                 values.append(captureGate)
+            }
+            if let resolution = formattedResolutionLabel(mode.resolution) {
+                values.append(resolution)
             }
             if let squeeze = mode.anamorphicPreviewSqueeze {
                 values.append(formattedSqueezeLabel(squeeze))
@@ -470,6 +485,13 @@ struct ScoutCameraLayout: View {
                 return "\(Int(squeeze.rounded()))x"
             }
             return String(format: "%.1fx", squeeze)
+        }
+
+        private func formattedResolutionLabel(_ resolution: String?) -> String? {
+            guard let resolution, !resolution.isEmpty else {
+                return nil
+            }
+            return resolution.replacingOccurrences(of: "x", with: " x ")
         }
     }
 
