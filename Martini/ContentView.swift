@@ -117,6 +117,7 @@ struct MainView: View {
     @State private var selectedCreativeIds: Set<String> = []
     @State private var selectedTagIds: Set<String> = []
     @State private var gridMagnification: CGFloat = 1.0
+    @State private var isGridPinching: Bool = false
 
     enum ViewMode {
         case list
@@ -809,7 +810,8 @@ struct MainView: View {
                                         onStatusSelected: { frame, status in
                                             updateFrameStatus(frame, to: status)
                                         },
-                                        showSkeleton: shouldShowFrameSkeleton && section.frames.isEmpty
+                                        showSkeleton: shouldShowFrameSkeleton && section.frames.isEmpty,
+                                        isPinching: isGridPinching
                                     )
                                 }
                                 .id(section.id)
@@ -822,10 +824,12 @@ struct MainView: View {
                         MagnificationGesture()
                             .onChanged { value in
                                 guard viewMode == .grid else { return }
+                                isGridPinching = true
                                 handleGridMagnificationChange(value)
                             }
                             .onEnded { _ in
                                 gridMagnification = 1.0
+                                isGridPinching = false
                             }
                     )
                     .coordinateSpace(name: "gridScroll")
@@ -840,6 +844,9 @@ struct MainView: View {
                         }
                     }
                     .onChange(of: viewMode) { _ in
+                        if viewMode != .grid {
+                            isGridPinching = false
+                        }
                         updateHereShortcutState(using: visibleFrameIds)
                     }
                     .onChange(of: frameSortMode) { _ in
@@ -1539,6 +1546,7 @@ struct CreativeGridSection: View {
     let primaryAsset: (Frame) -> FrameAssetItem?
     let onStatusSelected: (Frame, FrameStatus) -> Void
     let showSkeleton: Bool
+    let isPinching: Bool
 
     init(
         section: GridSectionData,
@@ -1552,7 +1560,8 @@ struct CreativeGridSection: View {
         viewportHeight: CGFloat,
         primaryAsset: @escaping (Frame) -> FrameAssetItem?,
         onStatusSelected: @escaping (Frame, FrameStatus) -> Void,
-        showSkeleton: Bool
+        showSkeleton: Bool,
+        isPinching: Bool
     ) {
         self.section = section
         self.onFrameTap = onFrameTap
@@ -1566,6 +1575,7 @@ struct CreativeGridSection: View {
         self.primaryAsset = primaryAsset
         self.onStatusSelected = onStatusSelected
         self.showSkeleton = showSkeleton
+        self.isPinching = isPinching
     }
 
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
@@ -1631,6 +1641,7 @@ struct CreativeGridSection: View {
                             )
                         }
                         .id(frame.id)
+                        .allowsHitTesting(!isPinching)
                     }
                 }
             }
