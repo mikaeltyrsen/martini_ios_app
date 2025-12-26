@@ -34,11 +34,14 @@ struct FrameView: View {
     @State private var sheetVisible: Bool = false
     @State private var statusBeingUpdated: FrameStatus?
     @State private var showingScoutCamera: Bool = false
+    @State private var showingScoutCameraWarning: Bool = false
+    @State private var showingScoutCameraSettings: Bool = false
 
     private let minDescriptionRatio: CGFloat = 0.35
     private let dimmerAnim = Animation.easeInOut(duration: 0.28)
     private let sheetAnim = Animation.spring(response: 0.42, dampingFraction: 0.92, blendDuration: 0.20)
     private let takePictureCardID = "take-picture"
+    private let selectionStore = ProjectKitSelectionStore.shared
 
     init(
         frame: Frame,
@@ -144,6 +147,18 @@ struct FrameView: View {
                     )
                     .environmentObject(authService)
                 }
+            }
+            .sheet(isPresented: $showingScoutCameraSettings) {
+                ScoutCameraSettingsSheet()
+                    .environmentObject(authService)
+            }
+            .alert("Scout Camera Setup Needed", isPresented: $showingScoutCameraWarning) {
+                Button("Cancel", role: .cancel) {}
+                Button("Go To Settings") {
+                    showingScoutCameraSettings = true
+                }
+            } message: {
+                Text("Select at least one camera and lens in settings to use Scout Camera.")
             }
     }
 
@@ -370,7 +385,7 @@ struct FrameView: View {
                 primaryText: primaryText,
                 takePictureID: takePictureCardID,
                 takePictureAction: {
-                    showingScoutCamera = true
+                    openScoutCamera()
                 }
             )
 
@@ -499,7 +514,7 @@ struct FrameView: View {
                     }
 
                     Button {
-                        showingScoutCamera = true
+                        openScoutCamera()
                     } label: {
                         Text("Add Photo")
                             .font(.system(size: 14, weight: .semibold))
@@ -605,6 +620,20 @@ struct FrameView: View {
         Task {
             await loadClips(force: true)
         }
+    }
+
+    private func openScoutCamera() {
+        guard let projectId = authService.projectId else {
+            showingScoutCamera = true
+            return
+        }
+        let hasCameras = !selectionStore.cameraIds(for: projectId).isEmpty
+        let hasLenses = !selectionStore.lensIds(for: projectId).isEmpty
+        guard hasCameras && hasLenses else {
+            showingScoutCameraWarning = true
+            return
+        }
+        showingScoutCamera = true
     }
 
     @ViewBuilder
@@ -759,6 +788,18 @@ private extension FrameView {
         let targetRatio: CGFloat = expanded ? 1.0 : minDescriptionRatio
         withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
             descriptionHeightRatio = targetRatio
+        }
+    }
+}
+
+private struct ScoutCameraSettingsSheet: View {
+    var body: some View {
+        NavigationStack {
+            Form {
+                ProjectKitSettingsView()
+            }
+            .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 }
