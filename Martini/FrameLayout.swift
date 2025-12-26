@@ -108,11 +108,13 @@ struct FrameLayout: View {
     var showTextBlock: Bool = true
     var cornerRadius: CGFloat = 8
     var enablesFullScreen: Bool = true
+    var doneCrossLineWidthOverride: Double? = nil
 
     @Environment(\.horizontalSizeClass) private var hSizeClass
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.fullscreenMediaCoordinator) private var fullscreenCoordinator
     @AppStorage("showDoneCrosses") private var showDoneCrosses: Bool = true
+    @AppStorage("doneCrossLineWidth") private var doneCrossLineWidth: Double = 5.0
     @Namespace private var fullscreenNamespace
     @State private var borderScale: CGFloat = 1.0
     @State private var omitOverlayOpacity: Double = 0
@@ -461,7 +463,7 @@ struct FrameLayout: View {
     }
 
     private var doneCrossVisibleLineWidth: CGFloat {
-        1
+        CGFloat(doneCrossLineWidthOverride ?? doneCrossLineWidth)
     }
 
     private func animateStatusChange(to status: FrameStatus) {
