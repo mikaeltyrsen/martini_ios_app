@@ -847,6 +847,11 @@ struct MainView: View {
                         if viewMode != .grid {
                             isGridPinching = false
                         }
+                        if viewMode == .grid {
+                            DispatchQueue.main.async {
+                                scrollToGridTop()
+                            }
+                        }
                         updateHereShortcutState(using: visibleFrameIds)
                     }
                     .onChange(of: frameSortMode) { _ in
@@ -925,6 +930,15 @@ struct MainView: View {
 
         withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
             proxy.scrollTo(id, anchor: .top)
+        }
+    }
+
+    private func scrollToGridTop() {
+        guard let topId = gridSections.first?.id else { return }
+        guard let proxy = gridScrollProxy else { return }
+
+        withAnimation(.easeInOut(duration: 0.2)) {
+            proxy.scrollTo(topId, anchor: .top)
         }
     }
 
@@ -1129,11 +1143,25 @@ private extension MainView {
     }
 
     private func handleFrameUpdateEvent(_ event: FrameUpdateEvent) {
+        guard shouldScrollToHereFrame(for: event) else { return }
         scrollFrameIntoGridIfAvailable(frameId: event.frameId)
     }
 
+    private func shouldScrollToHereFrame(for event: FrameUpdateEvent) -> Bool {
+        guard case .websocket(let eventName) = event.context,
+              eventName == "frame-status-updated"
+        else {
+            return false
+        }
+
+        guard let frame = displayedFramesInCurrentMode.first(where: { $0.id == event.frameId }) else {
+            return false
+        }
+
+        return frame.statusEnum == .here
+    }
+
     private func scrollFrameIntoGridIfAvailable(frameId: String, anchor: UnitPoint = .center) {
-        guard viewMode == .grid else { return }
         guard let frame = displayedFramesInCurrentMode.first(where: { $0.id == frameId }) else { return }
         scrollToFrame(frame, anchor: anchor)
     }
