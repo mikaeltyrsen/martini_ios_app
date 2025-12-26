@@ -800,6 +800,7 @@ struct MainView: View {
                                             }
                                         },
                                         columnCount: gridColumnCount,
+                                        forceThinCrosses: viewMode == .grid,
                                         showDescriptions: effectiveShowDescriptions,
                                         showFullDescriptions: effectiveShowFullDescriptions,
                                         showFrameTimeOverlay: shouldShowFrameTimeOverlay,
@@ -1565,6 +1566,7 @@ struct CreativeGridSection: View {
     let section: GridSectionData
     let onFrameTap: (String) -> Void
     let columnCount: Int
+    let forceThinCrosses: Bool
     let showDescriptions: Bool
     let showFullDescriptions: Bool
     let showFrameTimeOverlay: Bool
@@ -1580,6 +1582,7 @@ struct CreativeGridSection: View {
         section: GridSectionData,
         onFrameTap: @escaping (String) -> Void,
         columnCount: Int,
+        forceThinCrosses: Bool,
         showDescriptions: Bool,
         showFullDescriptions: Bool,
         showFrameTimeOverlay: Bool,
@@ -1594,6 +1597,7 @@ struct CreativeGridSection: View {
         self.section = section
         self.onFrameTap = onFrameTap
         self.columnCount = columnCount
+        self.forceThinCrosses = forceThinCrosses
         self.showDescriptions = showDescriptions
         self.showFullDescriptions = showFullDescriptions
         self.showFrameTimeOverlay = showFrameTimeOverlay
@@ -1657,6 +1661,7 @@ struct CreativeGridSection: View {
                                 GridFrameCell(
                                     frame: frame,
                                     primaryAsset: primaryAsset(frame),
+                                    forceThinCrosses: forceThinCrosses,
                                     showDescription: showDescriptions,
                                     showFullDescription: showFullDescriptions,
                                     showFrameTimeOverlay: showFrameTimeOverlay,
@@ -1683,6 +1688,7 @@ struct CreativeGridSection: View {
 struct GridFrameCell: View {
     let frame: Frame
     var primaryAsset: FrameAssetItem?
+    var forceThinCrosses: Bool = false
     var showDescription: Bool = false
     var showFullDescription: Bool = false
     var showFrameTimeOverlay: Bool = true
@@ -1701,7 +1707,7 @@ struct GridFrameCell: View {
                 showTextBlock: false,
                 cornerRadius: 6,
                 enablesFullScreen: false,
-                doneCrossLineWidthOverride: 1
+                doneCrossLineWidthOverride: forceThinCrosses ? 1 : nil
             )
             .contextMenu {
                 statusMenu
