@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum AppConfig {
-    static let debugMode = false
+    static let debugMode = true
 
     enum MarkerIcons {
         static let done = "xmark"
