@@ -1,5 +1,6 @@
 import SwiftUI
 import AVFoundation
+import MediaPlayer
 import UIKit
 
 struct ScoutCameraLayout: View {
@@ -139,6 +140,7 @@ struct ScoutCameraLayout: View {
         .sheet(isPresented: $isLensPackPresented) {
             LensPackSheet(viewModel: viewModel)
         }
+        .overlay(VolumeButtonSuppressor(volumeView: volumeObserver.volumeView))
     }
 
     private var rightControlBar: some View {
@@ -889,6 +891,18 @@ private final class VolumeButtonObserver: ObservableObject {
     var onVolumeChange: (() -> Void)?
     private var observation: NSKeyValueObservation?
     private var lastVolume: Float = AVAudioSession.sharedInstance().outputVolume
+    private var isRestoringVolume = false
+    let volumeView: MPVolumeView = {
+        let view = MPVolumeView(frame: .zero)
+        view.showsRouteButton = false
+        view.showsVolumeSlider = true
+        view.alpha = 0.0001
+        return view
+    }()
+
+    private var volumeSlider: UISlider? {
+        volumeView.subviews.compactMap { $0 as? UISlider }.first
+    }
 
     func start() {
         let session = AVAudioSession.sharedInstance()
@@ -902,10 +916,19 @@ private final class VolumeButtonObserver: ObservableObject {
         observation = session.observe(\.outputVolume, options: [.new]) { [weak self] session, change in
             guard let self else { return }
             let newVolume = change.newValue ?? session.outputVolume
+            if self.isRestoringVolume {
+                self.isRestoringVolume = false
+                self.lastVolume = newVolume
+                return
+            }
             guard abs(newVolume - self.lastVolume) > 0.001 else { return }
+            let previousVolume = self.lastVolume
             self.lastVolume = newVolume
             DispatchQueue.main.async {
                 self.onVolumeChange?()
+                self.isRestoringVolume = true
+                self.volumeSlider?.value = previousVolume
+                self.lastVolume = previousVolume
             }
         }
     }
@@ -914,4 +937,24 @@ private final class VolumeButtonObserver: ObservableObject {
         observation?.invalidate()
         observation = nil
     }
+}
+
+private struct VolumeButtonSuppressor: UIViewRepresentable {
+    let volumeView: MPVolumeView
+
+    func makeUIView(context: Context) -> UIView {
+        let container = UIView(frame: .zero)
+        volumeView.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(volumeView)
+        NSLayoutConstraint.activate([
+            volumeView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            volumeView.topAnchor.constraint(equalTo: container.topAnchor),
+            volumeView.widthAnchor.constraint(equalToConstant: 1),
+            volumeView.heightAnchor.constraint(equalToConstant: 1)
+        ])
+        container.isUserInteractionEnabled = false
+        return container
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {}
 }
