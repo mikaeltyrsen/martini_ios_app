@@ -72,8 +72,8 @@ struct ScoutCameraPhotoLayout {
 
             let rightMargin: CGFloat = 20
             let textWidth: CGFloat = canvasWidth - logoRect.maxX - rightMargin - 16
-            let cameraLine = "\(metadata.cameraName) • \(metadata.cameraModeName)"
-            let lensLine = "\(metadata.lensName) • \(metadata.focalLengthLabel) • \(metadata.squeezeLabel)"
+            let cameraLine = metadata.cameraLine
+            let lensLine = metadata.lensLine
 
             let cameraLineRect = CGRect(
                 x: logoRect.maxX + 16,
