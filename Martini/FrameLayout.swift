@@ -112,7 +112,6 @@ struct FrameLayout: View {
     @Environment(\.horizontalSizeClass) private var hSizeClass
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.fullscreenMediaCoordinator) private var fullscreenCoordinator
-    @AppStorage("doneCrossLineWidth") private var doneCrossLineWidth: Double = 5.0
     @AppStorage("showDoneCrosses") private var showDoneCrosses: Bool = true
     @Namespace private var fullscreenNamespace
     @State private var borderScale: CGFloat = 1.0
@@ -428,14 +427,14 @@ struct FrameLayout: View {
                             path.addLine(to: CGPoint(x: geometry.size.width, y: geometry.size.height))
                         }
                         .trim(from: 0, to: doneFirstLineProgress)
-                        .stroke(Color.red, style: StrokeStyle(lineWidth: CGFloat(doneCrossLineWidth), lineCap: .round))
+                        .stroke(Color.red, style: StrokeStyle(lineWidth: doneCrossVisibleLineWidth, lineCap: .round))
 
                         Path { path in
                             path.move(to: CGPoint(x: geometry.size.width, y: 0))
                             path.addLine(to: CGPoint(x: 0, y: geometry.size.height))
                         }
                         .trim(from: 0, to: doneSecondLineProgress)
-                        .stroke(Color.red, style: StrokeStyle(lineWidth: CGFloat(doneCrossLineWidth), lineCap: .round))
+                        .stroke(Color.red, style: StrokeStyle(lineWidth: doneCrossVisibleLineWidth, lineCap: .round))
                     }
                 }
                 .aspectRatio(aspectRatio, contentMode: .fit)
@@ -459,6 +458,10 @@ struct FrameLayout: View {
         doneFirstLineProgress = isDone ? 1 : 0
         doneSecondLineProgress = isDone ? 1 : 0
         borderScale = 1
+    }
+
+    private var doneCrossVisibleLineWidth: CGFloat {
+        1
     }
 
     private func animateStatusChange(to status: FrameStatus) {
