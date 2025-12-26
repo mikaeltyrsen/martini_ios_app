@@ -9,7 +9,8 @@ struct ScoutCameraLayout: View {
     @StateObject private var motionManager = MotionHeadingManager()
     @StateObject private var volumeObserver = VolumeButtonObserver()
     private let targetAspectRatio: CGFloat
-    @State private var isSettingsOpen = false
+    @State private var isCameraSettingsPresented = false
+    @State private var isLensPackPresented = false
     @State private var lastCameraRole: String?
     @State private var lensToastMessage: String?
     @State private var showLensToast = false
@@ -44,22 +45,7 @@ struct ScoutCameraLayout: View {
                     .padding(.horizontal, 24)
                     .padding(.top, 12)
                     .padding(.bottom, 24)
-
-                    HStack {
-                        Spacer()
-                        VStack {
-                            Spacer()
-                            settingsButton
-                            Spacer()
-                        }
-                    }
-                    .padding(.trailing, 24)
                 }
-            }
-
-            if isSettingsOpen {
-                settingsDrawer
-                    .transition(.move(edge: .trailing))
             }
 
             if viewModel.isCapturing {
@@ -72,7 +58,6 @@ struct ScoutCameraLayout: View {
                     .zIndex(1)
             }
         }
-        .animation(.easeInOut(duration: 0.2), value: isSettingsOpen)
         .animation(.easeInOut(duration: 0.25), value: showLensToast)
         .onAppear {
             AppDelegate.orientationLock = .landscape
@@ -133,6 +118,12 @@ struct ScoutCameraLayout: View {
                 )
             }
         }
+        .sheet(isPresented: $isCameraSettingsPresented) {
+            CameraSettingsSheet(viewModel: viewModel)
+        }
+        .sheet(isPresented: $isLensPackPresented) {
+            LensPackSheet(viewModel: viewModel)
+        }
     }
 
     private var topInfoBar: some View {
@@ -143,13 +134,18 @@ struct ScoutCameraLayout: View {
                 }
                 .foregroundStyle(.white)
                 .font(.caption.weight(.semibold))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(selectedCameraLabel)
-                    Text(selectedModeLabel)
-                        .foregroundStyle(.white.opacity(0.7))
+                Button {
+                    isCameraSettingsPresented = true
+                } label: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(selectedCameraLabel)
+                        Text(selectedModeLabel)
+                            .foregroundStyle(.white.opacity(0.7))
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.white)
                 }
-                .font(.caption)
-                .foregroundStyle(.white)
+                .buttonStyle(.plain)
             }
             Spacer()
             VStack(spacing: 4) {
@@ -159,146 +155,20 @@ struct ScoutCameraLayout: View {
             .font(.caption.weight(.semibold))
             .foregroundStyle(.white)
             Spacer()
-            VStack(alignment: .trailing, spacing: 4) {
-                Text("Lens")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.7))
-                Text(selectedLensLabel)
-                    .font(.caption)
-                    .foregroundStyle(.white)
-            }
-        }
-    }
-
-    private var settingsButton: some View {
-        Button {
-            isSettingsOpen.toggle()
-        } label: {
-            Image(systemName: "slider.horizontal.3")
-                .font(.system(size: 20, weight: .semibold))
-                .padding(12)
-                .background(Color.white.opacity(0.12))
-                .clipShape(Circle())
-        }
-        .foregroundStyle(.white)
-    }
-
-    private var settingsDrawer: some View {
-        GeometryReader { proxy in
-            ZStack(alignment: .trailing) {
-                Color.black.opacity(0.45)
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        isSettingsOpen = false
-                    }
-
-                settingsPanel
-                    .frame(width: min(360, proxy.size.width * 0.6))
-                    .transition(.move(edge: .trailing))
-            }
-        }
-    }
-
-    private var settingsPanel: some View {
-        NavigationStack {
-            List {
-                Section {
-                    NavigationLink {
-                        SelectionList(
-                            items: viewModel.availableCameras,
-                            selectedId: viewModel.selectedCamera?.id,
-                            title: "Camera",
-                            rowTitle: { "\($0.brand) \($0.model)" },
-                            rowSubtitle: { _ in nil }
-                        ) { camera in
-                            viewModel.selectedCamera = camera
-                        }
-                    } label: {
-                        settingsSectionLabel(title: "Camera", value: selectedCameraLabel)
-                    }
-                }
-
-                Section {
-                    NavigationLink {
-                        SelectionList(
-                            items: viewModel.availableModes,
-                            selectedId: viewModel.selectedMode?.id,
-                            title: "Mode",
-                            rowTitle: { $0.name },
-                            rowSubtitle: { modeResolutionLabel(for: $0) }
-                        ) { mode in
-                            viewModel.selectedMode = mode
-                        }
-                    } label: {
-                        settingsSectionLabel(title: "Mode", value: selectedModeLabel)
-                    }
-                }
-
-                Section {
-                    NavigationLink {
-                        SelectionList(
-                            items: viewModel.availableLenses,
-                            selectedId: viewModel.selectedLens?.id,
-                            title: "Lens",
-                            rowTitle: { "\($0.brand) \($0.series)" },
-                            rowSubtitle: { lensFocalLabel(for: $0) }
-                        ) { lens in
-                            viewModel.selectedLens = lens
-                        }
-                    } label: {
-                        settingsSectionLabel(title: "Lens", value: selectedLensLabel)
-                    }
-                }
-
-                Section {
-                    NavigationLink {
-                        SelectionList(
-                            items: FrameLineOption.allCases,
-                            selectedId: viewModel.selectedFrameLine.id,
-                            title: "Frame Lines",
-                            rowTitle: { $0.rawValue },
-                            rowSubtitle: { _ in nil }
-                        ) { option in
-                            viewModel.selectedFrameLine = option
-                        }
-                    } label: {
-                        settingsSectionLabel(title: "Frame Lines", value: viewModel.selectedFrameLine.rawValue)
-                    }
-                }
-
-                if let lens = viewModel.selectedLens, lens.isZoom,
-                   let minFocal = lens.focalLengthMinMm, let maxFocal = lens.focalLengthMaxMm {
-                    Section("Focal Length") {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("\(Int(viewModel.focalLengthMm))mm")
-                                .font(.headline)
-                            Slider(value: $viewModel.focalLengthMm, in: minFocal...maxFocal, step: 1)
-                        }
-                        .padding(.vertical, 4)
-                    }
+            Button {
+                isLensPackPresented = true
+            } label: {
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("Lens Pack")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.7))
+                    Text(selectedLensPackLabel)
+                        .font(.caption)
+                        .foregroundStyle(.white)
                 }
             }
-            .listStyle(.insetGrouped)
-            .scrollContentBackground(.hidden)
-            .background(Color.black.opacity(0.6))
-            .foregroundStyle(.white)
+            .buttonStyle(.plain)
         }
-        .navigationTitle("Camera Settings")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    isSettingsOpen = false
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 20, weight: .semibold))
-                }
-            }
-        }
-        .background(Color.black.opacity(0.85))
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .padding(.trailing, 16)
-        .padding(.vertical, 16)
     }
 
     private var selectedCameraLabel: String {
@@ -312,38 +182,8 @@ struct ScoutCameraLayout: View {
         viewModel.selectedMode?.name ?? "None"
     }
 
-    private var selectedLensLabel: String {
-        guard let lens = viewModel.selectedLens else {
-            return "None"
-        }
-        return "\(lens.brand) \(lens.series)"
-    }
-
-    private func lensFocalLabel(for lens: DBLens) -> String? {
-        if lens.isZoom, let min = lens.focalLengthMinMm, let max = lens.focalLengthMaxMm {
-            return "\(Int(min))–\(Int(max)) mm"
-        }
-        if let focal = lens.focalLengthMm ?? lens.focalLengthMinMm {
-            return "\(Int(focal)) mm"
-        }
-        return nil
-    }
-
-    private func modeResolutionLabel(for mode: DBCameraMode) -> String? {
-        guard let resolution = mode.resolution, !resolution.isEmpty else {
-            return nil
-        }
-        return "\(formattedResolution(resolution)) px"
-    }
-
-    private func formattedResolution(_ resolution: String) -> String {
-        let trimmed = resolution.replacingOccurrences(of: " ", with: "")
-        let separators = CharacterSet(charactersIn: "xX×")
-        let components = trimmed.components(separatedBy: separators).filter { !$0.isEmpty }
-        if components.count == 2 {
-            return "\(components[0])×\(components[1])"
-        }
-        return resolution
+    private var selectedLensPackLabel: String {
+        viewModel.selectedLensPack?.displayName ?? "Select Pack"
     }
 
     private struct SelectionList<Item: Identifiable>: View {
@@ -381,20 +221,106 @@ struct ScoutCameraLayout: View {
                 .buttonStyle(.plain)
             }
             .listStyle(.insetGrouped)
-            .scrollContentBackground(.hidden)
-            .background(Color.black.opacity(0.6))
-            .foregroundStyle(.white)
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
         }
     }
 
-    private func settingsSectionLabel(title: String, value: String) -> some View {
-        HStack {
-            Text(title)
-            Spacer()
-            Text(value)
-                .foregroundStyle(.white.opacity(0.7))
+    private struct SettingsSectionLabel: View {
+        let title: String
+        let value: String
+
+        var body: some View {
+            HStack {
+                Text(title)
+                Spacer()
+                Text(value)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private struct CameraSettingsSheet: View {
+        @Environment(\.dismiss) private var dismiss
+        @ObservedObject var viewModel: ScoutCameraViewModel
+
+        var body: some View {
+            NavigationStack {
+                List {
+                    Section {
+                        NavigationLink {
+                            ScoutCameraLayout.SelectionList(
+                                items: FrameLineOption.allCases,
+                                selectedId: viewModel.selectedFrameLine.id,
+                                title: "Frame Lines",
+                                rowTitle: { $0.rawValue },
+                                rowSubtitle: { _ in nil }
+                            ) { option in
+                                viewModel.selectedFrameLine = option
+                            }
+                        } label: {
+                            SettingsSectionLabel(title: "Frame Lines", value: viewModel.selectedFrameLine.rawValue)
+                        }
+                    }
+                }
+                .navigationTitle("Camera Settings")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Done") {
+                            dismiss()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private struct LensPackSheet: View {
+        @Environment(\.dismiss) private var dismiss
+        @ObservedObject var viewModel: ScoutCameraViewModel
+
+        var body: some View {
+            NavigationStack {
+                List {
+                    if viewModel.availableLensPacks.isEmpty {
+                        Text("No lens packs available.")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(viewModel.availableLensPacks) { pack in
+                            Button {
+                                viewModel.selectLensPack(pack)
+                                dismiss()
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(pack.displayName)
+                                        Text("\(pack.lenses.count) lenses")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    if viewModel.selectedLensPack?.id == pack.id {
+                                        Image(systemName: "checkmark")
+                                            .font(.caption.weight(.semibold))
+                                            .foregroundStyle(Color.accentColor)
+                                    }
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                .navigationTitle("Lens Packs")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Done") {
+                            dismiss()
+                        }
+                    }
+                }
+            }
         }
     }
 

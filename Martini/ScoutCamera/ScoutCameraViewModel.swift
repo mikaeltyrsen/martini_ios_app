@@ -7,10 +7,12 @@ final class ScoutCameraViewModel: ObservableObject {
     @Published var availableCameras: [DBCamera] = []
     @Published var availableLenses: [DBLens] = []
     @Published var availableModes: [DBCameraMode] = []
+    @Published var availableLensPacks: [LensPackGroup] = []
 
     @Published var selectedCamera: DBCamera?
     @Published var selectedMode: DBCameraMode?
     @Published var selectedLens: DBLens?
+    @Published var selectedLensPack: LensPackGroup?
     @Published var focalLengthMm: Double = 35
     @Published var selectedFrameLine: FrameLineOption = .none
 
@@ -51,8 +53,17 @@ final class ScoutCameraViewModel: ObservableObject {
         } else {
             errorMessage = nil
         }
+        availableLensPacks = buildLensPacks(from: availableLenses)
         selectedCamera = availableCameras.first
         selectedLens = availableLenses.first
+        selectedLensPack = lensPackContainingSelectedLens() ?? availableLensPacks.first
+        if let selectedLensPack,
+           let lens = selectedLens,
+           !selectedLensPack.lenses.contains(where: { $0.id == lens.id }) {
+            selectedLens = selectedLensPack.lenses.first
+        } else if selectedLensPack == nil {
+            selectedLens = availableLenses.first
+        }
         refreshModes()
         updateFocalLength()
         Task {
@@ -80,24 +91,42 @@ final class ScoutCameraViewModel: ObservableObject {
     }
 
     func selectNextLens() {
-        guard let selectedLens,
-              let currentIndex = availableLenses.firstIndex(where: { $0.id == selectedLens.id }) else {
+        guard let selectedLens else { return }
+        if selectedLens.isZoom,
+           let maxFocal = selectedLens.focalLengthMaxMm {
+            let nextValue = min(maxFocal, focalLengthMm + 1)
+            if nextValue != focalLengthMm {
+                focalLengthMm = nextValue
+            }
             return
         }
-        let nextIndex = min(currentIndex + 1, availableLenses.count - 1)
+        let lensPool = selectedLensPack?.lenses ?? availableLenses
+        guard let currentIndex = lensPool.firstIndex(where: { $0.id == selectedLens.id }) else {
+            return
+        }
+        let nextIndex = min(currentIndex + 1, lensPool.count - 1)
         if nextIndex != currentIndex {
-            self.selectedLens = availableLenses[nextIndex]
+            self.selectedLens = lensPool[nextIndex]
         }
     }
 
     func selectPreviousLens() {
-        guard let selectedLens,
-              let currentIndex = availableLenses.firstIndex(where: { $0.id == selectedLens.id }) else {
+        guard let selectedLens else { return }
+        if selectedLens.isZoom,
+           let minFocal = selectedLens.focalLengthMinMm {
+            let previousValue = max(minFocal, focalLengthMm - 1)
+            if previousValue != focalLengthMm {
+                focalLengthMm = previousValue
+            }
+            return
+        }
+        let lensPool = selectedLensPack?.lenses ?? availableLenses
+        guard let currentIndex = lensPool.firstIndex(where: { $0.id == selectedLens.id }) else {
             return
         }
         let previousIndex = max(currentIndex - 1, 0)
         if previousIndex != currentIndex {
-            self.selectedLens = availableLenses[previousIndex]
+            self.selectedLens = lensPool[previousIndex]
         }
     }
 
@@ -219,6 +248,42 @@ final class ScoutCameraViewModel: ObservableObject {
         return "\(Int(focalLengthMm))mm"
     }
 
+    func selectLensPack(_ pack: LensPackGroup) {
+        selectedLensPack = pack
+        if let selectedLens,
+           pack.lenses.contains(where: { $0.id == selectedLens.id }) {
+            return
+        }
+        selectedLens = pack.lenses.first
+    }
+
+    private func lensPackContainingSelectedLens() -> LensPackGroup? {
+        guard let selectedLens else { return nil }
+        return availableLensPacks.first { pack in
+            pack.lenses.contains(where: { $0.id == selectedLens.id })
+        }
+    }
+
+    private func buildLensPacks(from lenses: [DBLens]) -> [LensPackGroup] {
+        let lensLookup = Dictionary(uniqueKeysWithValues: lenses.map { ($0.id, $0) })
+        let itemsByPack = Dictionary(grouping: dataStore.lensPackItems, by: \.packId)
+        var packs: [LensPackGroup] = dataStore.lensPacks.compactMap { pack in
+            let sortedItems = (itemsByPack[pack.id] ?? []).sorted { $0.sortOrder < $1.sortOrder }
+            let packLenses = sortedItems.compactMap { lensLookup[$0.lensId] }
+            guard !packLenses.isEmpty else { return nil }
+            return LensPackGroup(id: pack.id, displayName: "\(pack.brand) \(pack.name)", lenses: packLenses)
+        }
+
+        let assignedLensIds = Set(packs.flatMap(\.lenses).map(\.id))
+        let unassigned = lenses
+            .filter { !assignedLensIds.contains($0.id) }
+            .sorted { "\($0.brand) \($0.series)" < "\($1.brand) \($1.series)" }
+        if !unassigned.isEmpty {
+            packs.append(LensPackGroup(id: "selected_lenses", displayName: "Selected Lenses", lenses: unassigned))
+        }
+        return packs.sorted { $0.displayName < $1.displayName }
+    }
+
     var sensorAspectRatio: CGFloat? {
         guard let mode = selectedMode else { return nil }
         if mode.sensorWidthMm > 0, mode.sensorHeightMm > 0 {
@@ -269,6 +334,12 @@ final class ScoutCameraViewModel: ObservableObject {
             focalLengthMm: focalLengthMm
         )
     }
+}
+
+struct LensPackGroup: Identifiable, Hashable {
+    let id: String
+    let displayName: String
+    let lenses: [DBLens]
 }
 
 struct ScoutCameraDebugInfo: Equatable {
