@@ -116,6 +116,7 @@ struct MainView: View {
     @State private var isShowingFilters = false
     @State private var selectedCreativeIds: Set<String> = []
     @State private var selectedTagIds: Set<String> = []
+    @State private var gridMagnification: CGFloat = 1.0
 
     enum ViewMode {
         case list
@@ -278,10 +279,6 @@ struct MainView: View {
     }
 
     private var gridColumnCount: Int {
-        if viewMode == .grid {
-            return isLandscape ? 7 : 5 // Overview fixed columns by orientation
-        }
-
         return adjustableColumnCount(for: gridSizeStep)
     }
 
@@ -819,6 +816,16 @@ struct MainView: View {
                         .padding(.vertical)
                         .padding(.bottom, 0)
                     }
+                    .simultaneousGesture(
+                        MagnificationGesture()
+                            .onChanged { value in
+                                guard viewMode == .grid else { return }
+                                handleGridMagnificationChange(value)
+                            }
+                            .onEnded { _ in
+                                gridMagnification = 1.0
+                            }
+                    )
                     .coordinateSpace(name: "gridScroll")
                     .onAppear { gridScrollProxy = proxy }
                     .onPreferenceChange(VisibleFramePreferenceKey.self) { ids in
@@ -871,6 +878,24 @@ struct MainView: View {
     private func selectCreative(_ id: String) {
         currentCreativeId = id
         scrollToCreative(withId: id)
+    }
+
+    private func handleGridMagnificationChange(_ value: CGFloat) {
+        let delta = value / max(gridMagnification, 0.01)
+        let stepThreshold: CGFloat = 0.08
+
+        if delta > 1.0 + stepThreshold {
+            adjustGridSize(increase: true)
+            gridMagnification = value
+        } else if delta < 1.0 - stepThreshold {
+            adjustGridSize(increase: false)
+            gridMagnification = value
+        }
+    }
+
+    private func adjustGridSize(increase: Bool) {
+        let newValue = gridSizeStep + (increase ? 1 : -1)
+        gridSizeStep = min(max(newValue, 1), 4)
     }
 
     private func synchronizeCreativeSelection() {
