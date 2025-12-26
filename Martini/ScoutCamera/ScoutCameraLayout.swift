@@ -608,7 +608,7 @@ struct ScoutCameraLayout: View {
                 }
 
                 if viewModel.showGrid {
-                    GridOverlay()
+                    GridOverlay(aspectRatio: viewModel.selectedFrameLine.aspectRatio)
                         .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
                 }
 
@@ -806,26 +806,42 @@ private struct FrameShadingOverlay: View {
 }
 
 private struct GridOverlay: View {
+    let aspectRatio: CGFloat?
+
     var body: some View {
         GeometryReader { proxy in
-            let width = proxy.size.width
-            let height = proxy.size.height
-            let oneThirdWidth = width / 3
-            let oneThirdHeight = height / 3
+            let rect = aspectRatio.map { frameRect(in: proxy.size, aspectRatio: $0) }
+                ?? CGRect(origin: .zero, size: proxy.size)
+            let oneThirdWidth = rect.width / 3
+            let oneThirdHeight = rect.height / 3
             Path { path in
-                path.move(to: CGPoint(x: oneThirdWidth, y: 0))
-                path.addLine(to: CGPoint(x: oneThirdWidth, y: height))
-                path.move(to: CGPoint(x: oneThirdWidth * 2, y: 0))
-                path.addLine(to: CGPoint(x: oneThirdWidth * 2, y: height))
+                path.move(to: CGPoint(x: rect.minX + oneThirdWidth, y: rect.minY))
+                path.addLine(to: CGPoint(x: rect.minX + oneThirdWidth, y: rect.maxY))
+                path.move(to: CGPoint(x: rect.minX + oneThirdWidth * 2, y: rect.minY))
+                path.addLine(to: CGPoint(x: rect.minX + oneThirdWidth * 2, y: rect.maxY))
 
-                path.move(to: CGPoint(x: 0, y: oneThirdHeight))
-                path.addLine(to: CGPoint(x: width, y: oneThirdHeight))
-                path.move(to: CGPoint(x: 0, y: oneThirdHeight * 2))
-                path.addLine(to: CGPoint(x: width, y: oneThirdHeight * 2))
+                path.move(to: CGPoint(x: rect.minX, y: rect.minY + oneThirdHeight))
+                path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + oneThirdHeight))
+                path.move(to: CGPoint(x: rect.minX, y: rect.minY + oneThirdHeight * 2))
+                path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + oneThirdHeight * 2))
             }
             .stroke(.white.opacity(0.6), lineWidth: 1)
         }
         .allowsHitTesting(false)
+    }
+
+    private func frameRect(in size: CGSize, aspectRatio: CGFloat) -> CGRect {
+        let containerAspect = size.width / max(size.height, 1)
+        let width: CGFloat
+        let height: CGFloat
+        if containerAspect > aspectRatio {
+            height = size.height
+            width = height * aspectRatio
+        } else {
+            width = size.width
+            height = width / aspectRatio
+        }
+        return CGRect(x: (size.width - width) / 2, y: (size.height - height) / 2, width: width, height: height)
     }
 }
 
