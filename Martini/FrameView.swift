@@ -517,17 +517,20 @@ struct FrameView: View {
                     Button {
                         openScoutCamera()
                     } label: {
-                        Text("Add Photo")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(Color.primary)
-                            .lineLimit(1)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 10)
-                            .frame(minWidth: 100)
-                            .background(
-                                Capsule()
-                                    .fill(Color.secondary.opacity(0.15))
-                            )
+                        HStack(spacing: 4) {
+                            Image("plus")
+                            Text("Add Photo")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(Color.primary)
+                                .lineLimit(1)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 10)
+                                .frame(minWidth: 100)
+                                .background(
+                                    Capsule()
+                                        .fill(Color.secondary.opacity(0.15))
+                                )
+                        }
                     }
                     .buttonStyle(.plain)
                     .id(takePictureCardID)
