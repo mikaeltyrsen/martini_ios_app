@@ -1672,7 +1672,8 @@ struct GridFrameCell: View {
                 showFrameTimeOverlay: showFrameTimeOverlay,
                 showTextBlock: false,
                 cornerRadius: 6,
-                enablesFullScreen: false
+                enablesFullScreen: false,
+                doneCrossLineWidthOverride: 1
             )
             .contextMenu {
                 statusMenu
