@@ -10,6 +10,9 @@ struct ScoutCameraLayout: View {
     @StateObject private var volumeObserver = VolumeButtonObserver()
     private let targetAspectRatio: CGFloat
     @State private var isSettingsOpen = false
+    @State private var lastCameraRole: String?
+    @State private var lensToastMessage: String?
+    @State private var showLensToast = false
     private let previewMargin: CGFloat = 80
 
     init(projectId: String, frameId: String, targetAspectRatio: CGFloat) {
@@ -62,8 +65,15 @@ struct ScoutCameraLayout: View {
             if viewModel.isCapturing {
                 captureOverlay
             }
+
+            if showLensToast, let lensToastMessage {
+                lensToast(message: lensToastMessage)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .zIndex(1)
+            }
         }
         .animation(.easeInOut(duration: 0.2), value: isSettingsOpen)
+        .animation(.easeInOut(duration: 0.25), value: showLensToast)
         .onAppear {
             AppDelegate.orientationLock = .landscape
             UIDevice.current.setValue(UIInterfaceOrientation.landscapeRight.rawValue, forKey: "orientation")
@@ -91,6 +101,9 @@ struct ScoutCameraLayout: View {
         }
         .onChange(of: viewModel.focalLengthMm) { _ in
             Task { await viewModel.updateCaptureConfiguration() }
+        }
+        .onChange(of: viewModel.matchResult?.cameraRole) { newRole in
+            handleCameraRoleChange(newRole)
         }
         .alert("Scout Camera Error", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
@@ -506,6 +519,51 @@ struct ScoutCameraLayout: View {
         }
         .ignoresSafeArea()
         .allowsHitTesting(true)
+    }
+
+    private func handleCameraRoleChange(_ newRole: String?) {
+        guard let newRole else { return }
+        defer { lastCameraRole = newRole }
+        guard let previousRole = lastCameraRole, previousRole != newRole else { return }
+        let label = lensRoleLabel(for: newRole)
+        lensToastMessage = "Switched to \(label) lens"
+        withAnimation {
+            showLensToast = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+            withAnimation {
+                showLensToast = false
+            }
+        }
+    }
+
+    private func lensRoleLabel(for role: String) -> String {
+        switch role {
+        case "ultra":
+            return "Ultra Wide"
+        case "tele":
+            return "Telephoto"
+        case "main":
+            return "Wide"
+        default:
+            return role.capitalized
+        }
+    }
+
+    private func lensToast(message: String) -> some View {
+        VStack {
+            Spacer()
+            Text(message)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(Color.black.opacity(0.7))
+                .clipShape(Capsule())
+                .padding(.bottom, 112)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .allowsHitTesting(false)
     }
 
     private func handleImport() async {
