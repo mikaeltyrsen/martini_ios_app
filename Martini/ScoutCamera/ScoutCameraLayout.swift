@@ -220,7 +220,37 @@ struct ScoutCameraLayout: View {
     }
 
     private var selectedModeLabel: String {
-        viewModel.selectedMode?.name ?? "None"
+        guard let mode = viewModel.selectedMode else {
+            return "None"
+        }
+        return formattedModeLabel(camera: viewModel.selectedCamera, mode: mode)
+    }
+
+    private func formattedModeLabel(camera: DBCamera?, mode: DBCameraMode) -> String {
+        var modeLabel = mode.name
+        if let camera {
+            let cameraFullName = "\(camera.brand) \(camera.model)"
+            if modeLabel.hasPrefix("\(cameraFullName) ") {
+                modeLabel = String(modeLabel.dropFirst(cameraFullName.count + 1))
+            }
+            let modelLabel = shortModelLabel(camera)
+            if !modelLabel.isEmpty, !modeLabel.hasPrefix(modelLabel) {
+                modeLabel = "\(modelLabel) \(modeLabel)"
+            }
+        }
+        if let resolution = mode.resolution, !resolution.isEmpty {
+            let formattedResolution = resolution.replacingOccurrences(of: "x", with: " x ")
+            modeLabel += " (\(formattedResolution))"
+        }
+        return modeLabel
+    }
+
+    private func shortModelLabel(_ camera: DBCamera) -> String {
+        let model = camera.model
+        if camera.brand == "ARRI", model.hasPrefix("Alexa ") {
+            return String(model.dropFirst("Alexa ".count))
+        }
+        return model
     }
 
     private var selectedLensPackLabel: String {
