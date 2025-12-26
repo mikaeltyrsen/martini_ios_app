@@ -10,39 +10,45 @@ final class CaptureSessionManager: ObservableObject {
     @Published var isRunning: Bool = false
 
     func configureSession(with role: String, zoomFactor: Double) throws {
-        session.beginConfiguration()
-        session.sessionPreset = .photo
-
-        if let currentInput {
-            session.removeInput(currentInput)
-            self.currentInput = nil
-        }
-
         guard let device = CameraDeviceSelector.device(for: role) else {
-            session.commitConfiguration()
             throw NSError(domain: "CaptureSessionManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "Camera device not available"])
         }
+        let needsInputUpdate = currentInput?.device.uniqueID != device.uniqueID
+        let needsOutputUpdate = !session.outputs.contains(photoOutput)
 
-        let input = try AVCaptureDeviceInput(device: device)
-        if session.canAddInput(input) {
-            session.addInput(input)
-            currentInput = input
+        if needsInputUpdate || needsOutputUpdate {
+            session.beginConfiguration()
+            session.sessionPreset = .photo
+
+            if needsInputUpdate, let currentInput {
+                session.removeInput(currentInput)
+                self.currentInput = nil
+            }
+
+            if needsInputUpdate {
+                let input = try AVCaptureDeviceInput(device: device)
+                if session.canAddInput(input) {
+                    session.addInput(input)
+                    currentInput = input
+                }
+            }
+
+            if needsOutputUpdate, session.canAddOutput(photoOutput) {
+                session.addOutput(photoOutput)
+            }
+
+            session.commitConfiguration()
         }
-
-        if session.canAddOutput(photoOutput) {
-            session.addOutput(photoOutput)
-        }
-
-        session.commitConfiguration()
 
         if let connection = photoOutput.connection(with: .video), connection.isVideoOrientationSupported {
             connection.videoOrientation = .landscapeRight
         }
 
-        try device.lockForConfiguration()
-        let clampedZoom = min(max(zoomFactor, device.minAvailableVideoZoomFactor), device.maxAvailableVideoZoomFactor)
-        device.videoZoomFactor = CGFloat(clampedZoom)
-        device.unlockForConfiguration()
+        let activeDevice = currentInput?.device ?? device
+        try activeDevice.lockForConfiguration()
+        let clampedZoom = min(max(zoomFactor, activeDevice.minAvailableVideoZoomFactor), activeDevice.maxAvailableVideoZoomFactor)
+        activeDevice.videoZoomFactor = CGFloat(clampedZoom)
+        activeDevice.unlockForConfiguration()
     }
 
     func start() {
