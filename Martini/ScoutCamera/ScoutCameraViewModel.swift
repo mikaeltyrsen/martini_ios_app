@@ -17,6 +17,7 @@ final class ScoutCameraViewModel: ObservableObject {
     @Published var selectedFrameLine: FrameLineOption = .none
     @Published var showCrosshair: Bool = false
     @Published var showGrid: Bool = false
+    @Published var showFrameShading: Bool = false
 
     @Published var matchResult: FOVMatchResult?
     @Published var debugInfo: ScoutCameraDebugInfo?

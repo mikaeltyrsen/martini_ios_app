@@ -305,6 +305,7 @@ struct ScoutCameraLayout: View {
                     Section("Overlays") {
                         Toggle("Crosshair", isOn: $viewModel.showCrosshair)
                         Toggle("Grid", isOn: $viewModel.showGrid)
+                        Toggle("Frame Shading", isOn: $viewModel.showFrameShading)
                     }
                 }
                 .navigationTitle("Camera Settings")
@@ -531,6 +532,12 @@ struct ScoutCameraLayout: View {
                         .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
                 }
 
+                if viewModel.showFrameShading,
+                   let frameLineAspect = viewModel.selectedFrameLine.aspectRatio {
+                    FrameShadingOverlay(aspectRatio: frameLineAspect)
+                        .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
+                }
+
                 if viewModel.showGrid {
                     GridOverlay()
                         .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
@@ -680,6 +687,36 @@ private struct FrameLineOverlay: View {
                 path.addRect(rect)
             }
             .stroke(.white.opacity(0.8), lineWidth: 2)
+        }
+        .allowsHitTesting(false)
+    }
+
+    private func frameRect(in size: CGSize) -> CGRect {
+        let containerAspect = size.width / max(size.height, 1)
+        let width: CGFloat
+        let height: CGFloat
+        if containerAspect > aspectRatio {
+            height = size.height
+            width = height * aspectRatio
+        } else {
+            width = size.width
+            height = width / aspectRatio
+        }
+        return CGRect(x: (size.width - width) / 2, y: (size.height - height) / 2, width: width, height: height)
+    }
+}
+
+private struct FrameShadingOverlay: View {
+    let aspectRatio: CGFloat
+
+    var body: some View {
+        GeometryReader { proxy in
+            let rect = frameRect(in: proxy.size)
+            Path { path in
+                path.addRect(CGRect(origin: .zero, size: proxy.size))
+                path.addRect(rect)
+            }
+            .fill(.black.opacity(0.7), style: FillStyle(eoFill: true))
         }
         .allowsHitTesting(false)
     }
