@@ -229,7 +229,7 @@ struct FrameView: View {
                         ProgressView()
                             .tint(.white)
                     } else {
-                        Image(systemName: selectedStatus == .none ? "tag" : selectedStatus.systemImageName)
+                        Image(systemName: selectedStatus == .none ? "pencil.tip" : selectedStatus.systemImageName)
                     }
                 }
                 .labelStyle(.titleAndIcon)
@@ -242,9 +242,13 @@ struct FrameView: View {
                 )
                 .fixedSize(horizontal: true, vertical: false)
                 .layoutPriority(1)
+                .shadow(color: selectedStatus.markerBackgroundColor.opacity(0.8), radius: 12, x: 0, y: 0)
+                .shadow(color: selectedStatus.markerBackgroundColor.opacity(0.5), radius: 50, x: 0, y: 0)
+                .shadow(color: selectedStatus.markerBackgroundColor.opacity(0.3), radius: 100, x: 0, y: 0)
             }
             .buttonStyle(.plain)
             .disabled(isUpdatingStatus)
+            //.tint(.yellow)
 
             Spacer()
 
@@ -1342,7 +1346,7 @@ extension FrameStatus {
         case .omit:
             return .red
         case .none:
-            return .gray
+            return .markerClear
         }
     }
 }
