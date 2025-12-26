@@ -7,11 +7,16 @@ struct FOVMatchResult: Equatable {
 }
 
 struct FOVEngine {
-    static func matchIPhoneModule(targetHFOVRadians: Double, iphoneCameras: [DBIPhoneCamera]) -> FOVMatchResult? {
+    static func matchIPhoneModule(
+        targetHFOVRadians: Double,
+        iphoneCameras: [DBIPhoneCamera],
+        calibrationMultipliers: [String: Double]
+    ) -> FOVMatchResult? {
         var best: FOVMatchResult?
 
         for camera in iphoneCameras {
-            let nativeHFOV = FOVMath.degreesToRadians(camera.nativeHFOVDegrees)
+            let calibratedHFOVDegrees = calibratedHFOVDegrees(camera: camera, calibrationMultipliers: calibrationMultipliers)
+            let nativeHFOV = FOVMath.degreesToRadians(calibratedHFOVDegrees)
             guard targetHFOVRadians > 0 else { continue }
             let requiredZoom = nativeHFOV / targetHFOVRadians
             let zoom = min(max(requiredZoom, camera.minZoom), camera.maxZoom)
@@ -29,5 +34,13 @@ struct FOVEngine {
         }
 
         return best
+    }
+
+    static func calibratedHFOVDegrees(
+        camera: DBIPhoneCamera,
+        calibrationMultipliers: [String: Double]
+    ) -> Double {
+        let multiplier = calibrationMultipliers[camera.cameraRole] ?? 1.0
+        return camera.nativeHFOVDegrees * multiplier
     }
 }
