@@ -15,7 +15,7 @@ struct ScoutCameraLayout: View {
     @State private var lastCameraRole: String?
     @State private var lensToastMessage: String?
     @State private var showLensToast = false
-    private let previewMargin: CGFloat = 80
+    private let previewMargin: CGFloat = 40
 
     init(projectId: String, frameId: String, targetAspectRatio: CGFloat) {
         self.targetAspectRatio = targetAspectRatio
@@ -24,7 +24,7 @@ struct ScoutCameraLayout: View {
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            Color(.cameraBackground).ignoresSafeArea()
 
             GeometryReader { proxy in
                 let previewWidth = max(proxy.size.width - previewMargin * 2, 0)
@@ -43,9 +43,20 @@ struct ScoutCameraLayout: View {
                         Spacer()
                         bottomControlBar
                     }
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, 12)
                     .padding(.top, 12)
-                    .padding(.bottom, 24)
+                    .padding(.bottom, 0)
+                }
+                ZStack {
+                    HStack {
+                        VStack(spacing: 12) {
+                            leftControlBar
+                        }
+                        Spacer()
+                        VStack(spacing: 12) {
+                            rightControlBar
+                        }
+                    }
                 }
             }
 
@@ -130,9 +141,31 @@ struct ScoutCameraLayout: View {
         }
     }
 
+    private var rightControlBar: some View {
+        VStack{
+            Spacer()
+            Button {
+                isFrameLineSettingsPresented = true
+            } label: {
+                Image(systemName: "viewfinder.rectangular")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(.white)
+            }
+            //.buttonStyle(.plain)
+            Spacer()
+        }
+    }
+    
+    private var leftControlBar: some View {
+        VStack {
+            
+        }
+    }
+    
+    
     private var topInfoBar: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
                 Button("Cancel") {
                     dismiss()
                 }
@@ -171,18 +204,6 @@ struct ScoutCameraLayout: View {
                             .font(.caption)
                             .foregroundStyle(.white)
                     }
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    isFrameLineSettingsPresented = true
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "slider.horizontal.3")
-                        Text("Settings")
-                    }
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.white)
                 }
                 .buttonStyle(.plain)
             }
@@ -425,46 +446,54 @@ struct ScoutCameraLayout: View {
 
     private var bottomControlBar: some View {
         HStack {
-            Spacer()
             Button {
                 viewModel.selectPreviousLens()
             } label: {
                 Image(systemName: "minus.circle")
-                    .font(.system(size: 24, weight: .semibold))
+                    .font(.system(size: 30, weight: .semibold))
             }
             .foregroundStyle(.white)
             Spacer()
             VStack(spacing: 4) {
-                Text(lensInfoText)
-                    .font(.headline.weight(.semibold))
-                if let match = viewModel.matchResult {
-                    Text("\(match.cameraRole.uppercased()) • \(String(format: "%.2fx", match.zoomFactor))")
-                        .font(.caption2)
-                        .foregroundStyle(.white.opacity(0.7))
+                VStack() {
+                    Text(lensInfoText)
+                        .font(.system(size: 30, weight: .semibold))
+                        .lineSpacing(1)
+                    Text("mm")
+                        .font(.system(size: 12, weight: .regular))
+                        .lineSpacing(1)
                 }
+//                if let match = viewModel.matchResult {
+//                    Text("\(match.cameraRole.uppercased()) • \(String(format: "%.2fx", match.zoomFactor))")
+//                        .font(.caption2)
+//                        .foregroundStyle(.white.opacity(0.7))
+//                }
             }
             .foregroundStyle(.white)
             Spacer()
-            Button {
-                viewModel.capturePhoto()
-            } label: {
-                Circle()
-                    .fill(Color.white)
-                    .frame(width: 72, height: 72)
-                    .overlay(
-                        Circle()
-                            .stroke(Color.black.opacity(0.6), lineWidth: 3)
-                    )
+            
+            HStack(spacing: 12) {
+                Button {
+                    viewModel.capturePhoto()
+                } label: {
+//                    Circle()
+//                        .fill(Color.white)
+//                        .frame(width: 72, height: 72)
+//                        .overlay(
+//                            Circle()
+//                                .stroke(Color.black.opacity(0.6), lineWidth: 3)
+//                        )
+                    Image(systemName: "camera.circle.fill")
+                        .font(.system(size: 30, weight: .regular))
+                }
+                Button {
+                    viewModel.selectNextLens()
+                } label: {
+                    Image(systemName: "plus.circle")
+                        .font(.system(size: 30, weight: .semibold))
+                }
+                .foregroundStyle(.white)
             }
-            Spacer()
-            Button {
-                viewModel.selectNextLens()
-            } label: {
-                Image(systemName: "plus.circle")
-                    .font(.system(size: 24, weight: .semibold))
-            }
-            .foregroundStyle(.white)
-            Spacer()
         }
     }
 
@@ -502,10 +531,10 @@ struct ScoutCameraLayout: View {
     }
 
     private var lensInfoText: String {
-        let focalText = "\(Int(viewModel.activeFocalLengthMm))mm"
-        if let targetHFOV = viewModel.debugInfo?.targetHFOVDegrees {
-            return "\(focalText) • \(Int(targetHFOV.rounded()))°"
-        }
+        let focalText = "\(Int(viewModel.activeFocalLengthMm))"
+//        if let targetHFOV = viewModel.debugInfo?.targetHFOVDegrees {
+//            return "\(focalText) • \(Int(targetHFOV.rounded()))°"
+//        }
         return focalText
     }
 
