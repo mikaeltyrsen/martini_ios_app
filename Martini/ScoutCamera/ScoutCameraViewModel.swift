@@ -27,6 +27,7 @@ final class ScoutCameraViewModel: ObservableObject {
     @Published var errorMessage: String?
 
     let captureManager = CaptureSessionManager()
+    let calibrationStore = FOVCalibrationStore.shared
 
     private let projectId: String
     private let frameId: String
@@ -155,13 +156,19 @@ final class ScoutCameraViewModel: ObservableObject {
         let squeeze = effectiveSqueeze(mode: mode, lens: lens)
         let targetHFOV = FOVMath.horizontalFOV(sensorWidthMm: mode.sensorWidthMm, focalLengthMm: focal, squeeze: squeeze)
         let iphoneCameras = dataStore.fetchIPhoneCameras()
-        let match = FOVEngine.matchIPhoneModule(targetHFOVRadians: targetHFOV, iphoneCameras: iphoneCameras)
+        let calibrationMultipliers = calibrationStore.multipliers
+        let match = FOVEngine.matchIPhoneModule(
+            targetHFOVRadians: targetHFOV,
+            iphoneCameras: iphoneCameras,
+            calibrationMultipliers: calibrationMultipliers
+        )
         matchResult = match
         debugInfo = buildDebugInfo(
             targetHFOVRadians: targetHFOV,
             focalLengthMm: focal,
             match: match,
-            iphoneCameras: iphoneCameras
+            iphoneCameras: iphoneCameras,
+            calibrationMultipliers: calibrationMultipliers
         )
 
         let role = match?.cameraRole ?? "main"
@@ -362,18 +369,22 @@ final class ScoutCameraViewModel: ObservableObject {
         targetHFOVRadians: Double,
         focalLengthMm: Double,
         match: FOVMatchResult?,
-        iphoneCameras: [DBIPhoneCamera]
+        iphoneCameras: [DBIPhoneCamera],
+        calibrationMultipliers: [String: Double]
     ) -> ScoutCameraDebugInfo? {
         guard let match else { return nil }
         let targetHFOVDegrees = FOVMath.radiansToDegrees(targetHFOVRadians)
         let camera = iphoneCameras.first { $0.cameraRole == match.cameraRole }
-        let nativeHFOVDegrees = camera?.nativeHFOVDegrees ?? 0
+        let nativeHFOVDegrees = camera.map {
+            FOVEngine.calibratedHFOVDegrees(camera: $0, calibrationMultipliers: calibrationMultipliers)
+        } ?? 0
         let achievedHFOVDegrees = match.zoomFactor > 0 ? nativeHFOVDegrees / match.zoomFactor : 0
         let errorDegrees = abs(achievedHFOVDegrees - targetHFOVDegrees)
         let candidates = buildDebugCandidates(
             iphoneCameras: iphoneCameras,
             targetHFOVRadians: targetHFOVRadians,
-            targetHFOVDegrees: targetHFOVDegrees
+            targetHFOVDegrees: targetHFOVDegrees,
+            calibrationMultipliers: calibrationMultipliers
         )
         return ScoutCameraDebugInfo(
             targetHFOVDegrees: targetHFOVDegrees,
@@ -389,18 +400,23 @@ final class ScoutCameraViewModel: ObservableObject {
     private func buildDebugCandidates(
         iphoneCameras: [DBIPhoneCamera],
         targetHFOVRadians: Double,
-        targetHFOVDegrees: Double
+        targetHFOVDegrees: Double,
+        calibrationMultipliers: [String: Double]
     ) -> [ScoutCameraFOVCandidate] {
         guard targetHFOVRadians > 0 else { return [] }
         return iphoneCameras.map { camera in
-            let nativeHFOVRadians = FOVMath.degreesToRadians(camera.nativeHFOVDegrees)
+            let calibratedHFOVDegrees = FOVEngine.calibratedHFOVDegrees(
+                camera: camera,
+                calibrationMultipliers: calibrationMultipliers
+            )
+            let nativeHFOVRadians = FOVMath.degreesToRadians(calibratedHFOVDegrees)
             let requiredZoom = nativeHFOVRadians / targetHFOVRadians
             let clampedZoom = min(max(requiredZoom, camera.minZoom), camera.maxZoom)
-            let achievedHFOVDegrees = clampedZoom > 0 ? camera.nativeHFOVDegrees / clampedZoom : 0
+            let achievedHFOVDegrees = clampedZoom > 0 ? calibratedHFOVDegrees / clampedZoom : 0
             let errorDegrees = abs(achievedHFOVDegrees - targetHFOVDegrees)
             return ScoutCameraFOVCandidate(
                 cameraRole: camera.cameraRole,
-                nativeHFOVDegrees: camera.nativeHFOVDegrees,
+                nativeHFOVDegrees: calibratedHFOVDegrees,
                 requiredZoom: requiredZoom,
                 clampedZoom: clampedZoom,
                 minZoom: camera.minZoom,

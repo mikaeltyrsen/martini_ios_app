@@ -13,6 +13,7 @@ struct ScoutCameraLayout: View {
     @State private var isCameraSelectionPresented = false
     @State private var isFrameLineSettingsPresented = false
     @State private var isLensPackPresented = false
+    @State private var isCalibrationPresented = false
     @State private var lastCameraRole: String?
     @State private var lensToastMessage: String?
     @State private var showLensToast = false
@@ -140,18 +141,32 @@ struct ScoutCameraLayout: View {
         .sheet(isPresented: $isLensPackPresented) {
             LensPackSheet(viewModel: viewModel)
         }
+        .sheet(isPresented: $isCalibrationPresented) {
+            FOVCalibrationView(scoutViewModel: viewModel)
+        }
         .overlay(VolumeButtonSuppressor(volumeView: volumeObserver.volumeView))
     }
 
     private var rightControlBar: some View {
         VStack{
             Spacer()
-            Button {
-                isFrameLineSettingsPresented = true
-            } label: {
-                Image(systemName: "viewfinder.rectangular")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(.white)
+            VStack(spacing: 6) {
+                Button {
+                    isFrameLineSettingsPresented = true
+                } label: {
+                    Image(systemName: "viewfinder.rectangular")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+
+                Button {
+                    isCalibrationPresented = true
+                } label: {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.7))
+                }
+                .buttonStyle(.plain)
             }
             //.buttonStyle(.plain)
             Spacer()

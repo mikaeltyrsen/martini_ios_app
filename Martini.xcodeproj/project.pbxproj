@@ -46,6 +46,9 @@
 		B97E51D7EFDA491EBD6C974C /* ScoutCamera/CameraKit/CaptureSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B50BC0CE2AA4639AE6F9264 /* ScoutCamera/CameraKit/CaptureSessionManager.swift */; };
 		B9D8650A752F4255AD620B9B /* ScoutCamera/ScoutCameraReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0187390DAD5C4818AD9A0A1B /* ScoutCamera/ScoutCameraReviewView.swift */; };
 		C0E3AD0331584BB39C1BE6BA /* ScoutCamera/FOV/FOVMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10F9CB29EE71481EB424475E /* ScoutCamera/FOV/FOVMath.swift */; };
+		A1B2C3D4E5F60718293A4B5E /* ScoutCamera/Calibration/FOVCalibrationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5D /* ScoutCamera/Calibration/FOVCalibrationStore.swift */; };
+		B1C2D3E4F5061728394A5B6D /* ScoutCamera/Calibration/FOVCalibrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C2D3E4F5061728394A5B6C /* ScoutCamera/Calibration/FOVCalibrationView.swift */; };
+		C1D2E3F40516273849A5B6C8 /* ScoutCamera/Calibration/FOVCalibrationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D2E3F40516273849A5B6C7 /* ScoutCamera/Calibration/FOVCalibrationViewModel.swift */; };
 		CB0A92282BEE469EB696343F /* ProjectKit/ProjectKitSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83E0E90984D6471FA90532C0 /* ProjectKit/ProjectKitSettingsView.swift */; };
 		DA0A67A443A94D11B57C5EC6 /* ProjectKit/ProjectKitStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 988E7BC68EFE4E89B6ADC548 /* ProjectKit/ProjectKitStore.swift */; };
 		DAB09D58B6A74211960FDCD9 /* LocalData/PackModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38B088F6DDD94E12A8B7997C /* LocalData/PackModels.swift */; };
@@ -101,6 +104,9 @@
 		B25D2D8C220E4A7CAE24D403 /* LocalData/Seed/martini_example_db.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = LocalData/Seed/martini_example_db.json; sourceTree = "<group>"; };
 		C15BCD3610C14777916BDDA9 /* Networking/FrameUploadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking/FrameUploadService.swift; sourceTree = "<group>"; };
 		C451CF6B5C97405C841E3067 /* ScoutCamera/FOV/FOVEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/FOV/FOVEngine.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B5D /* ScoutCamera/Calibration/FOVCalibrationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/Calibration/FOVCalibrationStore.swift; sourceTree = "<group>"; };
+		B1C2D3E4F5061728394A5B6C /* ScoutCamera/Calibration/FOVCalibrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/Calibration/FOVCalibrationView.swift; sourceTree = "<group>"; };
+		C1D2E3F40516273849A5B6C7 /* ScoutCamera/Calibration/FOVCalibrationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/Calibration/FOVCalibrationViewModel.swift; sourceTree = "<group>"; };
 		D4E5F60718293A4B5CA1B2C3 /* ScoutCamera/ScoutCameraPhotoLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/ScoutCameraPhotoLayout.swift; sourceTree = "<group>"; };
 		EBF9DC5BE38645D481011359 /* LocalData/DBModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalData/DBModels.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -170,6 +176,9 @@
 				D4E5F60718293A4B5CA1B2C3 /* ScoutCamera/ScoutCameraPhotoLayout.swift */,
 				0187390DAD5C4818AD9A0A1B /* ScoutCamera/ScoutCameraReviewView.swift */,
 				30240C00983A4B208F56B246 /* ScoutCamera/ScoutCameraViewModel.swift */,
+				A1B2C3D4E5F60718293A4B5D /* ScoutCamera/Calibration/FOVCalibrationStore.swift */,
+				B1C2D3E4F5061728394A5B6C /* ScoutCamera/Calibration/FOVCalibrationView.swift */,
+				C1D2E3F40516273849A5B6C7 /* ScoutCamera/Calibration/FOVCalibrationViewModel.swift */,
 				6B50BC0CE2AA4639AE6F9264 /* ScoutCamera/CameraKit/CaptureSessionManager.swift */,
 				A20AFBDAA8904AB283618CF2 /* ScoutCamera/CameraKit/CameraDeviceSelector.swift */,
 				6D1703649E3D46839E5BEC80 /* ScoutCamera/CameraKit/PhotoCaptureProcessor.swift */,
@@ -285,6 +294,9 @@
 				A1B2C3D4E5F60718293A4B5C /* ScoutCamera/ScoutCameraPhotoLayout.swift in Sources */,
 				B9D8650A752F4255AD620B9B /* ScoutCamera/ScoutCameraReviewView.swift in Sources */,
 				212769B0E99B412F8D9C27E8 /* ScoutCamera/ScoutCameraViewModel.swift in Sources */,
+				A1B2C3D4E5F60718293A4B5E /* ScoutCamera/Calibration/FOVCalibrationStore.swift in Sources */,
+				B1C2D3E4F5061728394A5B6D /* ScoutCamera/Calibration/FOVCalibrationView.swift in Sources */,
+				C1D2E3F40516273849A5B6C8 /* ScoutCamera/Calibration/FOVCalibrationViewModel.swift in Sources */,
 				B97E51D7EFDA491EBD6C974C /* ScoutCamera/CameraKit/CaptureSessionManager.swift in Sources */,
 				F8C07B4A4CB449BDB50BE3BB /* ScoutCamera/CameraKit/CameraDeviceSelector.swift in Sources */,
 				3953947E4AE944899289AFFB /* ScoutCamera/CameraKit/PhotoCaptureProcessor.swift in Sources */,
