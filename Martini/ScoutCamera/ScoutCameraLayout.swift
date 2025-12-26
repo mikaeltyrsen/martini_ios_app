@@ -344,15 +344,7 @@ struct ScoutCameraLayout: View {
                         }
 
                         NavigationLink {
-                            ScoutCameraLayout.SelectionList(
-                                items: viewModel.availableModes,
-                                selectedId: viewModel.selectedMode?.id,
-                                title: "Mode",
-                                rowTitle: { $0.name },
-                                rowSubtitle: { modeSubtitle($0) }
-                            ) { mode in
-                                viewModel.selectedMode = mode
-                            }
+                            ModeSelectionList(viewModel: viewModel)
                         } label: {
                             SettingsSectionLabel(title: "Mode", value: viewModel.selectedMode?.name ?? "None")
                         }
@@ -387,18 +379,95 @@ struct ScoutCameraLayout: View {
             return nil
         }
 
-        private func modeSubtitle(_ mode: DBCameraMode) -> String? {
-            var parts: [String] = []
-            if let resolution = mode.resolution, !resolution.isEmpty {
-                parts.append(resolution)
+    }
+
+    private struct ModeSelectionList: View {
+        @Environment(\.dismiss) private var dismiss
+        @ObservedObject var viewModel: ScoutCameraViewModel
+        @State private var showAnamorphicOnly = false
+
+        private var filteredModes: [DBCameraMode] {
+            if showAnamorphicOnly {
+                return viewModel.availableModes.filter { $0.anamorphicPreviewSqueeze != nil }
             }
-            if let aspect = mode.aspectRatio, !aspect.isEmpty {
-                parts.append(aspect)
+            return viewModel.availableModes
+        }
+
+        var body: some View {
+            List {
+                Section {
+                    Toggle("Anamorphic modes only", isOn: $showAnamorphicOnly)
+                }
+
+                Section {
+                    ForEach(filteredModes) { mode in
+                        Button {
+                            viewModel.selectedMode = mode
+                            dismiss()
+                        } label: {
+                            HStack(alignment: .top) {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text(mode.name)
+                                    ModeMetadataChips(mode: mode)
+                                }
+                                Spacer()
+                                if viewModel.selectedMode?.id == mode.id {
+                                    Image(systemName: "checkmark")
+                                        .font(.caption.weight(.semibold))
+                                }
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
             }
-            if parts.isEmpty {
-                return "\(String(format: "%.1f", mode.sensorWidthMm)) × \(String(format: "%.1f", mode.sensorHeightMm)) mm"
+            .listStyle(.insetGrouped)
+            .navigationTitle("Mode")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+
+    private struct ModeMetadataChips: View {
+        let mode: DBCameraMode
+
+        private var chips: [String] {
+            var values: [String] = []
+            if let captureGate = mode.captureGate, !captureGate.isEmpty {
+                values.append(captureGate)
             }
-            return parts.joined(separator: " • ")
+            if let squeeze = mode.anamorphicPreviewSqueeze {
+                values.append(formattedSqueezeLabel(squeeze))
+            }
+            if let delivery = mode.deliveryAspectRatio, !delivery.isEmpty {
+                values.append(delivery)
+            }
+            return values
+        }
+
+        var body: some View {
+            if chips.isEmpty {
+                EmptyView()
+            } else {
+                HStack(spacing: 6) {
+                    ForEach(chips, id: \.self) { chip in
+                        Text(chip)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.white.opacity(0.8))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Color.white.opacity(0.12))
+                            .clipShape(Capsule())
+                    }
+                }
+            }
+        }
+
+        private func formattedSqueezeLabel(_ squeeze: Double) -> String {
+            if abs(squeeze.rounded() - squeeze) < 0.01 {
+                return "\(Int(squeeze.rounded()))x"
+            }
+            return String(format: "%.1fx", squeeze)
         }
     }
 

@@ -24,6 +24,13 @@ struct DBCameraMode: Identifiable, Hashable {
     let sensorHeightMm: Double
     let resolution: String?
     let aspectRatio: String?
+    let captureGate: String?
+    let anamorphicPreviewSqueeze: Double?
+    let deliveryAspectRatio: String?
+    let recommendedLensCoverage: String?
+    let vignetteRisk: String?
+    let notes: String?
+    let extraction: ExtractionHint?
 }
 
 struct DBLens: Identifiable, Hashable {

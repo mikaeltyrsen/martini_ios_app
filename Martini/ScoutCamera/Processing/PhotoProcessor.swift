@@ -1,11 +1,8 @@
 import UIKit
 
 struct ScoutPhotoMetadata {
-    let cameraName: String
-    let cameraModeName: String
-    let lensName: String
-    let focalLengthLabel: String
-    let squeezeLabel: String
+    let cameraLine: String
+    let lensLine: String
 }
 
 struct PhotoProcessor {

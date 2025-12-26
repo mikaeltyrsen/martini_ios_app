@@ -123,6 +123,13 @@ struct PackCameraMode: Codable {
     let sensorHeightMm: Double
     let resolution: String?
     let aspectRatio: String?
+    let captureGate: String?
+    let anamorphicPreviewSqueeze: Double?
+    let deliveryAspectRatio: String?
+    let recommendedLensCoverage: String?
+    let vignetteRisk: String?
+    let notes: String?
+    let extraction: ExtractionHint?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -131,7 +138,19 @@ struct PackCameraMode: Codable {
         case sensorHeightMm = "sensor_height_mm"
         case resolution
         case aspectRatio = "aspect_ratio"
+        case captureGate = "capture_gate"
+        case anamorphicPreviewSqueeze = "anamorphic_preview_squeeze"
+        case deliveryAspectRatio = "delivery_aspect_ratio"
+        case recommendedLensCoverage = "recommended_lens_coverage"
+        case vignetteRisk = "vignette_risk"
+        case notes
+        case extraction
     }
+}
+
+struct ExtractionHint: Codable, Hashable {
+    let inside: String?
+    let targets: [String]?
 }
 
 struct PackLensPack: Codable {

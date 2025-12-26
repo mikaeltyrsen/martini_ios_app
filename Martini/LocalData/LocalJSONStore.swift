@@ -54,7 +54,14 @@ final class LocalJSONStore {
                         sensorWidthMm: mode.sensorWidthMm,
                         sensorHeightMm: mode.sensorHeightMm,
                         resolution: mode.resolution,
-                        aspectRatio: mode.aspectRatio
+                        aspectRatio: mode.aspectRatio,
+                        captureGate: mode.captureGate,
+                        anamorphicPreviewSqueeze: mode.anamorphicPreviewSqueeze,
+                        deliveryAspectRatio: mode.deliveryAspectRatio,
+                        recommendedLensCoverage: mode.recommendedLensCoverage,
+                        vignetteRisk: mode.vignetteRisk,
+                        notes: mode.notes,
+                        extraction: mode.extraction
                     )
                 }
             }, by: { $0.cameraId })

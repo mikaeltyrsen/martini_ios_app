@@ -152,7 +152,8 @@ final class ScoutCameraViewModel: ObservableObject {
 
         guard let mode = selectedMode, let lens = selectedLens else { return }
         let focal = currentFocalLength()
-        let targetHFOV = FOVMath.horizontalFOV(sensorWidthMm: mode.sensorWidthMm, focalLengthMm: focal, squeeze: lens.squeeze)
+        let squeeze = effectiveSqueeze(mode: mode, lens: lens)
+        let targetHFOV = FOVMath.horizontalFOV(sensorWidthMm: mode.sensorWidthMm, focalLengthMm: focal, squeeze: squeeze)
         let iphoneCameras = dataStore.fetchIPhoneCameras()
         let match = FOVEngine.matchIPhoneModule(targetHFOVRadians: targetHFOV, iphoneCameras: iphoneCameras)
         matchResult = match
@@ -196,12 +197,14 @@ final class ScoutCameraViewModel: ObservableObject {
     func processImage(_ image: UIImage) async -> UIImage? {
         guard let camera = selectedCamera, let mode = selectedMode, let lens = selectedLens else { return nil }
         let focalLabel = lensFocalLabel(lens: lens, focalLengthMm: focalLengthMm)
+        let squeeze = effectiveSqueeze(mode: mode, lens: lens)
+        let squeezeLabel = formattedSqueezeLabel(squeeze)
+        let modeLabel = modeDisplayLabel(mode: mode)
+        let cameraLine = buildCameraLine(camera: camera, modeLabel: modeLabel, squeezeLabel: squeezeLabel, squeeze: squeeze)
+        let lensLine = buildLensLine(lens: lens, focalLabel: focalLabel, squeezeLabel: squeezeLabel, squeeze: squeeze)
         let metadata = ScoutPhotoMetadata(
-            cameraName: "\(camera.model)",
-            cameraModeName: mode.name,
-            lensName: "\(lens.brand) \(lens.series)",
-            focalLengthLabel: focalLabel,
-            squeezeLabel: String(format: "%.1fx", lens.squeeze)
+            cameraLine: cameraLine,
+            lensLine: lensLine
         )
         let logo = UIImage(named: "martini-logo")
         return PhotoProcessor.composeFinalImage(
@@ -249,6 +252,45 @@ final class ScoutCameraViewModel: ObservableObject {
             return "\(Int(focal))mm"
         }
         return "\(Int(focalLengthMm))mm"
+    }
+
+    private func effectiveSqueeze(mode: DBCameraMode, lens: DBLens) -> Double {
+        if abs(lens.squeeze - 1.0) > 0.001 {
+            return lens.squeeze
+        }
+        if let modeSqueeze = mode.anamorphicPreviewSqueeze {
+            return modeSqueeze
+        }
+        return 1.0
+    }
+
+    private func formattedSqueezeLabel(_ squeeze: Double) -> String {
+        if abs(squeeze.rounded() - squeeze) < 0.01 {
+            return "\(Int(squeeze.rounded()))x"
+        }
+        return String(format: "%.1fx", squeeze)
+    }
+
+    private func modeDisplayLabel(mode: DBCameraMode) -> String {
+        if let captureGate = mode.captureGate, mode.name.count > 24 {
+            return captureGate
+        }
+        return mode.name
+    }
+
+    private func buildCameraLine(camera: DBCamera, modeLabel: String, squeezeLabel: String, squeeze: Double) -> String {
+        if squeeze > 1.0 {
+            return "\(camera.model) • \(modeLabel) (\(squeezeLabel) Anamorphic)"
+        }
+        return "\(camera.model) • \(modeLabel)"
+    }
+
+    private func buildLensLine(lens: DBLens, focalLabel: String, squeezeLabel: String, squeeze: Double) -> String {
+        let lensName = "\(lens.brand) \(lens.series)"
+        if squeeze > 1.0 {
+            return "\(lensName) • \(focalLabel) • \(squeezeLabel)"
+        }
+        return "\(lensName) • \(focalLabel)"
     }
 
     func selectLensPack(_ pack: LensPackGroup) {
