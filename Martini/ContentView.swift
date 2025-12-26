@@ -260,6 +260,10 @@ struct MainView: View {
 
     private var effectiveShowFullDescriptions: Bool { effectiveShowDescriptions && showFullDescriptions }
 
+    private var shouldShowFrameTimeOverlay: Bool {
+        !(viewMode == .grid && authService.isScheduleActive)
+    }
+
     private var isLandscape: Bool {
         if let verticalSizeClass, verticalSizeClass == .compact {
             return true
@@ -798,6 +802,7 @@ struct MainView: View {
                                         columnCount: gridColumnCount,
                                         showDescriptions: effectiveShowDescriptions,
                                         showFullDescriptions: effectiveShowFullDescriptions,
+                                        showFrameTimeOverlay: shouldShowFrameTimeOverlay,
                                         fontScale: fontScale,
                                         coordinateSpaceName: "gridScroll",
                                         viewportHeight: outerGeo.size.height,
@@ -1500,6 +1505,7 @@ struct CreativeGridSection: View {
     let columnCount: Int
     let showDescriptions: Bool
     let showFullDescriptions: Bool
+    let showFrameTimeOverlay: Bool
     let fontScale: CGFloat
     let coordinateSpaceName: String
     let viewportHeight: CGFloat
@@ -1513,6 +1519,7 @@ struct CreativeGridSection: View {
         columnCount: Int,
         showDescriptions: Bool,
         showFullDescriptions: Bool,
+        showFrameTimeOverlay: Bool,
         fontScale: CGFloat,
         coordinateSpaceName: String,
         viewportHeight: CGFloat,
@@ -1525,6 +1532,7 @@ struct CreativeGridSection: View {
         self.columnCount = columnCount
         self.showDescriptions = showDescriptions
         self.showFullDescriptions = showFullDescriptions
+        self.showFrameTimeOverlay = showFrameTimeOverlay
         self.fontScale = fontScale
         self.coordinateSpaceName = coordinateSpaceName
         self.viewportHeight = viewportHeight
@@ -1581,14 +1589,15 @@ struct CreativeGridSection: View {
                         Button {
                             onFrameTap(frame.id)
                         } label: {
-                            GridFrameCell(
-                                frame: frame,
-                                primaryAsset: primaryAsset(frame),
-                                showDescription: showDescriptions,
-                                showFullDescription: showFullDescriptions,
-                                fontScale: fontScale,
-                                coordinateSpaceName: coordinateSpaceName,
-                                viewportHeight: viewportHeight,
+                                GridFrameCell(
+                                    frame: frame,
+                                    primaryAsset: primaryAsset(frame),
+                                    showDescription: showDescriptions,
+                                    showFullDescription: showFullDescriptions,
+                                    showFrameTimeOverlay: showFrameTimeOverlay,
+                                    fontScale: fontScale,
+                                    coordinateSpaceName: coordinateSpaceName,
+                                    viewportHeight: viewportHeight,
                                 onStatusSelected: { status in
                                     onStatusSelected(frame, status)
                                 }
@@ -1610,6 +1619,7 @@ struct GridFrameCell: View {
     var primaryAsset: FrameAssetItem?
     var showDescription: Bool = false
     var showFullDescription: Bool = false
+    var showFrameTimeOverlay: Bool = true
     var fontScale: CGFloat
     let coordinateSpaceName: String
     let viewportHeight: CGFloat
@@ -1621,6 +1631,7 @@ struct GridFrameCell: View {
                 frame: frame,
                 primaryAsset: primaryAsset,
                 title: frame.caption,
+                showFrameTimeOverlay: showFrameTimeOverlay,
                 showTextBlock: false,
                 cornerRadius: 6,
                 enablesFullScreen: false
