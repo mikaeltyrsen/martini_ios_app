@@ -2,6 +2,7 @@ import SwiftUI
 import AVKit
 import UIKit
 import Combine
+import QuickLook
 
 @MainActor
 struct FrameView: View {
@@ -1172,7 +1173,7 @@ private struct ClipThumbnailView: View {
                     ProgressView()
                 }
             } else {
-                Image(systemName: clip.isVideo ? "video" : "doc")
+                Image(systemName: clip.systemIconName)
                     .foregroundStyle(.secondary)
             }
         }
@@ -1182,12 +1183,15 @@ private struct ClipThumbnailView: View {
 
 private struct ClipPreviewView: View {
     let clip: Clip
+    @State private var localPreviewURL: URL?
+    @State private var isLoadingPreview = false
+    @State private var previewErrorMessage: String?
 
     var body: some View {
         VStack {
             if clip.isVideo, let url = clip.fileURL {
                 VideoPlayerContainer(url: url)
-            } else if let url = clip.fileURL {
+            } else if clip.isImage, let url = clip.fileURL {
                 AsyncImage(url: url) { image in
                     image
                         .resizable()
@@ -1196,12 +1200,77 @@ private struct ClipPreviewView: View {
                 } placeholder: {
                     ProgressView()
                 }
+            } else if let localPreviewURL {
+                QuickLookPreview(url: localPreviewURL)
+            } else if isLoadingPreview {
+                ProgressView()
             } else {
-                Text("Unable to load clip")
+                Text(previewErrorMessage ?? "Unable to load clip")
                     .foregroundStyle(.secondary)
             }
         }
         .padding()
+        .task(id: clip.id) {
+            await loadPreview()
+        }
+    }
+
+    private func loadPreview() async {
+        guard !clip.isVideo, !clip.isImage else { return }
+        guard localPreviewURL == nil else { return }
+        guard let remoteURL = clip.fileURL else {
+            previewErrorMessage = "Unable to load file."
+            return
+        }
+        isLoadingPreview = true
+        defer { isLoadingPreview = false }
+        do {
+            let (tempURL, _) = try await URLSession.shared.download(from: remoteURL)
+            let destinationURL = FileManager.default.temporaryDirectory.appendingPathComponent(remoteURL.lastPathComponent)
+            if FileManager.default.fileExists(atPath: destinationURL.path) {
+                try FileManager.default.removeItem(at: destinationURL)
+            }
+            try FileManager.default.copyItem(at: tempURL, to: destinationURL)
+            localPreviewURL = destinationURL
+        } catch {
+            previewErrorMessage = "Unable to load file."
+            print("Failed to download preview file: \(error)")
+        }
+    }
+}
+
+private struct QuickLookPreview: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(url: url)
+    }
+
+    func makeUIViewController(context: Context) -> QLPreviewController {
+        let controller = QLPreviewController()
+        controller.dataSource = context.coordinator
+        return controller
+    }
+
+    func updateUIViewController(_ uiViewController: QLPreviewController, context: Context) {
+        context.coordinator.url = url
+        uiViewController.reloadData()
+    }
+
+    final class Coordinator: NSObject, QLPreviewControllerDataSource {
+        var url: URL
+
+        init(url: URL) {
+            self.url = url
+        }
+
+        func numberOfPreviewItems(in controller: QLPreviewController) -> Int {
+            1
+        }
+
+        func previewController(_ controller: QLPreviewController, previewItemAt index: Int) -> QLPreviewItem {
+            url as QLPreviewItem
+        }
     }
 }
 
