@@ -1032,20 +1032,20 @@ private struct FilesSheet: View {
 
     private var content: some View {
         Group {
-            if isLoading {
-                VStack(spacing: 12) {
-                    ProgressView()
-                    Text("Loading clips...")
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if !clips.isEmpty {
+            if !clips.isEmpty {
                 List(clips) { clip in
                     ClipRow(clip: clip) {
                         selectedClip = clip
                     }
                 }
                 .listStyle(.plain)
+            } else if isLoading {
+                VStack(spacing: 12) {
+                    ProgressView()
+                    Text("Loading clips...")
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 VStack(spacing: 12) {
                     Image(systemName: "folder.badge.questionmark")
