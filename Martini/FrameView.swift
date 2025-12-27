@@ -1069,6 +1069,8 @@ private struct ClipRow: View {
     let clip: Clip
     let onPreview: () -> Void
     @State private var shareItem: ShareItem?
+    @State private var photoAccessAlert: PhotoAccessAlert?
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         HStack(spacing: 12) {
@@ -1125,6 +1127,18 @@ private struct ClipRow: View {
         .sheet(item: $shareItem) { item in
             ActivityView(activityItems: [item.url])
         }
+        .alert(item: $photoAccessAlert) { alert in
+            Alert(
+                title: Text("Photos Access Needed"),
+                message: Text(alert.message),
+                primaryButton: .default(Text("Open Settings")) {
+                    if let settingsURL = URL(string: UIApplication.openSettingsURLString) {
+                        openURL(settingsURL)
+                    }
+                },
+                secondaryButton: .cancel()
+            )
+        }
     }
 
     private func saveToPhotos(clip: Clip) {
@@ -1136,10 +1150,18 @@ private struct ClipRow: View {
             do {
                 try data.write(to: tempURL)
                 Task {
+                    let result: PhotoSaveResult
                     if clip.isVideo {
-                        await saveVideoToPhotos(url: tempURL)
+                        result = await saveVideoToPhotos(url: tempURL)
                     } else {
-                        await saveImageToPhotos(data: data)
+                        result = await saveImageToPhotos(data: data)
+                    }
+                    if case .accessDenied = result {
+                        await MainActor.run {
+                            photoAccessAlert = PhotoAccessAlert(
+                                message: "Martini needs access to your Photos library to save clips. Please enable Photos access in Settings."
+                            )
+                        }
                     }
                 }
             } catch {
@@ -1296,6 +1318,11 @@ private struct ShareItem: Identifiable {
     let url: URL
 }
 
+private struct PhotoAccessAlert: Identifiable {
+    let id = UUID()
+    let message: String
+}
+
 private struct ActivityView: UIViewControllerRepresentable {
     let activityItems: [Any]
     var applicationActivities: [UIActivity]? = nil
@@ -1321,46 +1348,65 @@ private struct VideoPlayerContainer: UIViewControllerRepresentable {
     }
 }
 
-private func saveImageToPhotos(data: Data) async {
-    guard let _ = UIImage(data: data) else { return }
-    guard await requestPhotoLibraryAccess() else { return }
+private enum PhotoSaveResult {
+    case success
+    case accessDenied
+    case failure(Error)
+}
+
+private func saveImageToPhotos(data: Data) async -> PhotoSaveResult {
+    guard UIImage(data: data) != nil else {
+        return .failure(NSError(domain: "PhotosSave", code: 3, userInfo: nil))
+    }
+    let accessResult = await requestPhotoLibraryAccess()
+    guard accessResult == .authorized else { return .accessDenied }
     do {
         try await performPhotoLibraryChanges {
             let request = PHAssetCreationRequest.forAsset()
             request.addResource(with: .photo, data: data, options: nil)
         }
+        return .success
     } catch {
         print("Failed to save image to Photos: \(error)")
+        return .failure(error)
     }
 }
 
-private func saveVideoToPhotos(url: URL) async {
-    guard FileManager.default.fileExists(atPath: url.path) else { return }
-    guard await requestPhotoLibraryAccess() else { return }
+private func saveVideoToPhotos(url: URL) async -> PhotoSaveResult {
+    guard FileManager.default.fileExists(atPath: url.path) else { return .failure(NSError(domain: "PhotosSave", code: 2, userInfo: nil)) }
+    let accessResult = await requestPhotoLibraryAccess()
+    guard accessResult == .authorized else { return .accessDenied }
     do {
         try await performPhotoLibraryChanges {
             let request = PHAssetCreationRequest.forAsset()
             request.addResource(with: .video, fileURL: url, options: nil)
         }
+        return .success
     } catch {
         print("Failed to save video to Photos: \(error)")
+        return .failure(error)
     }
 }
 
-private func requestPhotoLibraryAccess() async -> Bool {
+private enum PhotoLibraryAccessResult {
+    case authorized
+    case denied
+}
+
+private func requestPhotoLibraryAccess() async -> PhotoLibraryAccessResult {
     let status = PHPhotoLibrary.authorizationStatus(for: .addOnly)
     switch status {
     case .authorized, .limited:
-        return true
+        return .authorized
     case .notDetermined:
         let newStatus = await withCheckedContinuation { continuation in
             PHPhotoLibrary.requestAuthorization(for: .addOnly) { result in
                 continuation.resume(returning: result)
             }
         }
-        return newStatus == .authorized || newStatus == .limited
+        return (newStatus == .authorized || newStatus == .limited) ? .authorized : .denied
     default:
-        return false
+        return .denied
     }
 }
 
