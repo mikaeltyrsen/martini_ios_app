@@ -3,6 +3,7 @@ import AVKit
 import UIKit
 import Combine
 import QuickLook
+import Photos
 
 @MainActor
 struct FrameView: View {
@@ -21,6 +22,7 @@ struct FrameView: View {
     @State private var visibleAssetID: FrameAssetItem.ID?
     @State private var showingComments: Bool = false
     @State private var showingFiles: Bool = false
+    @State private var filesSheetDetent: PresentationDetent = .medium
     @State private var clips: [Clip] = []
     @State private var isLoadingClips: Bool = false
     @State private var clipsError: String?
@@ -99,8 +101,13 @@ struct FrameView: View {
                     errorMessage: $clipsError,
                     onReload: { await loadClips(force: true) }
                 )
-                .presentationDetents([.fraction(0.25), .medium, .large])
+                .presentationDetents([.fraction(0.25), .medium, .large], selection: $filesSheetDetent)
                 .presentationDragIndicator(.visible)
+            }
+            .onChange(of: showingFiles) { isShowing in
+                if isShowing {
+                    filesSheetDetent = .medium
+                }
             }
             .onChange(of: assetOrder) { (newOrder: [FrameAssetKind]) in
                 let newStack: [FrameAssetItem] = FrameView.orderedAssets(for: frame, order: newOrder)
@@ -131,6 +138,14 @@ struct FrameView: View {
                 if assetStack.map(\.id) != newStack.map(\.id) {
                     assetStack = newStack
                     if visibleAssetID == nil { visibleAssetID = newStack.first?.id }
+                }
+            }
+            .onReceive(authService.$frameUpdateEvent) { event in
+                guard let event else { return }
+                guard event.frameId == frame.id else { return }
+                guard case .websocket(let eventName) = event.context, eventName == "update-clips" else { return }
+                Task {
+                    await loadClips(force: true)
                 }
             }
             .overlay(alignment: .center) {
@@ -1304,15 +1319,61 @@ private struct VideoPlayerContainer: UIViewControllerRepresentable {
     }
 }
 
-@MainActor
 private func saveImageToPhotos(data: Data) async {
-    guard let image = UIImage(data: data) else { return }
-    UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+    guard let _ = UIImage(data: data) else { return }
+    guard await requestPhotoLibraryAccess() else { return }
+    do {
+        try await performPhotoLibraryChanges {
+            let request = PHAssetCreationRequest.forAsset()
+            request.addResource(with: .photo, data: data, options: nil)
+        }
+    } catch {
+        print("Failed to save image to Photos: \(error)")
+    }
 }
 
-@MainActor
 private func saveVideoToPhotos(url: URL) async {
-    UISaveVideoAtPathToSavedPhotosAlbum(url.path, nil, nil, nil)
+    guard FileManager.default.fileExists(atPath: url.path) else { return }
+    guard await requestPhotoLibraryAccess() else { return }
+    do {
+        try await performPhotoLibraryChanges {
+            let request = PHAssetCreationRequest.forAsset()
+            request.addResource(with: .video, fileURL: url, options: nil)
+        }
+    } catch {
+        print("Failed to save video to Photos: \(error)")
+    }
+}
+
+private func requestPhotoLibraryAccess() async -> Bool {
+    let status = PHPhotoLibrary.authorizationStatus(for: .addOnly)
+    switch status {
+    case .authorized, .limited:
+        return true
+    case .notDetermined:
+        let newStatus = await withCheckedContinuation { continuation in
+            PHPhotoLibrary.requestAuthorization(for: .addOnly) { result in
+                continuation.resume(returning: result)
+            }
+        }
+        return newStatus == .authorized || newStatus == .limited
+    default:
+        return false
+    }
+}
+
+private func performPhotoLibraryChanges(_ changes: @escaping () -> Void) async throws {
+    try await withCheckedThrowingContinuation { continuation in
+        PHPhotoLibrary.shared().performChanges(changes) { success, error in
+            if let error {
+                continuation.resume(throwing: error)
+            } else if success {
+                continuation.resume()
+            } else {
+                continuation.resume(throwing: NSError(domain: "PhotosSave", code: 1, userInfo: nil))
+            }
+        }
+    }
 }
 
 enum FrameNavigationDirection {
