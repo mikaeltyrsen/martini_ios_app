@@ -7,6 +7,7 @@ struct ScoutCameraLayout: View {
     @EnvironmentObject private var authService: AuthService
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: ScoutCameraViewModel
+    @ObservedObject private var calibrationStore: FOVCalibrationStore
     @StateObject private var motionManager = MotionHeadingManager()
     @StateObject private var volumeObserver = VolumeButtonObserver()
     private let targetAspectRatio: CGFloat
@@ -21,7 +22,9 @@ struct ScoutCameraLayout: View {
 
     init(projectId: String, frameId: String, targetAspectRatio: CGFloat) {
         self.targetAspectRatio = targetAspectRatio
-        _viewModel = StateObject(wrappedValue: ScoutCameraViewModel(projectId: projectId, frameId: frameId, targetAspectRatio: targetAspectRatio))
+        let viewModel = ScoutCameraViewModel(projectId: projectId, frameId: frameId, targetAspectRatio: targetAspectRatio)
+        _viewModel = StateObject(wrappedValue: viewModel)
+        _calibrationStore = ObservedObject(wrappedValue: viewModel.calibrationStore)
     }
 
     var body: some View {
@@ -156,7 +159,7 @@ struct ScoutCameraLayout: View {
                 } label: {
                     Image(systemName: "viewfinder.rectangular")
                         .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(isFramingActive ? .white : .gray)
                 }
 
                 Button {
@@ -164,7 +167,7 @@ struct ScoutCameraLayout: View {
                 } label: {
                     Image(systemName: "slider.horizontal.3")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(isCalibrationActive ? .white.opacity(0.7) : .gray)
                 }
                 .buttonStyle(.plain)
             }
@@ -239,6 +242,17 @@ struct ScoutCameraLayout: View {
             return "None"
         }
         return formattedModeLabel(camera: viewModel.selectedCamera, mode: mode)
+    }
+
+    private var isFramingActive: Bool {
+        viewModel.selectedFrameLine != .none
+            || viewModel.showCrosshair
+            || viewModel.showGrid
+            || viewModel.showFrameShading
+    }
+
+    private var isCalibrationActive: Bool {
+        !calibrationStore.multipliers.values.allSatisfy { abs($0 - 1.0) < 0.0001 }
     }
 
     private func formattedModeLabel(camera: DBCamera?, mode: DBCameraMode) -> String {

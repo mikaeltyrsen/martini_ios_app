@@ -4,12 +4,15 @@ struct FOVCalibrationView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var scoutViewModel: ScoutCameraViewModel
     @StateObject private var viewModel: FOVCalibrationViewModel
+    @ObservedObject private var store: FOVCalibrationStore
 
     private let sliderRange: ClosedRange<Double> = 0.95...1.05
 
     init(scoutViewModel: ScoutCameraViewModel) {
         self.scoutViewModel = scoutViewModel
-        _viewModel = StateObject(wrappedValue: FOVCalibrationViewModel(store: scoutViewModel.calibrationStore))
+        let store = scoutViewModel.calibrationStore
+        _viewModel = StateObject(wrappedValue: FOVCalibrationViewModel(store: store))
+        _store = ObservedObject(wrappedValue: store)
     }
 
     var body: some View {
@@ -52,7 +55,7 @@ struct FOVCalibrationView: View {
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
 
-                                Text("Multiplier: \(String(format: "%.2fx", viewModel.store.multiplier(for: module.role)))")
+                                Text("Multiplier: \(String(format: "%.2fx", store.multiplier(for: module.role)))")
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
                             }
@@ -77,16 +80,16 @@ struct FOVCalibrationView: View {
                 }
             }
         }
-        .onChange(of: viewModel.store.multipliers) { _ in
+        .onChange(of: store.multipliers) { _ in
             Task { await scoutViewModel.updateCaptureConfiguration() }
         }
     }
 
     private func binding(for role: String) -> Binding<Double> {
         Binding(
-            get: { viewModel.store.multiplier(for: role) },
+            get: { store.multiplier(for: role) },
             set: { value in
-                viewModel.store.setMultiplier(value, for: role)
+                store.setMultiplier(value, for: role)
             }
         )
     }
