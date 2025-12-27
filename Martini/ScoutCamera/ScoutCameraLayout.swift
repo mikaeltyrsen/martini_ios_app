@@ -75,12 +75,15 @@ struct ScoutCameraLayout: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .zIndex(1)
             }
+
+            if isPortraitOrientation {
+                portraitOverlay
+                    .transition(.opacity)
+                    .zIndex(2)
+            }
         }
         .animation(.easeInOut(duration: 0.25), value: showLensToast)
         .onAppear {
-            AppDelegate.orientationLock = .landscape
-            UIDevice.current.setValue(UIInterfaceOrientation.landscapeRight.rawValue, forKey: "orientation")
-            UIViewController.attemptRotationToDeviceOrientation()
             previewOrientation = currentPreviewOrientation()
             viewModel.captureManager.updateVideoOrientation(previewOrientation)
             motionManager.start()
@@ -89,8 +92,6 @@ struct ScoutCameraLayout: View {
         }
         .onDisappear {
             motionManager.stop()
-            AppDelegate.orientationLock = .all
-            UIViewController.attemptRotationToDeviceOrientation()
             volumeObserver.stop()
         }
         .onChange(of: viewModel.selectedCamera) { _ in
@@ -112,6 +113,7 @@ struct ScoutCameraLayout: View {
         }
         .onChange(of: previewOrientation) { newValue in
             viewModel.captureManager.updateVideoOrientation(newValue)
+            viewModel.captureManager.restartSessionForOrientationChange()
         }
         .onReceive(NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)) { _ in
             let nextOrientation = currentPreviewOrientation()
@@ -729,6 +731,37 @@ struct ScoutCameraLayout: View {
         .aspectRatio(viewModel.sensorAspectRatio ?? targetAspectRatio, contentMode: .fit)
     }
 
+    private var isPortraitOrientation: Bool {
+        switch previewOrientation {
+        case .portrait, .portraitUpsideDown:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private var portraitOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.65)
+                .ignoresSafeArea()
+            VStack(spacing: 12) {
+                Image(systemName: "iphone")
+                    .font(.system(size: 36, weight: .semibold))
+                    .foregroundStyle(.white)
+                Text("Please rotate your phone")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.white)
+                Text("Scout Camera works best in landscape.")
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.8))
+            }
+            .padding(20)
+            .background(Color.black.opacity(0.6))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+        }
+        .allowsHitTesting(true)
+    }
+
     private var lensInfoText: String {
         let focalText = "\(Int(viewModel.activeFocalLengthMm))"
 //        if let targetHFOV = viewModel.debugInfo?.targetHFOVDegrees {
@@ -837,8 +870,25 @@ struct ScoutCameraLayout: View {
             return .landscapeLeft
         case .landscapeRight:
             return .landscapeRight
+        case .portrait:
+            return .portrait
         case .portraitUpsideDown:
             return .portraitUpsideDown
+        default:
+            return fallbackPreviewOrientation()
+        }
+    }
+
+    private func fallbackPreviewOrientation() -> AVCaptureVideoOrientation {
+        switch UIDevice.current.orientation {
+        case .landscapeLeft:
+            return .landscapeRight
+        case .landscapeRight:
+            return .landscapeLeft
+        case .portraitUpsideDown:
+            return .portraitUpsideDown
+        case .portrait:
+            return .portrait
         default:
             return .landscapeRight
         }

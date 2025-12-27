@@ -86,4 +86,16 @@ final class CaptureSessionManager: ObservableObject {
             connection.videoOrientation = orientation
         }
     }
+
+    func restartSessionForOrientationChange() {
+        guard session.isRunning else { return }
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self else { return }
+            self.session.stopRunning()
+            self.session.startRunning()
+            DispatchQueue.main.async {
+                self.isRunning = self.session.isRunning
+            }
+        }
+    }
 }

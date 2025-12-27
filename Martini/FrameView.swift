@@ -1143,32 +1143,32 @@ private struct ClipRow: View {
 
     private func saveToPhotos(clip: Clip) {
         guard let url = clip.fileURL else { return }
-
-        let task = URLSession.shared.dataTask(with: url) { data, _, _ in
-            guard let data else { return }
-            let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(url.lastPathComponent)
+        Task {
             do {
-                try data.write(to: tempURL)
-                Task {
-                    let result: PhotoSaveResult
-                    if clip.isVideo {
-                        result = await saveVideoToPhotos(url: tempURL)
-                    } else {
-                        result = await saveImageToPhotos(data: data)
-                    }
-                    if case .accessDenied = result {
-                        await MainActor.run {
-                            photoAccessAlert = PhotoAccessAlert(
-                                message: "Martini needs access to your Photos library to save clips. Please enable Photos access in Settings."
-                            )
-                        }
-                    }
+                let (downloadedURL, _) = try await URLSession.shared.download(from: url)
+                let destinationURL = FileManager.default.temporaryDirectory.appendingPathComponent(url.lastPathComponent)
+                if FileManager.default.fileExists(atPath: destinationURL.path) {
+                    try FileManager.default.removeItem(at: destinationURL)
+                }
+                try FileManager.default.copyItem(at: downloadedURL, to: destinationURL)
+
+                let result: PhotoSaveResult
+                if clip.isVideo {
+                    result = await saveVideoToPhotos(url: destinationURL)
+                } else {
+                    let data = try Data(contentsOf: destinationURL)
+                    result = await saveImageToPhotos(data: data)
+                }
+
+                if case .accessDenied = result {
+                    photoAccessAlert = PhotoAccessAlert(
+                        message: "Martini needs access to your Photos library to save clips. Please enable Photos access in Settings."
+                    )
                 }
             } catch {
-                print("Failed to save to temporary file: \(error)")
+                print("Failed to save clip to Photos: \(error)")
             }
         }
-        task.resume()
     }
 
     private func shareClip(url: URL) {
