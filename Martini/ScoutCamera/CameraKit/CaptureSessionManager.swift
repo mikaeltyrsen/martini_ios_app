@@ -8,6 +8,7 @@ final class CaptureSessionManager: ObservableObject {
     private var inFlightProcessor: PhotoCaptureProcessor?
 
     @Published var isRunning: Bool = false
+    private var currentOrientation: AVCaptureVideoOrientation = .landscapeRight
 
     func configureSession(with role: String, zoomFactor: Double) throws {
         guard let device = CameraDeviceSelector.device(for: role) else {
@@ -40,9 +41,7 @@ final class CaptureSessionManager: ObservableObject {
             session.commitConfiguration()
         }
 
-        if let connection = photoOutput.connection(with: .video), connection.isVideoOrientationSupported {
-            connection.videoOrientation = .landscapeRight
-        }
+        updateVideoOrientation(currentOrientation)
 
         let activeDevice = currentInput?.device ?? device
         try activeDevice.lockForConfiguration()
@@ -79,5 +78,12 @@ final class CaptureSessionManager: ObservableObject {
         }
         inFlightProcessor = processor
         photoOutput.capturePhoto(with: settings, delegate: processor)
+    }
+
+    func updateVideoOrientation(_ orientation: AVCaptureVideoOrientation) {
+        currentOrientation = orientation
+        if let connection = photoOutput.connection(with: .video), connection.isVideoOrientationSupported {
+            connection.videoOrientation = orientation
+        }
     }
 }

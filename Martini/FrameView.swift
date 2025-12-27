@@ -1062,9 +1062,6 @@ private struct FilesSheet: View {
             ClipPreviewView(clip: clip)
                 .presentationDragIndicator(.visible)
         }
-        .refreshable {
-            await onReload()
-        }
     }
 }
 
