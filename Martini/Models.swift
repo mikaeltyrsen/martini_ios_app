@@ -1302,7 +1302,7 @@ struct UpdateFrameStatusResponse: Codable {
 // MARK: - Clips
 
 struct Clip: Codable, Identifiable, Hashable {
-    let id: Int
+    let id: String
     let name: String?
     let fileName: String?
     let fileNameRaw: String?
@@ -1346,6 +1346,23 @@ struct Clip: Codable, Identifiable, Hashable {
     var isImage: Bool {
         guard let lowercased = fileType?.lowercased() ?? fileURL?.pathExtension.lowercased() else { return false }
         return Clip.imageExtensions.contains(lowercased) || (fileType?.lowercased().contains("image") ?? false)
+    }
+
+    var systemIconName: String {
+        if isVideo { return "video" }
+        if isImage { return "photo" }
+        if isPDF { return "doc.richtext" }
+        if isAudio { return "waveform" }
+        return "doc"
+    }
+
+    private var isPDF: Bool {
+        fileType?.lowercased().contains("pdf") == true || fileURL?.pathExtension.lowercased() == "pdf"
+    }
+
+    private var isAudio: Bool {
+        guard let lowercased = fileType?.lowercased() ?? fileURL?.pathExtension.lowercased() else { return false }
+        return ["mp3", "wav", "aac", "m4a"].contains(lowercased) || (fileType?.lowercased().contains("audio") ?? false)
     }
 
     var formattedFileSize: String? {
