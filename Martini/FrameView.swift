@@ -132,6 +132,12 @@ struct FrameView: View {
             .onChange(of: providedFrame.id) { _ in
                 syncWithProvidedFrame()
             }
+            .onChange(of: authService.projectId) { newProjectId in
+                guard newProjectId != nil else { return }
+                Task {
+                    await loadClips(force: false)
+                }
+            }
             .onReceive(authService.$frames) { frames in
                 guard let updated = frames.first(where: { $0.id == frame.id }) else { return }
                 frame = updated
@@ -224,9 +230,10 @@ struct FrameView: View {
                                 .foregroundStyle(.white)
                                 .padding(4)
                                 .background(Circle().fill(Color.red))
-                                .offset(x: 8, y: -8)
+                                .offset(x: 6, y: -6)
                         }
                     }
+                    .frame(width: 24, height: 24, alignment: .center)
                 }
             }
 
