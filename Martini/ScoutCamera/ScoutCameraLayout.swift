@@ -18,6 +18,7 @@ struct ScoutCameraLayout: View {
     @State private var lastCameraRole: String?
     @State private var lensToastMessage: String?
     @State private var showLensToast = false
+    @State private var previewOrientation: AVCaptureVideoOrientation = .landscapeRight
     private let previewMargin: CGFloat = 40
 
     init(projectId: String, frameId: String, targetAspectRatio: CGFloat) {
@@ -80,6 +81,8 @@ struct ScoutCameraLayout: View {
             AppDelegate.orientationLock = .landscape
             UIDevice.current.setValue(UIInterfaceOrientation.landscapeRight.rawValue, forKey: "orientation")
             UIViewController.attemptRotationToDeviceOrientation()
+            previewOrientation = currentPreviewOrientation()
+            viewModel.captureManager.updateVideoOrientation(previewOrientation)
             motionManager.start()
             volumeObserver.onVolumeChange = { viewModel.capturePhoto() }
             volumeObserver.start()
@@ -106,6 +109,15 @@ struct ScoutCameraLayout: View {
         }
         .onChange(of: viewModel.matchResult?.cameraRole) { newRole in
             handleCameraRoleChange(newRole)
+        }
+        .onChange(of: previewOrientation) { newValue in
+            viewModel.captureManager.updateVideoOrientation(newValue)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)) { _ in
+            let nextOrientation = currentPreviewOrientation()
+            if nextOrientation != previewOrientation {
+                previewOrientation = nextOrientation
+            }
         }
         .alert("Scout Camera Error", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
@@ -684,7 +696,10 @@ struct ScoutCameraLayout: View {
         GeometryReader { proxy in
             let previewAspectRatio = viewModel.sensorAspectRatio ?? targetAspectRatio
             ZStack {
-                CameraPreviewView(session: viewModel.captureManager.session)
+                CameraPreviewView(
+                    session: viewModel.captureManager.session,
+                    orientation: previewOrientation
+                )
                     .aspectRatio(previewAspectRatio, contentMode: .fit)
                     .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
                     .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
@@ -811,23 +826,41 @@ struct ScoutCameraLayout: View {
             dismiss()
         }
     }
+
+    private func currentPreviewOrientation() -> AVCaptureVideoOrientation {
+        let orientation = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first?
+            .interfaceOrientation
+        switch orientation {
+        case .landscapeLeft:
+            return .landscapeLeft
+        case .landscapeRight:
+            return .landscapeRight
+        case .portraitUpsideDown:
+            return .portraitUpsideDown
+        default:
+            return .landscapeRight
+        }
+    }
 }
 
 private struct CameraPreviewView: UIViewRepresentable {
     let session: AVCaptureSession
+    let orientation: AVCaptureVideoOrientation
 
     func makeUIView(context: Context) -> UIView {
         let view = PreviewView()
         view.videoPreviewLayer.session = session
         view.videoPreviewLayer.videoGravity = .resizeAspectFill
-        view.configurePreviewConnection(orientation: .landscapeRight)
+        view.configurePreviewConnection(orientation: orientation)
         return view
     }
 
     func updateUIView(_ uiView: UIView, context: Context) {
         guard let previewView = uiView as? PreviewView else { return }
         previewView.videoPreviewLayer.session = session
-        previewView.configurePreviewConnection(orientation: .landscapeRight)
+        previewView.configurePreviewConnection(orientation: orientation)
     }
 
     func makeCoordinator() -> Coordinator {
@@ -959,6 +992,8 @@ private struct CrosshairOverlay: View {
 }
 
 private final class PreviewView: UIView {
+    private var currentOrientation: AVCaptureVideoOrientation = .landscapeRight
+
     override class var layerClass: AnyClass {
         AVCaptureVideoPreviewLayer.self
     }
@@ -969,10 +1004,11 @@ private final class PreviewView: UIView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        configurePreviewConnection(orientation: .landscapeRight)
+        configurePreviewConnection(orientation: currentOrientation)
     }
 
     func configurePreviewConnection(orientation: AVCaptureVideoOrientation) {
+        currentOrientation = orientation
         guard let connection = videoPreviewLayer.connection, connection.isVideoOrientationSupported else { return }
         connection.videoOrientation = orientation
         if connection.isVideoStabilizationSupported {
