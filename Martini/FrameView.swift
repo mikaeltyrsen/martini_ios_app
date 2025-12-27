@@ -582,6 +582,7 @@ struct FrameView: View {
         }
 
         isLoadingClips = true
+        defer { isLoadingClips = false }
 
         do {
             let fetched = try await authService.fetchClips(
@@ -589,14 +590,15 @@ struct FrameView: View {
                 frameId: frame.id,
                 creativeId: frame.creativeId
             )
+            guard !Task.isCancelled else { return }
             clips = fetched
             filesBadgeCount = fetched.count
             clipsError = nil
+        } catch is CancellationError {
+            return
         } catch {
             clipsError = error.localizedDescription
         }
-
-        isLoadingClips = false
     }
 
     private func updateStatus(to status: FrameStatus) {
