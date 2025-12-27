@@ -123,6 +123,9 @@ struct FrameView: View {
                     visibleAssetID = first
                 }
             }
+            .onChange(of: clips) { newClips in
+                filesBadgeCount = newClips.count
+            }
             .task {
                 await loadClips(force: false)
             }
@@ -211,7 +214,7 @@ struct FrameView: View {
                 showingFiles = true
             } label: {
                 Label {
-                    Text("Files")
+                    Text("Clips")
                 } icon: {
                     ZStack(alignment: .topTrailing) {
                         Image(systemName: "folder")
