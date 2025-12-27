@@ -474,7 +474,7 @@ struct FrameView: View {
             descriptionScrollOffset = offset
             handleDescriptionScroll(offset: offset)
         }
-        .gesture(
+        .simultaneousGesture(
             descriptionDragGesture(containerHeight: containerHeight),
             including: allowsExpansion ? .all : .none
         )
@@ -715,6 +715,10 @@ private extension FrameView {
         descriptionHeightRatio > 0.75
     }
 
+    private var canDragDescription: Bool {
+        !isDescriptionExpanded || descriptionScrollOffset >= 0
+    }
+
     private var frameAspectRatio: CGFloat {
         parseAspectRatio(frame.creativeAspectRatio)
     }
@@ -765,6 +769,7 @@ private extension FrameView {
     private func descriptionDragGesture(containerHeight: CGFloat) -> some Gesture {
         DragGesture()
             .onChanged { value in
+                guard canDragDescription else { return }
                 if isDraggingDescription == false { isDraggingDescription = true }
                 if dragStartRatio == nil { dragStartRatio = descriptionHeightRatio }
 
@@ -774,7 +779,10 @@ private extension FrameView {
                 descriptionHeightRatio = min(max(proposedRatio, minDescriptionRatio), 1.0)
             }
             .onEnded { value in
-                let startingRatio: CGFloat = dragStartRatio ?? descriptionHeightRatio
+                guard let startingRatio: CGFloat = dragStartRatio else {
+                    isDraggingDescription = false
+                    return
+                }
                 let translationRatio: CGFloat = -value.translation.height / containerHeight
                 let proposedRatio: CGFloat = min(max(startingRatio + translationRatio, minDescriptionRatio), 1.0)
 
