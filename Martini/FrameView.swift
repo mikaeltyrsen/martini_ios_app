@@ -1441,10 +1441,10 @@ private struct TakePictureCardView: View {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .fill(Color.secondary.opacity(0.15))
                 VStack(spacing: 12) {
-                    Image(systemName: "camera")
+                    Image(systemName: "camera.viewfinder")
                         .font(.system(size: 32, weight: .semibold))
                         .foregroundStyle(Color.primary)
-                    Text("Take picture")
+                    Text("Scout Camera")
                         .font(.headline)
                         .foregroundStyle(Color.primary)
                 }

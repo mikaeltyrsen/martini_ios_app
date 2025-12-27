@@ -45,7 +45,7 @@ struct MartiniApp: App {
                 .environmentObject(realtimeService)
                 .environmentObject(connectionMonitor)
                 .fullscreenMediaCoordinator(fullscreenCoordinator)
-                .tint(.martiniDefaultColor)
+                //.tint(.martiniDefaultColor)
                 .accentColor(.martiniDefaultColor)
         }
     }
