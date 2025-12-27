@@ -7,9 +7,5 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Martini needs access to save clips to your Photos library.</string>
-	<key>NSSupportsLiveActivities</key>
-	<true/>
 </dict>
 </plist>
