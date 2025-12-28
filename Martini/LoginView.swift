@@ -21,7 +21,11 @@ struct LoginView: View {
     var body: some View {
         ZStack {
             // Background
+            ParallaxBoardBackground()
+                .edgesIgnoringSafeArea(.all)
+
             Color(.systemBackground)
+                .opacity(0.92)
                 .edgesIgnoringSafeArea(.all)
             
             if showAccessCodeEntry {
@@ -219,6 +223,176 @@ struct LoginView: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Parallax Board Background
+
+struct ParallaxBoardBackground: View {
+    private struct BoardItem: Identifiable {
+        let id = UUID()
+        let imageName: String
+        let size: CGSize
+        let xFraction: CGFloat
+        let speed: CGFloat
+        let phase: CGFloat
+        let spacing: CGFloat
+        let status: FrameStatus
+    }
+
+    @State private var items: [BoardItem] = ParallaxBoardBackground.makeItems()
+    @State private var startDate = Date()
+
+    var body: some View {
+        GeometryReader { proxy in
+            TimelineView(.animation) { timeline in
+                let elapsed = timeline.date.timeIntervalSince(startDate)
+
+                ZStack {
+                    ForEach(items) { item in
+                        let pathLength = proxy.size.height + item.size.height + item.spacing
+                        let offset = (CGFloat(elapsed) * item.speed + item.phase * pathLength)
+                            .truncatingRemainder(dividingBy: pathLength)
+                        let yPosition = proxy.size.height + item.size.height - offset
+
+                        BoardCardView(imageName: item.imageName, status: item.status)
+                            .frame(width: item.size.width, height: item.size.height)
+                            .position(x: proxy.size.width * item.xFraction, y: yPosition)
+                            .opacity(0.45)
+                    }
+                }
+            }
+        }
+        .allowsHitTesting(false)
+    }
+
+    private static func makeItems() -> [BoardItem] {
+        let imageNames = (1...17).map { String(format: "MartiniBoard%02d", $0) }
+        let itemCount = 22
+        let statuses = (0..<itemCount).map { index in
+            weightedStatus(seed: index)
+        }
+
+        return (0..<itemCount).map { index in
+            let height = CGFloat.random(in: 90...190)
+            let width = height * CGFloat.random(in: 1.4...1.8)
+            let speed = CGFloat.random(in: 12...38)
+            let spacing = CGFloat.random(in: 140...260)
+            return BoardItem(
+                imageName: imageNames[index % imageNames.count],
+                size: CGSize(width: width, height: height),
+                xFraction: CGFloat.random(in: 0.12...0.88),
+                speed: speed,
+                phase: CGFloat.random(in: 0...1),
+                spacing: spacing,
+                status: statuses[index]
+            )
+        }
+    }
+
+    private static func weightedStatus(seed: Int) -> FrameStatus {
+        var generator = SeededRandomNumberGenerator(seed: UInt64(seed))
+        let value = Double.random(in: 0...1, using: &generator)
+
+        switch value {
+        case 0..<0.6:
+            return .none
+        case 0.6..<0.7:
+            return .here
+        case 0.7..<0.8:
+            return .next
+        case 0.8..<0.9:
+            return .omit
+        default:
+            return .done
+        }
+    }
+}
+
+struct BoardCardView: View {
+    let imageName: String
+    let status: FrameStatus
+
+    var body: some View {
+        ZStack {
+            Image(imageName)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(borderColor, lineWidth: borderWidth)
+                )
+                .shadow(color: Color.black.opacity(0.15), radius: 6, x: 0, y: 4)
+
+            if status == .omit {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.red.opacity(0.18))
+            }
+
+            if status == .done {
+                DoneCrossOverlay()
+            }
+        }
+    }
+
+    private var borderWidth: CGFloat {
+        switch status {
+        case .here, .next:
+            return 3
+        default:
+            return 0
+        }
+    }
+
+    private var borderColor: Color {
+        switch status {
+        case .here:
+            return Color("MarkerHere")
+        case .next:
+            return Color("MarkerNext")
+        case .done:
+            return Color("MarkerDone")
+        case .omit:
+            return Color("MarkerClear")
+        case .none:
+            return .clear
+        }
+    }
+}
+
+struct DoneCrossOverlay: View {
+    var body: some View {
+        GeometryReader { proxy in
+            Path { path in
+                path.move(to: .zero)
+                path.addLine(to: CGPoint(x: proxy.size.width, y: proxy.size.height))
+            }
+            .stroke(Color.red.opacity(0.6), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+
+            Path { path in
+                path.move(to: CGPoint(x: proxy.size.width, y: 0))
+                path.addLine(to: CGPoint(x: 0, y: proxy.size.height))
+            }
+            .stroke(Color.red.opacity(0.6), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+struct SeededRandomNumberGenerator: RandomNumberGenerator {
+    private var state: UInt64
+
+    init(seed: UInt64) {
+        self.state = seed
+    }
+
+    mutating func next() -> UInt64 {
+        state &+= 0x9e3779b97f4a7c15
+        var z = state
+        z = (z ^ (z >> 30)) &* 0xbf58476d1ce4e5b9
+        z = (z ^ (z >> 27)) &* 0x94d049bb133111eb
+        return z ^ (z >> 31)
     }
 }
 
