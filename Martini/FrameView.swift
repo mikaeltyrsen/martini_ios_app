@@ -219,16 +219,22 @@ struct FrameView: View {
             Button {
                 showingFiles = true
             } label: {
-                Label {
-                    Text("Clips")
-                } icon: {
+                HStack(spacing: 6) {
+                    //Text("hey")
                     Image(systemName: "folder")
+                    //Label("Clips", systemImage: "eye")
+
+                    if let count = filesBadgeCount, count > 0 {
+                        Text(count > 99 ? "99+" : "\(count)")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Capsule().fill(.martiniDefault))
+                    }
                 }
             }
-            .badge({
-                guard let badgeCount = filesBadgeCount, badgeCount > 0 else { return 0 }
-                return badgeCount
-            }())
+
 
             Spacer()
 
@@ -541,7 +547,7 @@ struct FrameView: View {
                                 .frame(minWidth: 80)
                                 .background(
                                     Capsule()
-                                        .fill(isSelected ? Color.accentColor : Color.secondary.opacity(0.15))
+                                        .fill(isSelected ? Color.martiniDefaultColor : Color.secondary.opacity(0.15))
                                 )
                         }
                         .buttonStyle(.plain)
@@ -552,8 +558,8 @@ struct FrameView: View {
                         openScoutCamera()
                     } label: {
                         HStack(spacing: 4) {
-                            Image("plus")
-                            Text("Add Photo")
+                            Label("Add Photo", systemImage: "plus")
+                            //Text("Add Photo")
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundStyle(Color.primary)
                                 .lineLimit(1)
@@ -1053,7 +1059,7 @@ private struct FilesSheet: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 VStack(spacing: 12) {
-                    Image(systemName: "folder.badge.questionmark")
+                    Image(systemName: "folder")
                         .font(.system(size: 40))
                         .foregroundStyle(.tertiary)
                     Text("No files found")
