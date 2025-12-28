@@ -670,6 +670,19 @@ struct MainView: View {
 
     private var navigationPathContainsScheduleRoute: Bool { !navigationPath.isEmpty }
 
+    private var currentScheduleId: String? {
+        for route in navigationPath.reversed() {
+            switch route {
+            case .list(let schedule):
+                return schedule.id
+            case .detail(let schedule, _):
+                return schedule.id
+            }
+        }
+
+        return nil
+    }
+
     private func updatedNavigationPath(with schedule: ProjectSchedule) -> [ScheduleRoute] {
         var newPath: [ScheduleRoute] = []
 
@@ -698,6 +711,14 @@ struct MainView: View {
               !entries.isEmpty
         else {
             closeScheduleAndReturnToGrid()
+            return
+        }
+
+        if let currentScheduleId, currentScheduleId != schedule.id {
+            navigationPath = []
+            Task {
+                await loadSchedule(schedule)
+            }
             return
         }
 
