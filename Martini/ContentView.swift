@@ -2072,16 +2072,6 @@ struct SettingsView: View {
     }
 }
 
-struct ScoutCameraSettingsView: View {
-    var body: some View {
-        Form {
-            ProjectKitSettingsView()
-        }
-        .navigationTitle("Scout Camera")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
 #Preview {
     ContentView()
         .environmentObject(AuthService())
