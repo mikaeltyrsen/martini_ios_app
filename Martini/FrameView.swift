@@ -313,7 +313,14 @@ struct FrameView: View {
         GeometryReader { proxy in
             let isLandscape: Bool = proxy.size.width > proxy.size.height
             let overlayHeight: CGFloat = proxy.size.height * descriptionHeightRatio
-            let boardsHeight: CGFloat = max(proxy.size.height - overlayHeight, 0)
+            let descriptionProgress: CGFloat = max(
+                0,
+                min(
+                    1,
+                    (descriptionHeightRatio - minDescriptionRatio) / (1 - minDescriptionRatio)
+                )
+            )
+            let dimmerOpacity: CGFloat = descriptionProgress * 0.5
 
             Group {
                 if isLandscape {
@@ -330,18 +337,22 @@ struct FrameView: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 } else {
-                    VStack(spacing: 0) {
-                        boardsSection(height: boardsHeight)
+                    ZStack(alignment: .bottom) {
+                        boardsSection(height: proxy.size.height)
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                    .safeAreaInset(edge: .bottom) {
+
+                        Color.black
+                            .opacity(dimmerOpacity)
+                            .ignoresSafeArea()
+                            .allowsHitTesting(false)
+
                         descriptionOverlay(
                             containerHeight: proxy.size.height,
                             overlayHeight: overlayHeight,
                             allowsExpansion: true
                         )
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 }
             }
         }
