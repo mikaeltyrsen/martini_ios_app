@@ -24,9 +24,19 @@ struct LoginView: View {
             ParallaxBoardBackground()
                 .edgesIgnoringSafeArea(.all)
 
-            Color(.systemBackground)
-                .opacity(0.2)
-                .edgesIgnoringSafeArea(.all)
+//            Color(.systemBackground)
+//                .opacity(0.4)
+//                .edgesIgnoringSafeArea(.all)
+            LinearGradient(
+                gradient: Gradient(stops: [
+                    .init(color: .black.opacity(1.0), location: 0.0),   // top 100%
+                    .init(color: .black.opacity(0.0), location: 0.5),   // middle 0%
+                    .init(color: .black.opacity(1.0), location: 1.0)    // bottom 100%
+                ]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
             
             if showAccessCodeEntry {
                 // Access code entry screen
@@ -253,7 +263,7 @@ struct ParallaxBoardBackground: View {
         minWidth: CGFloat = 80,
         maxWidth: CGFloat = 140,
         speed: CGFloat = 42,
-        amount: Int = 22
+        amount: Int = 10
     ) {
         self.minWidth = minWidth
         self.maxWidth = maxWidth
@@ -304,8 +314,8 @@ struct ParallaxBoardBackground: View {
             weightedStatus(seed: index)
         }
 
-        if !statuses.contains(.done) {
-            statuses[max(0, itemCount - 1)] = .done
+        if !statuses.contains(.here) {
+            statuses[max(0, itemCount - 1)] = .here
         }
 
         return (0..<itemCount).map { index in
@@ -334,16 +344,16 @@ struct ParallaxBoardBackground: View {
         let value = Double.random(in: 0...1, using: &generator)
 
         switch value {
-        case 0..<0.6:
-            return .none
-        case 0.6..<0.7:
-            return .here
-        case 0.7..<0.8:
-            return .next
-        case 0.8..<0.9:
-            return .omit
-        default:
+        case 0..<0.5:
             return .done
+//        case 0.6..<0.7:
+//            return .here
+//        case 0.7..<0.8:
+//            return .next
+//        case 0.8..<0.9:
+//            return .omit
+        default:
+            return .none
         }
     }
 }
@@ -356,17 +366,17 @@ struct BoardCardView: View {
         ZStack {
             Image(imageName)
                 .resizable()
-                .aspectRatio(contentMode: .fit)
+                .aspectRatio(contentMode: .fill)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(borderColor, lineWidth: borderWidth)
                 )
-                .shadow(color: Color.black.opacity(0.15), radius: 6, x: 0, y: 4)
+                .shadow(color: Color.black.opacity(1), radius: 20, x: 0, y: 4)
 
             if status == .omit {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.red.opacity(0.18))
+//                RoundedRectangle(cornerRadius: 8)
+//                    .fill(Color.red.opacity(0.18))
             }
 
             if status == .done {
@@ -377,7 +387,7 @@ struct BoardCardView: View {
 
     private var borderWidth: CGFloat {
         switch status {
-        case .here, .next:
+        case .here, .next, .done:
             return 3
         default:
             return 0
@@ -393,7 +403,7 @@ struct BoardCardView: View {
         case .done:
             return Color("MarkerDone")
         case .omit:
-            return Color("MarkerClear")
+            return Color("MarkerDone")
         case .none:
             return .clear
         }
@@ -407,13 +417,13 @@ struct DoneCrossOverlay: View {
                 path.move(to: .zero)
                 path.addLine(to: CGPoint(x: proxy.size.width, y: proxy.size.height))
             }
-            .stroke(Color.red.opacity(0.6), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+            .stroke(Color.red.opacity(1), style: StrokeStyle(lineWidth: 4, lineCap: .round))
 
             Path { path in
                 path.move(to: CGPoint(x: proxy.size.width, y: 0))
                 path.addLine(to: CGPoint(x: 0, y: proxy.size.height))
             }
-            .stroke(Color.red.opacity(0.6), style: StrokeStyle(lineWidth: 3, lineCap: .round))
+            .stroke(Color.red.opacity(1), style: StrokeStyle(lineWidth: 4, lineCap: .round))
         }
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
