@@ -226,7 +226,7 @@ struct FrameView: View {
                 }
             }
             .badge({
-                guard let badgeCount = filesBadgeCount, badgeCount > 0 else { return nil }
+                guard let badgeCount = filesBadgeCount, badgeCount > 0 else { return 0 }
                 return badgeCount
             }())
 
