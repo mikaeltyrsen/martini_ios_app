@@ -23,6 +23,16 @@ enum FrameUpdateContext: Equatable {
     case websocket(event: String)
 }
 
+struct ScheduleUpdateEvent: Equatable {
+    let eventName: String
+
+    private let identifier = UUID()
+
+    static func == (lhs: ScheduleUpdateEvent, rhs: ScheduleUpdateEvent) -> Bool {
+        lhs.identifier == rhs.identifier
+    }
+}
+
 @MainActor
 protocol ConnectionMonitoring: AnyObject {
     func registerNetworkSuccess()
@@ -46,6 +56,7 @@ class AuthService: ObservableObject {
     @Published var fetchedSchedules: [ProjectSchedule] = []
     @Published var frames: [Frame] = []
     @Published var frameUpdateEvent: FrameUpdateEvent?
+    @Published var scheduleUpdateEvent: ScheduleUpdateEvent?
     @Published var isLoadingFrames: Bool = false
     @Published var isScheduleActive: Bool = false
     @Published var isLoadingProjectDetails: Bool = false
@@ -625,6 +636,10 @@ class AuthService: ObservableObject {
 
     func publishFrameUpdate(frameId: String, context: FrameUpdateContext) {
         frameUpdateEvent = FrameUpdateEvent(frameId: frameId, context: context)
+    }
+
+    func publishScheduleUpdate(eventName: String) {
+        scheduleUpdateEvent = ScheduleUpdateEvent(eventName: eventName)
     }
 
     func updateFramesAspectRatio(creativeId: String, aspectRatio: String) {

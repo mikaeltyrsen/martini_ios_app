@@ -489,6 +489,10 @@ struct MainView: View {
                     guard let event else { return }
                     handleFrameUpdateEvent(event)
                 }
+                .onChange(of: authService.scheduleUpdateEvent) { event in
+                    guard let event else { return }
+                    handleScheduleUpdateEvent(event)
+                }
                 .navigationDestination(for: ScheduleRoute.self) { route in
                     switch route {
                     case .list(let schedule):
@@ -633,9 +637,9 @@ struct MainView: View {
     }
 
     @MainActor
-    private func loadSchedule(_ schedule: ProjectSchedule) async {
+    private func loadSchedule(_ schedule: ProjectSchedule, replaceExistingRoutes: Bool = false) async {
         let cached = authService.cachedSchedule(for: schedule.id) ?? schedule
-        showSchedule(cached)
+        showSchedule(cached, replaceExistingRoutes: replaceExistingRoutes)
 
         isLoadingSchedule = true
         defer { isLoadingSchedule = false }
@@ -683,6 +687,30 @@ struct MainView: View {
         }
 
         return newPath
+    }
+
+    private func handleScheduleUpdateEvent(_ event: ScheduleUpdateEvent) {
+        _ = event
+        guard navigationPathContainsScheduleRoute else { return }
+
+        guard let schedule = activeSchedule,
+              let entries = schedule.schedules,
+              !entries.isEmpty
+        else {
+            closeScheduleAndReturnToGrid()
+            return
+        }
+
+        Task {
+            await loadSchedule(schedule, replaceExistingRoutes: true)
+        }
+    }
+
+    private func closeScheduleAndReturnToGrid() {
+        navigationPath = []
+        withAnimation(.easeInOut(duration: 0.12)) {
+            viewMode = .grid
+        }
     }
 
     private func loadProjectDetailsIfNeeded() async {
