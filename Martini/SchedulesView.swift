@@ -3,6 +3,10 @@ import SwiftUI
 struct SchedulesView: View {
     let schedule: ProjectSchedule
     let onSelect: (ProjectScheduleItem) -> Void
+    
+    private func entryDuration(for entry: ProjectScheduleItem) -> Int? {
+        entry.durationMinutes ?? entry.duration
+    }
 
     var body: some View {
         Section(){
@@ -36,16 +40,16 @@ struct SchedulesView: View {
                                     .foregroundStyle(.white)
                                 
                                 if let startTime = entry.startTime {
-                                    Label(startTime, systemImage: "clock")
+                                    Label(formattedTimeFrom24Hour(startTime), systemImage: "clock")
                                         .foregroundStyle(.gray)
                                         .font(.footnote)
                                 }
                                 
-                                //if let duration = scheduleDuration {
-                                    Label("Duration: 12h", systemImage: "timer")
+                                if let duration = entryDuration(for: entry) {
+                                    Label("Duration: \(formattedDuration(fromMinutes: duration))", systemImage: "timer")
                                         .foregroundStyle(.gray)
                                         .font(.footnote)
-                                //}
+                                }
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                         }
@@ -58,6 +62,19 @@ struct SchedulesView: View {
             Spacer()
         }
         .padding(10)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                VStack(spacing: 2) {
+                    Text("Schedule")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(schedule.name)
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                }
+            }
+        }
 //        List {
 //            Section(schedule.name) {
 //                ForEach(schedule.schedules ?? [], id: \.listIdentifier) { entry in
