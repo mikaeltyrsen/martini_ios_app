@@ -843,15 +843,9 @@ private extension FrameView {
 }
 
 private struct ScoutCameraSettingsSheet: View {
-    @Environment(\.dismiss) private var dismiss
-
     var body: some View {
         NavigationStack {
-            Form {
-                ProjectKitSettingsView()
-            }
-            .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.inline)
+            ScoutCameraSettingsView()
 //            .toolbar {
 //                ToolbarItem(placement: .topBarLeading) {
 //                    Button {
