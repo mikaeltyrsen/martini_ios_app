@@ -229,6 +229,11 @@ struct LoginView: View {
 // MARK: - Parallax Board Background
 
 struct ParallaxBoardBackground: View {
+    let minWidth: CGFloat
+    let maxWidth: CGFloat
+    let speed: CGFloat
+    let amount: Int
+
     private struct BoardItem: Identifiable {
         let id = UUID()
         let imageName: String
@@ -238,10 +243,29 @@ struct ParallaxBoardBackground: View {
         let phase: CGFloat
         let spacing: CGFloat
         let status: FrameStatus
+        let depth: CGFloat
     }
 
-    @State private var items: [BoardItem] = ParallaxBoardBackground.makeItems()
+    @State private var items: [BoardItem]
     @State private var startDate = Date()
+
+    init(
+        minWidth: CGFloat = 120,
+        maxWidth: CGFloat = 260,
+        speed: CGFloat = 42,
+        amount: Int = 22
+    ) {
+        self.minWidth = minWidth
+        self.maxWidth = maxWidth
+        self.speed = speed
+        self.amount = amount
+        _items = State(initialValue: Self.makeItems(
+            minWidth: minWidth,
+            maxWidth: maxWidth,
+            speed: speed,
+            amount: amount
+        ))
+    }
 
     var body: some View {
         GeometryReader { proxy in
@@ -258,6 +282,8 @@ struct ParallaxBoardBackground: View {
                         BoardCardView(imageName: item.imageName, status: item.status)
                             .frame(width: item.size.width, height: item.size.height)
                             .position(x: proxy.size.width * item.xFraction, y: yPosition)
+                            .opacity(0.25 + item.depth * 0.6)
+                            .zIndex(item.depth)
                             //.opacity(0.45)
                     }
                 }
@@ -266,26 +292,35 @@ struct ParallaxBoardBackground: View {
         .allowsHitTesting(false)
     }
 
-    private static func makeItems() -> [BoardItem] {
+    private static func makeItems(
+        minWidth: CGFloat,
+        maxWidth: CGFloat,
+        speed: CGFloat,
+        amount: Int
+    ) -> [BoardItem] {
         let imageNames = (1...17).map { String(format: "MartiniBoard%02d", $0) }
-        let itemCount = 22
+        let itemCount = max(amount, 1)
         let statuses = (0..<itemCount).map { index in
             weightedStatus(seed: index)
         }
 
         return (0..<itemCount).map { index in
-            let height = CGFloat.random(in: 90...190)
-            let width = height * CGFloat.random(in: 1.4...1.8)
-            let speed = CGFloat.random(in: 12...38)
+            let widthRange = max(maxWidth - minWidth, 1)
+            let width = CGFloat.random(in: minWidth...maxWidth)
+            let aspectRatio = CGFloat.random(in: 1.4...1.8)
+            let height = width / aspectRatio
+            let depth = (width - minWidth) / widthRange
+            let computedSpeed = (0.2 + 0.8 * depth) * speed
             let spacing = CGFloat.random(in: 140...260)
             return BoardItem(
                 imageName: imageNames[index % imageNames.count],
                 size: CGSize(width: width, height: height),
                 xFraction: CGFloat.random(in: 0.12...0.88),
-                speed: speed,
+                speed: computedSpeed,
                 phase: CGFloat.random(in: 0...1),
                 spacing: spacing,
-                status: statuses[index]
+                status: statuses[index],
+                depth: depth
             )
         }
     }
