@@ -222,20 +222,13 @@ struct FrameView: View {
                 Label {
                     Text("Clips")
                 } icon: {
-                    ZStack(alignment: .topTrailing) {
-                        Image(systemName: "folder")
-                        if let badgeCount = filesBadgeCount, badgeCount > 0 {
-                            Text("\(badgeCount)")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(.white)
-                                .padding(4)
-                                .background(Circle().fill(Color.red))
-                                .offset(x: 6, y: -6)
-                        }
-                    }
-                    .frame(width: 24, height: 24, alignment: .center)
+                    Image(systemName: "folder")
                 }
             }
+            .badge({
+                guard let badgeCount = filesBadgeCount, badgeCount > 0 else { return nil }
+                return badgeCount
+            }())
 
             Spacer()
 
