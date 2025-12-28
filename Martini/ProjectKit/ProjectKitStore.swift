@@ -34,7 +34,7 @@ final class ProjectKitStore: ObservableObject {
         currentProjectId = projectId
         loadAvailableKit()
 
-        guard let projectId else {
+        guard let projectId, !projectId.isEmpty else {
             selectedCameraIds = []
             selectedLensIds = []
             return
@@ -86,7 +86,7 @@ final class ProjectKitStore: ObservableObject {
     }
 
     func persist(projectId: String?) {
-        guard let projectId else { return }
+        guard let projectId, !projectId.isEmpty else { return }
         selectionStore.saveCameraIds(Array(selectedCameraIds), for: projectId)
         selectionStore.saveLensIds(Array(selectedLensIds), for: projectId)
         reloadSelections(projectId: projectId)

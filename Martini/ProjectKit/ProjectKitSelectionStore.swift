@@ -8,18 +8,22 @@ final class ProjectKitSelectionStore {
     private init() {}
 
     func cameraIds(for projectId: String) -> [String] {
+        guard !projectId.isEmpty else { return [] }
         defaults.stringArray(forKey: cameraKey(projectId: projectId)) ?? []
     }
 
     func lensIds(for projectId: String) -> [String] {
+        guard !projectId.isEmpty else { return [] }
         defaults.stringArray(forKey: lensKey(projectId: projectId)) ?? []
     }
 
     func saveCameraIds(_ ids: [String], for projectId: String) {
+        guard !projectId.isEmpty else { return }
         defaults.set(Array(Set(ids)).sorted(), forKey: cameraKey(projectId: projectId))
     }
 
     func saveLensIds(_ ids: [String], for projectId: String) {
+        guard !projectId.isEmpty else { return }
         defaults.set(Array(Set(ids)).sorted(), forKey: lensKey(projectId: projectId))
     }
 
