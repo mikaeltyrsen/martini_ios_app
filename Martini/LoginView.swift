@@ -250,8 +250,8 @@ struct ParallaxBoardBackground: View {
     @State private var startDate = Date()
 
     init(
-        minWidth: CGFloat = 120,
-        maxWidth: CGFloat = 260,
+        minWidth: CGFloat = 80,
+        maxWidth: CGFloat = 140,
         speed: CGFloat = 42,
         amount: Int = 22
     ) {
@@ -282,7 +282,7 @@ struct ParallaxBoardBackground: View {
                         BoardCardView(imageName: item.imageName, status: item.status)
                             .frame(width: item.size.width, height: item.size.height)
                             .position(x: proxy.size.width * item.xFraction, y: yPosition)
-                            .opacity(0.25 + item.depth * 0.6)
+                            //.opacity(0.25 + item.depth * 0.6)
                             .zIndex(item.depth)
                             //.opacity(0.45)
                     }
