@@ -25,7 +25,7 @@ struct LoginView: View {
                 .edgesIgnoringSafeArea(.all)
 
             Color(.systemBackground)
-                .opacity(0.92)
+                .opacity(0.2)
                 .edgesIgnoringSafeArea(.all)
             
             if showAccessCodeEntry {
@@ -258,7 +258,7 @@ struct ParallaxBoardBackground: View {
                         BoardCardView(imageName: item.imageName, status: item.status)
                             .frame(width: item.size.width, height: item.size.height)
                             .position(x: proxy.size.width * item.xFraction, y: yPosition)
-                            .opacity(0.45)
+                            //.opacity(0.45)
                     }
                 }
             }
