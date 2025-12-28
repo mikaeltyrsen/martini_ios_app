@@ -300,8 +300,12 @@ struct ParallaxBoardBackground: View {
     ) -> [BoardItem] {
         let imageNames = (1...17).map { String(format: "MartiniBoard%02d", $0) }
         let itemCount = max(amount, 1)
-        let statuses = (0..<itemCount).map { index in
+        var statuses = (0..<itemCount).map { index in
             weightedStatus(seed: index)
+        }
+
+        if !statuses.contains(.done) {
+            statuses[max(0, itemCount - 1)] = .done
         }
 
         return (0..<itemCount).map { index in
