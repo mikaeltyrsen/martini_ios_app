@@ -2013,7 +2013,18 @@ struct SettingsView: View {
                     }
                 }
 
-                ProjectKitSettingsView()
+                Section {
+                    NavigationLink {
+                        ScoutCameraSettingsView()
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Scout Camera")
+                            Text("Manage cameras and lenses")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
 
                 Section("Account") {
                     Button(role: .destructive) {
@@ -2058,6 +2069,16 @@ struct SettingsView: View {
         case 5: return "XL"
         default: return "M"
         }
+    }
+}
+
+struct ScoutCameraSettingsView: View {
+    var body: some View {
+        Form {
+            ProjectKitSettingsView()
+        }
+        .navigationTitle("Scout Camera")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
