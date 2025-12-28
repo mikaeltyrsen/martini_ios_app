@@ -23,7 +23,6 @@ final class WebsocketCalls {
         "creative-deleted",
         "creative-title-updated",
         "creative-order-updated",
-        "update-schedule",
         "project-files-updated",
         "reload"
     ]
@@ -60,12 +59,8 @@ final class WebsocketCalls {
         if scheduleEvents.contains(name) {
             Task { [weak self] in
                 try? await self?.authService.fetchProjectDetails()
-            }
-        }
-
-        if name == "activate-schedule" {
-            Task { [weak self] in
                 try? await self?.authService.fetchFrames()
+                self?.authService.publishScheduleUpdate(eventName: name)
             }
         }
     }
