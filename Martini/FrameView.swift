@@ -86,7 +86,7 @@ struct FrameView: View {
     }
 
     var body: some View {
-        contentView
+        let view = contentView
             .navigationTitle(frameTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -95,10 +95,7 @@ struct FrameView: View {
             }
             .alert(
                 "Unable to Update Status",
-                isPresented: Binding(
-                    get: { statusUpdateError != nil },
-                    set: { if !$0 { statusUpdateError = nil } }
-                )
+                isPresented: statusUpdateAlertBinding
             ) {
                 Button("OK", role: .cancel) { statusUpdateError = nil }
             } message: {
@@ -202,6 +199,15 @@ struct FrameView: View {
             } message: {
                 Text("Select at least one camera and lens in settings to use Scout Camera.")
             }
+
+        return view
+    }
+
+    private var statusUpdateAlertBinding: Binding<Bool> {
+        Binding(
+            get: { statusUpdateError != nil },
+            set: { if !$0 { statusUpdateError = nil } }
+        )
     }
 
     @ToolbarContentBuilder
