@@ -48,9 +48,10 @@ struct FrameView: View {
     @State private var boardRenameText: String = ""
     @State private var boardRenameTarget: FrameAssetItem?
     @State private var isRenamingBoard: Bool = false
-    @State private var showingBoardReorderSheet: Bool = false
     @State private var reorderBoards: [FrameAssetItem] = []
     @State private var activeReorderBoard: FrameAssetItem?
+    @State private var isReorderingBoards: Bool = false
+    @State private var reorderWiggle: Bool = false
     @State private var showingBoardDeleteAlert: Bool = false
     @State private var boardDeleteTarget: FrameAssetItem?
     @State private var boardActionError: String?
@@ -233,15 +234,6 @@ struct FrameView: View {
 
     private var boardActionContent: some View {
         statusAlertContent
-            .sheet(isPresented: $showingBoardReorderSheet) {
-                BoardReorderSheet(
-                    boards: $reorderBoards,
-                    activeBoard: $activeReorderBoard,
-                    onSave: { saveBoardReorder() }
-                )
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
-            }
             .alert(
                 "Remove Board?",
                 isPresented: $showingBoardDeleteAlert,
@@ -582,6 +574,27 @@ struct FrameView: View {
                 }
             )
 
+            if isReorderingBoards {
+                HStack(spacing: 12) {
+                    Text("Reorder boards")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+
+                    Spacer()
+
+                    Button("Cancel") {
+                        cancelBoardReorder()
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button("Save") {
+                        commitBoardReorder()
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                .padding(.horizontal, 20)
+            }
+
             boardCarouselTabs
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -605,8 +618,7 @@ struct FrameView: View {
                     showingBoardRenameAlert = true
                 }
                 Button("Reorder") {
-                    reorderBoards = boardEntries()
-                    showingBoardReorderSheet = true
+                    enterBoardReorderMode()
                 }
                 Button("Pin board") {
                     pinBoard(asset)
@@ -716,50 +728,77 @@ struct FrameView: View {
         ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    ForEach(assetStack) { asset in
-                        let isSelected: Bool = (asset.id == visibleAssetID)
-                        Button {
-                            visibleAssetID = asset.id
-                        } label: {
-                            Text(asset.label ?? asset.kind.displayName)
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(isSelected ? Color.white : Color.primary)
-                                .lineLimit(1)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 10)
-                                .frame(minWidth: 80)
-                                .background(
-                                    Capsule()
-                                        .fill(isSelected ? Color.martiniDefaultColor : Color.secondary.opacity(0.15))
+                    if isReorderingBoards {
+                        ForEach(reorderBoards) { board in
+                            let isPinned = boardEntry(for: board)?.isPinned == true
+                            let rotation: Double = reorderWiggle ? 1.5 : -1.5
+                            Group {
+                                if isPinned {
+                                    reorderLabel(for: board, isPinned: isPinned)
+                                } else {
+                                    reorderLabel(for: board, isPinned: isPinned)
+                                        .onDrag {
+                                            activeReorderBoard = board
+                                            return NSItemProvider(
+                                                item: board.id as NSString,
+                                                typeIdentifier: UTType.text.identifier
+                                            )
+                                        }
+                                }
+                            }
+                            .rotationEffect(.degrees(isPinned ? 0 : rotation))
+                            .animation(
+                                isPinned ? .default : .easeInOut(duration: 0.12).repeatForever(autoreverses: true),
+                                value: reorderWiggle
+                            )
+                            .opacity(activeReorderBoard?.id == board.id ? 0.6 : 1)
+                            .onDrop(
+                                of: [UTType.text],
+                                delegate: BoardReorderDropDelegate(
+                                    item: board,
+                                    boards: $reorderBoards,
+                                    activeBoard: $activeReorderBoard,
+                                    pinnedBoardId: pinnedBoardId
                                 )
+                            )
+                            .id(board.id)
+                        }
+                    } else {
+                        ForEach(assetStack) { asset in
+                            let isSelected: Bool = (asset.id == visibleAssetID)
+                            let isPinned = boardEntry(for: asset)?.isPinned == true
+                            Button {
+                                visibleAssetID = asset.id
+                            } label: {
+                                tabLabel(for: asset, isPinned: isPinned, isSelected: isSelected)
+                            }
+                            .buttonStyle(.plain)
+                            .contextMenu {
+                                boardContextMenu(for: asset)
+                            }
+                            .id(asset.id)
+                        }
+
+                        Button {
+                            openScoutCamera()
+                        } label: {
+                            HStack(spacing: 4) {
+                                Label("Add Photo", systemImage: "plus")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(Color.primary)
+                                    .lineLimit(1)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 10)
+                                    .frame(minWidth: 100)
+                                    .background(
+                                        Capsule()
+                                            .fill(Color.secondary.opacity(0.15))
+                                    )
+                            }
                         }
                         .buttonStyle(.plain)
-                        .contextMenu {
-                            boardContextMenu(for: asset)
-                        }
-                        .id(asset.id)
+                        .id(takePictureCardID)
                     }
-
-                    Button {
-                        openScoutCamera()
-                    } label: {
-                        HStack(spacing: 4) {
-                            Label("Add Photo", systemImage: "plus")
-                            //Text("Add Photo")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(Color.primary)
-                                .lineLimit(1)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 10)
-                                .frame(minWidth: 100)
-                                .background(
-                                    Capsule()
-                                        .fill(Color.secondary.opacity(0.15))
-                                )
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .id(takePictureCardID)
                 }
                 .padding(.horizontal, 20)
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -776,7 +815,59 @@ struct FrameView: View {
                 guard let id: FrameAssetItem.ID = visibleAssetID else { return }
                 proxy.scrollTo(id, anchor: .center)
             }
+            .onChange(of: isReorderingBoards) { isReordering in
+                if isReordering {
+                    reorderWiggle.toggle()
+                } else {
+                    reorderWiggle = false
+                }
+            }
         }
+    }
+
+    private var pinnedBoardId: String? {
+        frame.boards?.first(where: { $0.isPinned })?.id
+    }
+
+    @ViewBuilder
+    private func tabLabel(for asset: FrameAssetItem, isPinned: Bool, isSelected: Bool) -> some View {
+        HStack(spacing: 6) {
+            if isPinned && asset.kind == .board {
+                Image(systemName: "pin.fill")
+                    .font(.system(size: 12, weight: .semibold))
+            }
+            Text(asset.label ?? asset.kind.displayName)
+        }
+        .font(.system(size: 14, weight: .semibold))
+        .foregroundStyle(isSelected ? Color.white : Color.primary)
+        .lineLimit(1)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .frame(minWidth: 80)
+        .background(
+            Capsule()
+                .fill(isSelected ? Color.martiniDefaultColor : Color.secondary.opacity(0.15))
+        )
+    }
+
+    private func reorderLabel(for board: FrameAssetItem, isPinned: Bool) -> some View {
+        HStack(spacing: 6) {
+            if isPinned {
+                Image(systemName: "pin.fill")
+                    .font(.system(size: 12, weight: .semibold))
+            }
+            Text(board.displayLabel)
+        }
+        .font(.system(size: 14, weight: .semibold))
+        .foregroundStyle(Color.primary)
+        .lineLimit(1)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .frame(minWidth: 80)
+        .background(
+            Capsule()
+                .fill(Color.secondary.opacity(0.15))
+        )
     }
 
     private func loadClips(force: Bool) async {
@@ -1004,6 +1095,23 @@ private extension FrameView {
         return assetStack.filter { asset in
             asset.kind == .board && boardIds.contains(asset.id)
         }
+    }
+
+    private func enterBoardReorderMode() {
+        reorderBoards = boardEntries()
+        activeReorderBoard = nil
+        isReorderingBoards = true
+    }
+
+    private func cancelBoardReorder() {
+        reorderBoards = boardEntries()
+        activeReorderBoard = nil
+        isReorderingBoards = false
+    }
+
+    private func commitBoardReorder() {
+        saveBoardReorder()
+        isReorderingBoards = false
     }
 
     private func renameBoard() async -> Bool {
@@ -2042,7 +2150,7 @@ private struct AssetCardView: View {
             title: primaryText,
             showStatusBadge: true,
             showFrameNumberOverlay: true,
-            showPinnedBoardOverlay: true,
+            showPinnedBoardOverlay: false,
             showTextBlock: false,
             cornerRadius: cardCornerRadius,
             enablesFullScreen: enablesFullScreen
@@ -2161,93 +2269,24 @@ private struct BoardRenameAlert: View {
     }
 }
 
-private struct BoardReorderSheet: View {
-    @Binding var boards: [FrameAssetItem]
-    @Binding var activeBoard: FrameAssetItem?
-    let onSave: () -> Void
-    @Environment(\.dismiss) private var dismiss
-
-    private let columns: [GridItem] = [
-        GridItem(.adaptive(minimum: 120), spacing: 12)
-    ]
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Drag boards to reorder them.")
-                        .font(.headline)
-                    LazyVGrid(columns: columns, spacing: 12) {
-                        ForEach(boards) { board in
-                            VStack(spacing: 8) {
-                                Image(systemName: board.iconName)
-                                    .font(.system(size: 20, weight: .semibold))
-                                    .foregroundStyle(.primary)
-                                Text(board.displayLabel)
-                                    .font(.subheadline.weight(.semibold))
-                                    .multilineTextAlignment(.center)
-                                    .lineLimit(2)
-                                    .foregroundStyle(.primary)
-                            }
-                            .frame(maxWidth: .infinity, minHeight: 90)
-                            .padding(12)
-                            .background(
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .fill(Color.secondary.opacity(0.12))
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
-                            )
-                            .opacity(activeBoard?.id == board.id ? 0.6 : 1)
-                            .onDrag {
-                                activeBoard = board
-                                return NSItemProvider(
-                                    item: board.id as NSString,
-                                    typeIdentifier: UTType.text.identifier
-                                )
-                            }
-                            .onDrop(
-                                of: [UTType.text],
-                                delegate: BoardReorderDropDelegate(
-                                    item: board,
-                                    boards: $boards,
-                                    activeBoard: $activeBoard
-                                )
-                            )
-                        }
-                    }
-                }
-                .padding(20)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .navigationTitle("Reorder Boards")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        onSave()
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-}
-
 private struct BoardReorderDropDelegate: DropDelegate {
     let item: FrameAssetItem
     @Binding var boards: [FrameAssetItem]
     @Binding var activeBoard: FrameAssetItem?
+    let pinnedBoardId: String?
 
     func dropEntered(info: DropInfo) {
         guard let activeBoard, activeBoard != item else { return }
+        guard activeBoard.id != pinnedBoardId else { return }
         guard let fromIndex = boards.firstIndex(of: activeBoard),
               let toIndex = boards.firstIndex(of: item)
         else { return }
+
+        if let pinnedBoardId,
+           let pinnedIndex = boards.firstIndex(where: { $0.id == pinnedBoardId }),
+           toIndex <= pinnedIndex {
+            return
+        }
 
         withAnimation(.easeInOut(duration: 0.2)) {
             boards.move(
