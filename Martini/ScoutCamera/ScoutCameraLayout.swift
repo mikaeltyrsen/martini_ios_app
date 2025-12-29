@@ -635,7 +635,7 @@ struct ScoutCameraLayout: View {
                 Button {
                     viewModel.selectPreviousLens()
                 } label: {
-                    Image(systemName: "minus.circle")
+                    Image(systemName: "minus.circle.fill")
                         .font(.system(size: 30, weight: .semibold))
                 }
                 .foregroundStyle(.white)
@@ -651,7 +651,7 @@ struct ScoutCameraLayout: View {
                     Button {
                         viewModel.selectNextLens()
                     } label: {
-                        Image(systemName: "plus.circle")
+                        Image(systemName: "plus.circle.fill")
                             .font(.system(size: 30, weight: .semibold))
                     }
                     .foregroundStyle(.white)
