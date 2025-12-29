@@ -666,6 +666,7 @@ struct FrameView: View {
                                 reorderBoards = assetStack
                                 showingBoardReorderSheet = true
                             }
+                            Button("Pin board") {}
                             Button("Delete", role: .destructive) {
                                 boardDeleteTarget = asset
                                 showingBoardDeleteAlert = true
@@ -1845,6 +1846,7 @@ private struct AssetCardView: View {
             title: primaryText,
             showStatusBadge: true,
             showFrameNumberOverlay: true,
+            showPinnedBoardOverlay: true,
             showTextBlock: false,
             cornerRadius: cardCornerRadius
         )

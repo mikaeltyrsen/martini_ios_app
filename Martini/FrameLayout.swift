@@ -105,6 +105,7 @@ struct FrameLayout: View {
     var showStatusBadge: Bool = true
     var showFrameNumberOverlay: Bool = true
     var showFrameTimeOverlay: Bool = true
+    var showPinnedBoardOverlay: Bool = false
     var showTextBlock: Bool = true
     var cornerRadius: CGFloat = 8
     var enablesFullScreen: Bool = true
@@ -184,6 +185,28 @@ struct FrameLayout: View {
                                     .foregroundColor(.white)
                                     .minimumScaleFactor(0.5)
                             }
+                        }
+                        .padding(max(2, diameter * 0.25))
+                        Spacer()
+                    }
+                }
+            }
+
+            if showPinnedBoardOverlay, frameHasPinnedBoard {
+                GeometryReader { geo in
+                    let diameter = max(18, geo.size.width * 0.08)
+
+                    VStack {
+                        HStack {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.black.opacity(0.8))
+                                    .frame(width: diameter, height: diameter)
+                                Image(systemName: "pin.fill")
+                                    .font(.system(size: diameter * 0.52, weight: .semibold))
+                                    .foregroundColor(.white)
+                            }
+                            Spacer()
                         }
                         .padding(max(2, diameter * 0.25))
                         Spacer()
@@ -399,6 +422,10 @@ struct FrameLayout: View {
     private var frameStartTimeText: String? { frame.formattedStartTime }
 
     private var frameTimeOverlay: Bool { frameStartTimeText != nil }
+
+    private var frameHasPinnedBoard: Bool {
+        frame.boards?.contains(where: { $0.isPinned }) ?? false
+    }
 
     @ViewBuilder
     private func timeBadge(height: CGFloat, maxWidth: CGFloat) -> some View {
