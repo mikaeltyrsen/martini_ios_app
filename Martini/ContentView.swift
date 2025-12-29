@@ -434,22 +434,25 @@ struct MainView: View {
                     Text(dataError ?? "Unknown error")
                 }
                 .fullScreenCover(item: $selectedFrame) { frame in
-                    let navigation = navigationContext(for: frame)
                     NavigationStack {
+                        let currentFrame = selectedFrame ?? frame
+                        let navigation = navigationContext(for: currentFrame)
                         FrameView(
-                            frame: frame,
-                            assetOrder: assetOrderBinding(for: frame),
+                            frame: currentFrame,
+                            assetOrder: assetOrderBinding(for: currentFrame),
                             onClose: { selectedFrame = nil },
                             hasPreviousFrame: navigation.previous != nil,
                             hasNextFrame: navigation.next != nil,
                             onNavigate: { direction in
+                                let current = selectedFrame ?? frame
+                                let navigation = navigationContext(for: current)
                                 switch direction {
                                 case .previous:
-                                    if let previous = navigationContext(for: frame).previous {
+                                    if let previous = navigation.previous {
                                         selectedFrame = previous
                                     }
                                 case .next:
-                                    if let next = navigationContext(for: frame).next {
+                                    if let next = navigation.next {
                                         selectedFrame = next
                                     }
                                 }
