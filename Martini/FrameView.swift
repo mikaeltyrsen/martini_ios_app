@@ -1088,36 +1088,11 @@ private struct CommentsPage: View {
         .task {
             await onReload()
         }
-        .toolbar {
-            ToolbarItemGroup(placement: .bottomBar) {
-                HStack(spacing: 8) {
-                    HStack {
-                        Image(systemName: "text.bubble")
-                            .foregroundStyle(.secondary)
-                        TextField("Comment", text: $newCommentText)
-                            .focused($composeFieldFocused)
-                            .submitLabel(.send)
-                            .onTapGesture { composeFieldFocused = true }
-                            .onSubmit(sendComment)
-                            .foregroundStyle(.primary)
-                    }
-                    .tint(.primary)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
-                    .background(Color.clear, in: Capsule())
-                    .overlay(
-                        Capsule().stroke(Color.secondary.opacity(0.22), lineWidth: 1)
-                    )
-
-                    if !newCommentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        Button(action: sendComment) {
-                            Image(systemName: "paperplane.fill")
-                                .font(.system(size: 16, weight: .semibold))
-                        }
-                        .buttonStyle(.borderedProminent)
-                    }
-                }
-            }
+        .safeAreaInset(edge: .bottom) {
+            commentComposer
+                .padding(.horizontal)
+                .padding(.vertical, 10)
+                .background(.ultraThinMaterial)
         }
     }
 
@@ -1128,6 +1103,36 @@ private struct CommentsPage: View {
         withAnimation(.default) {
             newCommentText = ""
             composeFieldFocused = false
+        }
+    }
+
+    private var commentComposer: some View {
+        HStack(spacing: 8) {
+            HStack {
+                Image(systemName: "text.bubble")
+                    .foregroundStyle(.secondary)
+                TextField("Comment", text: $newCommentText)
+                    .focused($composeFieldFocused)
+                    .submitLabel(.send)
+                    .onTapGesture { composeFieldFocused = true }
+                    .onSubmit(sendComment)
+                    .foregroundStyle(.primary)
+            }
+            .tint(.primary)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(Color.clear, in: Capsule())
+            .overlay(
+                Capsule().stroke(Color.secondary.opacity(0.22), lineWidth: 1)
+            )
+
+            if !newCommentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Button(action: sendComment) {
+                    Image(systemName: "paperplane.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                }
+                .buttonStyle(.borderedProminent)
+            }
         }
     }
 }
