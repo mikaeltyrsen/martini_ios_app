@@ -5,12 +5,13 @@ struct FrameUploadService {
 
     func uploadPhotoboard(
         imageData: Data,
-        label: String,
-        projectId: String,
+        boardLabel: String,
+        shootId: String,
+        creativeId: String,
         frameId: String,
         bearerToken: String?
     ) async throws {
-        guard let url = URL(string: "\(baseScriptsURL)frame/upload.php") else {
+        guard let url = URL(string: "\(baseScriptsURL)frames/upload.php") else {
             throw URLError(.badURL)
         }
 
@@ -25,10 +26,11 @@ struct FrameUploadService {
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
 
         var body = Data()
-        body.append(formField(name: "label", value: label, boundary: boundary))
-        body.append(formField(name: "projectId", value: projectId, boundary: boundary))
+        body.append(formField(name: "boardLabel", value: boardLabel, boundary: boundary))
+        body.append(formField(name: "shootId", value: shootId, boundary: boundary))
+        body.append(formField(name: "creativeId", value: creativeId, boundary: boundary))
         body.append(formField(name: "frameId", value: frameId, boundary: boundary))
-        body.append(fileField(name: "image", filename: "photoboard.jpg", mimeType: "image/jpeg", data: imageData, boundary: boundary))
+        body.append(fileField(name: "file", filename: "photoboard.jpg", mimeType: "image/jpeg", data: imageData, boundary: boundary))
         body.append("--\(boundary)--\r\n".data(using: .utf8) ?? Data())
         request.httpBody = body
 
