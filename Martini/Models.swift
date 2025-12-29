@@ -79,6 +79,95 @@ struct SafeOptionalInt: Codable, Equatable, Hashable {
 }
 
 @propertyWrapper
+struct SafeString: Codable, Equatable, Hashable {
+    var wrappedValue: String
+
+    init(wrappedValue: String = "") {
+        self.wrappedValue = wrappedValue
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+
+        if let stringValue = try? container.decode(String.self) {
+            wrappedValue = stringValue
+            return
+        }
+
+        if let intValue = try? container.decode(Int.self) {
+            wrappedValue = String(intValue)
+            return
+        }
+
+        if let doubleValue = try? container.decode(Double.self) {
+            wrappedValue = String(doubleValue)
+            return
+        }
+
+        if let boolValue = try? container.decode(Bool.self) {
+            wrappedValue = String(boolValue)
+            return
+        }
+
+        wrappedValue = ""
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(wrappedValue)
+    }
+}
+
+@propertyWrapper
+struct SafeOptionalString: Codable, Equatable, Hashable {
+    var wrappedValue: String?
+
+    init(wrappedValue: String? = nil) {
+        self.wrappedValue = wrappedValue
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+
+        if container.decodeNil() {
+            wrappedValue = nil
+            return
+        }
+
+        if let stringValue = try? container.decode(String.self) {
+            wrappedValue = stringValue
+            return
+        }
+
+        if let intValue = try? container.decode(Int.self) {
+            wrappedValue = String(intValue)
+            return
+        }
+
+        if let doubleValue = try? container.decode(Double.self) {
+            wrappedValue = String(doubleValue)
+            return
+        }
+
+        if let boolValue = try? container.decode(Bool.self) {
+            wrappedValue = String(boolValue)
+            return
+        }
+
+        wrappedValue = nil
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        if let value = wrappedValue {
+            try container.encode(value)
+        } else {
+            try container.encodeNil()
+        }
+    }
+}
+
+@propertyWrapper
 struct SafeBool: Codable, Equatable, Hashable {
     var wrappedValue: Bool
 
@@ -1389,12 +1478,12 @@ struct ClipsResponse: Codable {
 // MARK: - Comments
 
 struct Comment: Codable, Identifiable, Hashable {
-    @SafeInt var id: Int
-    @SafeOptionalInt var userId: Int?
+    @SafeString var id: String
+    @SafeOptionalString var userId: String?
     let guestName: String?
     let comment: String?
-    let marker: String?
-    let status: String?
+    @SafeOptionalString var marker: String?
+    @SafeOptionalString var status: String?
     let frameId: String?
     @SafeOptionalInt var frameOrder: Int?
     let lastUpdated: String?
@@ -1418,8 +1507,8 @@ struct Comment: Codable, Identifiable, Hashable {
     }
 
     init(
-        id: Int,
-        userId: Int? = nil,
+        id: String,
+        userId: String? = nil,
         guestName: String? = nil,
         comment: String? = nil,
         marker: String? = nil,
@@ -1431,12 +1520,12 @@ struct Comment: Codable, Identifiable, Hashable {
         replies: [Comment] = [],
         frameThumb: String? = nil
     ) {
-        _id = SafeInt(wrappedValue: id)
-        _userId = SafeOptionalInt(wrappedValue: userId)
+        _id = SafeString(wrappedValue: id)
+        _userId = SafeOptionalString(wrappedValue: userId)
         self.guestName = guestName
         self.comment = comment
-        self.marker = marker
-        self.status = status
+        _marker = SafeOptionalString(wrappedValue: marker)
+        _status = SafeOptionalString(wrappedValue: status)
         self.frameId = frameId
         _frameOrder = SafeOptionalInt(wrappedValue: frameOrder)
         self.lastUpdated = lastUpdated
@@ -1447,12 +1536,12 @@ struct Comment: Codable, Identifiable, Hashable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        _id = try container.decode(SafeInt.self, forKey: .id)
-        _userId = try container.decodeIfPresent(SafeOptionalInt.self, forKey: .userId) ?? SafeOptionalInt()
+        _id = try container.decode(SafeString.self, forKey: .id)
+        _userId = try container.decodeIfPresent(SafeOptionalString.self, forKey: .userId) ?? SafeOptionalString()
         guestName = try container.decodeIfPresent(String.self, forKey: .guestName)
         comment = try container.decodeIfPresent(String.self, forKey: .comment)
-        marker = try container.decodeIfPresent(String.self, forKey: .marker)
-        status = try container.decodeIfPresent(String.self, forKey: .status)
+        _marker = try container.decodeIfPresent(SafeOptionalString.self, forKey: .marker) ?? SafeOptionalString()
+        _status = try container.decodeIfPresent(SafeOptionalString.self, forKey: .status) ?? SafeOptionalString()
         frameId = try container.decodeIfPresent(String.self, forKey: .frameId)
         _frameOrder = try container.decodeIfPresent(SafeOptionalInt.self, forKey: .frameOrder) ?? SafeOptionalInt()
         lastUpdated = try container.decodeIfPresent(String.self, forKey: .lastUpdated)
