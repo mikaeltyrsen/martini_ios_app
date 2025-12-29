@@ -117,9 +117,9 @@ struct FrameView: View {
     private var scoutCameraContent: some View {
         overlayContent
             .fullScreenCover(isPresented: $showingScoutCamera) {
-                if let shootId = authService.projectId {
+                if let projectId = authService.projectId {
                     ScoutCameraLayout(
-                        shootId: shootId,
+                        projectId: projectId,
                         frameId: frame.id,
                         creativeId: frame.creativeId,
                         targetAspectRatio: frameAspectRatio
@@ -620,7 +620,7 @@ struct FrameView: View {
                 Button("Reorder") {
                     enterBoardReorderMode()
                 }
-                if asset.kind == .board {
+                if asset.kind == .board || asset.kind == .photoboard {
                     Button("Pin board") {
                         pinBoard(asset)
                     }
@@ -836,7 +836,7 @@ struct FrameView: View {
     @ViewBuilder
     private func tabLabel(for asset: FrameAssetItem, isPinned: Bool, isSelected: Bool) -> some View {
         HStack(spacing: 6) {
-            if isPinned && asset.kind == .board {
+            if isPinned && (asset.kind == .board || asset.kind == .photoboard) {
                 Image(systemName: "pin.fill")
                     .font(.system(size: 12, weight: .semibold))
             }

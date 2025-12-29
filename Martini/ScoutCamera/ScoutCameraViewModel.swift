@@ -29,7 +29,7 @@ final class ScoutCameraViewModel: ObservableObject {
     let captureManager = CaptureSessionManager()
     let calibrationStore = FOVCalibrationStore.shared
 
-    private let shootId: String
+    private let projectId: String
     private let frameId: String
     private let creativeId: String
     private let targetAspectRatio: CGFloat
@@ -37,8 +37,8 @@ final class ScoutCameraViewModel: ObservableObject {
     private let selectionStore = ProjectKitSelectionStore.shared
     private let uploadService = FrameUploadService()
 
-    init(shootId: String, frameId: String, creativeId: String, targetAspectRatio: CGFloat) {
-        self.shootId = shootId
+    init(projectId: String, frameId: String, creativeId: String, targetAspectRatio: CGFloat) {
+        self.projectId = projectId
         self.frameId = frameId
         self.creativeId = creativeId
         self.targetAspectRatio = targetAspectRatio
@@ -46,8 +46,8 @@ final class ScoutCameraViewModel: ObservableObject {
     }
 
     func loadData() {
-        let projectCameraIds = selectionStore.cameraIds(for: shootId)
-        let projectLensIds = selectionStore.lensIds(for: shootId)
+        let projectCameraIds = selectionStore.cameraIds(for: projectId)
+        let projectLensIds = selectionStore.lensIds(for: projectId)
         availableCameras = projectCameraIds.isEmpty
             ? []
             : dataStore.fetchCameras(ids: projectCameraIds)
@@ -232,7 +232,7 @@ final class ScoutCameraViewModel: ObservableObject {
             try await uploadService.uploadPhotoboard(
                 imageData: data,
                 boardLabel: "Photoboard",
-                shootId: shootId,
+                shootId: projectId,
                 creativeId: creativeId,
                 frameId: frameId,
                 bearerToken: token
