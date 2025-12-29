@@ -2042,6 +2042,7 @@ private struct BoardRenameAlert: View {
     let isSaving: Bool
     let onCancel: () -> Void
     let onSave: () -> Void
+    @FocusState private var isFocused: Bool
 
     var body: some View {
         ZStack {
@@ -2060,6 +2061,10 @@ private struct BoardRenameAlert: View {
                     .foregroundStyle(.secondary)
                 TextField("Board name", text: $name)
                     .textFieldStyle(.roundedBorder)
+                    .focused($isFocused)
+                    .onAppear {
+                        isFocused = true
+                    }
 
                 HStack {
                     Button("Cancel") {
