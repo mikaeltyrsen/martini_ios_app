@@ -608,30 +608,32 @@ struct FrameView: View {
 
     @ViewBuilder
     private func boardContextMenu(for asset: FrameAssetItem) -> some View {
-        if asset.kind == .board {
-            let isBoardEntry = boardEntry(for: asset) != nil
-            if isBoardEntry {
-                Button("Rename") {
-                    boardRenameTarget = asset
-                    boardRenameText = asset.displayLabel
-                    isRenamingBoard = false
-                    showingBoardRenameAlert = true
-                }
-                Button("Reorder") {
-                    enterBoardReorderMode()
-                }
+        guard asset.kind == .board || asset.kind == .photoboard else { return }
+
+        let isBoardEntry = boardEntry(for: asset) != nil
+        if isBoardEntry {
+            Button("Rename") {
+                boardRenameTarget = asset
+                boardRenameText = asset.displayLabel
+                isRenamingBoard = false
+                showingBoardRenameAlert = true
+            }
+            Button("Reorder") {
+                enterBoardReorderMode()
+            }
+            if asset.kind == .board {
                 Button("Pin board") {
                     pinBoard(asset)
                 }
-                Button("Delete", role: .destructive) {
-                    boardDeleteTarget = asset
-                    showingBoardDeleteAlert = true
-                }
-            } else {
-                Button("Delete", role: .destructive) {
-                    boardDeleteTarget = asset
-                    showingBoardDeleteAlert = true
-                }
+            }
+            Button("Delete", role: .destructive) {
+                boardDeleteTarget = asset
+                showingBoardDeleteAlert = true
+            }
+        } else {
+            Button("Delete", role: .destructive) {
+                boardDeleteTarget = asset
+                showingBoardDeleteAlert = true
             }
         }
     }
@@ -1087,13 +1089,18 @@ private extension FrameView {
     }
 
     private func boardEntry(for asset: FrameAssetItem) -> FrameBoard? {
-        frame.boards?.first { $0.id == asset.id }
+        if asset.kind == .photoboard {
+            let label = FrameAssetKind.photoboard.displayName.lowercased()
+            return frame.boards?.first { $0.label?.lowercased() == label }
+        }
+
+        return frame.boards?.first { $0.id == asset.id }
     }
 
     private func boardEntries() -> [FrameAssetItem] {
         let boardIds = Set(frame.boards?.map(\.id) ?? [])
         return assetStack.filter { asset in
-            asset.kind == .board && boardIds.contains(asset.id)
+            (asset.kind == .board && boardIds.contains(asset.id)) || (asset.kind == .photoboard && boardEntry(for: asset) != nil)
         }
     }
 
@@ -1182,7 +1189,7 @@ private extension FrameView {
             return
         }
 
-        let fallbackLabel = "Storyboard"
+        let fallbackLabel = asset.displayLabel
         Task {
             do {
                 try await authService.removeBoardImage(frameId: frame.id, boardLabel: fallbackLabel)
