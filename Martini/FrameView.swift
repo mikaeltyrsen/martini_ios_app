@@ -54,6 +54,7 @@ struct FrameView: View {
     @State private var showingBoardDeleteAlert: Bool = false
     @State private var boardDeleteTarget: FrameAssetItem?
     @State private var boardActionError: String?
+    @State private var selectedBoardPreview: BoardPreviewItem?
 
     private let minDescriptionRatio: CGFloat = 0.35
     private let dimmerAnim = Animation.easeInOut(duration: 0.28)
@@ -219,6 +220,9 @@ struct FrameView: View {
                 )
                 .presentationDetents([.medium, .large], selection: $filesSheetDetent)
                 .presentationDragIndicator(.visible)
+            }
+            .sheet(item: $selectedBoardPreview) { previewItem in
+                BoardPreviewView(url: previewItem.url)
             }
             .onChange(of: showingFiles) { isShowing in
                 if isShowing {
@@ -568,6 +572,10 @@ struct FrameView: View {
                 takePictureID: takePictureCardID,
                 takePictureAction: {
                     openScoutCamera()
+                },
+                onAssetTap: { asset in
+                    guard asset.kind == .board || asset.kind == .photoboard else { return }
+                    openBoardPreview(asset)
                 },
                 contextMenuContent: { asset in
                     boardContextMenu(for: asset)
@@ -1081,6 +1089,11 @@ private extension FrameView {
         comments.reduce(0) { partial, comment in
             partial + 1 + totalCommentCount(in: comment.replies)
         }
+    }
+
+    private func openBoardPreview(_ asset: FrameAssetItem) {
+        guard let url = asset.url else { return }
+        selectedBoardPreview = BoardPreviewItem(url: url)
     }
 
     @ViewBuilder
@@ -1701,6 +1714,29 @@ private struct QuickLookPreview: UIViewControllerRepresentable {
     }
 }
 
+private struct BoardPreviewView: View {
+    let url: URL
+
+    var body: some View {
+        VStack {
+            AsyncImage(url: url) { image in
+                image
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } placeholder: {
+                ProgressView()
+            }
+        }
+        .padding()
+    }
+}
+
+private struct BoardPreviewItem: Identifiable {
+    let id = UUID()
+    let url: URL
+}
+
 private struct ShareItem: Identifiable {
     let id = UUID()
     let url: URL
@@ -1932,6 +1968,7 @@ private struct StackedAssetScroller<ContextMenuContent: View>: View {
     let primaryText: String?
     let takePictureID: String
     let takePictureAction: (() -> Void)?
+    let onAssetTap: ((FrameAssetItem) -> Void)?
     let contextMenuContent: (FrameAssetItem) -> ContextMenuContent
 
     var body: some View {
@@ -1947,11 +1984,17 @@ private struct StackedAssetScroller<ContextMenuContent: View>: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .center, spacing: 0) {
                     ForEach(assetStack) { asset in
+                        let shouldEnablePreview = asset.kind == .preview
+                        let shouldHandleTap = asset.kind == .board || asset.kind == .photoboard
                         AssetCardView(
                             frame: frame,
                             asset: asset,
                             cardWidth: cardWidth,
-                            primaryText: primaryText
+                            primaryText: primaryText,
+                            enablesFullScreen: shouldEnablePreview,
+                            onTap: shouldHandleTap ? {
+                                onAssetTap?(asset)
+                            } : nil
                         )
                         .contextMenu {
                             contextMenuContent(asset)
@@ -1988,10 +2031,12 @@ private struct AssetCardView: View {
     let asset: FrameAssetItem
     let cardWidth: CGFloat
     let primaryText: String?
+    let enablesFullScreen: Bool
+    let onTap: (() -> Void)?
     private let cardCornerRadius: CGFloat = 16
 
     var body: some View {
-        FrameLayout(
+        let card = FrameLayout(
             frame: frame,
             primaryAsset: asset,
             title: primaryText,
@@ -1999,12 +2044,24 @@ private struct AssetCardView: View {
             showFrameNumberOverlay: true,
             showPinnedBoardOverlay: true,
             showTextBlock: false,
-            cornerRadius: cardCornerRadius
+            cornerRadius: cardCornerRadius,
+            enablesFullScreen: enablesFullScreen
         )
-        .frame(width: cardWidth)
-        .padding(.vertical, 16)
-        .applyHorizontalScrollTransition()
-        .shadow(radius: 10, x: 0, y: 10)
+
+        let styledCard = card
+            .frame(width: cardWidth)
+            .padding(.vertical, 16)
+            .applyHorizontalScrollTransition()
+            .shadow(radius: 10, x: 0, y: 10)
+
+        if let onTap {
+            styledCard
+                .onTapGesture {
+                    onTap()
+                }
+        } else {
+            styledCard
+        }
     }
 }
 
