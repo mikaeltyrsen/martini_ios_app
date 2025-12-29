@@ -338,7 +338,7 @@ struct FrameView: View {
 
     @ViewBuilder
     private func toolbarIconBadge(title: String, systemName: String, count: Int?) -> some View {
-        HStack(spacing: 6) {
+        ZStack(alignment: .topTrailing) {
             Label(title, systemImage: systemName)
                 .labelStyle(.iconOnly)
 
@@ -346,9 +346,10 @@ struct FrameView: View {
                 Text(count > 99 ? "99+" : "\(count)")
                     .font(.caption2.weight(.bold))
                     .foregroundStyle(.white)
-                    .padding(.horizontal, 6)
+                    .padding(.horizontal, 5)
                     .padding(.vertical, 2)
                     .background(Capsule().fill(.martiniDefault))
+                    .offset(x: 10, y: -8)
             }
         }
     }
