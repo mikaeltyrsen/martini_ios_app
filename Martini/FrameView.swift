@@ -115,10 +115,11 @@ struct FrameView: View {
     private var scoutCameraContent: some View {
         overlayContent
             .fullScreenCover(isPresented: $showingScoutCamera) {
-                if let projectId = authService.projectId {
+                if let shootId = authService.projectId {
                     ScoutCameraLayout(
-                        projectId: projectId,
+                        shootId: shootId,
                         frameId: frame.id,
+                        creativeId: frame.creativeId,
                         targetAspectRatio: frameAspectRatio
                     )
                     .environmentObject(authService)
