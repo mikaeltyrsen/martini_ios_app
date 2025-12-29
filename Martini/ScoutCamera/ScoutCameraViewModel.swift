@@ -46,8 +46,8 @@ final class ScoutCameraViewModel: ObservableObject {
     }
 
     func loadData() {
-        let projectCameraIds = selectionStore.cameraIds(for: projectId)
-        let projectLensIds = selectionStore.lensIds(for: projectId)
+        let projectCameraIds = selectionStore.cameraIds(for: shootId)
+        let projectLensIds = selectionStore.lensIds(for: shootId)
         availableCameras = projectCameraIds.isEmpty
             ? []
             : dataStore.fetchCameras(ids: projectCameraIds)
