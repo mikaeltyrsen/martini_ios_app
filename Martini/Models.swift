@@ -1388,6 +1388,35 @@ struct UpdateFrameStatusResponse: Codable {
     let error: String?
 }
 
+struct UpdateBoardResponse: Codable {
+    @SafeBool var success: Bool
+    let error: String?
+    let id: String?
+    let frameId: String?
+    let frameID: String?
+    let frame_id: String?
+    let mainBoardType: String?
+    let boards: [FrameBoard]?
+
+    enum CodingKeys: String, CodingKey {
+        case success
+        case error
+        case id
+        case frameId
+        case frameID
+        case frame_id
+        case mainBoardType = "main_board_type"
+        case boards
+    }
+
+    var resolvedId: String? { id ?? frameId ?? frameID ?? frame_id }
+}
+
+struct BasicResponse: Codable {
+    @SafeBool var success: Bool
+    let error: String?
+}
+
 // MARK: - Clips
 
 struct Clip: Codable, Identifiable, Hashable {
