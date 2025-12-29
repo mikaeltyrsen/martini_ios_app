@@ -168,12 +168,12 @@ struct ScoutCameraLayout: View {
     private var rightControlBar: some View {
         VStack{
             Spacer()
-            VStack(spacing: 6) {
+            VStack(spacing: 25) {
                 Button {
                     isFrameLineSettingsPresented = true
                 } label: {
                     Image(systemName: "viewfinder.rectangular")
-                        .font(.system(size: 20, weight: .semibold))
+                        .font(.system(size: 22, weight: .semibold))
                         .foregroundStyle(isFramingActive ? .white : .gray)
                 }
 
@@ -181,7 +181,7 @@ struct ScoutCameraLayout: View {
                     isCalibrationPresented = true
                 } label: {
                     Image(systemName: "slider.horizontal.3")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 22, weight: .semibold))
                         .foregroundStyle(isCalibrationActive ? .white.opacity(0.7) : .gray)
                 }
                 .buttonStyle(.plain)
@@ -190,7 +190,7 @@ struct ScoutCameraLayout: View {
                     debugMode.toggle()
                 } label: {
                     Image(systemName: debugMode ? "ladybug.fill" : "ladybug")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 22, weight: .semibold))
                         .foregroundStyle(debugMode ? .white.opacity(0.7) : .gray)
                 }
                 .buttonStyle(.plain)

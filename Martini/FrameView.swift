@@ -205,7 +205,7 @@ struct FrameView: View {
                     errorMessage: $clipsError,
                     onReload: { await loadClips(force: true) }
                 )
-                .presentationDetents([.fraction(0.25), .medium, .large], selection: $filesSheetDetent)
+                .presentationDetents([.medium, .large], selection: $filesSheetDetent)
                 .presentationDragIndicator(.visible)
             }
             .onChange(of: showingFiles) { isShowing in
@@ -310,9 +310,9 @@ struct FrameView: View {
                 )
                 .fixedSize(horizontal: true, vertical: false)
                 .layoutPriority(1)
-                .shadow(color: selectedStatus.markerBackgroundColor.opacity(0.8), radius: 12, x: 0, y: 0)
-                .shadow(color: selectedStatus.markerBackgroundColor.opacity(0.5), radius: 50, x: 0, y: 0)
-                .shadow(color: selectedStatus.markerBackgroundColor.opacity(0.3), radius: 100, x: 0, y: 0)
+//                .shadow(color: selectedStatus.markerBackgroundColor.opacity(0.8), radius: 12, x: 0, y: 0)
+//                .shadow(color: selectedStatus.markerBackgroundColor.opacity(0.5), radius: 50, x: 0, y: 0)
+//                .shadow(color: selectedStatus.markerBackgroundColor.opacity(0.3), radius: 100, x: 0, y: 0)
             }
             .buttonStyle(.plain)
             .disabled(isUpdatingStatus)
