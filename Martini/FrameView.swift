@@ -4,6 +4,7 @@ import UIKit
 import Combine
 import QuickLook
 import Photos
+import UniformTypeIdentifiers
 
 @MainActor
 struct FrameView: View {
@@ -43,6 +44,14 @@ struct FrameView: View {
     @State private var showingScoutCamera: Bool = false
     @State private var showingScoutCameraWarning: Bool = false
     @State private var showingScoutCameraSettings: Bool = false
+    @State private var showingBoardRenameSheet: Bool = false
+    @State private var boardRenameText: String = ""
+    @State private var boardRenameTarget: FrameAssetItem?
+    @State private var showingBoardReorderSheet: Bool = false
+    @State private var reorderBoards: [FrameAssetItem] = []
+    @State private var activeReorderBoard: FrameAssetItem?
+    @State private var showingBoardDeleteAlert: Bool = false
+    @State private var boardDeleteTarget: FrameAssetItem?
 
     private let minDescriptionRatio: CGFloat = 0.35
     private let dimmerAnim = Animation.easeInOut(duration: 0.28)
@@ -196,7 +205,7 @@ struct FrameView: View {
     }
 
     private var filesSheetContent: some View {
-        statusAlertContent
+        boardActionContent
             .sheet(isPresented: $showingFiles) {
                 FilesSheet(
                     frame: frame,
@@ -212,6 +221,34 @@ struct FrameView: View {
                 if isShowing {
                     filesSheetDetent = .medium
                 }
+            }
+    }
+
+    private var boardActionContent: some View {
+        statusAlertContent
+            .sheet(isPresented: $showingBoardRenameSheet) {
+                BoardRenameSheet(
+                    boardName: boardRenameTarget?.displayLabel ?? "Board",
+                    name: $boardRenameText
+                )
+            }
+            .sheet(isPresented: $showingBoardReorderSheet) {
+                BoardReorderSheet(
+                    boards: $reorderBoards,
+                    activeBoard: $activeReorderBoard
+                )
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+            }
+            .alert(
+                "Remove Board?",
+                isPresented: $showingBoardDeleteAlert,
+                presenting: boardDeleteTarget
+            ) { _ in
+                Button("Cancel", role: .cancel) {}
+                Button("Continue", role: .destructive) {}
+            } message: { target in
+                Text("Are you sure you want to remove \(target.displayLabel)?")
             }
     }
 
@@ -619,6 +656,21 @@ struct FrameView: View {
                                 )
                         }
                         .buttonStyle(.plain)
+                        .contextMenu {
+                            Button("Rename") {
+                                boardRenameTarget = asset
+                                boardRenameText = asset.displayLabel
+                                showingBoardRenameSheet = true
+                            }
+                            Button("Reorder") {
+                                reorderBoards = assetStack
+                                showingBoardReorderSheet = true
+                            }
+                            Button("Delete", role: .destructive) {
+                                boardDeleteTarget = asset
+                                showingBoardDeleteAlert = true
+                            }
+                        }
                         .id(asset.id)
                     }
 
@@ -1829,6 +1881,136 @@ private struct TakePictureCardView: View {
             .shadow(radius: 10, x: 0, y: 10)
         }
         .buttonStyle(.plain)
+    }
+}
+
+private struct BoardRenameSheet: View {
+    let boardName: String
+    @Binding var name: String
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Rename Board")
+                    .font(.title2.weight(.semibold))
+                Text("Update the label for \(boardName).")
+                    .foregroundStyle(.secondary)
+                TextField("Board name", text: $name)
+                    .textFieldStyle(.roundedBorder)
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .navigationTitle("Rename")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { dismiss() }
+                        .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+        }
+    }
+}
+
+private struct BoardReorderSheet: View {
+    @Binding var boards: [FrameAssetItem]
+    @Binding var activeBoard: FrameAssetItem?
+    @Environment(\.dismiss) private var dismiss
+
+    private let columns: [GridItem] = [
+        GridItem(.adaptive(minimum: 120), spacing: 12)
+    ]
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Drag boards to reorder them.")
+                        .font(.headline)
+                    LazyVGrid(columns: columns, spacing: 12) {
+                        ForEach(boards) { board in
+                            VStack(spacing: 8) {
+                                Image(systemName: board.iconName)
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundStyle(.primary)
+                                Text(board.displayLabel)
+                                    .font(.subheadline.weight(.semibold))
+                                    .multilineTextAlignment(.center)
+                                    .lineLimit(2)
+                                    .foregroundStyle(.primary)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 90)
+                            .padding(12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .fill(Color.secondary.opacity(0.12))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
+                            )
+                            .opacity(activeBoard?.id == board.id ? 0.6 : 1)
+                            .onDrag {
+                                activeBoard = board
+                                return NSItemProvider(
+                                    item: board.id as NSString,
+                                    typeIdentifier: UTType.text.identifier
+                                )
+                            }
+                            .onDrop(
+                                of: [UTType.text],
+                                delegate: BoardReorderDropDelegate(
+                                    item: board,
+                                    boards: $boards,
+                                    activeBoard: $activeBoard
+                                )
+                            )
+                        }
+                    }
+                }
+                .padding(20)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .navigationTitle("Reorder Boards")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { dismiss() }
+                }
+            }
+        }
+    }
+}
+
+private struct BoardReorderDropDelegate: DropDelegate {
+    let item: FrameAssetItem
+    @Binding var boards: [FrameAssetItem]
+    @Binding var activeBoard: FrameAssetItem?
+
+    func dropEntered(info: DropInfo) {
+        guard let activeBoard, activeBoard != item else { return }
+        guard let fromIndex = boards.firstIndex(of: activeBoard),
+              let toIndex = boards.firstIndex(of: item)
+        else { return }
+
+        withAnimation(.easeInOut(duration: 0.2)) {
+            boards.move(
+                fromOffsets: IndexSet(integer: fromIndex),
+                toOffset: toIndex > fromIndex ? toIndex + 1 : toIndex
+            )
+        }
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        activeBoard = nil
+        return true
     }
 }
 //
