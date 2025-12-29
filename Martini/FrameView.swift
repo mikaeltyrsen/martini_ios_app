@@ -275,20 +275,7 @@ struct FrameView: View {
             Button {
                 showingFiles = true
             } label: {
-                HStack(spacing: 6) {
-                    //Text("hey")
-                    Image(systemName: "folder")
-                    //Label("Clips", systemImage: "eye")
-
-                    if let count = filesBadgeCount, count > 0 {
-                        Text(count > 99 ? "99+" : "\(count)")
-                            .font(.caption2.weight(.bold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Capsule().fill(.martiniDefault))
-                    }
-                }
+                toolbarIconBadge(title: "Files", systemName: "folder", count: filesBadgeCount)
             }
 
 
@@ -342,22 +329,27 @@ struct FrameView: View {
                     onReload: { await loadComments(force: true) }
                 )
             } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "text.bubble")
-                    Text("Comments")
-
-                    if let count = commentsBadgeCount, count > 0 {
-                        Text(count > 99 ? "99+" : "\(count)")
-                            .font(.caption2.weight(.bold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Capsule().fill(.martiniDefault))
-                    }
-                }
+                toolbarIconBadge(title: "Comments", systemName: "text.bubble", count: commentsBadgeCount)
             }
             
             
+        }
+    }
+
+    @ViewBuilder
+    private func toolbarIconBadge(title: String, systemName: String, count: Int?) -> some View {
+        HStack(spacing: 6) {
+            Label(title, systemImage: systemName)
+                .labelStyle(.iconOnly)
+
+            if let count, count > 0 {
+                Text(count > 99 ? "99+" : "\(count)")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Capsule().fill(.martiniDefault))
+            }
         }
     }
 
