@@ -87,6 +87,7 @@ class AuthService: ObservableObject {
         case updateFrameStatus = "frames/update_status.php"
         case schedule = "schedules/fetch.php"
         case clips = "clips/fetch.php"
+        case comments = "comments/get_comments.php"
 
         var path: String { rawValue }
     }
@@ -560,6 +561,55 @@ class AuthService: ObservableObject {
 
         print("✅ Successfully fetched \(clipsResponse.clips.count) clips")
         return clipsResponse.clips
+    }
+
+    func fetchComments(creativeId: String, frameId: String?) async throws -> CommentsResponse {
+        var body: [String: Any] = [
+            "creativeId": creativeId
+        ]
+
+        if let frameId {
+            body["frameId"] = frameId
+        }
+
+        var request = try authorizedRequest(for: .comments, body: body)
+
+        let requestJSON = String(data: request.httpBody ?? Data(), encoding: .utf8) ?? "Unable to encode"
+        print("📤 Fetching comments...")
+        print("🔗 URL: \(request.url?.absoluteString ?? "unknown")")
+        print("📝 Request body: \(requestJSON)")
+
+        let (data, response) = try await performRequest(request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw AuthError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let errorBody = String(data: data, encoding: .utf8) ?? "No response body"
+            print("❌ Failed to fetch comments - Status: \(httpResponse.statusCode)")
+            print("📝 Response: \(errorBody)")
+            if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
+                logout()
+                throw AuthError.unauthorized
+            }
+            throw AuthError.requestFailed(statusCode: httpResponse.statusCode)
+        }
+
+        let responseJSON = String(data: data, encoding: .utf8) ?? "Unable to decode"
+        print("📥 Comments response received (\(httpResponse.statusCode)):")
+        print(responseJSON)
+
+        let decoder = JSONDecoder()
+        let commentsResponse = try decoder.decode(CommentsResponse.self, from: data)
+
+        guard commentsResponse.success else {
+            print("❌ Comments response failed: \(commentsResponse.error ?? "Unknown error")")
+            throw AuthError.authenticationFailedWithMessage(commentsResponse.error ?? "Failed to fetch comments")
+        }
+
+        print("✅ Successfully fetched \(commentsResponse.comments.count) comments")
+        return commentsResponse
     }
 
     func fetchProjectDetails() async throws {
