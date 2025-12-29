@@ -550,6 +550,9 @@ struct FrameView: View {
                 takePictureID: takePictureCardID,
                 takePictureAction: {
                     openScoutCamera()
+                },
+                contextMenuContent: { asset in
+                    boardContextMenu(for: asset)
                 }
             )
 
@@ -562,6 +565,36 @@ struct FrameView: View {
     private var primaryText: String? {
         if let caption: String = frame.caption, !caption.isEmpty { return caption }
         return nil
+    }
+
+    @ViewBuilder
+    private func boardContextMenu(for asset: FrameAssetItem) -> some View {
+        if asset.kind == .board {
+            let isBoardEntry = boardEntry(for: asset) != nil
+            if isBoardEntry {
+                Button("Rename") {
+                    boardRenameTarget = asset
+                    boardRenameText = asset.displayLabel
+                    showingBoardRenameSheet = true
+                }
+                Button("Reorder") {
+                    reorderBoards = boardEntries()
+                    showingBoardReorderSheet = true
+                }
+                Button("Pin board") {
+                    pinBoard(asset)
+                }
+                Button("Delete", role: .destructive) {
+                    boardDeleteTarget = asset
+                    showingBoardDeleteAlert = true
+                }
+            } else {
+                Button("Delete", role: .destructive) {
+                    boardDeleteTarget = asset
+                    showingBoardDeleteAlert = true
+                }
+            }
+        }
     }
 
     private var secondaryText: String? {
@@ -675,32 +708,7 @@ struct FrameView: View {
                         }
                         .buttonStyle(.plain)
                         .contextMenu {
-                            if asset.kind == .board {
-                                let isBoardEntry = boardEntry(for: asset) != nil
-                                if isBoardEntry {
-                                    Button("Rename") {
-                                        boardRenameTarget = asset
-                                        boardRenameText = asset.displayLabel
-                                        showingBoardRenameSheet = true
-                                    }
-                                    Button("Reorder") {
-                                        reorderBoards = boardEntries()
-                                        showingBoardReorderSheet = true
-                                    }
-                                    Button("Pin board") {
-                                        pinBoard(asset)
-                                    }
-                                    Button("Delete", role: .destructive) {
-                                        boardDeleteTarget = asset
-                                        showingBoardDeleteAlert = true
-                                    }
-                                } else {
-                                    Button("Delete", role: .destructive) {
-                                        boardDeleteTarget = asset
-                                        showingBoardDeleteAlert = true
-                                    }
-                                }
-                            }
+                            boardContextMenu(for: asset)
                         }
                         .id(asset.id)
                     }
@@ -1898,13 +1906,14 @@ extension FrameStatus {
     }
 }
 
-private struct StackedAssetScroller: View {
+private struct StackedAssetScroller<ContextMenuContent: View>: View {
     let frame: Frame
     let assetStack: [FrameAssetItem]
     @Binding var visibleAssetID: FrameAssetItem.ID?
     let primaryText: String?
     let takePictureID: String
     let takePictureAction: (() -> Void)?
+    let contextMenuContent: (FrameAssetItem) -> ContextMenuContent
 
     var body: some View {
         GeometryReader { proxy in
@@ -1925,6 +1934,9 @@ private struct StackedAssetScroller: View {
                             cardWidth: cardWidth,
                             primaryText: primaryText
                         )
+                        .contextMenu {
+                            contextMenuContent(asset)
+                        }
                         .frame(maxWidth: .infinity, alignment: .center)
                         .containerRelativeFrame(.horizontal, alignment: .center)
                         .id(asset.id)
