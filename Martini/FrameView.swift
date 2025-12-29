@@ -78,9 +78,16 @@ struct FrameView: View {
         _descriptionHeightRatio = State(initialValue: minDescriptionRatio)
     }
 
+    private var frameTitle: String {
+        if frame.frameNumber > 0 {
+            return "Frame \(frame.frameNumber)"
+        }
+        return "Frame"
+    }
+
     var body: some View {
         contentView
-            .navigationTitle("Frame \(frame.frameNumber > 0 ? String(frame.frameNumber) : "")")
+            .navigationTitle(frameTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 topToolbar
