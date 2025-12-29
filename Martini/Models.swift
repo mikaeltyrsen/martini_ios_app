@@ -1154,7 +1154,12 @@ struct Frame: Codable, Identifiable {
     var availableAssets: [FrameAssetItem] {
         var items: [FrameAssetItem] = []
 
+        let photoboardLabel = FrameAssetKind.photoboard.displayName.lowercased()
         let sortedBoards: [FrameBoard] = (boards ?? [])
+            .filter { board in
+                guard let label = board.label?.lowercased() else { return true }
+                return label != photoboardLabel
+            }
             .sorted { lhs, rhs in
                 if lhs.isPinned != rhs.isPinned {
                     return lhs.isPinned
