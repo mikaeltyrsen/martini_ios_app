@@ -547,9 +547,7 @@ class AuthService: ObservableObject {
             throw AuthError.requestFailed(statusCode: httpResponse.statusCode)
         }
 
-        let responseJSON = String(data: data, encoding: .utf8) ?? "Unable to decode"
-        print("📥 Clips response received (\(httpResponse.statusCode)):")
-        print(responseJSON)
+        print("📥 Clips response received (\(httpResponse.statusCode))")
 
         let decoder = JSONDecoder()
         let clipsResponse = try decoder.decode(ClipsResponse.self, from: data)
