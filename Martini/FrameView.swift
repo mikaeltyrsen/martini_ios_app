@@ -44,9 +44,10 @@ struct FrameView: View {
     @State private var showingScoutCamera: Bool = false
     @State private var showingScoutCameraWarning: Bool = false
     @State private var showingScoutCameraSettings: Bool = false
-    @State private var showingBoardRenameSheet: Bool = false
+    @State private var showingBoardRenameAlert: Bool = false
     @State private var boardRenameText: String = ""
     @State private var boardRenameTarget: FrameAssetItem?
+    @State private var isRenamingBoard: Bool = false
     @State private var showingBoardReorderSheet: Bool = false
     @State private var reorderBoards: [FrameAssetItem] = []
     @State private var activeReorderBoard: FrameAssetItem?
@@ -227,13 +228,6 @@ struct FrameView: View {
 
     private var boardActionContent: some View {
         statusAlertContent
-            .sheet(isPresented: $showingBoardRenameSheet) {
-                BoardRenameSheet(
-                    boardName: boardRenameTarget?.displayLabel ?? "Board",
-                    name: $boardRenameText,
-                    onSave: { renameBoard() }
-                )
-            }
             .sheet(isPresented: $showingBoardReorderSheet) {
                 BoardReorderSheet(
                     boards: $reorderBoards,
@@ -267,6 +261,29 @@ struct FrameView: View {
                 Button("OK", role: .cancel) { boardActionError = nil }
             } message: {
                 Text(boardActionError ?? "An unknown error occurred.")
+            }
+            .overlay {
+                if showingBoardRenameAlert {
+                    BoardRenameAlert(
+                        boardName: boardRenameTarget?.displayLabel ?? "Board",
+                        name: $boardRenameText,
+                        isSaving: isRenamingBoard,
+                        onCancel: {
+                            showingBoardRenameAlert = false
+                            boardRenameTarget = nil
+                        },
+                        onSave: {
+                            Task {
+                                isRenamingBoard = true
+                                let didSave = await renameBoard()
+                                isRenamingBoard = false
+                                if didSave {
+                                    showingBoardRenameAlert = false
+                                }
+                            }
+                        }
+                    )
+                }
             }
     }
 
@@ -575,7 +592,8 @@ struct FrameView: View {
                 Button("Rename") {
                     boardRenameTarget = asset
                     boardRenameText = asset.displayLabel
-                    showingBoardRenameSheet = true
+                    isRenamingBoard = false
+                    showingBoardRenameAlert = true
                 }
                 Button("Reorder") {
                     reorderBoards = boardEntries()
@@ -979,22 +997,22 @@ private extension FrameView {
         }
     }
 
-    private func renameBoard() {
-        guard let target = boardRenameTarget else { return }
+    private func renameBoard() async -> Bool {
+        guard let target = boardRenameTarget else { return false }
         guard let boardId = boardEntry(for: target)?.id else {
             boardActionError = "Board ID not found for rename."
-            return
+            return false
         }
         let trimmedLabel = boardRenameText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedLabel.isEmpty else { return }
+        guard !trimmedLabel.isEmpty else { return false }
 
-        Task {
-            do {
-                try await authService.renameBoard(frameId: frame.id, boardId: boardId, label: trimmedLabel)
-                boardRenameTarget = nil
-            } catch {
-                boardActionError = error.localizedDescription
-            }
+        do {
+            try await authService.renameBoard(frameId: frame.id, boardId: boardId, label: trimmedLabel)
+            boardRenameTarget = nil
+            return true
+        } catch {
+            boardActionError = error.localizedDescription
+            return false
         }
     }
 
@@ -2018,38 +2036,64 @@ private struct TakePictureCardView: View {
     }
 }
 
-private struct BoardRenameSheet: View {
+private struct BoardRenameAlert: View {
     let boardName: String
     @Binding var name: String
+    let isSaving: Bool
+    let onCancel: () -> Void
     let onSave: () -> Void
-    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        NavigationStack {
+        ZStack {
+            Color.black.opacity(0.45)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    if !isSaving {
+                        onCancel()
+                    }
+                }
+
             VStack(alignment: .leading, spacing: 16) {
                 Text("Rename Board")
-                    .font(.title2.weight(.semibold))
+                    .font(.title3.weight(.semibold))
                 Text("Update the label for \(boardName).")
                     .foregroundStyle(.secondary)
                 TextField("Board name", text: $name)
                     .textFieldStyle(.roundedBorder)
+
+                HStack {
+                    Button("Cancel") {
+                        onCancel()
+                    }
+                    .disabled(isSaving)
+
+                    Spacer()
+
+                    Button {
+                        onSave()
+                    } label: {
+                        if isSaving {
+                            ProgressView()
+                        } else {
+                            Text("Save")
+                        }
+                    }
+                    .disabled(isSaving || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+                .padding(.top, 8)
             }
             .padding(20)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .navigationTitle("Rename")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        onSave()
-                        dismiss()
-                    }
-                        .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
-            }
+            .frame(maxWidth: 360)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color(uiColor: .systemBackground))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(Color.primary.opacity(0.05), lineWidth: 1)
+            )
+            .shadow(radius: 12)
+            .padding(24)
         }
     }
 }
