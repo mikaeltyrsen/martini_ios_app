@@ -1386,6 +1386,113 @@ struct ClipsResponse: Codable {
     let error: String?
 }
 
+// MARK: - Comments
+
+struct Comment: Codable, Identifiable, Hashable {
+    @SafeInt var id: Int
+    @SafeOptionalInt var userId: Int?
+    let guestName: String?
+    let comment: String?
+    let marker: String?
+    let status: String?
+    let frameId: String?
+    @SafeOptionalInt var frameOrder: Int?
+    let lastUpdated: String?
+    let name: String?
+    let replies: [Comment]
+    let frameThumb: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case userId = "user_id"
+        case guestName = "guest_name"
+        case comment
+        case marker
+        case status
+        case frameId = "frame_id"
+        case frameOrder = "frame_order"
+        case lastUpdated = "last_updated"
+        case name
+        case replies
+        case frameThumb = "frame_thumb"
+    }
+
+    init(
+        id: Int,
+        userId: Int? = nil,
+        guestName: String? = nil,
+        comment: String? = nil,
+        marker: String? = nil,
+        status: String? = nil,
+        frameId: String? = nil,
+        frameOrder: Int? = nil,
+        lastUpdated: String? = nil,
+        name: String? = nil,
+        replies: [Comment] = [],
+        frameThumb: String? = nil
+    ) {
+        _id = SafeInt(wrappedValue: id)
+        _userId = SafeOptionalInt(wrappedValue: userId)
+        self.guestName = guestName
+        self.comment = comment
+        self.marker = marker
+        self.status = status
+        self.frameId = frameId
+        _frameOrder = SafeOptionalInt(wrappedValue: frameOrder)
+        self.lastUpdated = lastUpdated
+        self.name = name
+        self.replies = replies
+        self.frameThumb = frameThumb
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        _id = try container.decode(SafeInt.self, forKey: .id)
+        _userId = try container.decodeIfPresent(SafeOptionalInt.self, forKey: .userId) ?? SafeOptionalInt()
+        guestName = try container.decodeIfPresent(String.self, forKey: .guestName)
+        comment = try container.decodeIfPresent(String.self, forKey: .comment)
+        marker = try container.decodeIfPresent(String.self, forKey: .marker)
+        status = try container.decodeIfPresent(String.self, forKey: .status)
+        frameId = try container.decodeIfPresent(String.self, forKey: .frameId)
+        _frameOrder = try container.decodeIfPresent(SafeOptionalInt.self, forKey: .frameOrder) ?? SafeOptionalInt()
+        lastUpdated = try container.decodeIfPresent(String.self, forKey: .lastUpdated)
+        name = try container.decodeIfPresent(String.self, forKey: .name)
+        replies = try container.decodeIfPresent([Comment].self, forKey: .replies) ?? []
+        frameThumb = try container.decodeIfPresent(String.self, forKey: .frameThumb)
+    }
+}
+
+struct CommentsResponse: Codable {
+    @SafeBool var success: Bool
+    let comments: [Comment]
+    let currentUserId: String?
+    @SafeBool var isProjectAdmin: Bool
+    let error: String?
+
+    enum CodingKeys: String, CodingKey {
+        case success
+        case comments
+        case currentUserId = "currentUserId"
+        case isProjectAdmin
+        case error
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        _success = try container.decodeIfPresent(SafeBool.self, forKey: .success) ?? SafeBool(wrappedValue: true)
+        comments = try container.decodeIfPresent([Comment].self, forKey: .comments) ?? []
+        if let stringValue = try container.decodeIfPresent(String.self, forKey: .currentUserId) {
+            currentUserId = stringValue
+        } else if let intValue = try container.decodeIfPresent(Int.self, forKey: .currentUserId) {
+            currentUserId = String(intValue)
+        } else {
+            currentUserId = nil
+        }
+        _isProjectAdmin = try container.decodeIfPresent(SafeBool.self, forKey: .isProjectAdmin) ?? SafeBool()
+        error = try container.decodeIfPresent(String.self, forKey: .error)
+    }
+}
+
 // MARK: - Frame Assets
 
 enum FrameAssetKind: String, CaseIterable, Hashable {

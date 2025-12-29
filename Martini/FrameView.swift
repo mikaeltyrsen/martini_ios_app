@@ -27,6 +27,10 @@ struct FrameView: View {
     @State private var isLoadingClips: Bool = false
     @State private var clipsError: String?
     @State private var filesBadgeCount: Int? = nil
+    @State private var comments: [Comment] = []
+    @State private var isLoadingComments: Bool = false
+    @State private var commentsError: String?
+    @State private var commentsBadgeCount: Int? = nil
     @State private var descriptionHeightRatio: CGFloat
     @State private var dragStartRatio: CGFloat?
     @State private var descriptionScrollOffset: CGFloat = 0
@@ -126,8 +130,12 @@ struct FrameView: View {
             .onChange(of: clips) { newClips in
                 filesBadgeCount = newClips.count
             }
+            .onChange(of: comments) { newComments in
+                commentsBadgeCount = totalCommentCount(in: newComments)
+            }
             .task {
                 await loadClips(force: false)
+                await loadComments(force: false)
             }
             .onChange(of: providedFrame.id) { _ in
                 syncWithProvidedFrame()
@@ -136,6 +144,7 @@ struct FrameView: View {
                 guard newProjectId != nil else { return }
                 Task {
                     await loadClips(force: false)
+                    await loadComments(force: false)
                 }
             }
             .onReceive(authService.$frames) { frames in
@@ -278,9 +287,27 @@ struct FrameView: View {
             Spacer()
 
             NavigationLink {
-                CommentsPage(frameNumber: frame.frameNumber)
+                CommentsPage(
+                    frameNumber: frame.frameNumber,
+                    comments: comments,
+                    isLoading: isLoadingComments,
+                    errorMessage: commentsError,
+                    onReload: { await loadComments(force: true) }
+                )
             } label: {
-                Label("Comments", systemImage: "text.bubble")
+                HStack(spacing: 6) {
+                    Image(systemName: "text.bubble")
+                    Text("Comments")
+
+                    if let count = commentsBadgeCount, count > 0 {
+                        Text(count > 99 ? "99+" : "\(count)")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Capsule().fill(.martiniDefault))
+                    }
+                }
             }
             
             
@@ -621,6 +648,29 @@ struct FrameView: View {
         }
     }
 
+    private func loadComments(force: Bool) async {
+        if isLoadingComments { return }
+        if !force && !comments.isEmpty { return }
+
+        isLoadingComments = true
+        defer { isLoadingComments = false }
+
+        do {
+            let response = try await authService.fetchComments(
+                creativeId: frame.creativeId,
+                frameId: frame.id
+            )
+            guard !Task.isCancelled else { return }
+            comments = response.comments
+            commentsBadgeCount = totalCommentCount(in: response.comments)
+            commentsError = nil
+        } catch is CancellationError {
+            return
+        } catch {
+            commentsError = error.localizedDescription
+        }
+    }
+
     private func updateStatus(to status: FrameStatus) {
         guard !isUpdatingStatus else { return }
         isUpdatingStatus = true
@@ -661,10 +711,14 @@ struct FrameView: View {
         clips = []
         filesBadgeCount = nil
         clipsError = nil
+        comments = []
+        commentsBadgeCount = nil
+        commentsError = nil
         descriptionHeightRatio = minDescriptionRatio
         closeStatusSheet()
         Task {
             await loadClips(force: true)
+            await loadComments(force: true)
         }
     }
 
@@ -780,6 +834,12 @@ private extension FrameView {
             return CGFloat(value)
         }
         return 16.0 / 9.0
+    }
+
+    private func totalCommentCount(in comments: [Comment]) -> Int {
+        comments.reduce(0) { partial, comment in
+            partial + 1 + totalCommentCount(in: comment.replies)
+        }
     }
 
     @ViewBuilder
@@ -944,33 +1004,51 @@ private struct CommentsSheet: View {
 
 private struct CommentsPage: View {
     let frameNumber: Int
+    let comments: [Comment]
+    let isLoading: Bool
+    let errorMessage: String?
+    let onReload: () async -> Void
     @State private var newCommentText: String = ""
     @FocusState private var composeFieldFocused: Bool
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                ForEach(Array(0..<30), id: \.self) { index in
-                    let idx: Int = index + 1
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Circle().fill(Color.martiniDefaultColor.opacity(0.2)).frame(width: 28, height: 28)
-                            Text("User \(idx)").font(.headline)
-                            Spacer()
-                            Text("2h ago").font(.caption).foregroundStyle(.secondary)
+        Group {
+            if isLoading && comments.isEmpty {
+                VStack(spacing: 12) {
+                    ProgressView()
+                    Text("Loading comments...")
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if comments.isEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: "text.bubble")
+                        .font(.system(size: 40))
+                        .foregroundStyle(.tertiary)
+                    Text(errorMessage ?? "No comments yet.")
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        ForEach(comments) { comment in
+                            CommentThreadView(comment: comment)
+                                .padding(.bottom, 4)
                         }
-                        Text("This is a placeholder comment for frame \(frameNumber). It can wrap across multiple lines to demonstrate scrolling.")
-                            .font(.body)
-                        Divider()
                     }
+                    .padding(.horizontal)
+                    .padding(.top)
+                    .padding(.bottom, 24)
                 }
             }
-            .padding(.horizontal)
-            .padding(.top)
-            .padding(.bottom, 24)
         }
-        .navigationTitle("Comments")
+        .navigationTitle("Comments for Frame \(frameNumber)")
         .navigationBarTitleDisplayMode(.inline)
+        .task {
+            await onReload()
+        }
         .toolbar {
             ToolbarItemGroup(placement: .bottomBar) {
                 HStack(spacing: 8) {
@@ -1012,6 +1090,59 @@ private struct CommentsPage: View {
             newCommentText = ""
             composeFieldFocused = false
         }
+    }
+}
+
+private struct CommentThreadView: View {
+    let comment: Comment
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            CommentRow(comment: comment, isReply: false)
+
+            if !comment.replies.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(comment.replies) { reply in
+                        CommentRow(comment: reply, isReply: true)
+                    }
+                }
+                .padding(.leading, 24)
+            }
+        }
+    }
+}
+
+private struct CommentRow: View {
+    let comment: Comment
+    let isReply: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(Color.martiniDefaultColor.opacity(isReply ? 0.12 : 0.2))
+                    .frame(width: isReply ? 22 : 28, height: isReply ? 22 : 28)
+                Text(displayName)
+                    .font(isReply ? .subheadline.weight(.semibold) : .headline)
+                Spacer()
+                if let lastUpdated = comment.lastUpdated, !lastUpdated.isEmpty {
+                    Text(lastUpdated)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if let body = comment.comment, !body.isEmpty {
+                Text(body)
+                    .font(isReply ? .subheadline : .body)
+            }
+
+            Divider()
+        }
+    }
+
+    private var displayName: String {
+        comment.name ?? comment.guestName ?? "Unknown"
     }
 }
 
