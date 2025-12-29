@@ -608,33 +608,35 @@ struct FrameView: View {
 
     @ViewBuilder
     private func boardContextMenu(for asset: FrameAssetItem) -> some View {
-        guard asset.kind == .board || asset.kind == .photoboard else { return }
-
-        let isBoardEntry = boardEntry(for: asset) != nil
-        if isBoardEntry {
-            Button("Rename") {
-                boardRenameTarget = asset
-                boardRenameText = asset.displayLabel
-                isRenamingBoard = false
-                showingBoardRenameAlert = true
-            }
-            Button("Reorder") {
-                enterBoardReorderMode()
-            }
-            if asset.kind == .board {
-                Button("Pin board") {
-                    pinBoard(asset)
+        if asset.kind == .board || asset.kind == .photoboard {
+            let isBoardEntry = boardEntry(for: asset) != nil
+            if isBoardEntry {
+                Button("Rename") {
+                    boardRenameTarget = asset
+                    boardRenameText = asset.displayLabel
+                    isRenamingBoard = false
+                    showingBoardRenameAlert = true
+                }
+                Button("Reorder") {
+                    enterBoardReorderMode()
+                }
+                if asset.kind == .board {
+                    Button("Pin board") {
+                        pinBoard(asset)
+                    }
+                }
+                Button("Delete", role: .destructive) {
+                    boardDeleteTarget = asset
+                    showingBoardDeleteAlert = true
+                }
+            } else {
+                Button("Delete", role: .destructive) {
+                    boardDeleteTarget = asset
+                    showingBoardDeleteAlert = true
                 }
             }
-            Button("Delete", role: .destructive) {
-                boardDeleteTarget = asset
-                showingBoardDeleteAlert = true
-            }
         } else {
-            Button("Delete", role: .destructive) {
-                boardDeleteTarget = asset
-                showingBoardDeleteAlert = true
-            }
+            EmptyView()
         }
     }
 
