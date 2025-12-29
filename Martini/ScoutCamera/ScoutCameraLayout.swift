@@ -210,49 +210,50 @@ struct ScoutCameraLayout: View {
     
     
     private var topInfoBar: some View {
-        HStack {
-            HStack(spacing: 6) {
-                Button("Cancel") {
-                    dismiss()
-                }
-                .foregroundStyle(.white)
-                .font(.caption.weight(.semibold))
-                Button {
-                    isCameraSelectionPresented = true
-                } label: {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(selectedCameraLabel)
-                        Text(selectedModeLabel)
-                            .foregroundStyle(.white.opacity(0.7))
+        ZStack {
+            HStack {
+                HStack(spacing: 6) {
+                    Button("Cancel") {
+                        dismiss()
                     }
-                    .font(.caption)
                     .foregroundStyle(.white)
+                    .font(.caption.weight(.semibold))
+                    Button {
+                        isCameraSelectionPresented = true
+                    } label: {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(selectedCameraLabel)
+                            Text(selectedModeLabel)
+                                .foregroundStyle(.white.opacity(0.7))
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.white)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
+                Spacer()
+                VStack(alignment: .trailing, spacing: 10) {
+                    Button {
+                        isLensPackPresented = true
+                    } label: {
+                        VStack(alignment: .trailing, spacing: 4) {
+                            Text("Lens Pack")
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(.white.opacity(0.7))
+                            Text(selectedLensPackLabel)
+                                .font(.caption)
+                                .foregroundStyle(.white)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
             }
-            Spacer()
             VStack(spacing: 4) {
                 Text("\(motionManager.headingText) \(Int(motionManager.headingDegrees))°")
                 Text("Tilt \(Int(motionManager.tiltDegrees))°")
             }
             .font(.caption.weight(.semibold))
             .foregroundStyle(.white)
-            Spacer()
-            VStack(alignment: .trailing, spacing: 10) {
-                Button {
-                    isLensPackPresented = true
-                } label: {
-                    VStack(alignment: .trailing, spacing: 4) {
-                        Text("Lens Pack")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.white.opacity(0.7))
-                        Text(selectedLensPackLabel)
-                            .font(.caption)
-                            .foregroundStyle(.white)
-                    }
-                }
-                .buttonStyle(.plain)
-            }
         }
     }
 
@@ -629,15 +630,33 @@ struct ScoutCameraLayout: View {
     }
 
     private var bottomControlBar: some View {
-        HStack {
-            Button {
-                viewModel.selectPreviousLens()
-            } label: {
-                Image(systemName: "minus.circle")
-                    .font(.system(size: 30, weight: .semibold))
+        ZStack {
+            HStack {
+                Button {
+                    viewModel.selectPreviousLens()
+                } label: {
+                    Image(systemName: "minus.circle")
+                        .font(.system(size: 30, weight: .semibold))
+                }
+                .foregroundStyle(.white)
+                Spacer()
+
+                HStack(spacing: 12) {
+                    Button {
+                        viewModel.capturePhoto()
+                    } label: {
+                        Image(systemName: "camera.circle.fill")
+                            .font(.system(size: 30, weight: .regular))
+                    }
+                    Button {
+                        viewModel.selectNextLens()
+                    } label: {
+                        Image(systemName: "plus.circle")
+                            .font(.system(size: 30, weight: .semibold))
+                    }
+                    .foregroundStyle(.white)
+                }
             }
-            .foregroundStyle(.white)
-            Spacer()
             VStack(spacing: 4) {
                 VStack() {
                     Text(lensInfoText)
@@ -654,30 +673,6 @@ struct ScoutCameraLayout: View {
 //                }
             }
             .foregroundStyle(.white)
-            Spacer()
-            
-            HStack(spacing: 12) {
-                Button {
-                    viewModel.capturePhoto()
-                } label: {
-//                    Circle()
-//                        .fill(Color.white)
-//                        .frame(width: 72, height: 72)
-//                        .overlay(
-//                            Circle()
-//                                .stroke(Color.black.opacity(0.6), lineWidth: 3)
-//                        )
-                    Image(systemName: "camera.circle.fill")
-                        .font(.system(size: 30, weight: .regular))
-                }
-                Button {
-                    viewModel.selectNextLens()
-                } label: {
-                    Image(systemName: "plus.circle")
-                        .font(.system(size: 30, weight: .semibold))
-                }
-                .foregroundStyle(.white)
-            }
         }
     }
 
