@@ -22,10 +22,10 @@ struct ScoutCameraLayout: View {
     @AppStorage("scoutCameraDebugMode") private var debugMode = true
     private let previewMargin: CGFloat = 40
 
-    init(shootId: String, frameId: String, creativeId: String, targetAspectRatio: CGFloat) {
+    init(projectId: String, frameId: String, creativeId: String, targetAspectRatio: CGFloat) {
         self.targetAspectRatio = targetAspectRatio
         let viewModel = ScoutCameraViewModel(
-            shootId: shootId,
+            projectId: projectId,
             frameId: frameId,
             creativeId: creativeId,
             targetAspectRatio: targetAspectRatio
