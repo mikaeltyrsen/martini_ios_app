@@ -17,9 +17,23 @@ struct QRScannerView: View {
     let onCodeScanned: (String) -> Void
     
     var body: some View {
-        ZStack {
+        ZStack(alignment: .topLeading) {
             CameraPreview(session: scanner.captureSession)
                 .edgesIgnoringSafeArea(.all)
+
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white)
+                    .padding(10)
+                    .background(Color.black.opacity(0.7))
+                    .clipShape(Circle())
+                    .accessibilityLabel("Close camera")
+            }
+            .padding(.top, 16)
+            .padding(.leading, 16)
             
             VStack {
                 Spacer()
