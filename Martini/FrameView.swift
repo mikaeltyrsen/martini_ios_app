@@ -52,6 +52,7 @@ struct FrameView: View {
     @State private var activeReorderBoard: FrameAssetItem?
     @State private var showingBoardDeleteAlert: Bool = false
     @State private var boardDeleteTarget: FrameAssetItem?
+    @State private var boardActionError: String?
 
     private let minDescriptionRatio: CGFloat = 0.35
     private let dimmerAnim = Animation.easeInOut(duration: 0.28)
@@ -229,13 +230,15 @@ struct FrameView: View {
             .sheet(isPresented: $showingBoardRenameSheet) {
                 BoardRenameSheet(
                     boardName: boardRenameTarget?.displayLabel ?? "Board",
-                    name: $boardRenameText
+                    name: $boardRenameText,
+                    onSave: { renameBoard() }
                 )
             }
             .sheet(isPresented: $showingBoardReorderSheet) {
                 BoardReorderSheet(
                     boards: $reorderBoards,
-                    activeBoard: $activeReorderBoard
+                    activeBoard: $activeReorderBoard,
+                    onSave: { saveBoardReorder() }
                 )
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
@@ -246,9 +249,24 @@ struct FrameView: View {
                 presenting: boardDeleteTarget
             ) { _ in
                 Button("Cancel", role: .cancel) {}
-                Button("Continue", role: .destructive) {}
+                Button("Continue", role: .destructive) {
+                    if let target = boardDeleteTarget {
+                        deleteBoard(target)
+                    }
+                }
             } message: { target in
                 Text("Are you sure you want to remove \(target.displayLabel)?")
+            }
+            .alert(
+                "Unable to Update Board",
+                isPresented: Binding(
+                    get: { boardActionError != nil },
+                    set: { if !$0 { boardActionError = nil } }
+                )
+            ) {
+                Button("OK", role: .cancel) { boardActionError = nil }
+            } message: {
+                Text(boardActionError ?? "An unknown error occurred.")
             }
     }
 
@@ -657,19 +675,31 @@ struct FrameView: View {
                         }
                         .buttonStyle(.plain)
                         .contextMenu {
-                            Button("Rename") {
-                                boardRenameTarget = asset
-                                boardRenameText = asset.displayLabel
-                                showingBoardRenameSheet = true
-                            }
-                            Button("Reorder") {
-                                reorderBoards = assetStack
-                                showingBoardReorderSheet = true
-                            }
-                            Button("Pin board") {}
-                            Button("Delete", role: .destructive) {
-                                boardDeleteTarget = asset
-                                showingBoardDeleteAlert = true
+                            if asset.kind == .board {
+                                let isBoardEntry = boardEntry(for: asset) != nil
+                                if isBoardEntry {
+                                    Button("Rename") {
+                                        boardRenameTarget = asset
+                                        boardRenameText = asset.displayLabel
+                                        showingBoardRenameSheet = true
+                                    }
+                                    Button("Reorder") {
+                                        reorderBoards = boardEntries()
+                                        showingBoardReorderSheet = true
+                                    }
+                                    Button("Pin board") {
+                                        pinBoard(asset)
+                                    }
+                                    Button("Delete", role: .destructive) {
+                                        boardDeleteTarget = asset
+                                        showingBoardDeleteAlert = true
+                                    }
+                                } else {
+                                    Button("Delete", role: .destructive) {
+                                        boardDeleteTarget = asset
+                                        showingBoardDeleteAlert = true
+                                    }
+                                }
                             }
                         }
                         .id(asset.id)
@@ -928,6 +958,96 @@ private extension FrameView {
             return CGFloat(value)
         }
         return 16.0 / 9.0
+    }
+
+    private func boardEntry(for asset: FrameAssetItem) -> FrameBoard? {
+        frame.boards?.first { $0.id == asset.id }
+    }
+
+    private func boardEntries() -> [FrameAssetItem] {
+        let boardIds = Set(frame.boards?.map(\.id) ?? [])
+        return assetStack.filter { asset in
+            asset.kind == .board && boardIds.contains(asset.id)
+        }
+    }
+
+    private func renameBoard() {
+        guard let target = boardRenameTarget else { return }
+        guard let boardId = boardEntry(for: target)?.id else {
+            boardActionError = "Board ID not found for rename."
+            return
+        }
+        let trimmedLabel = boardRenameText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedLabel.isEmpty else { return }
+
+        Task {
+            do {
+                try await authService.renameBoard(frameId: frame.id, boardId: boardId, label: trimmedLabel)
+                boardRenameTarget = nil
+            } catch {
+                boardActionError = error.localizedDescription
+            }
+        }
+    }
+
+    private func saveBoardReorder() {
+        let boardsToReorder = reorderBoards
+        guard !boardsToReorder.isEmpty else { return }
+
+        let orders: [[String: Any]] = boardsToReorder.enumerated().map { index, board in
+            [
+                "boardId": board.id,
+                "order": index + 1
+            ]
+        }
+
+        Task {
+            do {
+                try await authService.reorderBoards(frameId: frame.id, orders: orders)
+                activeReorderBoard = nil
+            } catch {
+                boardActionError = error.localizedDescription
+            }
+        }
+    }
+
+    private func pinBoard(_ asset: FrameAssetItem) {
+        guard let boardId = boardEntry(for: asset)?.id else {
+            boardActionError = "Board ID not found for pinning."
+            return
+        }
+
+        Task {
+            do {
+                try await authService.pinBoard(frameId: frame.id, boardId: boardId)
+            } catch {
+                boardActionError = error.localizedDescription
+            }
+        }
+    }
+
+    private func deleteBoard(_ asset: FrameAssetItem) {
+        if let boardId = boardEntry(for: asset)?.id {
+            Task {
+                do {
+                    try await authService.deleteBoard(frameId: frame.id, boardId: boardId)
+                    boardDeleteTarget = nil
+                } catch {
+                    boardActionError = error.localizedDescription
+                }
+            }
+            return
+        }
+
+        let fallbackLabel = "Storyboard"
+        Task {
+            do {
+                try await authService.removeBoardImage(frameId: frame.id, boardLabel: fallbackLabel)
+                boardDeleteTarget = nil
+            } catch {
+                boardActionError = error.localizedDescription
+            }
+        }
     }
 
     private func totalCommentCount(in comments: [Comment]) -> Int {
@@ -1889,6 +2009,7 @@ private struct TakePictureCardView: View {
 private struct BoardRenameSheet: View {
     let boardName: String
     @Binding var name: String
+    let onSave: () -> Void
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -1910,7 +2031,10 @@ private struct BoardRenameSheet: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { dismiss() }
+                    Button("Save") {
+                        onSave()
+                        dismiss()
+                    }
                         .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
@@ -1921,6 +2045,7 @@ private struct BoardRenameSheet: View {
 private struct BoardReorderSheet: View {
     @Binding var boards: [FrameAssetItem]
     @Binding var activeBoard: FrameAssetItem?
+    let onSave: () -> Void
     @Environment(\.dismiss) private var dismiss
 
     private let columns: [GridItem] = [
@@ -1984,7 +2109,10 @@ private struct BoardReorderSheet: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { dismiss() }
+                    Button("Save") {
+                        onSave()
+                        dismiss()
+                    }
                 }
             }
         }

@@ -85,6 +85,8 @@ class AuthService: ObservableObject {
         case creatives = "creatives/get_creatives.php"
         case frames = "frames/get.php"
         case updateFrameStatus = "frames/update_status.php"
+        case updateBoard = "frames/update_board.php"
+        case removeImage = "frames/remove_image.php"
         case schedule = "schedules/fetch.php"
         case clips = "clips/fetch.php"
         case comments = "comments/get_comments.php"
@@ -778,6 +780,151 @@ class AuthService: ObservableObject {
 
         publishFrameUpdate(frameId: updatedFrame.id, context: .localStatusChange)
         return updatedFrame
+    }
+
+    func renameBoard(frameId: String, boardId: String, label: String) async throws {
+        guard let projectId else {
+            throw AuthError.noAuth
+        }
+
+        let body: [String: Any] = [
+            "projectId": projectId,
+            "frameId": frameId,
+            "action": "rename",
+            "boardId": boardId,
+            "label": label
+        ]
+
+        let data = try await sendBoardRequest(body: body, logLabel: "Renaming board")
+        let response = try JSONDecoder().decode(UpdateBoardResponse.self, from: data)
+        try await applyBoardUpdate(response, fallbackFrameId: frameId)
+    }
+
+    func deleteBoard(frameId: String, boardId: String) async throws {
+        guard let projectId else {
+            throw AuthError.noAuth
+        }
+
+        let body: [String: Any] = [
+            "projectId": projectId,
+            "frameId": frameId,
+            "action": "delete",
+            "boardId": boardId
+        ]
+
+        let data = try await sendBoardRequest(body: body, logLabel: "Deleting board")
+        let response = try JSONDecoder().decode(UpdateBoardResponse.self, from: data)
+        try await applyBoardUpdate(response, fallbackFrameId: frameId)
+    }
+
+    func reorderBoards(frameId: String, orders: [[String: Any]]) async throws {
+        guard let projectId else {
+            throw AuthError.noAuth
+        }
+
+        let body: [String: Any] = [
+            "projectId": projectId,
+            "frameId": frameId,
+            "action": "reorder",
+            "orders": orders
+        ]
+
+        let data = try await sendBoardRequest(body: body, logLabel: "Reordering boards")
+        let response = try JSONDecoder().decode(UpdateBoardResponse.self, from: data)
+        try await applyBoardUpdate(response, fallbackFrameId: frameId)
+    }
+
+    func pinBoard(frameId: String, boardId: String) async throws {
+        guard let projectId else {
+            throw AuthError.noAuth
+        }
+
+        let body: [String: Any] = [
+            "projectId": projectId,
+            "frameId": frameId,
+            "action": "pin",
+            "boardId": boardId
+        ]
+
+        let data = try await sendBoardRequest(body: body, logLabel: "Pinning board")
+        let response = try JSONDecoder().decode(UpdateBoardResponse.self, from: data)
+        try await applyBoardUpdate(response, fallbackFrameId: frameId)
+    }
+
+    func removeBoardImage(frameId: String, boardLabel: String) async throws {
+        guard let projectId else {
+            throw AuthError.noAuth
+        }
+
+        let body: [String: Any] = [
+            "projectId": projectId,
+            "frameId": frameId,
+            "board": boardLabel
+        ]
+
+        let data = try await sendBoardRequest(for: .removeImage, body: body, logLabel: "Removing board image")
+        let response = try JSONDecoder().decode(BasicResponse.self, from: data)
+        guard response.success else {
+            throw AuthError.authenticationFailedWithMessage(response.error ?? "Failed to remove board image")
+        }
+        try await fetchFrames()
+    }
+
+    private func sendBoardRequest(
+        for endpoint: APIEndpoint = .updateBoard,
+        body: [String: Any],
+        logLabel: String
+    ) async throws -> Data {
+        var request = try authorizedRequest(for: endpoint, body: body)
+
+        let requestJSON = String(data: request.httpBody ?? Data(), encoding: .utf8) ?? "Unable to encode"
+        print("📤 \(logLabel)...")
+        print("🔗 URL: \(request.url?.absoluteString ?? "unknown")")
+        print("📝 Request body: \(requestJSON)")
+
+        let (data, response) = try await performRequest(request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw AuthError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let errorBody = String(data: data, encoding: .utf8) ?? "No response body"
+            print("❌ Failed to update board - Status: \(httpResponse.statusCode)")
+            print("📝 Response: \(errorBody)")
+            if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
+                logout()
+                throw AuthError.unauthorized
+            }
+            throw AuthError.requestFailed(statusCode: httpResponse.statusCode)
+        }
+
+        let responseJSON = String(data: data, encoding: .utf8) ?? "Unable to decode"
+        print("📥 Board response received (\(httpResponse.statusCode)):")
+        print(responseJSON)
+
+        return data
+    }
+
+    private func applyBoardUpdate(_ response: UpdateBoardResponse, fallbackFrameId: String) async throws {
+        guard response.success else {
+            throw AuthError.authenticationFailedWithMessage(response.error ?? "Failed to update board")
+        }
+
+        guard let boards = response.boards else {
+            try await fetchFrames()
+            return
+        }
+
+        let frameId = response.resolvedId ?? fallbackFrameId
+        guard let index = frames.firstIndex(where: { $0.id == frameId }) else { return }
+
+        let mainBoardType = response.mainBoardType ?? frames[index].mainBoardType
+        frames[index] = frames[index].updatingBoards(boards, mainBoardType: mainBoardType)
+
+        if let projectId {
+            cacheFrames(frames, for: projectId)
+        }
     }
 
     // Logout and clear auth data
