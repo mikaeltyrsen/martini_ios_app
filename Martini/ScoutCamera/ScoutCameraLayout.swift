@@ -19,6 +19,7 @@ struct ScoutCameraLayout: View {
     @State private var lensToastMessage: String?
     @State private var showLensToast = false
     @State private var previewOrientation: AVCaptureVideoOrientation = .landscapeRight
+    @AppStorage("scoutCameraDebugMode") private var debugMode = true
     private let previewMargin: CGFloat = 40
 
     init(projectId: String, frameId: String, targetAspectRatio: CGFloat) {
@@ -43,7 +44,7 @@ struct ScoutCameraLayout: View {
 
                     VStack(spacing: 12) {
                         topInfoBar
-                        if AppConfig.debugMode {
+                        if debugMode {
                             debugBar
                         }
                         Spacer()
@@ -184,6 +185,17 @@ struct ScoutCameraLayout: View {
                         .foregroundStyle(isCalibrationActive ? .white.opacity(0.7) : .gray)
                 }
                 .buttonStyle(.plain)
+
+                Button {
+                    debugMode.toggle()
+                } label: {
+                    Image(systemName: debugMode ? "ladybug.fill" : "ladybug")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(debugMode ? .white.opacity(0.7) : .gray)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Debug Overlay")
+                .accessibilityValue(debugMode ? "On" : "Off")
             }
             //.buttonStyle(.plain)
             Spacer()
