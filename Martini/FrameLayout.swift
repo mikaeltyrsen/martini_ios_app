@@ -272,10 +272,10 @@ struct FrameLayout: View {
         }
 
         return GeometryReader { geo in
-            let minDimension = min(geo.size.width, geo.size.height)
-            let fontSize = max(14, min(minDimension * 0.06, 28))
-            let horizontalPadding = minDimension * 0.08
-            let verticalPadding = minDimension * 0.05
+            let referenceWidth = geo.size.width
+            let fontSize = max(14, min(referenceWidth * 0.06, 28))
+            let horizontalPadding = referenceWidth * 0.08
+            let verticalPadding = referenceWidth * 0.05
 
             captionText
                 .font(.system(size: fontSize, weight: .semibold))
