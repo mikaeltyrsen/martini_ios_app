@@ -86,57 +86,52 @@ struct FrameView: View {
     }
 
     var body: some View {
-        let view = contentView
-            .navigationTitle(frameTitle)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                topToolbar
-                bottomToolbar
-            }
-            .alert(
-                "Unable to Update Status",
-                isPresented: statusUpdateAlertBinding
-            ) {
-                Button("OK", role: .cancel) { statusUpdateError = nil }
+        fullContent
+    }
+
+    private var fullContent: some View {
+        scoutCameraContent
+            .alert("Scout Camera Setup Needed", isPresented: $showingScoutCameraWarning) {
+                Button("Cancel", role: .cancel) {}
+                Button("Go To Settings") {
+                    showingScoutCameraSettings = true
+                }
             } message: {
-                Text(statusUpdateError ?? "An unknown error occurred.")
+                Text("Select at least one camera and lens in settings to use Scout Camera.")
             }
-            .sheet(isPresented: $showingFiles) {
-                FilesSheet(
-                    frame: frame,
-                    clips: $clips,
-                    isLoading: $isLoadingClips,
-                    errorMessage: $clipsError,
-                    onReload: { await loadClips(force: true) }
-                )
-                .presentationDetents([.fraction(0.25), .medium, .large], selection: $filesSheetDetent)
-                .presentationDragIndicator(.visible)
-            }
-            .onChange(of: showingFiles) { isShowing in
-                if isShowing {
-                    filesSheetDetent = .medium
+    }
+
+    private var scoutCameraContent: some View {
+        overlayContent
+            .fullScreenCover(isPresented: $showingScoutCamera) {
+                if let projectId = authService.projectId {
+                    ScoutCameraLayout(
+                        projectId: projectId,
+                        frameId: frame.id,
+                        targetAspectRatio: frameAspectRatio
+                    )
+                    .environmentObject(authService)
                 }
             }
-            .onChange(of: assetOrder) { (newOrder: [FrameAssetKind]) in
-                let newStack: [FrameAssetItem] = FrameView.orderedAssets(for: frame, order: newOrder)
-                assetStack = newStack
-                if visibleAssetID == nil { visibleAssetID = newStack.first?.id }
+            .sheet(isPresented: $showingScoutCameraSettings) {
+                ScoutCameraSettingsSheet()
+                    .environmentObject(authService)
             }
-            .onChange(of: assetStack) { (newStack: [FrameAssetItem]) in
-                assetOrder = newStack.map(\.kind)
-                let newIDs = Set(newStack.map(\.id))
-                if let currentID = visibleAssetID, !newIDs.contains(currentID), currentID != takePictureCardID {
-                    visibleAssetID = newStack.first?.id
-                } else if visibleAssetID == nil, let first: FrameAssetItem.ID = newStack.first?.id {
-                    visibleAssetID = first
-                }
+    }
+
+    private var overlayContent: some View {
+        eventDrivenContent
+            .overlay(alignment: .center) {
+                fullscreenOverlay
             }
-            .onChange(of: clips) { newClips in
-                filesBadgeCount = newClips.count
+            .overlay(alignment: .bottom) {
+                statusSheetOverlay
             }
-            .onChange(of: comments) { newComments in
-                commentsBadgeCount = totalCommentCount(in: newComments)
-            }
+            .animation(.easeInOut(duration: 0.25), value: fullscreenCoordinator?.configuration?.id)
+    }
+
+    private var eventDrivenContent: some View {
+        badgeContent
             .task {
                 await loadClips(force: false)
                 await loadComments(force: false)
@@ -170,37 +165,76 @@ struct FrameView: View {
                     await loadClips(force: true)
                 }
             }
-            .overlay(alignment: .center) {
-                fullscreenOverlay
-            }
-            .overlay(alignment: .bottom) {
-                statusSheetOverlay
-            }
-            .animation(.easeInOut(duration: 0.25), value: fullscreenCoordinator?.configuration?.id)
-            .fullScreenCover(isPresented: $showingScoutCamera) {
-                if let projectId = authService.projectId {
-                    ScoutCameraLayout(
-                        projectId: projectId,
-                        frameId: frame.id,
-                        targetAspectRatio: frameAspectRatio
-                    )
-                    .environmentObject(authService)
-                }
-            }
-            .sheet(isPresented: $showingScoutCameraSettings) {
-                ScoutCameraSettingsSheet()
-                    .environmentObject(authService)
-            }
-            .alert("Scout Camera Setup Needed", isPresented: $showingScoutCameraWarning) {
-                Button("Cancel", role: .cancel) {}
-                Button("Go To Settings") {
-                    showingScoutCameraSettings = true
-                }
-            } message: {
-                Text("Select at least one camera and lens in settings to use Scout Camera.")
-            }
+    }
 
-        return view
+    private var badgeContent: some View {
+        assetOrderContent
+            .onChange(of: clips) { newClips in
+                filesBadgeCount = newClips.count
+            }
+            .onChange(of: comments) { newComments in
+                commentsBadgeCount = totalCommentCount(in: newComments)
+            }
+    }
+
+    private var assetOrderContent: some View {
+        filesSheetContent
+            .onChange(of: assetOrder) { (newOrder: [FrameAssetKind]) in
+                let newStack: [FrameAssetItem] = FrameView.orderedAssets(for: frame, order: newOrder)
+                assetStack = newStack
+                if visibleAssetID == nil { visibleAssetID = newStack.first?.id }
+            }
+            .onChange(of: assetStack) { (newStack: [FrameAssetItem]) in
+                assetOrder = newStack.map(\.kind)
+                let newIDs = Set(newStack.map(\.id))
+                if let currentID = visibleAssetID, !newIDs.contains(currentID), currentID != takePictureCardID {
+                    visibleAssetID = newStack.first?.id
+                } else if visibleAssetID == nil, let first: FrameAssetItem.ID = newStack.first?.id {
+                    visibleAssetID = first
+                }
+            }
+    }
+
+    private var filesSheetContent: some View {
+        statusAlertContent
+            .sheet(isPresented: $showingFiles) {
+                FilesSheet(
+                    frame: frame,
+                    clips: $clips,
+                    isLoading: $isLoadingClips,
+                    errorMessage: $clipsError,
+                    onReload: { await loadClips(force: true) }
+                )
+                .presentationDetents([.fraction(0.25), .medium, .large], selection: $filesSheetDetent)
+                .presentationDragIndicator(.visible)
+            }
+            .onChange(of: showingFiles) { isShowing in
+                if isShowing {
+                    filesSheetDetent = .medium
+                }
+            }
+    }
+
+    private var statusAlertContent: some View {
+        baseContent
+            .alert(
+                "Unable to Update Status",
+                isPresented: statusUpdateAlertBinding
+            ) {
+                Button("OK", role: .cancel) { statusUpdateError = nil }
+            } message: {
+                Text(statusUpdateError ?? "An unknown error occurred.")
+            }
+    }
+
+    private var baseContent: some View {
+        contentView
+            .navigationTitle(frameTitle)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                topToolbar
+                bottomToolbar
+            }
     }
 
     private var statusUpdateAlertBinding: Binding<Bool> {
