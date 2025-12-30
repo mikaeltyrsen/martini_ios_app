@@ -223,7 +223,7 @@ struct FrameView: View {
                 .presentationDragIndicator(.visible)
             }
             .sheet(item: $selectedBoardPreview) { previewItem in
-                BoardPreviewView(url: previewItem.url)
+                BoardPreviewView(url: previewItem.url, isVideo: previewItem.isVideo)
             }
             .onChange(of: showingFiles) { isShowing in
                 if isShowing {
@@ -1269,7 +1269,7 @@ private extension FrameView {
 
     private func openBoardPreview(_ asset: FrameAssetItem) {
         guard let url = asset.url else { return }
-        selectedBoardPreview = BoardPreviewItem(url: url)
+        selectedBoardPreview = BoardPreviewItem(url: url, isVideo: asset.isVideo)
     }
 
     @ViewBuilder
@@ -1719,24 +1719,29 @@ private struct QuickLookPreview: UIViewControllerRepresentable {
 
 private struct BoardPreviewView: View {
     let url: URL
+    let isVideo: Bool
 
     var body: some View {
         VStack {
-            CachedAsyncImage(url: url) { phase in
-                switch phase {
-                case let .success(image):
-                    image
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                case .empty:
-                    ProgressView()
-                case .failure:
-                    Text("Unable to load image.")
-                        .foregroundStyle(.secondary)
-                @unknown default:
-                    Text("Unable to load image.")
-                        .foregroundStyle(.secondary)
+            if isVideo {
+                CachedVideoPlayerView(url: url)
+            } else {
+                CachedAsyncImage(url: url) { phase in
+                    switch phase {
+                    case let .success(image):
+                        image
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    case .empty:
+                        ProgressView()
+                    case .failure:
+                        Text("Unable to load image.")
+                            .foregroundStyle(.secondary)
+                    @unknown default:
+                        Text("Unable to load image.")
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
         }
@@ -1747,6 +1752,7 @@ private struct BoardPreviewView: View {
 private struct BoardPreviewItem: Identifiable {
     let id = UUID()
     let url: URL
+    let isVideo: Bool
 }
 
 private struct ShareItem: Identifiable {
