@@ -21,6 +21,7 @@ struct ScoutCameraLayout: View {
     @State private var lensToastMessage: String?
     @State private var showLensToast = false
     @State private var previewOrientation: AVCaptureVideoOrientation = .landscapeRight
+    @State private var showReferenceOverlay = false
     @AppStorage("scoutCameraDebugMode") private var debugMode = true
     private let previewMargin: CGFloat = 40
 
@@ -231,6 +232,18 @@ struct ScoutCameraLayout: View {
                         .foregroundStyle(isCalibrationActive ? .white.opacity(0.7) : .gray)
                 }
                 .buttonStyle(.plain)
+
+                Button {
+                    showReferenceOverlay.toggle()
+                } label: {
+                    Image(systemName: showReferenceOverlay ? "photo.fill" : "photo")
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(showReferenceOverlay ? .white.opacity(0.7) : .gray)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Reference Image")
+                .accessibilityValue(showReferenceOverlay ? "On" : "Off")
+                .disabled(referenceImageURL == nil)
 
                 Button {
                     debugMode.toggle()
@@ -780,6 +793,14 @@ struct ScoutCameraLayout: View {
                         .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
                 }
             }
+            .overlay(alignment: .bottomTrailing) {
+                if showReferenceOverlay, let referenceImageURL {
+                    let referenceSize = min(proxy.size.width, proxy.size.height) * 0.28
+                    referenceImagePreview(url: referenceImageURL)
+                        .frame(width: referenceSize, height: referenceSize)
+                        .padding(12)
+                }
+            }
         }
         .aspectRatio(viewModel.sensorAspectRatio ?? targetAspectRatio, contentMode: .fit)
     }
@@ -858,6 +879,46 @@ struct ScoutCameraLayout: View {
         }
         .ignoresSafeArea()
         .allowsHitTesting(true)
+    }
+
+    private var referenceImageURL: URL? {
+        guard let frame = authService.frames.first(where: { $0.id == frameId }) else {
+            return nil
+        }
+        if let pinnedBoard = frame.boards?.first(where: { $0.isPinned }),
+           let pinnedURLString = pinnedBoard.fileUrl ?? pinnedBoard.fileThumbUrl,
+           let pinnedURL = URL(string: pinnedURLString) {
+            return pinnedURL
+        }
+        return frame.availableAssets.first(where: { !$0.isVideo })?.url
+    }
+
+    @ViewBuilder
+    private func referenceImagePreview(url: URL) -> some View {
+        CachedAsyncImage(url: url) { phase in
+            switch phase {
+            case let .success(image):
+                image.resizable().scaledToFit()
+            case .empty:
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+            case .failure:
+                Image(systemName: "photo")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.7))
+            @unknown default:
+                Image(systemName: "photo")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+        }
+        .padding(6)
+        .background(Color.black.opacity(0.4))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color.white.opacity(0.35), lineWidth: 1)
+        )
     }
 
     private func handleCameraRoleChange(_ newRole: String?) {
