@@ -748,28 +748,45 @@ struct FrameView: View {
     }
 
     private func tagGroupColor(for groupName: String) -> Color {
-        switch groupName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        let normalized = groupName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let colorName: String
+        let color: Color
+
+        switch normalized {
         case "blue":
-            return .martiniBlueColor
+            colorName = "martiniBlueColor"
+            color = .martiniBlueColor
         case "cyan":
-            return .martiniCyanColor
+            colorName = "martiniCyanColor"
+            color = .martiniCyanColor
         case "green":
-            return .martiniGreenColor
+            colorName = "martiniGreenColor"
+            color = .martiniGreenColor
         case "lime":
-            return .martiniLimeColor
+            colorName = "martiniLimeColor"
+            color = .martiniLimeColor
         case "orange":
-            return .martiniOrangeColor
+            colorName = "martiniOrangeColor"
+            color = .martiniOrangeColor
         case "pink":
-            return .martiniPinkColor
+            colorName = "martiniPinkColor"
+            color = .martiniPinkColor
         case "purple":
-            return .martiniPurpleColor
+            colorName = "martiniPurpleColor"
+            color = .martiniPurpleColor
         case "red":
-            return .martiniRedColor
+            colorName = "martiniRedColor"
+            color = .martiniRedColor
         case "yellow":
-            return .martiniYellowColor
+            colorName = "martiniYellowColor"
+            color = .martiniYellowColor
         default:
-            return .martiniGrayColor
+            colorName = "martiniGrayColor"
+            color = .martiniGrayColor
         }
+
+        print("[TagPill] groupName='\(groupName)' normalized='\(normalized)' color=\(colorName)")
+        return color
     }
 
     @ViewBuilder
