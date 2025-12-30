@@ -41,6 +41,26 @@ actor ImageCache {
         }
     }
 
+    func data(for url: URL) async -> Data? {
+        if let cached = cachedData(for: url) {
+            return cached
+        }
+
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            saveToDisk(data: data, for: url)
+            return data
+        } catch {
+            return nil
+        }
+    }
+
+    func cachedData(for url: URL) -> Data? {
+        let path = cacheFileURL(for: url)
+        guard fileManager.fileExists(atPath: path.path) else { return nil }
+        return try? Data(contentsOf: path)
+    }
+
     private func loadFromDisk(for url: URL) -> UIImage? {
         let path = cacheFileURL(for: url)
         guard fileManager.fileExists(atPath: path.path) else { return nil }
