@@ -17,11 +17,22 @@ enum ThemePreference: String, CaseIterable, Identifiable {
     var label: String {
         switch self {
         case .system:
-            return "Follow Device Theme"
+            return "System"
         case .light:
-            return "Light Mode"
+            return "Light"
         case .dark:
-            return "Dark Mode"
+            return "Dark"
+        }
+    }
+
+    var systemImageName: String {
+        switch self {
+        case .system:
+            return "circle.lefthalf.filled"
+        case .light:
+            return "sun.max.fill"
+        case .dark:
+            return "moon.fill"
         }
     }
 
