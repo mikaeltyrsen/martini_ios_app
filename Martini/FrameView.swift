@@ -747,6 +747,31 @@ struct FrameView: View {
         }
     }
 
+    private func tagGroupColor(for groupName: String) -> Color {
+        switch groupName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "blue":
+            return .martiniBlue
+        case "cyan":
+            return .martiniCyan
+        case "green":
+            return .martiniGreen
+        case "lime":
+            return .martiniLime
+        case "orange":
+            return .martiniOrange
+        case "pink":
+            return .martiniPink
+        case "purple":
+            return .martiniPurple
+        case "red":
+            return .martiniRed
+        case "yellow":
+            return .martiniYellow
+        default:
+            return .martiniGray
+        }
+    }
+
     @ViewBuilder
     private var tagsSection: some View {
         if frameTagGroups.isEmpty {
@@ -777,7 +802,7 @@ struct FrameView: View {
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 6)
                                     .background(
-                                        Capsule().fill(Color.martiniRed)
+                                        Capsule().fill(tagGroupColor(for: group.name))
                                     )
                             }
                         }
