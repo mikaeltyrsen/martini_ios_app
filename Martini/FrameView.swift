@@ -121,7 +121,6 @@ struct FrameView: View {
                     ScoutCameraLayout(
                         projectId: projectId,
                         frameId: frame.id,
-                        creativeId: frame.creativeId,
                         targetAspectRatio: frameAspectRatio
                     )
                     .environmentObject(authService)
@@ -2152,7 +2151,6 @@ private struct AssetCardView: View {
             title: primaryText,
             showStatusBadge: true,
             showFrameNumberOverlay: true,
-            showPinnedBoardOverlay: false,
             showTextBlock: false,
             cornerRadius: cardCornerRadius,
             enablesFullScreen: enablesFullScreen

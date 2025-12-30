@@ -10,6 +10,7 @@ struct ScoutCameraLayout: View {
     @ObservedObject private var calibrationStore: FOVCalibrationStore
     @StateObject private var motionManager = MotionHeadingManager()
     @StateObject private var volumeObserver = VolumeButtonObserver()
+    private let frameId: String
     private let targetAspectRatio: CGFloat
     @State private var isCameraSelectionPresented = false
     @State private var isFrameLineSettingsPresented = false
@@ -22,7 +23,8 @@ struct ScoutCameraLayout: View {
     @AppStorage("scoutCameraDebugMode") private var debugMode = true
     private let previewMargin: CGFloat = 40
 
-    init(projectId: String, frameId: String, creativeId: String, targetAspectRatio: CGFloat) {
+    init(projectId: String, frameId: String, targetAspectRatio: CGFloat, creativeId: String? = nil) {
+        self.frameId = frameId
         self.targetAspectRatio = targetAspectRatio
         let viewModel = ScoutCameraViewModel(
             projectId: projectId,
@@ -92,6 +94,10 @@ struct ScoutCameraLayout: View {
         .onAppear {
             previewOrientation = currentPreviewOrientation()
             viewModel.captureManager.updateVideoOrientation(previewOrientation)
+            if viewModel.creativeId == nil {
+                let creativeId = authService.frames.first(where: { $0.id == frameId })?.creativeId
+                viewModel.updateCreativeId(creativeId)
+            }
             motionManager.start()
             volumeObserver.onVolumeChange = { viewModel.capturePhoto() }
             volumeObserver.start()
