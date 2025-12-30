@@ -1155,17 +1155,16 @@ struct Frame: Codable, Identifiable {
         var items: [FrameAssetItem] = []
 
         let photoboardLabel = FrameAssetKind.photoboard.displayName.lowercased()
-        let sortedBoards: [FrameBoard] = (boards ?? [])
-            .filter { board in
-                guard let label = board.label?.lowercased() else { return true }
-                return label != photoboardLabel
+        let boardsList: [FrameBoard] = boards ?? []
+        let hasPhotoboardBoard = boardsList.contains { board in
+            board.label?.lowercased() == photoboardLabel
+        }
+        let sortedBoards: [FrameBoard] = boardsList.sorted { lhs, rhs in
+            if lhs.isPinned != rhs.isPinned {
+                return lhs.isPinned
             }
-            .sorted { lhs, rhs in
-                if lhs.isPinned != rhs.isPinned {
-                    return lhs.isPinned
-                }
-                return (lhs.order ?? Int.max) < (rhs.order ?? Int.max)
-            }
+            return (lhs.order ?? Int.max) < (rhs.order ?? Int.max)
+        }
 
         if !sortedBoards.isEmpty {
             for board in sortedBoards {
@@ -1192,7 +1191,7 @@ struct Frame: Codable, Identifiable {
             )
         }
 
-        if photoboard != nil || photoboardThumb != nil {
+        if (photoboard != nil || photoboardThumb != nil), !hasPhotoboardBoard {
             items.append(
                 FrameAssetItem(
                     id: "photoboard",
