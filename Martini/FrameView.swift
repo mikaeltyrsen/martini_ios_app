@@ -3,7 +3,6 @@ import AVKit
 import UIKit
 import Combine
 import QuickLook
-import Photos
 import UniformTypeIdentifiers
 
 @MainActor
@@ -56,6 +55,8 @@ struct FrameView: View {
     @State private var boardDeleteTarget: FrameAssetItem?
     @State private var boardActionError: String?
     @State private var selectedBoardPreview: BoardPreviewItem?
+    @State private var boardPhotoAccessAlert: PhotoAccessAlert?
+    @Environment(\.openURL) private var openURL
 
     private let minDescriptionRatio: CGFloat = 0.35
     private let dimmerAnim = Animation.easeInOut(duration: 0.28)
@@ -257,6 +258,18 @@ struct FrameView: View {
                 Button("OK", role: .cancel) { boardActionError = nil }
             } message: {
                 Text(boardActionError ?? "An unknown error occurred.")
+            }
+            .alert(item: $boardPhotoAccessAlert) { alert in
+                Alert(
+                    title: Text("Photos Access Needed"),
+                    message: Text(alert.message),
+                    primaryButton: .default(Text("Open Settings")) {
+                        if let settingsURL = URL(string: UIApplication.openSettingsURLString) {
+                            openURL(settingsURL)
+                        }
+                    },
+                    secondaryButton: .cancel()
+                )
             }
             .overlay {
                 if showingBoardRenameAlert {
@@ -628,6 +641,13 @@ struct FrameView: View {
                 } label: {
                     Label("Pin board", systemImage: "pin.fill")
                 }
+                if asset.url != nil {
+                    Button {
+                        saveBoardAssetToPhotos(asset)
+                    } label: {
+                        Label(asset.isVideo ? "Download Video" : "Download Image", systemImage: "square.and.arrow.down")
+                    }
+                }
                 Button(role: .destructive) {
                     boardDeleteTarget = asset
                     showingBoardDeleteAlert = true
@@ -635,6 +655,13 @@ struct FrameView: View {
                     Label("Delete", systemImage: "trash.fill")
                 }
             } else {
+                if asset.url != nil {
+                    Button {
+                        saveBoardAssetToPhotos(asset)
+                    } label: {
+                        Label(asset.isVideo ? "Download Video" : "Download Image", systemImage: "square.and.arrow.down")
+                    }
+                }
                 Button(role: .destructive) {
                     boardDeleteTarget = asset
                     showingBoardDeleteAlert = true
@@ -1204,6 +1231,36 @@ private extension FrameView {
         }
     }
 
+    private func saveBoardAssetToPhotos(_ asset: FrameAssetItem) {
+        guard let url = asset.url else { return }
+        Task {
+            do {
+                let (downloadedURL, _) = try await URLSession.shared.download(from: url)
+                let destinationURL = FileManager.default.temporaryDirectory.appendingPathComponent(url.lastPathComponent)
+                if FileManager.default.fileExists(atPath: destinationURL.path) {
+                    try FileManager.default.removeItem(at: destinationURL)
+                }
+                try FileManager.default.copyItem(at: downloadedURL, to: destinationURL)
+
+                let result: PhotoSaveResult
+                if asset.isVideo {
+                    result = await PhotoLibraryHelper.saveVideo(url: destinationURL)
+                } else {
+                    let data = try Data(contentsOf: destinationURL)
+                    result = await PhotoLibraryHelper.saveImage(data: data)
+                }
+
+                if case .accessDenied = result {
+                    boardPhotoAccessAlert = PhotoAccessAlert(
+                        message: PhotoLibraryHelper.accessDeniedMessage(for: .board)
+                    )
+                }
+            } catch {
+                print("Failed to save board to Photos: \(error)")
+            }
+        }
+    }
+
     private func totalCommentCount(in comments: [Comment]) -> Int {
         comments.reduce(0) { partial, comment in
             partial + 1 + totalCommentCount(in: comment.replies)
@@ -1674,15 +1731,15 @@ private struct ClipRow: View {
 
                 let result: PhotoSaveResult
                 if clip.isVideo {
-                    result = await saveVideoToPhotos(url: destinationURL)
+                    result = await PhotoLibraryHelper.saveVideo(url: destinationURL)
                 } else {
                     let data = try Data(contentsOf: destinationURL)
-                    result = await saveImageToPhotos(data: data)
+                    result = await PhotoLibraryHelper.saveImage(data: data)
                 }
 
                 if case .accessDenied = result {
                     photoAccessAlert = PhotoAccessAlert(
-                        message: "Martini needs access to your Photos library to save clips. Please enable Photos access in Settings."
+                        message: PhotoLibraryHelper.accessDeniedMessage(for: .clip)
                     )
                 }
             } catch {
@@ -1861,11 +1918,6 @@ private struct ShareItem: Identifiable {
     let url: URL
 }
 
-private struct PhotoAccessAlert: Identifiable {
-    let id = UUID()
-    let message: String
-}
-
 private struct ActivityView: UIViewControllerRepresentable {
     let activityItems: [Any]
     var applicationActivities: [UIActivity]? = nil
@@ -1888,82 +1940,6 @@ private struct VideoPlayerContainer: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ uiViewController: UIViewControllerType, context: Context) {
-    }
-}
-
-private enum PhotoSaveResult {
-    case success
-    case accessDenied
-    case failure(Error)
-}
-
-private func saveImageToPhotos(data: Data) async -> PhotoSaveResult {
-    guard UIImage(data: data) != nil else {
-        return .failure(NSError(domain: "PhotosSave", code: 3, userInfo: nil))
-    }
-    let accessResult = await requestPhotoLibraryAccess()
-    guard accessResult == .authorized else { return .accessDenied }
-    do {
-        try await performPhotoLibraryChanges {
-            let request = PHAssetCreationRequest.forAsset()
-            request.addResource(with: .photo, data: data, options: nil)
-        }
-        return .success
-    } catch {
-        print("Failed to save image to Photos: \(error)")
-        return .failure(error)
-    }
-}
-
-private func saveVideoToPhotos(url: URL) async -> PhotoSaveResult {
-    guard FileManager.default.fileExists(atPath: url.path) else { return .failure(NSError(domain: "PhotosSave", code: 2, userInfo: nil)) }
-    let accessResult = await requestPhotoLibraryAccess()
-    guard accessResult == .authorized else { return .accessDenied }
-    do {
-        try await performPhotoLibraryChanges {
-            let request = PHAssetCreationRequest.forAsset()
-            request.addResource(with: .video, fileURL: url, options: nil)
-        }
-        return .success
-    } catch {
-        print("Failed to save video to Photos: \(error)")
-        return .failure(error)
-    }
-}
-
-private enum PhotoLibraryAccessResult {
-    case authorized
-    case denied
-}
-
-private func requestPhotoLibraryAccess() async -> PhotoLibraryAccessResult {
-    let status = PHPhotoLibrary.authorizationStatus(for: .addOnly)
-    switch status {
-    case .authorized, .limited:
-        return .authorized
-    case .notDetermined:
-        let newStatus = await withCheckedContinuation { continuation in
-            PHPhotoLibrary.requestAuthorization(for: .addOnly) { result in
-                continuation.resume(returning: result)
-            }
-        }
-        return (newStatus == .authorized || newStatus == .limited) ? .authorized : .denied
-    default:
-        return .denied
-    }
-}
-
-private func performPhotoLibraryChanges(_ changes: @escaping () -> Void) async throws {
-    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-        PHPhotoLibrary.shared().performChanges(changes) { success, error in
-            if let error {
-                continuation.resume(throwing: error)
-            } else if success {
-                continuation.resume(returning: ())
-            } else {
-                continuation.resume(throwing: NSError(domain: "PhotosSave", code: 1, userInfo: nil))
-            }
-        }
     }
 }
 
