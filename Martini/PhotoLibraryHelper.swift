@@ -1,11 +1,6 @@
 import Photos
 import UIKit
 
-struct PhotoAccessAlert: Identifiable {
-    let id = UUID()
-    let message: String
-}
-
 enum PhotoSaveContext {
     case clip
     case board
@@ -23,6 +18,11 @@ enum PhotoLibraryAccessResult {
 }
 
 enum PhotoLibraryHelper {
+    struct PhotoAccessAlert: Identifiable {
+        let id = UUID()
+        let message: String
+    }
+
     static func saveImage(data: Data) async -> PhotoSaveResult {
         guard UIImage(data: data) != nil else {
             return .failure(NSError(domain: "PhotosSave", code: 3, userInfo: nil))
