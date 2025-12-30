@@ -885,12 +885,31 @@ struct ScoutCameraLayout: View {
         guard let frame = authService.frames.first(where: { $0.id == frameId }) else {
             return nil
         }
-        if let pinnedBoard = frame.boards?.first(where: { $0.isPinned }),
-           let pinnedURLString = pinnedBoard.fileUrl ?? pinnedBoard.fileThumbUrl,
-           let pinnedURL = URL(string: pinnedURLString) {
+        if let pinnedBoard = frame.boards?.first(where: { $0.isPinned }) {
+            let pinnedURLString: String?
+            if isVideoBoard(pinnedBoard) {
+                pinnedURLString = pinnedBoard.fileThumbUrl ?? pinnedBoard.fileUrl
+            } else {
+                pinnedURLString = pinnedBoard.fileUrl ?? pinnedBoard.fileThumbUrl
+            }
+            if let pinnedURLString,
+               let pinnedURL = URL(string: pinnedURLString) {
             return pinnedURL
+            }
         }
         return frame.availableAssets.first(where: { !$0.isVideo })?.url
+    }
+
+    private func isVideoBoard(_ board: FrameBoard) -> Bool {
+        if let fileType = board.fileType?.lowercased(), fileType.contains("video") {
+            return true
+        }
+        guard let urlString = board.fileUrl ?? board.fileThumbUrl,
+              let url = URL(string: urlString) else {
+            return false
+        }
+        let extensionValue = url.pathExtension.lowercased()
+        return ["mp4", "mov", "m4v", "webm", "mkv", "m3u8"].contains(extensionValue)
     }
 
     @ViewBuilder
