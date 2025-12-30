@@ -864,29 +864,25 @@ struct FrameView: View {
                                 .foregroundColor(.white.opacity(0.75))
                         }
 
-                        LazyVGrid(
-                            columns: [GridItem(.adaptive(minimum: 80), spacing: 8, alignment: .leading)],
-                            alignment: .leading,
-                            spacing: 8
-                        ) {
-                            ForEach(group.tags) { tag in
-                                Text(tag.name)
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundColor(pillTextColor)
-                                    .lineLimit(1)
-                                    .truncationMode(.tail)
-                                    .minimumScaleFactor(0.8)
-                                    .allowsTightening(true)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 6)
-                                    .background(
-                                        Capsule().fill(tagGroupColor(for: group.name))
-                                    )
-                                    .overlay(
-                                        Capsule().strokeBorder(pillBorderColor, lineWidth: 1)
-                                    )
-                                    .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 3)
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(group.tags) { tag in
+                                    Text(tag.name)
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundColor(pillTextColor)
+                                        .fixedSize(horizontal: true, vertical: false)
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 6)
+                                        .background(
+                                            Capsule().fill(tagGroupColor(for: group.name))
+                                        )
+                                        .overlay(
+                                            Capsule().strokeBorder(pillBorderColor, lineWidth: 1)
+                                        )
+                                        .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 3)
+                                }
                             }
+                            .padding(.vertical, 2)
                         }
                     }
                 }
@@ -962,81 +958,84 @@ struct FrameView: View {
     private var boardCarouselTabs: some View {
         ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    if isReorderingBoards {
-                        ForEach(reorderBoards) { board in
-                            let isPinned = boardEntry(for: board)?.isPinned == true
-                            let rotation: Double = reorderWiggle ? 1.5 : -1.5
-                            Group {
-                                if isPinned {
-                                    reorderLabel(for: board, isPinned: isPinned)
-                                } else {
-                                    reorderLabel(for: board, isPinned: isPinned)
-                                        .onDrag {
-                                            activeReorderBoard = board
-                                            return NSItemProvider(
-                                                item: board.id as NSString,
-                                                typeIdentifier: UTType.text.identifier
-                                            )
-                                        }
+                HStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    HStack(spacing: 8) {
+                        if isReorderingBoards {
+                            ForEach(reorderBoards) { board in
+                                let isPinned = boardEntry(for: board)?.isPinned == true
+                                let rotation: Double = reorderWiggle ? 1.5 : -1.5
+                                Group {
+                                    if isPinned {
+                                        reorderLabel(for: board, isPinned: isPinned)
+                                    } else {
+                                        reorderLabel(for: board, isPinned: isPinned)
+                                            .onDrag {
+                                                activeReorderBoard = board
+                                                return NSItemProvider(
+                                                    item: board.id as NSString,
+                                                    typeIdentifier: UTType.text.identifier
+                                                )
+                                            }
+                                    }
+                                }
+                                .rotationEffect(.degrees(isPinned ? 0 : rotation))
+                                .animation(
+                                    isPinned ? .default : .easeInOut(duration: 0.12).repeatForever(autoreverses: true),
+                                    value: reorderWiggle
+                                )
+                                .opacity(activeReorderBoard?.id == board.id ? 0.6 : 1)
+                                .onDrop(
+                                    of: [UTType.text],
+                                    delegate: BoardReorderDropDelegate(
+                                        item: board,
+                                        boards: $reorderBoards,
+                                        activeBoard: $activeReorderBoard,
+                                        pinnedBoardId: pinnedBoardId
+                                    )
+                                )
+                                .id(board.id)
+                            }
+                        } else {
+                            ForEach(assetStack) { asset in
+                                let isSelected: Bool = (asset.id == visibleAssetID)
+                                let isPinned = boardEntry(for: asset)?.isPinned == true
+                                Button {
+                                    visibleAssetID = asset.id
+                                } label: {
+                                    tabLabel(for: asset, isPinned: isPinned, isSelected: isSelected)
+                                }
+                                .buttonStyle(.plain)
+                                .contextMenu {
+                                    boardContextMenu(for: asset)
+                                }
+                                .id(asset.id)
+                            }
+
+                            Button {
+                                openScoutCamera()
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Label("Add Photo", systemImage: "plus")
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundStyle(Color.primary)
+                                        .lineLimit(1)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 10)
+                                        .frame(minWidth: 100)
+                                        .background(
+                                            Capsule()
+                                                .fill(Color.secondary.opacity(0.15))
+                                        )
                                 }
                             }
-                            .rotationEffect(.degrees(isPinned ? 0 : rotation))
-                            .animation(
-                                isPinned ? .default : .easeInOut(duration: 0.12).repeatForever(autoreverses: true),
-                                value: reorderWiggle
-                            )
-                            .opacity(activeReorderBoard?.id == board.id ? 0.6 : 1)
-                            .onDrop(
-                                of: [UTType.text],
-                                delegate: BoardReorderDropDelegate(
-                                    item: board,
-                                    boards: $reorderBoards,
-                                    activeBoard: $activeReorderBoard,
-                                    pinnedBoardId: pinnedBoardId
-                                )
-                            )
-                            .id(board.id)
-                        }
-                    } else {
-                        ForEach(assetStack) { asset in
-                            let isSelected: Bool = (asset.id == visibleAssetID)
-                            let isPinned = boardEntry(for: asset)?.isPinned == true
-                            Button {
-                                visibleAssetID = asset.id
-                            } label: {
-                                tabLabel(for: asset, isPinned: isPinned, isSelected: isSelected)
-                            }
                             .buttonStyle(.plain)
-                            .contextMenu {
-                                boardContextMenu(for: asset)
-                            }
-                            .id(asset.id)
+                            .id(takePictureCardID)
                         }
-
-                        Button {
-                            openScoutCamera()
-                        } label: {
-                            HStack(spacing: 4) {
-                                Label("Add Photo", systemImage: "plus")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundStyle(Color.primary)
-                                    .lineLimit(1)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 10)
-                                    .frame(minWidth: 100)
-                                    .background(
-                                        Capsule()
-                                            .fill(Color.secondary.opacity(0.15))
-                                    )
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .id(takePictureCardID)
                     }
+                    Spacer(minLength: 0)
                 }
                 .padding(.horizontal, 20)
-                .frame(maxWidth: .infinity, alignment: .center)
                 .scrollTargetLayout()
             }
             .scrollTargetBehavior(.viewAligned(limitBehavior: .always))
