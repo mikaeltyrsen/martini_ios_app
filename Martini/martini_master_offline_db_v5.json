@@ -2232,6 +2232,14 @@
       "description": "Leica Summicron-C primes"
     },
     {
+      "id": "leica_summilux_c",
+      "brand": "Leica",
+      "name": "Summilux-C",
+      "type": "prime",
+      "format": "LF",
+      "description": "Leica Summilux-C primes"
+    },
+    {
       "id": "canon_sumire_primes",
       "brand": "Canon",
       "name": "Sumire Primes",
@@ -3720,6 +3728,175 @@
       "squeeze": 1.0
     },
     {
+      "id": "leica_summilux_c__16mm__t1_4__1x",
+      "type": "prime",
+      "brand": "Leica",
+      "series": "Summilux-C",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 16,
+      "max_t_stop": 1.4,
+      "squeeze": 1.0
+    },
+    {
+      "id": "leica_summilux_c__18mm__t1_4__1x",
+      "type": "prime",
+      "brand": "Leica",
+      "series": "Summilux-C",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 18,
+      "max_t_stop": 1.4,
+      "squeeze": 1.0
+    },
+    {
+      "id": "leica_summilux_c__21mm__t1_4__1x",
+      "type": "prime",
+      "brand": "Leica",
+      "series": "Summilux-C",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 21,
+      "max_t_stop": 1.4,
+      "squeeze": 1.0
+    },
+    {
+      "id": "leica_summilux_c__25mm__t1_4__1x",
+      "type": "prime",
+      "brand": "Leica",
+      "series": "Summilux-C",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 25,
+      "max_t_stop": 1.4,
+      "squeeze": 1.0
+    },
+    {
+      "id": "leica_summilux_c__29mm__t1_4__1x",
+      "type": "prime",
+      "brand": "Leica",
+      "series": "Summilux-C",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 29,
+      "max_t_stop": 1.4,
+      "squeeze": 1.0
+    },
+    {
+      "id": "leica_summilux_c__35mm__t1_4__1x",
+      "type": "prime",
+      "brand": "Leica",
+      "series": "Summilux-C",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 35,
+      "max_t_stop": 1.4,
+      "squeeze": 1.0
+    },
+    {
+      "id": "leica_summilux_c__40mm__t1_4__1x",
+      "type": "prime",
+      "brand": "Leica",
+      "series": "Summilux-C",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 40,
+      "max_t_stop": 1.4,
+      "squeeze": 1.0
+    },
+    {
+      "id": "leica_summilux_c__50mm__t1_4__1x",
+      "type": "prime",
+      "brand": "Leica",
+      "series": "Summilux-C",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 50,
+      "max_t_stop": 1.4,
+      "squeeze": 1.0
+    },
+    {
+      "id": "leica_summilux_c__65mm__t1_4__1x",
+      "type": "prime",
+      "brand": "Leica",
+      "series": "Summilux-C",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 65,
+      "max_t_stop": 1.4,
+      "squeeze": 1.0
+    },
+    {
+      "id": "leica_summilux_c__75mm__t1_4__1x",
+      "type": "prime",
+      "brand": "Leica",
+      "series": "Summilux-C",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 75,
+      "max_t_stop": 1.4,
+      "squeeze": 1.0
+    },
+    {
+      "id": "leica_summilux_c__90mm__t1_4__1x",
+      "type": "prime",
+      "brand": "Leica",
+      "series": "Summilux-C",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 90,
+      "max_t_stop": 1.4,
+      "squeeze": 1.0
+    },
+    {
+      "id": "leica_summilux_c__100mm__t1_4__1x",
+      "type": "prime",
+      "brand": "Leica",
+      "series": "Summilux-C",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 100,
+      "max_t_stop": 1.4,
+      "squeeze": 1.0
+    },
+    {
+      "id": "leica_summilux_c__135mm__t1_4__1x",
+      "type": "prime",
+      "brand": "Leica",
+      "series": "Summilux-C",
+      "format": "LF",
+      "mounts": [
+        "PL"
+      ],
+      "focal_length_mm": 135,
+      "max_t_stop": 1.4,
+      "squeeze": 1.0
+    },
+    {
       "id": "sigma_cine_ff_high_speed__14mm__t1_5__1x",
       "type": "prime",
       "brand": "Sigma",
@@ -4606,6 +4783,71 @@
     {
       "pack_id": "leica_summicron_c",
       "lens_id": "leica_summicron_c__135mm__t2__1x",
+      "sort_order": 135
+    },
+    {
+      "pack_id": "leica_summilux_c",
+      "lens_id": "leica_summilux_c__16mm__t1_4__1x",
+      "sort_order": 16
+    },
+    {
+      "pack_id": "leica_summilux_c",
+      "lens_id": "leica_summilux_c__18mm__t1_4__1x",
+      "sort_order": 18
+    },
+    {
+      "pack_id": "leica_summilux_c",
+      "lens_id": "leica_summilux_c__21mm__t1_4__1x",
+      "sort_order": 21
+    },
+    {
+      "pack_id": "leica_summilux_c",
+      "lens_id": "leica_summilux_c__25mm__t1_4__1x",
+      "sort_order": 25
+    },
+    {
+      "pack_id": "leica_summilux_c",
+      "lens_id": "leica_summilux_c__29mm__t1_4__1x",
+      "sort_order": 29
+    },
+    {
+      "pack_id": "leica_summilux_c",
+      "lens_id": "leica_summilux_c__35mm__t1_4__1x",
+      "sort_order": 35
+    },
+    {
+      "pack_id": "leica_summilux_c",
+      "lens_id": "leica_summilux_c__40mm__t1_4__1x",
+      "sort_order": 40
+    },
+    {
+      "pack_id": "leica_summilux_c",
+      "lens_id": "leica_summilux_c__50mm__t1_4__1x",
+      "sort_order": 50
+    },
+    {
+      "pack_id": "leica_summilux_c",
+      "lens_id": "leica_summilux_c__65mm__t1_4__1x",
+      "sort_order": 65
+    },
+    {
+      "pack_id": "leica_summilux_c",
+      "lens_id": "leica_summilux_c__75mm__t1_4__1x",
+      "sort_order": 75
+    },
+    {
+      "pack_id": "leica_summilux_c",
+      "lens_id": "leica_summilux_c__90mm__t1_4__1x",
+      "sort_order": 90
+    },
+    {
+      "pack_id": "leica_summilux_c",
+      "lens_id": "leica_summilux_c__100mm__t1_4__1x",
+      "sort_order": 100
+    },
+    {
+      "pack_id": "leica_summilux_c",
+      "lens_id": "leica_summilux_c__135mm__t1_4__1x",
       "sort_order": 135
     },
     {
