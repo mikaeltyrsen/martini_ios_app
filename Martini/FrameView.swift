@@ -879,7 +879,6 @@ struct FrameView: View {
                                         .overlay(
                                             Capsule().strokeBorder(pillBorderColor, lineWidth: 1)
                                         )
-                                        .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 3)
                                 }
                             }
                             .padding(.vertical, 2)
