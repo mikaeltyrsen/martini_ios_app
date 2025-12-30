@@ -1413,7 +1413,11 @@ struct FramesResponse: Codable {
         frames = try container.decodeIfPresent([Frame].self, forKey: .frames) ?? []
         error = try container.decodeIfPresent(String.self, forKey: .error)
         let decodedTagGroups = try container.decodeIfPresent([TagGroupDefinition].self, forKey: .tagGroups)
-        tagGroups = decodedTagGroups ?? (try container.decodeIfPresent([TagGroupDefinition].self, forKey: .tag_groups))
+        if let decodedTagGroups {
+            tagGroups = decodedTagGroups
+        } else {
+            tagGroups = try container.decodeIfPresent([TagGroupDefinition].self, forKey: .tag_groups)
+        }
     }
 
     func encode(to encoder: Encoder) throws {
