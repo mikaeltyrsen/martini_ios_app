@@ -725,6 +725,69 @@ struct FrameView: View {
         }
     }
 
+    private var frameTagGroups: [FrameTagGroup] {
+        guard let tags = frame.tags, !tags.isEmpty else { return [] }
+
+        let grouped = Dictionary(grouping: tags) { tag -> String in
+            let group = tag.groupName?.trimmingCharacters(in: .whitespacesAndNewlines)
+            return (group?.isEmpty == false ? group : nil) ?? "Tags"
+        }
+
+        return grouped.map { key, tags in
+            FrameTagGroup(
+                id: key,
+                name: key,
+                tags: Array(Set(tags)).sorted { $0.name.lowercased() < $1.name.lowercased() }
+            )
+        }
+        .sorted { lhs, rhs in
+            if lhs.name == "Tags" { return true }
+            if rhs.name == "Tags" { return false }
+            return lhs.name.lowercased() < rhs.name.lowercased()
+        }
+    }
+
+    @ViewBuilder
+    private var tagsSection: some View {
+        if frameTagGroups.isEmpty {
+            EmptyView()
+        } else {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Tags")
+                    .font(.headline)
+                    .foregroundStyle(.white)
+
+                ForEach(frameTagGroups) { group in
+                    VStack(alignment: .leading, spacing: 8) {
+                        if frameTagGroups.count > 1 {
+                            Text(group.name)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundColor(.white.opacity(0.75))
+                        }
+
+                        LazyVGrid(
+                            columns: [GridItem(.adaptive(minimum: 80), spacing: 8, alignment: .leading)],
+                            alignment: .leading,
+                            spacing: 8
+                        ) {
+                            ForEach(group.tags) { tag in
+                                Text(tag.name)
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(
+                                        Capsule().fill(Color.martiniRed)
+                                    )
+                            }
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
     private func descriptionOverlay(containerHeight: CGFloat, overlayHeight: CGFloat, allowsExpansion: Bool) -> some View {
         ScrollView(.vertical, showsIndicators: true) {
             VStack(alignment: .leading, spacing: 16) {
@@ -742,7 +805,16 @@ struct FrameView: View {
 
                 descriptionSection
                     .padding(.horizontal, 20)
-                    .padding(.bottom, 24)
+
+                if !allowsExpansion || isDescriptionExpanded {
+                    tagsSection
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 24)
+                } else {
+                    Color.clear
+                        .frame(height: 24)
+                        .frame(maxWidth: .infinity)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
@@ -1776,6 +1848,12 @@ private struct BoardPreviewItem: Identifiable {
 private struct ShareItem: Identifiable {
     let id = UUID()
     let url: URL
+}
+
+private struct FrameTagGroup: Identifiable {
+    let id: String
+    let name: String
+    let tags: [FrameTag]
 }
 
 private struct ActivityView: UIViewControllerRepresentable {
