@@ -59,6 +59,7 @@ struct FrameView: View {
     @State private var selectedBoardPreview: BoardPreviewItem?
     @State private var boardPhotoAccessAlert: PhotoLibraryHelper.PhotoAccessAlert?
     @Environment(\.openURL) private var openURL
+    @Environment(\.colorScheme) private var colorScheme
 
     private let minDescriptionRatio: CGFloat = 0.35
     private let dimmerAnim = Animation.easeInOut(duration: 0.28)
@@ -842,6 +843,14 @@ struct FrameView: View {
         if frameTagGroups.isEmpty {
             EmptyView()
         } else {
+            let pillTextColor = Color(
+                red: colorScheme == .dark ? 243.0 / 255.0 : 15.0 / 255.0,
+                green: colorScheme == .dark ? 244.0 / 255.0 : 23.0 / 255.0,
+                blue: colorScheme == .dark ? 246.0 / 255.0 : 42.0 / 255.0
+            )
+            let pillBorderColor = colorScheme == .dark
+                ? Color.white.opacity(0.08)
+                : Color.black.opacity(0.04)
             VStack(alignment: .leading, spacing: 12) {
                 Text("Tags")
                     .font(.headline)
@@ -863,12 +872,20 @@ struct FrameView: View {
                             ForEach(group.tags) { tag in
                                 Text(tag.name)
                                     .font(.caption.weight(.semibold))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(pillTextColor)
+                                    .lineLimit(1)
+                                    .truncationMode(.tail)
+                                    .minimumScaleFactor(0.8)
+                                    .allowsTightening(true)
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 6)
                                     .background(
                                         Capsule().fill(tagGroupColor(for: group.name))
                                     )
+                                    .overlay(
+                                        Capsule().strokeBorder(pillBorderColor, lineWidth: 1)
+                                    )
+                                    .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 3)
                             }
                         }
                     }
