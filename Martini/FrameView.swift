@@ -1722,18 +1722,14 @@ private struct ClipRow: View {
         guard let url = clip.fileURL else { return }
         Task {
             do {
-                let (downloadedURL, _) = try await URLSession.shared.download(from: url)
-                let destinationURL = FileManager.default.temporaryDirectory.appendingPathComponent(url.lastPathComponent)
-                if FileManager.default.fileExists(atPath: destinationURL.path) {
-                    try FileManager.default.removeItem(at: destinationURL)
-                }
-                try FileManager.default.copyItem(at: downloadedURL, to: destinationURL)
-
                 let result: PhotoSaveResult
                 if clip.isVideo {
-                    result = await PhotoLibraryHelper.saveVideo(url: destinationURL)
+                    let localURL = try await localVideoURL(for: url)
+                    result = await PhotoLibraryHelper.saveVideo(url: localURL)
                 } else {
-                    let data = try Data(contentsOf: destinationURL)
+                    guard let data = await ImageCache.shared.data(for: url) else {
+                        throw URLError(.cannotDecodeContentData)
+                    }
                     result = await PhotoLibraryHelper.saveImage(data: data)
                 }
 
@@ -1749,27 +1745,65 @@ private struct ClipRow: View {
     }
 
     private func shareClip(url: URL) {
-        let task = URLSession.shared.downloadTask(with: url) { tempURL, _, error in
-            guard let tempURL else {
-                if let error {
-                    print("Failed to download clip for sharing: \(error)")
-                }
-                return
-            }
-            let destinationURL = FileManager.default.temporaryDirectory.appendingPathComponent(url.lastPathComponent)
+        Task {
             do {
-                if FileManager.default.fileExists(atPath: destinationURL.path) {
-                    try FileManager.default.removeItem(at: destinationURL)
-                }
-                try FileManager.default.copyItem(at: tempURL, to: destinationURL)
-                DispatchQueue.main.async {
-                    shareItem = ShareItem(url: destinationURL)
-                }
+                let localURL = try await localShareURL(for: url)
+                shareItem = ShareItem(url: localURL)
             } catch {
                 print("Failed to prepare clip for sharing: \(error)")
             }
         }
-        task.resume()
+    }
+
+    private func localShareURL(for url: URL) async throws -> URL {
+        if clip.isImage, let data = await ImageCache.shared.data(for: url) {
+            return try writeTemporaryFile(data: data, originalURL: url)
+        }
+
+        if clip.isVideo, let cached = await cachedVideoURL(for: url) {
+            return cached
+        }
+
+        return try await downloadToTemporaryFile(url: url)
+    }
+
+    private func localVideoURL(for url: URL) async throws -> URL {
+        if let cached = await cachedVideoURL(for: url) {
+            return cached
+        }
+
+        return try await downloadToTemporaryFile(url: url)
+    }
+
+    private func cachedVideoURL(for url: URL) async -> URL? {
+        if let cached = VideoCacheManager.shared.existingCachedFile(for: url) {
+            return cached
+        }
+
+        return await withCheckedContinuation { continuation in
+            VideoCacheManager.shared.fetchCachedURL(for: url) { cachedURL in
+                continuation.resume(returning: cachedURL)
+            }
+        }
+    }
+
+    private func downloadToTemporaryFile(url: URL) async throws -> URL {
+        let (downloadedURL, _) = try await URLSession.shared.download(from: url)
+        let destinationURL = FileManager.default.temporaryDirectory.appendingPathComponent(url.lastPathComponent)
+        if FileManager.default.fileExists(atPath: destinationURL.path) {
+            try FileManager.default.removeItem(at: destinationURL)
+        }
+        try FileManager.default.copyItem(at: downloadedURL, to: destinationURL)
+        return destinationURL
+    }
+
+    private func writeTemporaryFile(data: Data, originalURL: URL) throws -> URL {
+        let destinationURL = FileManager.default.temporaryDirectory.appendingPathComponent(originalURL.lastPathComponent)
+        if FileManager.default.fileExists(atPath: destinationURL.path) {
+            try FileManager.default.removeItem(at: destinationURL)
+        }
+        try data.write(to: destinationURL, options: .atomic)
+        return destinationURL
     }
 }
 
@@ -1781,12 +1815,21 @@ private struct ClipThumbnailView: View {
             RoundedRectangle(cornerRadius: 8)
                 .fill(.secondary.opacity(0.15))
             if let url = clip.thumbnailURL {
-                AsyncImage(url: url) { image in
-                    image
-                        .resizable()
-                        .scaledToFill()
-                } placeholder: {
-                    ProgressView()
+                CachedAsyncImage(url: url) { phase in
+                    switch phase {
+                    case let .success(image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    case .empty:
+                        ProgressView()
+                    case .failure:
+                        Image(systemName: clip.systemIconName)
+                            .foregroundStyle(.secondary)
+                    @unknown default:
+                        Image(systemName: clip.systemIconName)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             } else {
                 Image(systemName: clip.systemIconName)
@@ -1806,15 +1849,24 @@ private struct ClipPreviewView: View {
     var body: some View {
         VStack {
             if clip.isVideo, let url = clip.fileURL {
-                VideoPlayerContainer(url: url)
+                CachedVideoPlayerView(url: url)
             } else if clip.isImage, let url = clip.fileURL {
-                AsyncImage(url: url) { image in
-                    image
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } placeholder: {
-                    ProgressView()
+                CachedAsyncImage(url: url) { phase in
+                    switch phase {
+                    case let .success(image):
+                        image
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    case .empty:
+                        ProgressView()
+                    case .failure:
+                        Text("Unable to load image.")
+                            .foregroundStyle(.secondary)
+                    @unknown default:
+                        Text("Unable to load image.")
+                            .foregroundStyle(.secondary)
+                    }
                 }
             } else if let localPreviewURL {
                 QuickLookPreview(url: localPreviewURL)
@@ -1895,13 +1947,22 @@ private struct BoardPreviewView: View {
 
     var body: some View {
         VStack {
-            AsyncImage(url: url) { image in
-                image
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } placeholder: {
-                ProgressView()
+            CachedAsyncImage(url: url) { phase in
+                switch phase {
+                case let .success(image):
+                    image
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                case .empty:
+                    ProgressView()
+                case .failure:
+                    Text("Unable to load image.")
+                        .foregroundStyle(.secondary)
+                @unknown default:
+                    Text("Unable to load image.")
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         .padding()
@@ -1940,6 +2001,37 @@ private struct VideoPlayerContainer: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ uiViewController: UIViewControllerType, context: Context) {
+    }
+}
+
+private struct CachedVideoPlayerView: View {
+    let url: URL
+    @State private var resolvedURL: URL?
+
+    var body: some View {
+        VideoPlayerContainer(url: resolvedURL ?? url)
+            .task(id: url) {
+                await resolveCachedURL()
+            }
+    }
+
+    private func resolveCachedURL() async {
+        if let cached = VideoCacheManager.shared.existingCachedFile(for: url) {
+            resolvedURL = cached
+            return
+        }
+
+        resolvedURL = url
+
+        let cached = await withCheckedContinuation { continuation in
+            VideoCacheManager.shared.fetchCachedURL(for: url) { cachedURL in
+                continuation.resume(returning: cachedURL)
+            }
+        }
+
+        if let cached {
+            resolvedURL = cached
+        }
     }
 }
 
