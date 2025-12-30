@@ -41,15 +41,23 @@ struct MartiniApp: App {
     
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environmentObject(authService)
-                .environmentObject(realtimeService)
-                .environmentObject(connectionMonitor)
-                .fullscreenMediaCoordinator(fullscreenCoordinator)
-                //.tint(.martiniDefaultColor)
-                .accentColor(.martiniDefaultColor)
-                .preferredColorScheme(themePreference.colorScheme)
+            if let colorScheme = themePreference.colorScheme {
+                configuredContentView
+                    .preferredColorScheme(colorScheme)
+            } else {
+                configuredContentView
+            }
         }
+    }
+
+    private var configuredContentView: some View {
+        ContentView()
+            .environmentObject(authService)
+            .environmentObject(realtimeService)
+            .environmentObject(connectionMonitor)
+            .fullscreenMediaCoordinator(fullscreenCoordinator)
+            //.tint(.martiniDefaultColor)
+            .accentColor(.martiniDefaultColor)
     }
 
     private var themePreference: ThemePreference {
