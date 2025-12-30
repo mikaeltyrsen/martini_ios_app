@@ -85,12 +85,6 @@ struct ScoutCameraLayout: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .zIndex(1)
             }
-
-            if isPortraitOrientation {
-                portraitOverlay
-                    .transition(.opacity)
-                    .zIndex(2)
-            }
         }
         .animation(.easeInOut(duration: 0.25), value: showLensToast)
         .onAppear {
@@ -272,11 +266,16 @@ struct ScoutCameraLayout: View {
         ZStack {
             HStack {
                 HStack(spacing: 6) {
-                    Button("Cancel") {
+                    Button {
                         dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 24, height: 24)
+                            .background(Circle().fill(Color.white.opacity(0.2)))
                     }
-                    .foregroundStyle(.white)
-                    .font(.caption.weight(.semibold))
+                    .buttonStyle(.plain)
                     Button {
                         isCameraSelectionPresented = true
                     } label: {
@@ -792,6 +791,10 @@ struct ScoutCameraLayout: View {
                     CrosshairOverlay()
                         .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
                 }
+
+                if isPortraitOrientation {
+                    portraitOverlay
+                }
             }
             .overlay(alignment: .bottomTrailing) {
                 if showReferenceOverlay, let referenceImageURL {
@@ -816,10 +819,9 @@ struct ScoutCameraLayout: View {
 
     private var portraitOverlay: some View {
         ZStack {
-            Color.black.opacity(0.65)
-                .ignoresSafeArea()
+            Color.black.opacity(0.5)
             VStack(spacing: 12) {
-                Image(systemName: "iphone")
+                Image(systemName: "rectangle.portrait.rotate")
                     .font(.system(size: 36, weight: .semibold))
                     .foregroundStyle(.white)
                 Text("Please rotate your phone")
@@ -829,9 +831,6 @@ struct ScoutCameraLayout: View {
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.8))
             }
-            .padding(20)
-            .background(Color.black.opacity(0.6))
-            .clipShape(RoundedRectangle(cornerRadius: 16))
         }
         .allowsHitTesting(true)
     }
