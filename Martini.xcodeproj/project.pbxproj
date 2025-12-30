@@ -21,6 +21,7 @@
 		07C904B22EDB92DB004EDBFA /* playground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C904B12EDB92D8004EDBFA /* playground.swift */; };
 		07C904B42EDB9F3D004EDBFA /* Uiplayground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C904B32EDB9F3D004EDBFA /* Uiplayground.swift */; };
 		07C904B62EDBAE73004EDBFA /* FrameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C904B52EDBAE73004EDBFA /* FrameView.swift */; };
+		07D1C1072FF0BBBB00000003 /* PhotoLibraryHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F3F62F0400F0000B598F /* PhotoLibraryHelper.swift */; };
 		07C904B72FE2B5E9004EDBFA /* FrameLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C904B82FE2B5E9004EDBFA /* FrameLayout.swift */; };
 		07C904B82EDC888C004EDBFA /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C904B72EDC888C004EDBFA /* Helpers.swift */; };
 		07C904BE2FF4B4A4004EDBFA /* FullscreenMediaCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C904BD2FF4B4A4004EDBFA /* FullscreenMediaCoordinator.swift */; };
@@ -297,6 +298,7 @@
 				07E1A0033B7A111100000001 /* ConnectionMonitor.swift in Sources */,
 				07C904B22EDB92DB004EDBFA /* playground.swift in Sources */,
 				07C904B62EDBAE73004EDBFA /* FrameView.swift in Sources */,
+				07D1C1072FF0BBBB00000003 /* PhotoLibraryHelper.swift in Sources */,
 				07C904B72FE2B5E9004EDBFA /* FrameLayout.swift in Sources */,
 				07D1C1032FF0BBBB00000001 /* ImageCache.swift in Sources */,
 				07D1C1052FF0BBBB00000002 /* ScheduleCache.swift in Sources */,
