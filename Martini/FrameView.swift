@@ -750,25 +750,25 @@ struct FrameView: View {
     private func tagGroupColor(for groupName: String) -> Color {
         switch groupName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
         case "blue":
-            return .martiniBlue
+            return .martiniBlueColor
         case "cyan":
-            return .martiniCyan
+            return .martiniCyanColor
         case "green":
-            return .martiniGreen
+            return .martiniGreenColor
         case "lime":
-            return .martiniLime
+            return .martiniLimeColor
         case "orange":
-            return .martiniOrange
+            return .martiniOrangeColor
         case "pink":
-            return .martiniPink
+            return .martiniPinkColor
         case "purple":
-            return .martiniPurple
+            return .martiniPurpleColor
         case "red":
-            return .martiniRed
+            return .martiniRedColor
         case "yellow":
-            return .martiniYellow
+            return .martiniYellowColor
         default:
-            return .martiniGray
+            return .martiniGrayColor
         }
     }
 
