@@ -1902,30 +1902,34 @@ private struct BoardPreviewView: View {
     let isVideo: Bool
 
     var body: some View {
-        VStack {
-            if isVideo {
-                CachedVideoPlayerView(url: url)
-            } else {
-                CachedAsyncImage(url: url) { phase in
-                    switch phase {
-                    case let .success(image):
-                        image
-                            .resizable()
-                            .scaledToFit()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    case .empty:
-                        ProgressView()
-                    case .failure:
-                        Text("Unable to load image.")
-                            .foregroundStyle(.secondary)
-                    @unknown default:
-                        Text("Unable to load image.")
-                            .foregroundStyle(.secondary)
+        ZStack {
+            Color("PreviewBackground")
+                .ignoresSafeArea()
+            VStack {
+                if isVideo {
+                    CachedVideoPlayerView(url: url)
+                } else {
+                    CachedAsyncImage(url: url) { phase in
+                        switch phase {
+                        case let .success(image):
+                            image
+                                .resizable()
+                                .scaledToFit()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        case .empty:
+                            ProgressView()
+                        case .failure:
+                            Text("Unable to load image.")
+                                .foregroundStyle(.secondary)
+                        @unknown default:
+                            Text("Unable to load image.")
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
             }
+            .padding()
         }
-        .padding()
     }
 }
 
