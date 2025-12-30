@@ -852,6 +852,26 @@ struct FrameTag: Codable, Identifiable, Hashable {
     }
 }
 
+// MARK: - Tag Group Model
+
+struct TagGroupDefinition: Codable, Identifiable, Hashable {
+    let id: String
+    let name: String
+    let color: String?
+    let icon: String?
+    let order: Int?
+    let tags: [FrameTag]?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case color
+        case icon
+        case order
+        case tags
+    }
+}
+
 // MARK: - Frame Board
 
 struct FrameBoard: Codable, Identifiable, Hashable {
@@ -1377,6 +1397,32 @@ struct FramesResponse: Codable {
     @SafeBool var success: Bool
     let frames: [Frame]
     let error: String?
+    let tagGroups: [TagGroupDefinition]?
+
+    enum CodingKeys: String, CodingKey {
+        case success
+        case frames
+        case error
+        case tagGroups
+        case tag_groups
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        _success = try container.decodeIfPresent(SafeBool.self, forKey: .success) ?? SafeBool()
+        frames = try container.decodeIfPresent([Frame].self, forKey: .frames) ?? []
+        error = try container.decodeIfPresent(String.self, forKey: .error)
+        let decodedTagGroups = try container.decodeIfPresent([TagGroupDefinition].self, forKey: .tagGroups)
+        tagGroups = decodedTagGroups ?? (try container.decodeIfPresent([TagGroupDefinition].self, forKey: .tag_groups))
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(success, forKey: .success)
+        try container.encode(frames, forKey: .frames)
+        try container.encodeIfPresent(error, forKey: .error)
+        try container.encodeIfPresent(tagGroups, forKey: .tagGroups)
+    }
 }
 
 struct UpdateFrameStatusResponse: Codable {
