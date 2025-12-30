@@ -21,6 +21,8 @@ struct LoginView: View {
     var body: some View {
         ZStack {
             // Background
+            Color.black
+                .ignoresSafeArea()
             ParallaxBoardBackground()
                 .edgesIgnoringSafeArea(.all)
 

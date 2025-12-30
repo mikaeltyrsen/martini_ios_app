@@ -17,24 +17,10 @@ struct QRScannerView: View {
     let onCodeScanned: (String) -> Void
     
     var body: some View {
-        ZStack(alignment: .topLeading) {
+        ZStack {
             CameraPreview(session: scanner.captureSession)
                 .edgesIgnoringSafeArea(.all)
 
-            Button {
-                dismiss()
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.white)
-                    .padding(10)
-                    .background(Color.black.opacity(0.7))
-                    .clipShape(Circle())
-                    .accessibilityLabel("Close camera")
-            }
-            .padding(.top, 16)
-            .padding(.leading, 16)
-            
             VStack {
                 Spacer()
                 
@@ -67,6 +53,22 @@ struct QRScannerView: View {
                         .padding(.bottom, 50)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white)
+                    .padding(10)
+                    .background(Color.black.opacity(0.7))
+                    .clipShape(Circle())
+                    .accessibilityLabel("Close camera")
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .padding(.top, 16)
+            .padding(.leading, 16)
         }
         .onChange(of: scanner.scannedCode) { oldValue, newValue in
             if let code = newValue {
