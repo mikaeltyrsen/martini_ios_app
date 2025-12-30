@@ -1999,6 +1999,7 @@ struct Triangle: Shape {
 struct SettingsView: View {
     @EnvironmentObject var authService: AuthService
     @Environment(\.dismiss) private var dismiss
+    @AppStorage("themePreference") private var themePreferenceRawValue = ThemePreference.system.rawValue
     @Binding var showDescriptions: Bool
     @Binding var showFullDescriptions: Bool
     @Binding var gridSizeStep: Int // 1..4 (portrait: 4->1, landscape: 5->2)
@@ -2063,6 +2064,16 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("Theme") {
+                    Picker("Theme", selection: themePreferenceBinding) {
+                        ForEach(ThemePreference.allCases) { preference in
+                            Text(preference.label)
+                                .tag(preference)
+                        }
+                    }
+                    .pickerStyle(.inline)
+                }
+
                 Section {
                     NavigationLink {
                         ScoutCameraSettingsView()
@@ -2119,6 +2130,13 @@ struct SettingsView: View {
         case 5: return "XL"
         default: return "M"
         }
+    }
+
+    private var themePreferenceBinding: Binding<ThemePreference> {
+        Binding(
+            get: { ThemePreference(rawValue: themePreferenceRawValue) ?? .system },
+            set: { themePreferenceRawValue = $0.rawValue }
+        )
     }
 }
 

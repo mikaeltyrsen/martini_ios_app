@@ -23,6 +23,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 @main
 struct MartiniApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    @AppStorage("themePreference") private var themePreferenceRawValue = ThemePreference.system.rawValue
     @StateObject private var authService: AuthService
     @StateObject private var realtimeService: RealtimeService
     @StateObject private var connectionMonitor: ConnectionMonitor
@@ -47,6 +48,11 @@ struct MartiniApp: App {
                 .fullscreenMediaCoordinator(fullscreenCoordinator)
                 //.tint(.martiniDefaultColor)
                 .accentColor(.martiniDefaultColor)
+                .preferredColorScheme(themePreference.colorScheme)
         }
+    }
+
+    private var themePreference: ThemePreference {
+        ThemePreference(rawValue: themePreferenceRawValue) ?? .system
     }
 }
