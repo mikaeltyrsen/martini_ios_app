@@ -1,4 +1,7 @@
 import UIKit
+#if DEBUG
+import SwiftUI
+#endif
 
 struct ScoutCameraPhotoLayout {
     static func render(
@@ -135,3 +138,81 @@ struct ScoutCameraPhotoLayout {
         return UIImage(cgImage: cropped, scale: image.scale, orientation: image.imageOrientation)
     }
 }
+
+#if DEBUG
+private struct ScoutCameraPhotoLayoutPreview: View {
+    private let metadata = ScoutPhotoMetadata(
+        cameraLine: "ScoutCam • 24fps • 8K",
+        lensLine: "50mm ƒ/1.4 • ISO 400"
+    )
+
+    var body: some View {
+        let previewImage = ScoutCameraPhotoLayout.render(
+            capturedImage: sampleImage(),
+            targetAspectRatio: 4 / 5,
+            sensorAspectRatio: 3 / 2,
+            metadata: metadata,
+            logoImage: sampleLogo(),
+            frameLineAspectRatio: 16 / 9
+        )
+
+        return Group {
+            if let previewImage {
+                Image(uiImage: previewImage)
+                    .resizable()
+                    .scaledToFit()
+                    .background(Color(.secondarySystemBackground))
+            } else {
+                Text("Failed to render preview")
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding()
+        .previewLayout(.sizeThatFits)
+    }
+
+    private func sampleImage() -> UIImage {
+        let size = CGSize(width: 1200, height: 800)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { context in
+            UIColor.systemTeal.setFill()
+            context.fill(CGRect(origin: .zero, size: size))
+
+            let insetRect = CGRect(x: 80, y: 60, width: 1040, height: 680)
+            UIColor.systemIndigo.setFill()
+            context.fill(insetRect)
+
+            let accentRect = CGRect(x: 140, y: 120, width: 240, height: 140)
+            UIColor.systemOrange.setFill()
+            context.fill(accentRect)
+        }
+    }
+
+    private func sampleLogo() -> UIImage {
+        let size = CGSize(width: 120, height: 32)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { context in
+            UIColor.black.setFill()
+            context.fill(CGRect(origin: .zero, size: size))
+
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: 14, weight: .bold),
+                .foregroundColor: UIColor.white
+            ]
+            let text = "MARTINI"
+            let textSize = text.size(withAttributes: attributes)
+            let textOrigin = CGPoint(
+                x: (size.width - textSize.width) / 2,
+                y: (size.height - textSize.height) / 2
+            )
+            text.draw(at: textOrigin, withAttributes: attributes)
+        }
+    }
+}
+
+struct ScoutCameraPhotoLayout_Previews: PreviewProvider {
+    static var previews: some View {
+        ScoutCameraPhotoLayoutPreview()
+    }
+}
+#endif
