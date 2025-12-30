@@ -33,3 +33,50 @@ struct CommentLayout: View {
         comment.name ?? comment.guestName ?? "Unknown"
     }
 }
+
+#if DEBUG
+struct CommentLayout_Previews: PreviewProvider {
+    static var previews: some View {
+        VStack(spacing: 16) {
+            CommentLayout(comment: sampleComment, isReply: false)
+            CommentLayout(comment: sampleReply, isReply: true)
+        }
+        .padding()
+        .previewLayout(.sizeThatFits)
+    }
+
+    private static var sampleComment: Comment {
+        Comment(
+            id: "comment-1",
+            userId: "user-1",
+            guestName: nil,
+            comment: "Really like the color grading on this take!",
+            marker: nil,
+            status: "open",
+            frameId: "frame-1",
+            frameOrder: 1,
+            lastUpdated: "Just now",
+            name: "Martini",
+            replies: [],
+            frameThumb: nil
+        )
+    }
+
+    private static var sampleReply: Comment {
+        Comment(
+            id: "reply-1",
+            userId: "user-2",
+            guestName: nil,
+            comment: "Totally agree—maybe lift the shadows a bit more.",
+            marker: nil,
+            status: "open",
+            frameId: "frame-1",
+            frameOrder: 1,
+            lastUpdated: "2m ago",
+            name: "Scout",
+            replies: [],
+            frameThumb: nil
+        )
+    }
+}
+#endif
