@@ -31,18 +31,22 @@ final class ScoutCameraViewModel: ObservableObject {
 
     private let projectId: String
     private let frameId: String
-    private let creativeId: String
+    private(set) var creativeId: String?
     private let targetAspectRatio: CGFloat
     private let dataStore = LocalJSONStore.shared
     private let selectionStore = ProjectKitSelectionStore.shared
     private let uploadService = FrameUploadService()
 
-    init(projectId: String, frameId: String, creativeId: String, targetAspectRatio: CGFloat) {
+    init(projectId: String, frameId: String, creativeId: String?, targetAspectRatio: CGFloat) {
         self.projectId = projectId
         self.frameId = frameId
         self.creativeId = creativeId
         self.targetAspectRatio = targetAspectRatio
         loadData()
+    }
+
+    func updateCreativeId(_ creativeId: String?) {
+        self.creativeId = creativeId
     }
 
     func loadData() {
@@ -228,6 +232,10 @@ final class ScoutCameraViewModel: ObservableObject {
 
     func uploadProcessedImage(token: String?) async -> Bool {
         guard let processedImage, let data = processedImage.jpegData(compressionQuality: 0.9) else { return false }
+        guard let creativeId else {
+            errorMessage = "Missing creative ID for upload."
+            return false
+        }
         do {
             try await uploadService.uploadPhotoboard(
                 imageData: data,
