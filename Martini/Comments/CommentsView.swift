@@ -5,6 +5,7 @@ struct CommentsView: View {
     let comments: [Comment]
     let isLoading: Bool
     let errorMessage: String?
+    @Binding var isVisible: Bool
     let onReload: () async -> Void
     @State private var newCommentText: String = ""
     @FocusState private var composeFieldFocused: Bool
@@ -46,6 +47,12 @@ struct CommentsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await onReload()
+        }
+        .onAppear {
+            isVisible = true
+        }
+        .onDisappear {
+            isVisible = false
         }
         .safeAreaInset(edge: .bottom) {
             commentComposer

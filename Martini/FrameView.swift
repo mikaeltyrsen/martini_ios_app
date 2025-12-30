@@ -20,7 +20,6 @@ struct FrameView: View {
     @State private var selectedStatus: FrameStatus
     @State private var assetStack: [FrameAssetItem]
     @State private var visibleAssetID: FrameAssetItem.ID?
-    @State private var showingComments: Bool = false
     @State private var showingFiles: Bool = false
     @State private var filesSheetDetent: PresentationDetent = .medium
     @State private var clips: [Clip] = []
@@ -31,6 +30,8 @@ struct FrameView: View {
     @State private var isLoadingComments: Bool = false
     @State private var commentsError: String?
     @State private var commentsBadgeCount: Int? = nil
+    @State private var isFrameVisible: Bool = false
+    @State private var isCommentsVisible: Bool = false
     @State private var descriptionHeightRatio: CGFloat
     @State private var dragStartRatio: CGFloat?
     @State private var descriptionScrollOffset: CGFloat = 0
@@ -174,10 +175,26 @@ struct FrameView: View {
             .onReceive(authService.$frameUpdateEvent) { event in
                 guard let event else { return }
                 guard event.frameId == frame.id else { return }
-                guard case .websocket(let eventName) = event.context, eventName == "update-clips" else { return }
-                Task {
-                    await loadClips(force: true)
+                guard case .websocket(let eventName) = event.context else { return }
+                switch eventName {
+                case "update-clips":
+                    Task {
+                        await loadClips(force: true)
+                    }
+                case "comment-added":
+                    guard isFrameVisible || isCommentsVisible else { return }
+                    Task {
+                        await loadComments(force: true)
+                    }
+                default:
+                    break
                 }
+            }
+            .onAppear {
+                isFrameVisible = true
+            }
+            .onDisappear {
+                isFrameVisible = false
             }
     }
 
@@ -407,6 +424,7 @@ struct FrameView: View {
                     comments: comments,
                     isLoading: isLoadingComments,
                     errorMessage: commentsError,
+                    isVisible: $isCommentsVisible,
                     onReload: { await loadComments(force: true) }
                 )
             } label: {
