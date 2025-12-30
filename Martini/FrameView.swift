@@ -917,7 +917,7 @@ struct FrameView: View {
         .coordinateSpace(name: "descriptionScroll")
         .frame(maxWidth: .infinity)
         .frame(height: overlayHeight)
-        .background(Color.black)
+        .background(Color(.systemBackground))
         .scrollDisabled(allowsExpansion ? !isDescriptionExpanded : false)
         .onPreferenceChange(DescriptionScrollOffsetKey.self) { offset in
             descriptionScrollOffset = offset
