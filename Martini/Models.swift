@@ -948,19 +948,18 @@ struct Frame: Codable, Identifiable {
         mainBoardType = try container.decodeIfPresent(String.self, forKey: .mainBoardType)
 
         let primaryBoard = Frame.selectPrimaryBoard(from: boards, matching: mainBoardType)
-        let photoBoard = Frame.selectPrimaryBoard(from: boards, matching: "photoboard")
 
         board = try container.decodeIfPresent(String.self, forKey: .board) ?? primaryBoard?.fileUrl
         boardThumb = try container.decodeIfPresent(String.self, forKey: .boardThumb) ?? primaryBoard?.fileThumbUrl
         boardFileName = try container.decodeIfPresent(String.self, forKey: .boardFileName) ?? primaryBoard?.fileName
         boardFileType = try container.decodeIfPresent(String.self, forKey: .boardFileType) ?? primaryBoard?.fileType
         _boardFileSize = try container.decodeIfPresent(SafeOptionalInt.self, forKey: .boardFileSize) ?? SafeOptionalInt(wrappedValue: primaryBoard?.fileSize)
-        photoboard = try container.decodeIfPresent(String.self, forKey: .photoboard) ?? photoBoard?.fileUrl
-        photoboardThumb = try container.decodeIfPresent(String.self, forKey: .photoboardThumb) ?? photoBoard?.fileThumbUrl
-        photoboardFileName = try container.decodeIfPresent(String.self, forKey: .photoboardFileName) ?? photoBoard?.fileName
-        photoboardFileType = try container.decodeIfPresent(String.self, forKey: .photoboardFileType) ?? photoBoard?.fileType
-        _photoboardFileSize = try container.decodeIfPresent(SafeOptionalInt.self, forKey: .photoboardFileSize) ?? SafeOptionalInt(wrappedValue: photoBoard?.fileSize)
-        photoboardCrop = try container.decodeIfPresent(String.self, forKey: .photoboardCrop) ?? photoBoard?.fileCrop
+        photoboard = try container.decodeIfPresent(String.self, forKey: .photoboard)
+        photoboardThumb = try container.decodeIfPresent(String.self, forKey: .photoboardThumb)
+        photoboardFileName = try container.decodeIfPresent(String.self, forKey: .photoboardFileName)
+        photoboardFileType = try container.decodeIfPresent(String.self, forKey: .photoboardFileType)
+        _photoboardFileSize = try container.decodeIfPresent(SafeOptionalInt.self, forKey: .photoboardFileSize) ?? SafeOptionalInt()
+        photoboardCrop = try container.decodeIfPresent(String.self, forKey: .photoboardCrop)
         preview = try container.decodeIfPresent(String.self, forKey: .preview)
         previewThumb = try container.decodeIfPresent(String.self, forKey: .previewThumb)
         previewFileName = try container.decodeIfPresent(String.self, forKey: .previewFileName)
@@ -1154,11 +1153,7 @@ struct Frame: Codable, Identifiable {
     var availableAssets: [FrameAssetItem] {
         var items: [FrameAssetItem] = []
 
-        let photoboardLabel = FrameAssetKind.photoboard.displayName.lowercased()
         let boardsList: [FrameBoard] = boards ?? []
-        let hasPhotoboardBoard = boardsList.contains { board in
-            board.label?.lowercased() == photoboardLabel
-        }
         let sortedBoards: [FrameBoard] = boardsList.sorted { lhs, rhs in
             if lhs.isPinned != rhs.isPinned {
                 return lhs.isPinned
@@ -1191,11 +1186,16 @@ struct Frame: Codable, Identifiable {
             )
         }
 
-        if (photoboard != nil || photoboardThumb != nil), !hasPhotoboardBoard {
+        let hasMatchingPhotoboard = boardsList.contains { board in
+            (photoboard != nil && board.fileUrl == photoboard) ||
+            (photoboardThumb != nil && board.fileThumbUrl == photoboardThumb)
+        }
+
+        if (photoboard != nil || photoboardThumb != nil), !hasMatchingPhotoboard {
             items.append(
                 FrameAssetItem(
                     id: "photoboard",
-                    kind: .photoboard,
+                    kind: .board,
                     primary: photoboard,
                     fallback: photoboardThumb,
                     fileType: photoboardFileType
@@ -1258,7 +1258,6 @@ struct Frame: Codable, Identifiable {
 
     func updatingBoards(_ boards: [FrameBoard], mainBoardType: String?) -> Frame {
         let primaryBoard = Frame.selectPrimaryBoard(from: boards, matching: mainBoardType)
-        let photoBoard = Frame.selectPrimaryBoard(from: boards, matching: "photoboard")
 
         return copyFrame(
             boards: boards,
@@ -1267,13 +1266,7 @@ struct Frame: Codable, Identifiable {
             boardThumb: primaryBoard?.fileThumbUrl,
             boardFileName: primaryBoard?.fileName,
             boardFileType: primaryBoard?.fileType,
-            boardFileSize: primaryBoard?.fileSize,
-            photoboard: photoBoard?.fileUrl,
-            photoboardThumb: photoBoard?.fileThumbUrl,
-            photoboardFileName: photoBoard?.fileName,
-            photoboardFileType: photoBoard?.fileType,
-            photoboardFileSize: photoBoard?.fileSize,
-            photoboardCrop: photoBoard?.fileCrop
+            boardFileSize: primaryBoard?.fileSize
         )
     }
 
@@ -1619,15 +1612,12 @@ struct CommentsResponse: Codable {
 
 enum FrameAssetKind: String, CaseIterable, Hashable {
     case board
-    case photoboard
     case preview
 
     var displayName: String {
         switch self {
         case .board:
             return "Board"
-        case .photoboard:
-            return "Photoboard"
         case .preview:
             return "Preview"
         }
@@ -1637,8 +1627,6 @@ enum FrameAssetKind: String, CaseIterable, Hashable {
         switch self {
         case .board:
             return "square.on.square"
-        case .photoboard:
-            return "photo.on.rectangle"
         case .preview:
             return "video"
         }

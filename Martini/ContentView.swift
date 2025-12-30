@@ -1304,8 +1304,6 @@ private extension MainView {
         switch gridAssetPriority {
         case .board:
             return baseOrder
-        case .photoboard:
-            return prioritize(order: baseOrder, primary: .photoboard)
         case .preview:
             return prioritize(order: baseOrder, primary: .preview)
         }
