@@ -2224,7 +2224,7 @@ private struct AssetCardView: View {
             .frame(width: cardWidth)
             .padding(.vertical, 16)
             .applyHorizontalScrollTransition()
-            .shadow(radius: 10, x: 0, y: 10)
+            //.shadow(radius: 10, x: 0, y: 10)
 
         if let onTap {
             styledCard
@@ -2260,7 +2260,7 @@ private struct TakePictureCardView: View {
             .aspectRatio(aspectRatio, contentMode: .fit)
             .frame(width: cardWidth)
             .padding(.vertical, 16)
-            .shadow(radius: 10, x: 0, y: 10)
+            //.shadow(radius: 10, x: 0, y: 10)
         }
         .buttonStyle(.plain)
     }
