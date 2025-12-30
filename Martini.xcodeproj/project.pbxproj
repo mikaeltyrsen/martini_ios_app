@@ -64,6 +64,9 @@
 		0730F3E62EFC14E3000B598F /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		0730F3EA2EFD9B85000B598F /* martini_master_offline_db_v2.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = martini_master_offline_db_v2.json; sourceTree = "<group>"; };
 		0730F3EC2EFE2AB9000B598F /* martini_master_offline_db_v5.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = martini_master_offline_db_v5.json; sourceTree = "<group>"; };
+		0730F3F42F0400F0000B598F /* CommentLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentLayout.swift; sourceTree = "<group>"; };
+		0730F3F52F0400F0000B598F /* CommentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentsView.swift; sourceTree = "<group>"; };
+		0730F3F62F0400F0000B598F /* PhotoLibraryHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLibraryHelper.swift; sourceTree = "<group>"; };
 		075455FE2EC9A6E100C45739 /* AuthService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		075455FF2EC9A6E100C45739 /* LoginView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		075456002EC9A6E100C45739 /* QRScannerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
@@ -87,10 +90,10 @@
 		07F4E0032FF0AAAA00000002 /* WebsocketCalls.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebsocketCalls.swift; sourceTree = "<group>"; };
 		107AD8B89F4A441698E034E1 /* ScoutCamera/Processing/PhotoProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/Processing/PhotoProcessor.swift; sourceTree = "<group>"; };
 		10F9CB29EE71481EB424475E /* ScoutCamera/FOV/FOVMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/FOV/FOVMath.swift; sourceTree = "<group>"; };
+		1F7A3C5D4D1B4C3A8B9C0D1E /* ScoutCamera/ScoutCameraSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/ScoutCameraSettingsView.swift; sourceTree = "<group>"; };
 		2644D6ACDD4A4DC1A33D228A /* ProjectKit/ProjectKitSelectionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectKit/ProjectKitSelectionViews.swift; sourceTree = "<group>"; };
 		2A4CC88B8D6C4B3EB1AF6B93 /* ProjectKit/ProjectKitSelectionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectKit/ProjectKitSelectionStore.swift; sourceTree = "<group>"; };
 		2F825837CC9D4A3C884F0F59 /* ScoutCamera/ScoutCameraLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/ScoutCameraLayout.swift; sourceTree = "<group>"; };
-		1F7A3C5D4D1B4C3A8B9C0D1E /* ScoutCamera/ScoutCameraSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/ScoutCameraSettingsView.swift; sourceTree = "<group>"; };
 		30240C00983A4B208F56B246 /* ScoutCamera/ScoutCameraViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/ScoutCameraViewModel.swift; sourceTree = "<group>"; };
 		38B088F6DDD94E12A8B7997C /* LocalData/PackModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalData/PackModels.swift; sourceTree = "<group>"; };
 		477F863DD3304428A7C610C5 /* SchedulesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchedulesView.swift; sourceTree = "<group>"; };
@@ -124,6 +127,25 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0730F3F72F0400FC000B598F /* Comments */ = {
+			isa = PBXGroup;
+			children = (
+				0730F3F42F0400F0000B598F /* CommentLayout.swift */,
+				0730F3F52F0400F0000B598F /* CommentsView.swift */,
+			);
+			path = Comments;
+			sourceTree = "<group>";
+		};
+		0730F3F82F04010F000B598F /* Schedule */ = {
+			isa = PBXGroup;
+			children = (
+				07D1C1042FF0BBBB00000002 /* ScheduleCache.swift */,
+				477F863DD3304428A7C610C5 /* SchedulesView.swift */,
+				60C91863CD124D159734FD1B /* ScheduleView.swift */,
+			);
+			path = Schedule;
+			sourceTree = "<group>";
+		};
 		07A6A6792EC9A272002C8EB9 = {
 			isa = PBXGroup;
 			children = (
@@ -143,6 +165,8 @@
 		07A6A6842EC9A272002C8EB9 /* Martini */ = {
 			isa = PBXGroup;
 			children = (
+				0730F3F72F0400FC000B598F /* Comments */,
+				0730F3F62F0400F0000B598F /* PhotoLibraryHelper.swift */,
 				0730F3EA2EFD9B85000B598F /* martini_master_offline_db_v2.json */,
 				07ACD0013127F1D000000001 /* Martini.entitlements */,
 				07C904B12EDB92D8004EDBFA /* playground.swift */,
@@ -164,9 +188,7 @@
 				07C904BD2FF4B4A4004EDBFA /* FullscreenMediaCoordinator.swift */,
 				07C904B72EDC888C004EDBFA /* Helpers.swift */,
 				07D1C1022FF0BBBB00000001 /* ImageCache.swift */,
-				07D1C1042FF0BBBB00000002 /* ScheduleCache.swift */,
-				477F863DD3304428A7C610C5 /* SchedulesView.swift */,
-				60C91863CD124D159734FD1B /* ScheduleView.swift */,
+				0730F3F82F04010F000B598F /* Schedule */,
 				0730F3E62EFC14E3000B598F /* Config.swift */,
 				38B088F6DDD94E12A8B7997C /* LocalData/PackModels.swift */,
 				EBF9DC5BE38645D481011359 /* LocalData/DBModels.swift */,
