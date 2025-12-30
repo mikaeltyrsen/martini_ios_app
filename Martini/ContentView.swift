@@ -2067,11 +2067,11 @@ struct SettingsView: View {
                 Section("Theme") {
                     Picker("Theme", selection: themePreferenceBinding) {
                         ForEach(ThemePreference.allCases) { preference in
-                            Text(preference.label)
+                            Label(preference.label, systemImage: preference.systemImageName)
                                 .tag(preference)
                         }
                     }
-                    .pickerStyle(.inline)
+                    .pickerStyle(.segmented)
                 }
 
                 Section {
