@@ -6,6 +6,7 @@ import UIKit
 struct ScoutCameraLayout: View {
     @EnvironmentObject private var authService: AuthService
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var viewModel: ScoutCameraViewModel
     @ObservedObject private var calibrationStore: FOVCalibrationStore
     @StateObject private var motionManager = MotionHeadingManager()
@@ -125,7 +126,21 @@ struct ScoutCameraLayout: View {
         }
         .onChange(of: previewOrientation) { newValue in
             viewModel.captureManager.updateVideoOrientation(newValue)
-            viewModel.captureManager.restartSessionForOrientationChange()
+            if viewModel.captureManager.isRunning {
+                viewModel.captureManager.restartSessionForOrientationChange()
+            } else {
+                Task { await viewModel.updateCaptureConfiguration() }
+            }
+        }
+        .onChange(of: scenePhase) { newPhase in
+            switch newPhase {
+            case .active:
+                Task { await viewModel.updateCaptureConfiguration() }
+            case .background:
+                viewModel.captureManager.stop()
+            default:
+                break
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)) { _ in
             let nextOrientation = currentPreviewOrientation()
@@ -164,14 +179,34 @@ struct ScoutCameraLayout: View {
         .sheet(isPresented: $isCameraSelectionPresented) {
             CameraSelectionSheet(viewModel: viewModel)
         }
+        .onChange(of: isCameraSelectionPresented) { newValue in
+            if !newValue {
+                resumePreviewIfNeeded()
+            }
+        }
         .sheet(isPresented: $isFrameLineSettingsPresented) {
             CameraSettingsSheet(viewModel: viewModel)
+        }
+        .onChange(of: isFrameLineSettingsPresented) { newValue in
+            if !newValue {
+                resumePreviewIfNeeded()
+            }
         }
         .sheet(isPresented: $isLensPackPresented) {
             LensPackSheet(viewModel: viewModel)
         }
+        .onChange(of: isLensPackPresented) { newValue in
+            if !newValue {
+                resumePreviewIfNeeded()
+            }
+        }
         .sheet(isPresented: $isCalibrationPresented) {
             FOVCalibrationView(scoutViewModel: viewModel)
+        }
+        .onChange(of: isCalibrationPresented) { newValue in
+            if !newValue {
+                resumePreviewIfNeeded()
+            }
         }
         .overlay(VolumeButtonSuppressor(volumeView: volumeObserver.volumeView))
     }
@@ -876,6 +911,11 @@ struct ScoutCameraLayout: View {
             try? await authService.fetchFrames()
             dismiss()
         }
+    }
+
+    private func resumePreviewIfNeeded() {
+        guard !viewModel.captureManager.isRunning else { return }
+        Task { await viewModel.updateCaptureConfiguration() }
     }
 
     private func currentPreviewOrientation() -> AVCaptureVideoOrientation {
