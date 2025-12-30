@@ -705,22 +705,22 @@ struct FrameView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Description")
                     .font(.headline)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
 
                 Text(cleanText)
                     .font(.body)
-                    .foregroundColor(.white.opacity(0.9))
+                    .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         } else {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Description")
                     .font(.headline)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
 
                 Text("No description provided for this frame.")
                     .font(.body)
-                    .foregroundColor(.white.opacity(0.7))
+                    .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
