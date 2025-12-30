@@ -6,6 +6,7 @@ final class WebsocketCalls {
     private let authService: AuthService
 
     private let frameEvents: Set<String> = [
+        "comment-added",
         "frame-status-updated",
         "frame-order-updated",
         "frame-image-updated",
@@ -99,6 +100,10 @@ final class WebsocketCalls {
             } else {
                 notifyFrameUpdate(id: frameId, eventName: name)
             }
+            return
+
+        case "comment-added":
+            notifyFrameUpdate(id: frameId, eventName: name)
             return
 
         default:
