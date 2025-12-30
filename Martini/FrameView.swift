@@ -1093,7 +1093,7 @@ private extension FrameView {
 
     private func boardEntries() -> [FrameAssetItem] {
         let boardIds = Set(frame.boards?.map(\.id) ?? [])
-        assetStack.filter { asset in
+        return assetStack.filter { asset in
             asset.kind == .board && boardIds.contains(asset.id)
         }
     }
