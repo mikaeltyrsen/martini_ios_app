@@ -5,14 +5,14 @@ struct CommentLayout: View {
     let isReply: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
                 Circle()
-                    .fill(Color.martiniDefaultColor.opacity(isReply ? 0.12 : 0.2))
+                    .fill(Color.martiniDefaultColor.opacity(isReply ? 1 : 1))
                     .frame(width: isReply ? 22 : 28, height: isReply ? 22 : 28)
                 Text(displayName)
-                    .font(isReply ? .subheadline.weight(.semibold) : .headline)
-                Spacer()
+                    .font(.system(size: 14, weight: .semibold))
+
                 if let lastUpdated = comment.lastUpdated, !lastUpdated.isEmpty {
                     Text(lastUpdated)
                         .font(.caption)
@@ -24,9 +24,12 @@ struct CommentLayout: View {
                 Text(body)
                     .font(isReply ? .subheadline : .body)
             }
-
-            Divider()
         }
+        .padding(18) // ⬅️ padding FIRST
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.commentBackground.opacity(1))
+        )
     }
 
     private var displayName: String {
