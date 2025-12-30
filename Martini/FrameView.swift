@@ -610,26 +610,36 @@ struct FrameView: View {
         if asset.kind == .board {
             let isBoardEntry = boardEntry(for: asset) != nil
             if isBoardEntry {
-                Button("Rename") {
+                Button {
                     boardRenameTarget = asset
                     boardRenameText = asset.displayLabel
                     isRenamingBoard = false
                     showingBoardRenameAlert = true
+                } label: {
+                    Label("Rename", systemImage: "character.cursor.ibeam")
                 }
-                Button("Reorder") {
+                Button {
                     enterBoardReorderMode()
+                } label: {
+                    Label("Reorder", systemImage: "arrow.left.arrow.right")
                 }
-                Button("Pin board") {
+                Button {
                     pinBoard(asset)
+                } label: {
+                    Label("Pin board", systemImage: "pin.fill")
                 }
-                Button("Delete", role: .destructive) {
+                Button(role: .destructive) {
                     boardDeleteTarget = asset
                     showingBoardDeleteAlert = true
+                } label: {
+                    Label("Delete", systemImage: "trash.fill")
                 }
             } else {
-                Button("Delete", role: .destructive) {
+                Button(role: .destructive) {
                     boardDeleteTarget = asset
                     showingBoardDeleteAlert = true
+                } label: {
+                    Label("Delete", systemImage: "trash.fill")
                 }
             }
         } else {
