@@ -55,7 +55,7 @@ struct FrameView: View {
     @State private var boardDeleteTarget: FrameAssetItem?
     @State private var boardActionError: String?
     @State private var selectedBoardPreview: BoardPreviewItem?
-    @State private var boardPhotoAccessAlert: PhotoAccessAlert?
+    @State private var boardPhotoAccessAlert: PhotoLibraryHelper.PhotoAccessAlert?
     @Environment(\.openURL) private var openURL
 
     private let minDescriptionRatio: CGFloat = 0.35
@@ -1251,7 +1251,7 @@ private extension FrameView {
                 }
 
                 if case .accessDenied = result {
-                    boardPhotoAccessAlert = PhotoAccessAlert(
+                    boardPhotoAccessAlert = PhotoLibraryHelper.PhotoAccessAlert(
                         message: PhotoLibraryHelper.accessDeniedMessage(for: .board)
                     )
                 }
@@ -1421,7 +1421,7 @@ private struct ClipRow: View {
     let clip: Clip
     let onPreview: () -> Void
     @State private var shareItem: ShareItem?
-    @State private var photoAccessAlert: PhotoAccessAlert?
+    @State private var photoAccessAlert: PhotoLibraryHelper.PhotoAccessAlert?
     @Environment(\.openURL) private var openURL
 
     var body: some View {
@@ -1509,7 +1509,7 @@ private struct ClipRow: View {
                 }
 
                 if case .accessDenied = result {
-                    photoAccessAlert = PhotoAccessAlert(
+                    photoAccessAlert = PhotoLibraryHelper.PhotoAccessAlert(
                         message: PhotoLibraryHelper.accessDeniedMessage(for: .clip)
                     )
                 }
