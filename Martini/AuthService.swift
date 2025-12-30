@@ -55,6 +55,7 @@ class AuthService: ObservableObject {
     @Published var cachedSchedule: ProjectSchedule?
     @Published var fetchedSchedules: [ProjectSchedule] = []
     @Published var frames: [Frame] = []
+    @Published var tagGroups: [TagGroupDefinition] = []
     @Published var frameUpdateEvent: FrameUpdateEvent?
     @Published var scheduleUpdateEvent: ScheduleUpdateEvent?
     @Published var isLoadingFrames: Bool = false
@@ -510,6 +511,9 @@ class AuthService: ObservableObject {
         }
 
         self.frames = framesResponse.frames
+        if let tagGroups = framesResponse.tagGroups {
+            self.tagGroups = tagGroups
+        }
         cacheFrames(framesResponse.frames, for: projectId)
         self.isScheduleActive = framesResponse.frames.contains { frame in
             if let schedule = frame.schedule, !schedule.isEmpty { return true }

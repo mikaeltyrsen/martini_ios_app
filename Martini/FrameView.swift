@@ -4,6 +4,7 @@ import UIKit
 import Combine
 import QuickLook
 import UniformTypeIdentifiers
+import Foundation
 
 @MainActor
 struct FrameView: View {
@@ -749,10 +750,17 @@ struct FrameView: View {
 
     private func tagGroupColor(for groupName: String) -> Color {
         let normalized = groupName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let resolvedColorValue = tagGroupColorValue(for: normalized)
+
+        if let resolved = colorFromTagGroupValue(resolvedColorValue) {
+            print("[TagPill] groupName='\(groupName)' normalized='\(normalized)' resolved='\(resolvedColorValue)' color=custom")
+            return resolved
+        }
+
         let colorName: String
         let color: Color
 
-        switch normalized {
+        switch resolvedColorValue {
         case "blue":
             colorName = "martiniBlueColor"
             color = .martiniBlueColor
@@ -785,8 +793,48 @@ struct FrameView: View {
             color = .martiniGrayColor
         }
 
-        print("[TagPill] groupName='\(groupName)' normalized='\(normalized)' color=\(colorName)")
+        print("[TagPill] groupName='\(groupName)' normalized='\(normalized)' resolved='\(resolvedColorValue)' color=\(colorName)")
         return color
+    }
+
+    private func tagGroupColorValue(for normalizedGroupName: String) -> String {
+        let matchedGroup = authService.tagGroups.first {
+            $0.name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == normalizedGroupName
+        }
+
+        let rawColor = matchedGroup?.color?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return rawColor?.isEmpty == false ? rawColor! : normalizedGroupName
+    }
+
+    private func colorFromTagGroupValue(_ value: String) -> Color? {
+        let cleaned = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !cleaned.isEmpty else { return nil }
+
+        let hexString = cleaned.hasPrefix("#") ? String(cleaned.dropFirst()) : cleaned
+        guard hexString.count == 6 || hexString.count == 8 else { return nil }
+        guard hexString.range(of: "^[0-9a-f]+$", options: .regularExpression) != nil else { return nil }
+
+        var hexNumber: UInt64 = 0
+        guard Scanner(string: hexString).scanHexInt64(&hexNumber) else { return nil }
+
+        let red: Double
+        let green: Double
+        let blue: Double
+        let alpha: Double
+
+        if hexString.count == 8 {
+            red = Double((hexNumber & 0xFF000000) >> 24) / 255
+            green = Double((hexNumber & 0x00FF0000) >> 16) / 255
+            blue = Double((hexNumber & 0x0000FF00) >> 8) / 255
+            alpha = Double(hexNumber & 0x000000FF) / 255
+        } else {
+            red = Double((hexNumber & 0xFF0000) >> 16) / 255
+            green = Double((hexNumber & 0x00FF00) >> 8) / 255
+            blue = Double(hexNumber & 0x0000FF) / 255
+            alpha = 1.0
+        }
+
+        return Color(red: red, green: green, blue: blue, opacity: alpha)
     }
 
     @ViewBuilder
