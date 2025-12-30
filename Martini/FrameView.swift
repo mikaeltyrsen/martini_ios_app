@@ -566,7 +566,7 @@ struct FrameView: View {
                     openScoutCamera()
                 },
                 onAssetTap: { asset in
-                    guard asset.kind == .board || asset.kind == .photoboard else { return }
+                    guard asset.kind == .board else { return }
                     openBoardPreview(asset)
                 },
                 contextMenuContent: { asset in
@@ -608,7 +608,7 @@ struct FrameView: View {
 
     @ViewBuilder
     private func boardContextMenu(for asset: FrameAssetItem) -> some View {
-        if asset.kind == .board || asset.kind == .photoboard {
+        if asset.kind == .board {
             let isBoardEntry = boardEntry(for: asset) != nil
             if isBoardEntry {
                 Button("Rename") {
@@ -620,10 +620,8 @@ struct FrameView: View {
                 Button("Reorder") {
                     enterBoardReorderMode()
                 }
-                if asset.kind == .board || asset.kind == .photoboard {
-                    Button("Pin board") {
-                        pinBoard(asset)
-                    }
+                Button("Pin board") {
+                    pinBoard(asset)
                 }
                 Button("Delete", role: .destructive) {
                     boardDeleteTarget = asset
@@ -836,7 +834,7 @@ struct FrameView: View {
     @ViewBuilder
     private func tabLabel(for asset: FrameAssetItem, isPinned: Bool, isSelected: Bool) -> some View {
         HStack(spacing: 6) {
-            if isPinned && (asset.kind == .board || asset.kind == .photoboard) {
+            if isPinned && asset.kind == .board {
                 Image(systemName: "pin.fill")
                     .font(.system(size: 12, weight: .semibold))
             }
@@ -1091,18 +1089,13 @@ private extension FrameView {
     }
 
     private func boardEntry(for asset: FrameAssetItem) -> FrameBoard? {
-        if asset.kind == .photoboard {
-            let label = FrameAssetKind.photoboard.displayName.lowercased()
-            return frame.boards?.first { $0.label?.lowercased() == label }
-        }
-
-        return frame.boards?.first { $0.id == asset.id }
+        frame.boards?.first { $0.id == asset.id }
     }
 
     private func boardEntries() -> [FrameAssetItem] {
         let boardIds = Set(frame.boards?.map(\.id) ?? [])
-        return assetStack.filter { asset in
-            (asset.kind == .board && boardIds.contains(asset.id)) || (asset.kind == .photoboard && boardEntry(for: asset) != nil)
+        assetStack.filter { asset in
+            asset.kind == .board && boardIds.contains(asset.id)
         }
     }
 
@@ -2102,7 +2095,7 @@ private struct StackedAssetScroller<ContextMenuContent: View>: View {
                 LazyHStack(alignment: .center, spacing: 0) {
                     ForEach(assetStack) { asset in
                         let shouldEnablePreview = asset.kind == .preview
-                        let shouldHandleTap = asset.kind == .board || asset.kind == .photoboard
+                        let shouldHandleTap = asset.kind == .board
                         AssetCardView(
                             frame: frame,
                             asset: asset,
@@ -2317,12 +2310,12 @@ private struct BoardReorderDropDelegate: DropDelegate {
 //        creativeId: "c1",
 //        board: "https://example.com/board.jpg",
 //        frameOrder: "1",
-//        photoboard: "https://example.com/photoboard.jpg",
+//        photoboard: "https://example.com/board.jpg",
 //        preview: "https://example.com/preview.mp4",
 //        previewThumb: "https://example.com/preview_thumb.jpg",
 //        description: "A sample description.",
 //        caption: "Sample Caption",
 //        status: FrameStatus.inProgress.rawValue
 //    )
-//    FrameView(frame: sample, assetOrder: .constant([.board, .photoboard, .preview])) {}
+//    FrameView(frame: sample, assetOrder: .constant([.board, .preview])) {}
 //}
