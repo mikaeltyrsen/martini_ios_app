@@ -50,10 +50,19 @@ public func attributedStringFromHTML(
     defaultColor: UIColor? = nil,
     baseFontSize: CGFloat? = nil
 ) -> AttributedString? {
-    let preferredDescriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .body)
-    let preferredFont = UIFont(descriptor: preferredDescriptor, size: 0)
+    let resolvedTraits = UITraitCollection.current
+    let resolvedDefaultColor = defaultColor?.resolvedColor(with: resolvedTraits)
+    let colorKey = resolvedDefaultColor.map(rgbaCacheKey) ?? "nil"
+    let fontSizeKey = baseFontSize.map { String(format: "%.2f", $0) } ?? "preferred"
+    let cacheKey = "\(resolvedTraits.userInterfaceStyle.rawValue)|\(fontSizeKey)|\(colorKey)|\(html)" as NSString
+
+    if let cached = HTMLAttributedStringCache.shared.value(forKey: cacheKey) {
+        return cached
+    }
+
+    let preferredFont = UIFont.preferredFont(forTextStyle: .body)
     let resolvedFontSize = baseFontSize ?? preferredFont.pointSize
-    let baseFont = UIFont(descriptor: preferredDescriptor, size: resolvedFontSize)
+    let baseFont = preferredFont.withSize(resolvedFontSize)
     let fontSize = "\(resolvedFontSize)px"
     let sanitizedHTML = html.replacingOccurrences(of: "\u{0000}", with: "")
     let styledHTML = """
@@ -97,10 +106,12 @@ public func attributedStringFromHTML(
         }
     }
 
-    let fallbackColor = adjustedReadableTextColor(defaultColor ?? dynamicReadableTextColor())
+    let fallbackColor = adjustedReadableTextColor(resolvedDefaultColor ?? dynamicReadableTextColor())
+        .resolvedColor(with: resolvedTraits)
     attributed.enumerateAttribute(.foregroundColor, in: fullRange, options: []) { value, range, _ in
         if let color = value as? UIColor {
             let adjustedColor = adjustedReadableTextColor(color)
+                .resolvedColor(with: resolvedTraits)
             if adjustedColor != color {
                 attributed.addAttribute(.foregroundColor, value: adjustedColor, range: range)
             }
@@ -109,7 +120,9 @@ public func attributedStringFromHTML(
         }
     }
 
-    return AttributedString(attributed)
+    let attributedString = AttributedString(attributed)
+    HTMLAttributedStringCache.shared.insert(attributedString, forKey: cacheKey)
+    return attributedString
 }
 
 private func dynamicReadableTextColor() -> UIColor {
@@ -147,6 +160,47 @@ private func isPureBlackOrWhite(_ color: UIColor) -> Bool {
     }
 
     return false
+}
+
+private final class HTMLAttributedStringCache {
+    static let shared = HTMLAttributedStringCache()
+
+    private let cache = NSCache<NSString, AttributedStringBox>()
+
+    private init() {}
+
+    func value(forKey key: NSString) -> AttributedString? {
+        cache.object(forKey: key)?.value
+    }
+
+    func insert(_ value: AttributedString, forKey key: NSString) {
+        cache.setObject(AttributedStringBox(value), forKey: key)
+    }
+}
+
+private final class AttributedStringBox: NSObject {
+    let value: AttributedString
+
+    init(_ value: AttributedString) {
+        self.value = value
+    }
+}
+
+private func rgbaCacheKey(for color: UIColor) -> String {
+    var red: CGFloat = 0
+    var green: CGFloat = 0
+    var blue: CGFloat = 0
+    var alpha: CGFloat = 0
+    if color.getRed(&red, green: &green, blue: &blue, alpha: &alpha) {
+        return String(format: "%.4f-%.4f-%.4f-%.4f", red, green, blue, alpha)
+    }
+
+    var white: CGFloat = 0
+    if color.getWhite(&white, alpha: &alpha) {
+        return String(format: "w%.4f-%.4f", white, alpha)
+    }
+
+    return color.description
 }
 
 /// Converts a simple HTML string to plain text by removing tags,
