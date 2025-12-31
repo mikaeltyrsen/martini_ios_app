@@ -295,7 +295,8 @@ struct FrameLayout: View {
 
         return GeometryReader { geo in
             let referenceWidth = geo.size.width
-            let fontSize = max(14, min(referenceWidth * 0.06, 28))
+            //let fontSize = max(14, min(referenceWidth * 0.06, 28))
+            let fontSize = referenceWidth * 0.06
             let horizontalPadding = referenceWidth * 0.08
             let verticalPadding = referenceWidth * 0.05
 
