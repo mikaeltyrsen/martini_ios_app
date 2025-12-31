@@ -104,7 +104,7 @@ struct ScheduleView: View {
                 if let description = block.description, !description.isEmpty {
                     Text(description)
                         .font(.subheadline)
-                        .foregroundStyle(.martiniDefaultDescriptionColor)
+                        .foregroundStyle(Color.martiniDefaultDescriptionColor)
                 }
             }
             .padding(.vertical, 10)
@@ -130,7 +130,7 @@ struct ScheduleView: View {
                 if let description = block.description, !description.isEmpty {
                     Text(description)
                         .font(.subheadline)
-                        .foregroundStyle(.martiniDefaultDescriptionColor)
+                        .foregroundStyle(Color.martiniDefaultDescriptionColor)
                 }
 
                 storyboardGrid(for: block)
