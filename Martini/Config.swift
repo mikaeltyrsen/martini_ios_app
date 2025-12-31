@@ -37,4 +37,5 @@ extension Color {
     static let martiniPurpleColor = Color("MartiniPurple")
     static let martiniRedColor = Color("MartiniRed")
     static let martiniYellowColor = Color("MartiniYellow")
+    static let scheduleColor = Color("ScheduleColor")
 }
