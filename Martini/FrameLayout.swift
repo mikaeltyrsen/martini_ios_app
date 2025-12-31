@@ -706,11 +706,11 @@ struct FrameLayout: View {
     }
 
     private var descriptionColor: Color {
-        colorScheme == .dark ? .white : .black
+        .martiniDefaultDescriptionColor
     }
 
     private var defaultDescriptionUIColor: UIColor {
-        .white
+        UIColor(named: "MartiniDefaultDescriptionColor") ?? .label
     }
 
     private var aspectRatio: CGFloat {

@@ -103,6 +103,7 @@ struct MainView: View {
 
     @AppStorage("showDescriptions") private var showDescriptions: Bool = true
     @AppStorage("showFullDescriptions") private var showFullDescriptions: Bool = false
+    @AppStorage("gridFontStep") private var gridFontStep: Int = 3 // 1..5
     @AppStorage("doneCrossLineWidth") private var doneCrossLineWidth: Double = 5.0
     @AppStorage("showDoneCrosses") private var showDoneCrosses: Bool = true
     @State private var visibleFrameIds: Set<String> = []
@@ -468,6 +469,7 @@ struct MainView: View {
                         showDescriptions: $showDescriptions,
                         showFullDescriptions: $showFullDescriptions,
                         gridSizeStep: $gridSizeStep,
+                        gridFontStep: $gridFontStep,
                         gridPriority: gridAssetPriorityBinding,
                         doneCrossLineWidth: $doneCrossLineWidth,
                         showDoneCrosses: $showDoneCrosses
@@ -854,6 +856,7 @@ struct MainView: View {
                                         showDescriptions: effectiveShowDescriptions,
                                         showFullDescriptions: effectiveShowFullDescriptions,
                                         showFrameTimeOverlay: shouldShowFrameTimeOverlay,
+                                        fontScale: fontScale,
                                         coordinateSpaceName: "gridScroll",
                                         viewportHeight: outerGeo.size.height,
                                         primaryAsset: { primaryAsset(for: $0) },
@@ -1100,6 +1103,17 @@ struct MainView: View {
     private var shouldShowFrameSkeleton: Bool {
         guard !useMockData else { return false }
         return authService.isLoadingFrames && authService.frames.isEmpty
+    }
+
+    private var fontScale: CGFloat {
+        switch gridFontStep {
+        case 1: return 0.85
+        case 2: return 1.0
+        case 3: return 1.15
+        case 4: return 1.3
+        case 5: return 1.45
+        default: return 1.0
+        }
     }
     
 }
@@ -1601,6 +1615,7 @@ struct CreativeGridSection: View {
     let showDescriptions: Bool
     let showFullDescriptions: Bool
     let showFrameTimeOverlay: Bool
+    let fontScale: CGFloat
     let coordinateSpaceName: String
     let viewportHeight: CGFloat
     let primaryAsset: (Frame) -> FrameAssetItem?
@@ -1616,6 +1631,7 @@ struct CreativeGridSection: View {
         showDescriptions: Bool,
         showFullDescriptions: Bool,
         showFrameTimeOverlay: Bool,
+        fontScale: CGFloat,
         coordinateSpaceName: String,
         viewportHeight: CGFloat,
         primaryAsset: @escaping (Frame) -> FrameAssetItem?,
@@ -1630,6 +1646,7 @@ struct CreativeGridSection: View {
         self.showDescriptions = showDescriptions
         self.showFullDescriptions = showFullDescriptions
         self.showFrameTimeOverlay = showFrameTimeOverlay
+        self.fontScale = fontScale
         self.coordinateSpaceName = coordinateSpaceName
         self.viewportHeight = viewportHeight
         self.primaryAsset = primaryAsset
@@ -1700,6 +1717,7 @@ struct CreativeGridSection: View {
                                     showDescription: showDescriptions,
                                     showFullDescription: showFullDescriptions,
                                     showFrameTimeOverlay: showFrameTimeOverlay,
+                                    fontScale: fontScale,
                                     coordinateSpaceName: coordinateSpaceName,
                                     viewportHeight: viewportHeight,
                                 onStatusSelected: { status in
@@ -1726,6 +1744,7 @@ struct GridFrameCell: View {
     var showDescription: Bool = false
     var showFullDescription: Bool = false
     var showFrameTimeOverlay: Bool = true
+    var fontScale: CGFloat
     let coordinateSpaceName: String
     let viewportHeight: CGFloat
     var onStatusSelected: (FrameStatus) -> Void
@@ -1746,17 +1765,20 @@ struct GridFrameCell: View {
                 statusMenu
             }
             if showDescription, let desc = frame.description, !desc.isEmpty {
+                let baseFontSize = 12 * fontScale
+                let descriptionUIColor = UIColor(named: "MartiniDefaultDescriptionColor") ?? .label
                 let attributedText = attributedStringFromHTML(
                     desc,
-                    defaultColor: UIColor.secondaryLabel
+                    defaultColor: descriptionUIColor,
+                    baseFontSize: baseFontSize
                 )
                 if let attributedText {
                     Text(attributedText)
                         .lineLimit(showFullDescription ? nil : 3)
                 } else {
                     Text(plainTextFromHTML(desc))
-                        .font(.body)
-                        .foregroundColor(.secondary)
+                        .font(.system(size: baseFontSize))
+                        .foregroundColor(.martiniDefaultDescriptionColor)
                         .lineLimit(showFullDescription ? nil : 3)
                 }
             }
@@ -1986,6 +2008,7 @@ struct SettingsView: View {
     @Binding var showDescriptions: Bool
     @Binding var showFullDescriptions: Bool
     @Binding var gridSizeStep: Int // 1..4 (portrait: 4->1, landscape: 5->2)
+    @Binding var gridFontStep: Int // 1..5
     @Binding var gridPriority: FrameAssetKind
     @Binding var doneCrossLineWidth: Double
     @Binding var showDoneCrosses: Bool
@@ -2011,6 +2034,21 @@ struct SettingsView: View {
                             ), in: 1...4, step: 1)
                             Spacer()
                             Image(systemName: "rectangle.fill")
+                        }
+                    }
+
+                    // Font size slider: 1..5 steps
+                    VStack(alignment: .leading) {
+                        Text("Font Size")
+                        HStack {
+                            Image(systemName: "textformat.size.smaller")
+                            Spacer()
+                            Slider(value: Binding(
+                                get: { Double(gridFontStep) },
+                                set: { gridFontStep = Int($0.rounded()) }
+                            ), in: 1...5, step: 1)
+                            Spacer()
+                            Image(systemName: "textformat.size.larger")
                         }
                     }
 
