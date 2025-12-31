@@ -285,14 +285,6 @@ struct FrameLayout: View {
     }
 
     private func captionOverlay(for text: String) -> some View {
-        let captionText: Text
-
-        if let attributedTitle = attributedStringFromHTML(text, defaultColor: UIColor.white) {
-            captionText = Text(attributedTitle)
-        } else {
-            captionText = Text(text)
-        }
-
         return GeometryReader { geo in
             let referenceWidth = geo.size.width
             //let fontSize = max(14, min(referenceWidth * 0.06, 28))
@@ -300,7 +292,7 @@ struct FrameLayout: View {
             let horizontalPadding = referenceWidth * 0.08
             let verticalPadding = referenceWidth * 0.05
 
-            captionText
+            Text(text)
                 .font(.system(size: fontSize, weight: .semibold))
                 .foregroundStyle(Color.white)
                 .multilineTextAlignment(.center)
