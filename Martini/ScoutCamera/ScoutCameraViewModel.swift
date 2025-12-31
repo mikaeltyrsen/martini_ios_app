@@ -4,6 +4,12 @@ import AVFoundation
 
 @MainActor
 final class ScoutCameraViewModel: ObservableObject {
+    private enum PreferenceKey {
+        static let showCrosshair = "scoutCameraShowCrosshair"
+        static let showGrid = "scoutCameraShowGrid"
+        static let showFrameShading = "scoutCameraShowFrameShading"
+    }
+
     @Published var availableCameras: [DBCamera] = []
     @Published var availableLenses: [DBLens] = []
     @Published var availableModes: [DBCameraMode] = []
@@ -15,9 +21,15 @@ final class ScoutCameraViewModel: ObservableObject {
     @Published var selectedLensPack: LensPackGroup?
     @Published var focalLengthMm: Double = 35
     @Published var selectedFrameLine: FrameLineOption = .none
-    @Published var showCrosshair: Bool = false
-    @Published var showGrid: Bool = false
-    @Published var showFrameShading: Bool = false
+    @Published var showCrosshair: Bool {
+        didSet { UserDefaults.standard.set(showCrosshair, forKey: PreferenceKey.showCrosshair) }
+    }
+    @Published var showGrid: Bool {
+        didSet { UserDefaults.standard.set(showGrid, forKey: PreferenceKey.showGrid) }
+    }
+    @Published var showFrameShading: Bool {
+        didSet { UserDefaults.standard.set(showFrameShading, forKey: PreferenceKey.showFrameShading) }
+    }
 
     @Published var matchResult: FOVMatchResult?
     @Published var debugInfo: ScoutCameraDebugInfo?
@@ -42,6 +54,9 @@ final class ScoutCameraViewModel: ObservableObject {
         self.frameId = frameId
         self.creativeId = creativeId
         self.targetAspectRatio = targetAspectRatio
+        self.showCrosshair = UserDefaults.standard.bool(forKey: PreferenceKey.showCrosshair)
+        self.showGrid = UserDefaults.standard.bool(forKey: PreferenceKey.showGrid)
+        self.showFrameShading = UserDefaults.standard.bool(forKey: PreferenceKey.showFrameShading)
         loadData()
     }
 
