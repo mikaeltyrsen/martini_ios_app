@@ -50,10 +50,11 @@ public func attributedStringFromHTML(
     defaultColor: UIColor? = nil,
     baseFontSize: CGFloat? = nil
 ) -> AttributedString? {
+    _ = baseFontSize
     let resolvedTraits = UITraitCollection.current
     let resolvedDefaultColor = defaultColor?.resolvedColor(with: resolvedTraits)
     let colorKey = resolvedDefaultColor.map(rgbaCacheKey) ?? "nil"
-    let fontSizeKey = baseFontSize.map { String(format: "%.2f", $0) } ?? "preferred"
+    let fontSizeKey = "preferred"
     let cacheKey = "\(resolvedTraits.userInterfaceStyle.rawValue)|\(fontSizeKey)|\(colorKey)|\(html)" as NSString
 
     if let cached = HTMLAttributedStringCache.shared.value(forKey: cacheKey) {
@@ -61,7 +62,7 @@ public func attributedStringFromHTML(
     }
 
     let preferredFont = UIFont.preferredFont(forTextStyle: .body)
-    let resolvedFontSize = baseFontSize ?? preferredFont.pointSize
+    let resolvedFontSize = preferredFont.pointSize
     let baseFont = preferredFont.withSize(resolvedFontSize)
     let fontSize = "\(resolvedFontSize)px"
     let sanitizedHTML = html.replacingOccurrences(of: "\u{0000}", with: "")
