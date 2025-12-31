@@ -865,20 +865,18 @@ struct FrameView: View {
                     .font(.headline)
                     .foregroundStyle(.white)
 
-                HStack() {
+                VStack(alignment: .leading, spacing: 12) {
                     ForEach(frameTagGroups) { group in
-                        //VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 8) {
                             if frameTagGroups.count > 1 {
                                 Text(group.name)
                                     .font(.subheadline.weight(.semibold))
                                     .foregroundColor(.white.opacity(0.75))
                             }
-                            
-                            // ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) {
+
+                            TagFlowLayout(spacing: 8) {
                                 ForEach(group.tags) { tag in
                                     Text(tag.name)
-                                    // .font(.caption.weight(.semibold))
                                         .foregroundColor(pillTextColor)
                                         .fixedSize(horizontal: true, vertical: false)
                                         .padding(.horizontal, 10)
@@ -886,14 +884,10 @@ struct FrameView: View {
                                         .background(
                                             Capsule().fill(tagGroupColor(for: group.name))
                                         )
-                                    //.overlay(
-                                    //    Capsule().strokeBorder(pillBorderColor, lineWidth: 1)
-                                    //)
                                 }
                             }
                             .padding(.vertical, 2)
-                            //}
-                        //}
+                        }
                     }
                 }
             }
@@ -2012,6 +2006,77 @@ private struct FrameTagGroup: Identifiable {
     let id: String
     let name: String
     let tags: [FrameTag]
+}
+
+private struct TagFlowLayout: Layout {
+    let spacing: CGFloat
+
+    init(spacing: CGFloat) {
+        self.spacing = spacing
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let maxWidth = proposal.width ?? .greatestFiniteMagnitude
+        let layout = layoutRows(maxWidth: maxWidth, subviews: subviews)
+        let totalHeight = layout.rows.reduce(0) { $0 + $1.height } + spacing * max(0, CGFloat(layout.rows.count - 1))
+        return CGSize(width: maxWidth, height: totalHeight)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let layout = layoutRows(maxWidth: bounds.width, subviews: subviews)
+        var y = bounds.minY
+
+        for row in layout.rows {
+            var x = bounds.minX
+            for index in row.indices {
+                let subview = subviews[index]
+                let size = layout.sizes[index]
+                subview.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
+                x += size.width + spacing
+            }
+            y += row.height + spacing
+        }
+    }
+
+    private func layoutRows(maxWidth: CGFloat, subviews: Subviews) -> (rows: [Row], sizes: [CGSize]) {
+        var rows: [Row] = []
+        var currentRow = Row()
+        var sizes: [CGSize] = Array(repeating: .zero, count: subviews.count)
+
+        for index in subviews.indices {
+            let size = subviews[index].sizeThatFits(.unspecified)
+            sizes[index] = size
+
+            if currentRow.indices.isEmpty {
+                currentRow.indices.append(index)
+                currentRow.width = size.width
+                currentRow.height = max(currentRow.height, size.height)
+                continue
+            }
+
+            let candidateWidth = currentRow.width + spacing + size.width
+            if candidateWidth <= maxWidth {
+                currentRow.indices.append(index)
+                currentRow.width = candidateWidth
+                currentRow.height = max(currentRow.height, size.height)
+            } else {
+                rows.append(currentRow)
+                currentRow = Row(indices: [index], width: size.width, height: size.height)
+            }
+        }
+
+        if !currentRow.indices.isEmpty {
+            rows.append(currentRow)
+        }
+
+        return (rows, sizes)
+    }
+
+    private struct Row {
+        var indices: [Int] = []
+        var width: CGFloat = 0
+        var height: CGFloat = 0
+    }
 }
 
 private struct ActivityView: UIViewControllerRepresentable {
