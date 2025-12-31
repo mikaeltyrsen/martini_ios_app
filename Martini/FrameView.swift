@@ -857,39 +857,53 @@ struct FrameView: View {
                 green: colorScheme == .dark ? 244.0 / 255.0 : 23.0 / 255.0,
                 blue: colorScheme == .dark ? 246.0 / 255.0 : 42.0 / 255.0
             )
-            let pillBorderColor = colorScheme == .dark
-                ? Color.white.opacity(0.08)
-                : Color.black.opacity(0.04)
+            let tagItems = frameTagGroups.enumerated().flatMap { groupIndex, group in
+                var items: [TagFlowItem] = []
+                if frameTagGroups.count > 1 {
+                    items.append(
+                        TagFlowItem(
+                            id: "group-\(groupIndex)-\(group.name)",
+                            kind: .groupLabel(group.name)
+                        )
+                    )
+                }
+                for (tagIndex, tag) in group.tags.enumerated() {
+                    let tagId = tag.id ?? tag.name
+                    items.append(
+                        TagFlowItem(
+                            id: "tag-\(groupIndex)-\(tagIndex)-\(tagId)",
+                            kind: .tag(tag, groupName: group.name)
+                        )
+                    )
+                }
+                return items
+            }
             VStack(alignment: .leading, spacing: 12) {
                 Text("Tags")
                     .font(.headline)
                     .foregroundStyle(.white)
 
-                VStack(alignment: .leading, spacing: 12) {
-                    ForEach(frameTagGroups) { group in
-                        VStack(alignment: .leading, spacing: 8) {
-                            if frameTagGroups.count > 1 {
-                                Text(group.name)
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundColor(.white.opacity(0.75))
-                            }
-
-                            TagFlowLayout(spacing: 8) {
-                                ForEach(group.tags) { tag in
-                                    Text(tag.name)
-                                        .foregroundColor(pillTextColor)
-                                        .fixedSize(horizontal: true, vertical: false)
-                                        .padding(.horizontal, 10)
-                                        .padding(.vertical, 6)
-                                        .background(
-                                            Capsule().fill(tagGroupColor(for: group.name))
-                                        )
-                                }
-                            }
-                            .padding(.vertical, 2)
+                TagFlowLayout(spacing: 8) {
+                    ForEach(tagItems) { item in
+                        switch item.kind {
+                        case .groupLabel(let name):
+                            Text(name)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundColor(.white.opacity(0.75))
+                                .fixedSize(horizontal: true, vertical: false)
+                        case .tag(let tag, let groupName):
+                            Text(tag.name)
+                                .foregroundColor(pillTextColor)
+                                .fixedSize(horizontal: true, vertical: false)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(
+                                    Capsule().fill(tagGroupColor(for: groupName))
+                                )
                         }
                     }
                 }
+                .padding(.vertical, 2)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -2006,6 +2020,16 @@ private struct FrameTagGroup: Identifiable {
     let id: String
     let name: String
     let tags: [FrameTag]
+}
+
+private struct TagFlowItem: Identifiable {
+    let id: String
+    let kind: Kind
+
+    enum Kind {
+        case groupLabel(String)
+        case tag(FrameTag, groupName: String)
+    }
 }
 
 private struct TagFlowLayout: Layout {
