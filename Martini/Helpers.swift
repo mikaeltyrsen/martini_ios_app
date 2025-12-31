@@ -51,6 +51,7 @@ public func attributedStringFromHTML(
     baseFontSize: CGFloat? = nil
 ) -> AttributedString? {
     let fontSize = baseFontSize.map { "\($0)px" } ?? "1em"
+    let sanitizedHTML = html.replacingOccurrences(of: "\u{0000}", with: "")
     let styledHTML = """
     <html>
     <head>
@@ -64,12 +65,12 @@ public func attributedStringFromHTML(
     </style>
     </head>
     <body>
-    \(html)
+    \(sanitizedHTML)
     </body>
     </html>
     """
 
-    guard let data = styledHTML.data(using: .utf8) else {
+    guard let data = styledHTML.data(using: .utf8, allowLossyConversion: true) else {
         return nil
     }
 
@@ -82,16 +83,57 @@ public func attributedStringFromHTML(
         return nil
     }
 
-    if let defaultColor {
-        let fullRange = NSRange(location: 0, length: attributed.length)
-        attributed.enumerateAttribute(.foregroundColor, in: fullRange, options: []) { value, range, _ in
-            if value == nil {
-                attributed.addAttribute(.foregroundColor, value: defaultColor, range: range)
+    let fallbackColor = adjustedReadableTextColor(defaultColor ?? dynamicReadableTextColor())
+    let fullRange = NSRange(location: 0, length: attributed.length)
+    attributed.enumerateAttribute(.foregroundColor, in: fullRange, options: []) { value, range, _ in
+        if let color = value as? UIColor {
+            let adjustedColor = adjustedReadableTextColor(color)
+            if adjustedColor != color {
+                attributed.addAttribute(.foregroundColor, value: adjustedColor, range: range)
             }
+        } else {
+            attributed.addAttribute(.foregroundColor, value: fallbackColor, range: range)
         }
     }
 
     return AttributedString(attributed)
+}
+
+private func dynamicReadableTextColor() -> UIColor {
+    UIColor { trait in
+        trait.userInterfaceStyle == .dark ? .white : .black
+    }
+}
+
+private func adjustedReadableTextColor(_ color: UIColor) -> UIColor {
+    guard isPureBlackOrWhite(color) else {
+        return color
+    }
+
+    return dynamicReadableTextColor()
+}
+
+private func isPureBlackOrWhite(_ color: UIColor) -> Bool {
+    let resolvedColor = color.resolvedColor(with: UITraitCollection.current)
+    var red: CGFloat = 0
+    var green: CGFloat = 0
+    var blue: CGFloat = 0
+    var alpha: CGFloat = 0
+
+    if resolvedColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha) {
+        let epsilon: CGFloat = 0.001
+        let isBlack = red <= epsilon && green <= epsilon && blue <= epsilon
+        let isWhite = red >= 1 - epsilon && green >= 1 - epsilon && blue >= 1 - epsilon
+        return isBlack || isWhite
+    }
+
+    var white: CGFloat = 0
+    if resolvedColor.getWhite(&white, alpha: &alpha) {
+        let epsilon: CGFloat = 0.001
+        return white <= epsilon || white >= 1 - epsilon
+    }
+
+    return false
 }
 
 /// Converts a simple HTML string to plain text by removing tags,
