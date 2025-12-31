@@ -746,9 +746,9 @@ struct FrameView: View {
     private var descriptionSection: some View {
         if let secondaryText {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Description")
-                    .font(.headline)
-                    .foregroundStyle(.primary)
+//                Text("Description")
+//                    .font(.headline)
+//                    .foregroundStyle(.primary)
 
                 if let attributedText = descriptionAttributedText {
                     Text(attributedText)
@@ -765,9 +765,9 @@ struct FrameView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         } else {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Description")
-                    .font(.headline)
-                    .foregroundStyle(.primary)
+//                Text("Description")
+//                    .font(.headline)
+//                    .foregroundStyle(.primary)
 
                 Text("No description provided for this frame.")
                     .font(.body)
