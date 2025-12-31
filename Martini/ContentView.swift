@@ -1141,13 +1141,6 @@ private extension MainView {
     }
 
     func updateHereShortcutState(using visibleIds: Set<String>) {
-        guard viewMode == .grid else {
-            if isHereShortcutVisible {
-                isHereShortcutVisible = false
-            }
-            return
-        }
-
         guard let frame = hereFrame else {
             if isHereShortcutVisible {
                 isHereShortcutVisible = false
