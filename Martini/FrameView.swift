@@ -58,6 +58,9 @@ struct FrameView: View {
     @State private var boardActionError: String?
     @State private var selectedBoardPreview: BoardPreviewItem?
     @State private var boardPhotoAccessAlert: PhotoLibraryHelper.PhotoAccessAlert?
+    @State private var descriptionAttributedText: AttributedString?
+    @State private var descriptionTextAlignment: TextAlignment = .leading
+    @State private var descriptionHorizontalAlignment: Alignment = .leading
     @Environment(\.openURL) private var openURL
     @Environment(\.colorScheme) private var colorScheme
 
@@ -196,9 +199,16 @@ struct FrameView: View {
             }
             .onAppear {
                 isFrameVisible = true
+                refreshDescriptionAttributedText()
             }
             .onDisappear {
                 isFrameVisible = false
+            }
+            .onChange(of: frame.description) { _ in
+                refreshDescriptionAttributedText()
+            }
+            .onChange(of: colorScheme) { _ in
+                refreshDescriptionAttributedText()
             }
     }
 
@@ -708,25 +718,42 @@ struct FrameView: View {
         return nil
     }
 
+    private func refreshDescriptionAttributedText() {
+        guard let secondaryText, !secondaryText.isEmpty else {
+            descriptionAttributedText = nil
+            descriptionTextAlignment = .leading
+            descriptionHorizontalAlignment = .leading
+            return
+        }
+
+        let descriptionUIColor = UIColor(named: "MartiniDefaultDescriptionColor") ?? .label
+        let attributedText = attributedStringFromHTML(
+            secondaryText,
+            defaultColor: descriptionUIColor
+        )
+
+        descriptionAttributedText = attributedText
+        if let attributedText {
+            descriptionTextAlignment = textAlignment(from: attributedText)
+            descriptionHorizontalAlignment = horizontalAlignment(from: attributedText)
+        } else {
+            descriptionTextAlignment = .leading
+            descriptionHorizontalAlignment = .leading
+        }
+    }
+
     @ViewBuilder
     private var descriptionSection: some View {
         if let secondaryText {
-            let descriptionUIColor = UIColor(named: "MartiniDefaultDescriptionColor") ?? .label
-            let attributedText = attributedStringFromHTML(
-                secondaryText,
-                defaultColor: descriptionUIColor
-            )
             VStack(alignment: .leading, spacing: 8) {
                 Text("Description")
                     .font(.headline)
                     .foregroundStyle(.primary)
 
-                if let attributedText {
-                    let resolvedAlignment = textAlignment(from: attributedText)
-                    let resolvedHorizontalAlignment = horizontalAlignment(from: attributedText)
+                if let attributedText = descriptionAttributedText {
                     Text(attributedText)
-                        .multilineTextAlignment(resolvedAlignment)
-                        .frame(maxWidth: .infinity, alignment: resolvedHorizontalAlignment)
+                        .multilineTextAlignment(descriptionTextAlignment)
+                        .frame(maxWidth: .infinity, alignment: descriptionHorizontalAlignment)
                 } else {
                     Text(plainTextFromHTML(secondaryText))
                         .font(.body)
