@@ -1764,11 +1764,21 @@ struct GridFrameCell: View {
                 statusMenu
             }
             if showDescription, let desc = frame.description, !desc.isEmpty {
-                let clean = plainTextFromHTML(desc)
-                Text(clean)
-                    .font(.system(size: 12 * fontScale))
-                    .foregroundColor(.secondary)
-                    .lineLimit(showFullDescription ? nil : 3)
+                let baseFontSize = 12 * fontScale
+                let attributedText = attributedStringFromHTML(
+                    desc,
+                    defaultColor: UIColor.secondaryLabel,
+                    baseFontSize: baseFontSize
+                )
+                if let attributedText {
+                    Text(attributedText)
+                        .lineLimit(showFullDescription ? nil : 3)
+                } else {
+                    Text(plainTextFromHTML(desc))
+                        .font(.system(size: baseFontSize))
+                        .foregroundColor(.secondary)
+                        .lineLimit(showFullDescription ? nil : 3)
+                }
             }
             Spacer(minLength: 0)
         }
