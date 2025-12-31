@@ -8,6 +8,7 @@ final class ScoutCameraViewModel: ObservableObject {
         static let showCrosshair = "scoutCameraShowCrosshair"
         static let showGrid = "scoutCameraShowGrid"
         static let showFrameShading = "scoutCameraShowFrameShading"
+        static let selectedFrameLine = "scoutCameraSelectedFrameLine"
     }
 
     @Published var availableCameras: [DBCamera] = []
@@ -20,7 +21,9 @@ final class ScoutCameraViewModel: ObservableObject {
     @Published var selectedLens: DBLens?
     @Published var selectedLensPack: LensPackGroup?
     @Published var focalLengthMm: Double = 35
-    @Published var selectedFrameLine: FrameLineOption = .none
+    @Published var selectedFrameLine: FrameLineOption {
+        didSet { UserDefaults.standard.set(selectedFrameLine.rawValue, forKey: PreferenceKey.selectedFrameLine) }
+    }
     @Published var showCrosshair: Bool {
         didSet { UserDefaults.standard.set(showCrosshair, forKey: PreferenceKey.showCrosshair) }
     }
@@ -57,6 +60,12 @@ final class ScoutCameraViewModel: ObservableObject {
         self.showCrosshair = UserDefaults.standard.bool(forKey: PreferenceKey.showCrosshair)
         self.showGrid = UserDefaults.standard.bool(forKey: PreferenceKey.showGrid)
         self.showFrameShading = UserDefaults.standard.bool(forKey: PreferenceKey.showFrameShading)
+        if let rawValue = UserDefaults.standard.string(forKey: PreferenceKey.selectedFrameLine),
+           let savedOption = FrameLineOption(rawValue: rawValue) {
+            self.selectedFrameLine = savedOption
+        } else {
+            self.selectedFrameLine = .none
+        }
         loadData()
     }
 
