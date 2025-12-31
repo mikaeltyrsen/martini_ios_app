@@ -587,7 +587,8 @@ struct FrameView: View {
     }
 
     private func boardsSection(height: CGFloat) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 0) {
+            //Spacer()
             StackedAssetScroller(
                 frame: frame,
                 assetStack: assetStack,
@@ -626,8 +627,9 @@ struct FrameView: View {
                 }
                 .padding(.horizontal, 20)
             }
-
+            //Spacer()
             boardCarouselTabs
+            //Spacer()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: height, alignment: .top)
@@ -956,65 +958,69 @@ struct FrameView: View {
     @ViewBuilder
     private var boardCarouselTabs: some View {
         ScrollViewReader { proxy in
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 0) {
-                    Spacer(minLength: 0)
-                    HStack(spacing: 8) {
-                        if isReorderingBoards {
-                            ForEach(reorderBoards) { board in
-                                let isPinned = boardEntry(for: board)?.isPinned == true
-                                let rotation: Double = reorderWiggle ? 1.5 : -1.5
-                                Group {
-                                    if isPinned {
-                                        reorderLabel(for: board, isPinned: isPinned)
-                                    } else {
-                                        reorderLabel(for: board, isPinned: isPinned)
-                                            .onDrag {
-                                                activeReorderBoard = board
-                                                return NSItemProvider(
-                                                    item: board.id as NSString,
-                                                    typeIdentifier: UTType.text.identifier
-                                                )
-                                            }
-                                    }
-                                }
-                                .rotationEffect(.degrees(isPinned ? 0 : rotation))
-                                .animation(
-                                    isPinned ? .default : .easeInOut(duration: 0.12).repeatForever(autoreverses: true),
-                                    value: reorderWiggle
-                                )
-                                .opacity(activeReorderBoard?.id == board.id ? 0.6 : 1)
-                                .onDrop(
-                                    of: [UTType.text],
-                                    delegate: BoardReorderDropDelegate(
-                                        item: board,
-                                        boards: $reorderBoards,
-                                        activeBoard: $activeReorderBoard,
-                                        pinnedBoardId: pinnedBoardId
-                                    )
-                                )
-                                .id(board.id)
-                            }
-                        } else {
-                            ForEach(assetStack) { asset in
-                                let isSelected: Bool = (asset.id == visibleAssetID)
-                                let isPinned = boardEntry(for: asset)?.isPinned == true
-                                Button {
-                                    visibleAssetID = asset.id
-                                } label: {
-                                    tabLabel(for: asset, isPinned: isPinned, isSelected: isSelected)
-                                }
-                                .buttonStyle(.plain)
-                                .contextMenu {
-                                    boardContextMenu(for: asset)
-                                }
-                                .id(asset.id)
-                            }
+            GeometryReader { geo in
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 0) {
+                        Spacer(minLength: 0)
 
-                            Button {
-                                openScoutCamera()
-                            } label: {
-                                HStack(spacing: 4) {
+                        HStack(spacing: 8) {
+                            if isReorderingBoards {
+                                ForEach(reorderBoards) { board in
+                                    let isPinned = boardEntry(for: board)?.isPinned == true
+                                    let rotation: Double = reorderWiggle ? 1.5 : -1.5
+
+                                    Group {
+                                        if isPinned {
+                                            reorderLabel(for: board, isPinned: isPinned)
+                                        } else {
+                                            reorderLabel(for: board, isPinned: isPinned)
+                                                .onDrag {
+                                                    activeReorderBoard = board
+                                                    return NSItemProvider(
+                                                        item: board.id as NSString,
+                                                        typeIdentifier: UTType.text.identifier
+                                                    )
+                                                }
+                                        }
+                                    }
+                                    .rotationEffect(.degrees(isPinned ? 0 : rotation))
+                                    .animation(
+                                        isPinned ? .default
+                                        : .easeInOut(duration: 0.12).repeatForever(autoreverses: true),
+                                        value: reorderWiggle
+                                    )
+                                    .opacity(activeReorderBoard?.id == board.id ? 0.6 : 1)
+                                    .onDrop(
+                                        of: [UTType.text],
+                                        delegate: BoardReorderDropDelegate(
+                                            item: board,
+                                            boards: $reorderBoards,
+                                            activeBoard: $activeReorderBoard,
+                                            pinnedBoardId: pinnedBoardId
+                                        )
+                                    )
+                                    .id(board.id)
+                                }
+                            } else {
+                                ForEach(assetStack) { asset in
+                                    let isSelected: Bool = (asset.id == visibleAssetID)
+                                    let isPinned = boardEntry(for: asset)?.isPinned == true
+
+                                    Button {
+                                        visibleAssetID = asset.id
+                                    } label: {
+                                        tabLabel(for: asset, isPinned: isPinned, isSelected: isSelected)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .contextMenu {
+                                        boardContextMenu(for: asset)
+                                    }
+                                    .id(asset.id)
+                                }
+
+                                Button {
+                                    openScoutCamera()
+                                } label: {
                                     Label("Add Photo", systemImage: "plus")
                                         .font(.system(size: 14, weight: .semibold))
                                         .foregroundStyle(Color.primary)
@@ -1027,36 +1033,45 @@ struct FrameView: View {
                                                 .fill(Color.secondary.opacity(0.15))
                                         )
                                 }
+                                .buttonStyle(.plain)
+                                .id(takePictureCardID)
                             }
-                            .buttonStyle(.plain)
-                            .id(takePictureCardID)
                         }
+
+                        Spacer(minLength: 0)
                     }
-                    Spacer(minLength: 0)
+                    .padding(.horizontal, 20)
+                    // Force content to be at least viewport width so Spacers can center it
+                    .frame(minWidth: geo.size.width, alignment: .center)
+                    .scrollTargetLayout()
                 }
-                .padding(.horizontal, 20)
-                .scrollTargetLayout()
-            }
-            .scrollTargetBehavior(.viewAligned(limitBehavior: .always))
-            .onChange(of: visibleAssetID) { (id: FrameAssetItem.ID?) in
-                guard let id else { return }
-                withAnimation(.snappy(duration: 0.25)) {
+                .scrollTargetBehavior(.viewAligned(limitBehavior: .always))
+                // iOS 17+ onChange API (two params)
+                .onChange(of: visibleAssetID) { _, newValue in
+                    guard let id = newValue else { return }
+                    withAnimation(.snappy(duration: 0.25)) {
+                        proxy.scrollTo(id, anchor: .center)
+                    }
+                }
+                .onAppear {
+                    guard let id = visibleAssetID else { return }
                     proxy.scrollTo(id, anchor: .center)
                 }
-            }
-            .onAppear {
-                guard let id: FrameAssetItem.ID = visibleAssetID else { return }
-                proxy.scrollTo(id, anchor: .center)
-            }
-            .onChange(of: isReorderingBoards) { isReordering in
-                if isReordering {
-                    reorderWiggle.toggle()
-                } else {
-                    reorderWiggle = false
+                // iOS 17+ onChange API (two params)
+                .onChange(of: isReorderingBoards) { _, isReordering in
+                    if isReordering {
+                        reorderWiggle.toggle()
+                    } else {
+                        reorderWiggle = false
+                    }
                 }
             }
+            // Give GeometryReader a deterministic height (match your tab row height)
+            .frame(height: 56)
+            .background(Color.martiniRed)
         }
     }
+
 
     private var pinnedBoardId: String? {
         frame.boards?.first(where: { $0.isPinned })?.id
@@ -2195,6 +2210,7 @@ private struct StackedAssetScroller<ContextMenuContent: View>: View {
             .scrollTargetBehavior(.paging)
             .scrollPosition(id: $visibleAssetID)
             .frame(maxWidth: .infinity, minHeight: cardHeight, maxHeight: cardHeight)
+            .background(Color(.black))
         }
     }
 }

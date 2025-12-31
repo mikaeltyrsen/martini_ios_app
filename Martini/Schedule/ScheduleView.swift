@@ -193,7 +193,7 @@ struct ScheduleView: View {
         case "purple": return .martiniPurpleColor
         case "lime": return .martiniLimeColor
         case "gray": return .martiniGrayColor
-        default: return .scheduleColor
+        default: return .scheduleBackground
         }
     }
 
