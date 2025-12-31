@@ -711,15 +711,24 @@ struct FrameView: View {
     @ViewBuilder
     private var descriptionSection: some View {
         if let secondaryText {
-            let cleanText = plainTextFromHTML(secondaryText)
+            let baseFontSize = UIFont.preferredFont(forTextStyle: .body).pointSize
+            let attributedText = attributedStringFromHTML(
+                secondaryText,
+                defaultColor: UIColor.secondaryLabel,
+                baseFontSize: baseFontSize
+            )
             VStack(alignment: .leading, spacing: 8) {
                 Text("Description")
                     .font(.headline)
                     .foregroundStyle(.primary)
 
-                Text(cleanText)
-                    .font(.body)
-                    .foregroundStyle(.secondary)
+                if let attributedText {
+                    Text(attributedText)
+                } else {
+                    Text(plainTextFromHTML(secondaryText))
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         } else {
