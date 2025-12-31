@@ -714,38 +714,46 @@ struct FrameLayout: View {
     }
 
     private func attributedString(fromHTML html: String, defaultColor: UIColor? = nil) -> AttributedString? {
-        // 1) Preserve line breaks by converting common HTML breaks/blocks to \n
-        var text = html
-            .replacingOccurrences(of: "<br>", with: "\n", options: .caseInsensitive)
-            .replacingOccurrences(of: "<br/>", with: "\n", options: .caseInsensitive)
-            .replacingOccurrences(of: "<br />", with: "\n", options: .caseInsensitive)
+        let styledHTML = """
+        <html>
+        <head>
+        <style>
+        body { font-family: -apple-system; font-size: 1em; }
+        p { margin: 0; }
+        .ql-align-center { text-align: center; }
+        .ql-align-left { text-align: left; }
+        .ql-align-right { text-align: right; }
+        </style>
+        </head>
+        <body>
+        \(html)
+        </body>
+        </html>
+        """
 
-        // Treat common block-level tags as line breaks
-        let blockTags = ["</p>", "</div>", "</li>", "</h1>", "</h2>", "</h3>", "</h4>", "</h5>", "</h6>"]
-        for tag in blockTags {
-            text = text.replacingOccurrences(of: tag, with: "\n", options: .caseInsensitive)
+        guard let data = styledHTML.data(using: .utf8) else {
+            return nil
         }
 
-        // 2) Strip all remaining HTML tags
-        // This regex removes anything that looks like <...>
-        let regex = try? NSRegularExpression(pattern: "<[^>]+>", options: [])
-        let range = NSRange(location: 0, length: (text as NSString).length)
-        let stripped = regex?.stringByReplacingMatches(in: text, options: [], range: range, withTemplate: "") ?? text
+        let options: [NSAttributedString.DocumentReadingOptionKey: Any] = [
+            .documentType: NSAttributedString.DocumentType.html,
+            .characterEncoding: String.Encoding.utf8.rawValue
+        ]
 
-        // 3) Decode basic HTML entities
-        let decoded = stripped
-            .replacingOccurrences(of: "&nbsp;", with: " ")
-            .replacingOccurrences(of: "&amp;", with: "&")
-            .replacingOccurrences(of: "&lt;", with: "<")
-            .replacingOccurrences(of: "&gt;", with: ">")
-            .replacingOccurrences(of: "&quot;", with: "\"")
-            .replacingOccurrences(of: "&#39;", with: "'")
+        guard let attributed = try? NSMutableAttributedString(data: data, options: options, documentAttributes: nil) else {
+            return nil
+        }
 
-        // 4) Collapse multiple consecutive newlines to a single newline
-        let collapsed = decoded.replacingOccurrences(of: "\n{3,}", with: "\n\n", options: .regularExpression)
+        if let defaultColor {
+            let fullRange = NSRange(location: 0, length: attributed.length)
+            attributed.enumerateAttribute(.foregroundColor, in: fullRange, options: []) { value, range, _ in
+                if value == nil {
+                    attributed.addAttribute(.foregroundColor, value: defaultColor, range: range)
+                }
+            }
+        }
 
-        // Return as a plain AttributedString (no styles), letting caller apply font/color
-        return AttributedString(collapsed)
+        return AttributedString(attributed)
     }
 
     private var descriptionColor: Color {
