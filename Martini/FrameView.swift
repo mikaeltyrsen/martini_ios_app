@@ -711,12 +711,10 @@ struct FrameView: View {
     @ViewBuilder
     private var descriptionSection: some View {
         if let secondaryText {
-            let baseFontSize = UIFont.preferredFont(forTextStyle: .body).pointSize
             let descriptionUIColor = UIColor(named: "MartiniDefaultDescriptionColor") ?? .label
             let attributedText = attributedStringFromHTML(
                 secondaryText,
-                defaultColor: descriptionUIColor,
-                baseFontSize: baseFontSize
+                defaultColor: descriptionUIColor
             )
             VStack(alignment: .leading, spacing: 8) {
                 Text("Description")
