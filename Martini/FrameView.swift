@@ -732,7 +732,7 @@ struct FrameView: View {
                 } else {
                     Text(plainTextFromHTML(secondaryText))
                         .font(.body)
-                        .foregroundStyle(.martiniDefaultDescriptionColor)
+                        .foregroundStyle(Color.martiniDefaultDescriptionColor)
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -746,7 +746,7 @@ struct FrameView: View {
 
                 Text("No description provided for this frame.")
                     .font(.body)
-                    .foregroundStyle(.martiniDefaultDescriptionColor)
+                    .foregroundStyle(Color.martiniDefaultDescriptionColor)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
