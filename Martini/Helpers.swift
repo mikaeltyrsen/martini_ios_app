@@ -50,7 +50,11 @@ public func attributedStringFromHTML(
     defaultColor: UIColor? = nil,
     baseFontSize: CGFloat? = nil
 ) -> AttributedString? {
-    let fontSize = baseFontSize.map { "\($0)px" } ?? "1em"
+    let preferredDescriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .body)
+    let preferredFont = UIFont(descriptor: preferredDescriptor, size: 0)
+    let resolvedFontSize = baseFontSize ?? preferredFont.pointSize
+    let baseFont = UIFont(descriptor: preferredDescriptor, size: resolvedFontSize)
+    let fontSize = "\(resolvedFontSize)px"
     let sanitizedHTML = html.replacingOccurrences(of: "\u{0000}", with: "")
     let styledHTML = """
     <html>
@@ -83,8 +87,17 @@ public func attributedStringFromHTML(
         return nil
     }
 
-    let fallbackColor = adjustedReadableTextColor(defaultColor ?? dynamicReadableTextColor())
     let fullRange = NSRange(location: 0, length: attributed.length)
+    attributed.enumerateAttribute(.font, in: fullRange, options: []) { value, range, _ in
+        if let font = value as? UIFont,
+           let descriptor = baseFont.fontDescriptor.withSymbolicTraits(font.fontDescriptor.symbolicTraits) {
+            attributed.addAttribute(.font, value: UIFont(descriptor: descriptor, size: baseFont.pointSize), range: range)
+        } else {
+            attributed.addAttribute(.font, value: baseFont, range: range)
+        }
+    }
+
+    let fallbackColor = adjustedReadableTextColor(defaultColor ?? dynamicReadableTextColor())
     attributed.enumerateAttribute(.foregroundColor, in: fullRange, options: []) { value, range, _ in
         if let color = value as? UIColor {
             let adjustedColor = adjustedReadableTextColor(color)
