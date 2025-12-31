@@ -900,58 +900,70 @@ struct FrameView: View {
     }
 
     private func descriptionOverlay(containerHeight: CGFloat, overlayHeight: CGFloat, allowsExpansion: Bool) -> some View {
-        ScrollView(.vertical, showsIndicators: true) {
-            VStack(alignment: .leading, spacing: 16) {
-                if allowsExpansion {
-                    Capsule()
-                        .fill(Color.white.opacity(0.3))
-                        .frame(width: 44, height: 5)
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 10)
-                } else {
-                    Color.clear
-                        .frame(height: 10)
-                        .frame(maxWidth: .infinity)
-                }
-
-                descriptionSection
-                    .padding(.horizontal, 20)
-
-                if !allowsExpansion || isDescriptionExpanded {
-                    tagsSection
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 24)
-                } else {
-                    Color.clear
-                        .frame(height: 24)
-                        .frame(maxWidth: .infinity)
-                }
+        VStack(spacing: 0) {
+            if allowsExpansion {
+                descriptionHandle
+                    .gesture(descriptionDragGesture(containerHeight: containerHeight))
+                    .onTapGesture {
+                        toggleDescriptionExpanded()
+                    }
+            } else {
+                Color.clear
+                    .frame(height: 10)
+                    .frame(maxWidth: .infinity)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                GeometryReader { proxy in
-                    Color.clear
-                        .preference(key: DescriptionScrollOffsetKey.self, value: proxy.frame(in: .named("descriptionScroll")).minY)
+
+            ScrollView(.vertical, showsIndicators: true) {
+                VStack(alignment: .leading, spacing: 16) {
+                    descriptionSection
+                        .padding(.horizontal, 20)
+
+                    if !allowsExpansion || isDescriptionExpanded {
+                        tagsSection
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 24)
+                    } else {
+                        Color.clear
+                            .frame(height: 24)
+                            .frame(maxWidth: .infinity)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    GeometryReader { proxy in
+                        Color.clear
+                            .preference(key: DescriptionScrollOffsetKey.self, value: proxy.frame(in: .named("descriptionScroll")).minY)
+                    }
+                )
+            }
+            .simultaneousGesture(
+                TapGesture().onEnded {
+                    guard allowsExpansion else { return }
+                    toggleDescriptionExpanded()
                 }
             )
+            .coordinateSpace(name: "descriptionScroll")
+            .scrollDisabled(allowsExpansion ? !isDescriptionExpanded || isDraggingDescription : false)
+            .onPreferenceChange(DescriptionScrollOffsetKey.self) { offset in
+                descriptionScrollOffset = offset
+                handleDescriptionScroll(offset: offset)
+            }
         }
-        .coordinateSpace(name: "descriptionScroll")
         .frame(maxWidth: .infinity)
         .frame(height: overlayHeight)
         .background(Color(.systemBackground))
-        .scrollDisabled(allowsExpansion ? !isDescriptionExpanded || isDraggingDescription : false)
-        .onPreferenceChange(DescriptionScrollOffsetKey.self) { offset in
-            descriptionScrollOffset = offset
-            handleDescriptionScroll(offset: offset)
+    }
+
+    private var descriptionHandle: some View {
+        VStack(spacing: 0) {
+            Capsule()
+                .fill(Color.white.opacity(0.3))
+                .frame(width: 44, height: 5)
+                .padding(.top, 10)
+                .padding(.bottom, 8)
         }
-        .highPriorityGesture(
-            descriptionDragGesture(containerHeight: containerHeight),
-            including: allowsExpansion ? .all : .none
-        )
-        .onTapGesture {
-            guard allowsExpansion else { return }
-            setDescriptionExpanded(true)
-        }
+        .frame(maxWidth: .infinity)
+        .contentShape(Rectangle())
     }
 
     private func handleDescriptionScroll(offset: CGFloat) {
@@ -1561,6 +1573,10 @@ private extension FrameView {
         withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
             descriptionHeightRatio = targetRatio
         }
+    }
+
+    private func toggleDescriptionExpanded() {
+        setDescriptionExpanded(!isDescriptionExpanded)
     }
 }
 
