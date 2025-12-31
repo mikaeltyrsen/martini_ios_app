@@ -763,6 +763,7 @@ struct FrameView: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, 10)
         } else {
             VStack(alignment: .leading, spacing: 8) {
 //                Text("Description")
@@ -774,6 +775,7 @@ struct FrameView: View {
                     .foregroundStyle(Color.martiniDefaultDescriptionColor)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, 10)
         }
     }
 
@@ -927,11 +929,9 @@ struct FrameView: View {
                 TagFlowLayout(spacing: 8) {
                     ForEach(tagItems) { item in
                         switch item.kind {
-                        case .groupLabel(let name):
-                            Text(name)
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundColor(.white.opacity(0.75))
-                                .fixedSize(horizontal: true, vertical: false)
+                        case .groupLabel:
+                            EmptyView()
+
                         case .tag(let tag, let groupName):
                             Text(tag.name)
                                 .foregroundColor(pillTextColor)
@@ -943,6 +943,25 @@ struct FrameView: View {
                                 )
                         }
                     }
+
+//                    ForEach(tagItems) { item in
+//                        switch item.kind {
+//                        case .groupLabel(let name):
+//                            Text(name)
+//                                .font(.subheadline.weight(.semibold))
+//                                .foregroundColor(.white.opacity(0.75))
+//                                .fixedSize(horizontal: true, vertical: false)
+//                        case .tag(let tag, let groupName):
+//                            Text(tag.name)
+//                                .foregroundColor(pillTextColor)
+//                                .fixedSize(horizontal: true, vertical: false)
+//                                .padding(.horizontal, 10)
+//                                .padding(.vertical, 6)
+//                                .background(
+//                                    Capsule().fill(tagGroupColor(for: groupName))
+//                                )
+//                        }
+//                    }
                 }
                 .padding(.vertical, 2)
             }
