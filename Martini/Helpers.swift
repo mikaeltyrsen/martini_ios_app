@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import UIKit
 
 /// Formats a date string from `yyyy-MM-dd` into a user-friendly style.
