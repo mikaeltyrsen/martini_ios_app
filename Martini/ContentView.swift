@@ -2058,13 +2058,33 @@ struct SettingsView: View {
                 }
 
                 Section("Theme") {
-                    Picker("Theme", selection: themePreferenceBinding) {
+                    HStack(spacing: 6) {
                         ForEach(ThemePreference.allCases) { preference in
-                            Label(preference.label, systemImage: preference.systemImageName)
-                                .tag(preference)
+                            let isSelected = themePreferenceBinding.wrappedValue == preference
+                            Button {
+                                themePreferenceBinding.wrappedValue = preference
+                            } label: {
+                                VStack(spacing: 4) {
+                                    Image(systemName: preference.systemImageName)
+                                        .font(.system(size: 16, weight: .semibold))
+                                    Text(preference.label)
+                                        .font(.system(size: 11, weight: .medium))
+                                }
+                                .foregroundStyle(isSelected ? Color.white : Color.primary)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 8)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(isSelected
+                                              ? Color.accentColor
+                                              : Color.secondary.opacity(0.15))
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(preference.label)
+                            .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : .isButton)
                         }
                     }
-                    .pickerStyle(.segmented)
                 }
 
                 Section {
