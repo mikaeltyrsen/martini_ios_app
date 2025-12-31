@@ -22,7 +22,7 @@ struct ScoutCameraLayout: View {
     @State private var showLensToast = false
     @State private var previewOrientation: AVCaptureVideoOrientation = .landscapeRight
     @State private var showReferenceOverlay = false
-    @State private var showBoardGuide = false
+    @AppStorage("scoutCameraShowBoardGuide") private var showBoardGuide = false
     @AppStorage("scoutCameraDebugMode") private var debugMode = true
     @State private var previewLayer: AVCaptureVideoPreviewLayer?
     private let previewMargin: CGFloat = 40
@@ -796,7 +796,11 @@ struct ScoutCameraLayout: View {
                 if showReferenceOverlay,
                    showBoardGuide,
                    let selection = referenceImageSelection {
-                    ReferenceImageGuide(url: selection.url, crop: selection.crop)
+                    ReferenceImageGuide(
+                        url: selection.url,
+                        crop: selection.crop,
+                        aspectRatio: viewModel.selectedFrameLine.aspectRatio
+                    )
                         .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
                         .allowsHitTesting(false)
                 }
@@ -1082,22 +1086,31 @@ struct ScoutCameraLayout: View {
     private struct ReferenceImageGuide: View {
         let url: URL
         let crop: String?
+        let aspectRatio: CGFloat?
 
         @State private var displayImage: UIImage?
+        @State private var imageAspectRatio: CGFloat = 1
 
         var body: some View {
-            Group {
-                if let displayImage {
-                    Image(uiImage: displayImage)
-                        .resizable()
-                        .scaledToFit()
-                        .opacity(0.5)
-                } else {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+            GeometryReader { proxy in
+                let ratio = max(aspectRatio ?? imageAspectRatio, 0.01)
+                let rect = frameRect(in: proxy.size, aspectRatio: ratio)
+                ZStack {
+                    if let displayImage {
+                        Image(uiImage: displayImage)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: rect.width, height: rect.height)
+                            .clipped()
+                            .opacity(0.5)
+                            .position(x: rect.midX, y: rect.midY)
+                    } else {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+                    }
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .task(id: taskIdentifier) {
                 await loadImage()
             }
@@ -1112,7 +1125,27 @@ struct ScoutCameraLayout: View {
             guard let image = await ReferenceImageLoader.loadImage(url: url, crop: crop) else { return }
             await MainActor.run {
                 displayImage = image
+                imageAspectRatio = image.size.width / max(image.size.height, 1)
             }
+        }
+
+        private func frameRect(in size: CGSize, aspectRatio: CGFloat) -> CGRect {
+            let containerAspect = size.width / max(size.height, 1)
+            let width: CGFloat
+            let height: CGFloat
+            if containerAspect > aspectRatio {
+                height = size.height
+                width = height * aspectRatio
+            } else {
+                width = size.width
+                height = width / aspectRatio
+            }
+            return CGRect(
+                x: (size.width - width) / 2,
+                y: (size.height - height) / 2,
+                width: width,
+                height: height
+            )
         }
     }
 
