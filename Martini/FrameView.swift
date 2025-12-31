@@ -803,7 +803,7 @@ struct FrameView: View {
             color = .martiniGrayColor
         }
 
-        print("[TagPill] groupName='\(groupName)' normalized='\(normalized)' resolved='\(resolvedColorValue)' color=\(colorName)")
+        //print("[TagPill] groupName='\(groupName)' normalized='\(normalized)' resolved='\(resolvedColorValue)' color=\(colorName)")
         return color
     }
 
@@ -865,19 +865,20 @@ struct FrameView: View {
                     .font(.headline)
                     .foregroundStyle(.white)
 
-                ForEach(frameTagGroups) { group in
-                    VStack(alignment: .leading, spacing: 8) {
-                        if frameTagGroups.count > 1 {
-                            Text(group.name)
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundColor(.white.opacity(0.75))
-                        }
-
-                        ScrollView(.horizontal, showsIndicators: false) {
+                HStack() {
+                    ForEach(frameTagGroups) { group in
+                        //VStack(alignment: .leading, spacing: 8) {
+                            if frameTagGroups.count > 1 {
+                                Text(group.name)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundColor(.white.opacity(0.75))
+                            }
+                            
+                            // ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 8) {
                                 ForEach(group.tags) { tag in
                                     Text(tag.name)
-                                        .font(.caption.weight(.semibold))
+                                    // .font(.caption.weight(.semibold))
                                         .foregroundColor(pillTextColor)
                                         .fixedSize(horizontal: true, vertical: false)
                                         .padding(.horizontal, 10)
@@ -885,13 +886,14 @@ struct FrameView: View {
                                         .background(
                                             Capsule().fill(tagGroupColor(for: group.name))
                                         )
-                                        .overlay(
-                                            Capsule().strokeBorder(pillBorderColor, lineWidth: 1)
-                                        )
+                                    //.overlay(
+                                    //    Capsule().strokeBorder(pillBorderColor, lineWidth: 1)
+                                    //)
                                 }
                             }
                             .padding(.vertical, 2)
-                        }
+                            //}
+                        //}
                     }
                 }
             }
@@ -2241,7 +2243,7 @@ private struct StackedAssetScroller<ContextMenuContent: View>: View {
             .scrollTargetBehavior(.paging)
             .scrollPosition(id: $visibleAssetID)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-            .background(Color(.black))
+            //.background(Color(.black))
         }
     }
 }
