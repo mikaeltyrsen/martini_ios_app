@@ -482,6 +482,7 @@ struct FrameView: View {
         GeometryReader { proxy in
             let isLandscape: Bool = proxy.size.width > proxy.size.height
             let overlayHeight: CGFloat = proxy.size.height * descriptionHeightRatio
+            let portraitBoardsHeight: CGFloat = max(0, proxy.size.height - overlayHeight)
             let descriptionProgress: CGFloat = max(
                 0,
                 min(
@@ -508,7 +509,7 @@ struct FrameView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 } else {
                     ZStack(alignment: .bottom) {
-                        boardsSection(height: proxy.size.height)
+                        boardsSection(height: portraitBoardsHeight)
                             .scaleEffect(boardScale)
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
