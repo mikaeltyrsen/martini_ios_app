@@ -52,7 +52,7 @@ struct ScoutCameraPhotoLayout {
             UIColor.white.setFill()
             context.fill(stripRect)
 
-            let logoRect = CGRect(x: 20, y: availableHeight + (stripHeight - 32) / 2, width: 120, height: 32)
+            let logoRect = CGRect(x: 20, y: availableHeight + (stripHeight - 32) / 2, width: 240, height: 64)
             if let logoImage {
                 let tintedLogo = logoImage.withTintColor(.black, renderingMode: .alwaysOriginal)
                 tintedLogo.draw(in: logoRect, blendMode: .normal, alpha: 1)
@@ -62,13 +62,13 @@ struct ScoutCameraPhotoLayout {
             paragraphStyle.alignment = .right
 
             let textAttributes: [NSAttributedString.Key: Any] = [
-                .font: UIFont.systemFont(ofSize: 18, weight: .semibold),
+                .font: UIFont.systemFont(ofSize: 28, weight: .semibold),
                 .foregroundColor: UIColor.black,
                 .paragraphStyle: paragraphStyle
             ]
 
             let detailAttributes: [NSAttributedString.Key: Any] = [
-                .font: UIFont.systemFont(ofSize: 14, weight: .regular),
+                .font: UIFont.systemFont(ofSize: 22, weight: .regular),
                 .foregroundColor: UIColor.black,
                 .paragraphStyle: paragraphStyle
             ]
@@ -82,7 +82,7 @@ struct ScoutCameraPhotoLayout {
                 x: logoRect.maxX + 16,
                 y: availableHeight + 12,
                 width: textWidth,
-                height: 22
+                height: 40
             )
             cameraLine.draw(in: cameraLineRect, withAttributes: textAttributes)
 
@@ -90,7 +90,7 @@ struct ScoutCameraPhotoLayout {
                 x: logoRect.maxX + 16,
                 y: cameraLineRect.maxY + 4,
                 width: textWidth,
-                height: 20
+                height: 30
             )
             lensLine.draw(in: lensLineRect, withAttributes: detailAttributes)
         }
@@ -189,7 +189,7 @@ private struct ScoutCameraPhotoLayoutPreview: View {
     }
 
     private func sampleLogo() -> UIImage {
-        let size = CGSize(width: 120, height: 32)
+        let size = CGSize(width: 240, height: 64)
         let renderer = UIGraphicsImageRenderer(size: size)
         return renderer.image { context in
             UIColor.black.setFill()
