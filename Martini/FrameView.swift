@@ -2171,8 +2171,7 @@ private struct StackedAssetScroller<ContextMenuContent: View>: View {
             let cardWidth: CGFloat = proxy.size.width * 0.82
             let idealHeight: CGFloat = cardWidth * 1.15
             let availableHeight: CGFloat = proxy.size.height
-            let maxHeight: CGFloat = availableHeight > 0 ? availableHeight * 0.92 : idealHeight
-            let cardHeight: CGFloat = min(idealHeight, maxHeight)
+            let cardHeight: CGFloat = min(idealHeight, availableHeight)
             let cardCornerRadius: CGFloat = 16
             let aspectRatio: CGFloat = FrameLayout.aspectRatio(from: frame.creativeAspectRatio ?? "") ?? (16.0 / 9.0)
 
@@ -2216,7 +2215,7 @@ private struct StackedAssetScroller<ContextMenuContent: View>: View {
             .scrollIndicators(.hidden)
             .scrollTargetBehavior(.paging)
             .scrollPosition(id: $visibleAssetID)
-            .frame(maxWidth: .infinity, minHeight: cardHeight, maxHeight: cardHeight)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             .background(Color(.black))
         }
     }
