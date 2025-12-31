@@ -24,6 +24,7 @@ struct ScoutCameraLayout: View {
     @State private var showReferenceOverlay = false
     @State private var showBoardGuide = false
     @AppStorage("scoutCameraDebugMode") private var debugMode = true
+    @State private var previewLayer: AVCaptureVideoPreviewLayer?
     private let previewMargin: CGFloat = 40
     private let referenceOverlayPadding = EdgeInsets(top: 0, leading: 0, bottom: 120, trailing: 72)
 
@@ -777,14 +778,28 @@ struct ScoutCameraLayout: View {
     private var previewPanel: some View {
         GeometryReader { proxy in
             let previewAspectRatio = viewModel.sensorAspectRatio ?? targetAspectRatio
+            let previewRect = previewBounds(in: proxy.size, aspectRatio: previewAspectRatio)
             ZStack {
                 CameraPreviewView(
                     session: viewModel.captureManager.session,
-                    orientation: previewOrientation
+                    orientation: previewOrientation,
+                    onPreviewLayerReady: { layer in
+                        if previewLayer !== layer {
+                            previewLayer = layer
+                        }
+                    }
                 )
                     .aspectRatio(previewAspectRatio, contentMode: .fit)
                     .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
                     .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+
+                if showReferenceOverlay,
+                   showBoardGuide,
+                   let selection = referenceImageSelection {
+                    ReferenceImageGuide(url: selection.url, crop: selection.crop)
+                        .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
+                        .allowsHitTesting(false)
+                }
 
                 if let frameLineAspect = viewModel.selectedFrameLine.aspectRatio {
                     FrameLineOverlay(aspectRatio: frameLineAspect)
@@ -807,19 +822,50 @@ struct ScoutCameraLayout: View {
                         .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
                 }
 
-                if showReferenceOverlay,
-                   showBoardGuide,
-                   let selection = referenceImageSelection {
-                    ReferenceImageGuide(url: selection.url, crop: selection.crop)
-                        .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
-                }
-
                 if isPortraitOrientation {
                     portraitOverlay
                 }
             }
+            .contentShape(Rectangle())
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .onEnded { value in
+                        let threshold: CGFloat = 12
+                        guard abs(value.translation.width) < threshold,
+                              abs(value.translation.height) < threshold else { return }
+                        handleTapToFocus(at: value.location, in: previewRect)
+                    }
+            )
         }
         .aspectRatio(viewModel.sensorAspectRatio ?? targetAspectRatio, contentMode: .fit)
+    }
+
+    private func previewBounds(in size: CGSize, aspectRatio: CGFloat) -> CGRect {
+        let containerAspect = size.width / max(size.height, 1)
+        let width: CGFloat
+        let height: CGFloat
+        if containerAspect > aspectRatio {
+            height = size.height
+            width = height * aspectRatio
+        } else {
+            width = size.width
+            height = width / max(aspectRatio, 0.01)
+        }
+        let origin = CGPoint(x: (size.width - width) / 2, y: (size.height - height) / 2)
+        return CGRect(origin: origin, size: CGSize(width: width, height: height))
+    }
+
+    private func handleTapToFocus(at location: CGPoint, in previewRect: CGRect) {
+        guard previewRect.contains(location) else { return }
+        let localPoint = CGPoint(x: location.x - previewRect.minX, y: location.y - previewRect.minY)
+        if let previewLayer {
+            let devicePoint = previewLayer.captureDevicePointConverted(fromLayerPoint: localPoint)
+            viewModel.captureManager.focus(at: devicePoint)
+        } else {
+            let normalized = CGPoint(x: localPoint.x / max(previewRect.width, 1),
+                                     y: localPoint.y / max(previewRect.height, 1))
+            viewModel.captureManager.focus(at: normalized)
+        }
     }
 
     private var isPortraitOrientation: Bool {
@@ -1097,10 +1143,22 @@ struct ScoutCameraLayout: View {
             if let data = trimmed.data(using: .utf8),
                let json = try? JSONSerialization.jsonObject(with: data) {
                 if let dict = json as? [String: Any] {
-                    let x = number(from: dict["x"]) ?? number(from: dict["left"])
-                    let y = number(from: dict["y"]) ?? number(from: dict["top"])
-                    let width = number(from: dict["width"]) ?? number(from: dict["w"])
-                    let height = number(from: dict["height"]) ?? number(from: dict["h"])
+                    let x = number(from: dict["x"])
+                        ?? number(from: dict["left"])
+                        ?? number(from: dict["x1"])
+                    let y = number(from: dict["y"])
+                        ?? number(from: dict["top"])
+                        ?? number(from: dict["y1"])
+                    let right = number(from: dict["right"]) ?? number(from: dict["x2"])
+                    let bottom = number(from: dict["bottom"]) ?? number(from: dict["y2"])
+                    var width = number(from: dict["width"]) ?? number(from: dict["w"])
+                    var height = number(from: dict["height"]) ?? number(from: dict["h"])
+                    if width == nil, let right, let x {
+                        width = right - x
+                    }
+                    if height == nil, let bottom, let y {
+                        height = bottom - y
+                    }
                     if let x, let y, let width, let height {
                         return ReferenceImageCrop(x: x, y: y, width: width, height: height)
                     }
@@ -1232,12 +1290,14 @@ struct ScoutCameraLayout: View {
 private struct CameraPreviewView: UIViewRepresentable {
     let session: AVCaptureSession
     let orientation: AVCaptureVideoOrientation
+    let onPreviewLayerReady: (AVCaptureVideoPreviewLayer) -> Void
 
     func makeUIView(context: Context) -> UIView {
         let view = PreviewView()
         view.videoPreviewLayer.session = session
         view.videoPreviewLayer.videoGravity = .resizeAspectFill
         view.configurePreviewConnection(orientation: orientation)
+        onPreviewLayerReady(view.videoPreviewLayer)
         return view
     }
 
@@ -1245,6 +1305,7 @@ private struct CameraPreviewView: UIViewRepresentable {
         guard let previewView = uiView as? PreviewView else { return }
         previewView.videoPreviewLayer.session = session
         previewView.configurePreviewConnection(orientation: orientation)
+        onPreviewLayerReady(previewView.videoPreviewLayer)
     }
 
     func makeCoordinator() -> Coordinator {

@@ -80,6 +80,28 @@ final class CaptureSessionManager: ObservableObject {
         photoOutput.capturePhoto(with: settings, delegate: processor)
     }
 
+    func focus(at point: CGPoint) {
+        guard let device = currentInput?.device else { return }
+        do {
+            try device.lockForConfiguration()
+            defer { device.unlockForConfiguration() }
+            if device.isFocusPointOfInterestSupported {
+                device.focusPointOfInterest = point
+                if device.isFocusModeSupported(.autoFocus) {
+                    device.focusMode = .autoFocus
+                }
+            }
+            if device.isExposurePointOfInterestSupported {
+                device.exposurePointOfInterest = point
+                if device.isExposureModeSupported(.continuousAutoExposure) {
+                    device.exposureMode = .continuousAutoExposure
+                }
+            }
+        } catch {
+            return
+        }
+    }
+
     func updateVideoOrientation(_ orientation: AVCaptureVideoOrientation) {
         currentOrientation = orientation
         if let connection = photoOutput.connection(with: .video), connection.isVideoOrientationSupported {
