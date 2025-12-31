@@ -126,6 +126,41 @@ public func attributedStringFromHTML(
     return attributedString
 }
 
+public func textAlignment(from attributedString: AttributedString) -> TextAlignment {
+    let nsAttributedString = NSAttributedString(attributedString)
+    let range = NSRange(location: 0, length: nsAttributedString.length)
+    var resolvedAlignment: NSTextAlignment = .natural
+
+    nsAttributedString.enumerateAttribute(.paragraphStyle, in: range, options: []) { value, _, stop in
+        if let style = value as? NSParagraphStyle {
+            resolvedAlignment = style.alignment
+            stop.pointee = true
+        }
+    }
+
+    switch resolvedAlignment {
+    case .center:
+        return .center
+    case .right:
+        return .trailing
+    case .justified, .left, .natural:
+        return .leading
+    @unknown default:
+        return .leading
+    }
+}
+
+public func horizontalAlignment(from attributedString: AttributedString) -> Alignment {
+    switch textAlignment(from: attributedString) {
+    case .center:
+        return .center
+    case .trailing:
+        return .trailing
+    case .leading:
+        return .leading
+    }
+}
+
 private func dynamicReadableTextColor() -> UIColor {
     UIColor { trait in
         trait.userInterfaceStyle == .dark ? .white : .black

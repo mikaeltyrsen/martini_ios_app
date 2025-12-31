@@ -724,11 +724,17 @@ struct FrameView: View {
                     .foregroundStyle(.primary)
 
                 if let attributedText {
+                    let resolvedAlignment = textAlignment(from: attributedText)
+                    let resolvedHorizontalAlignment = horizontalAlignment(from: attributedText)
                     Text(attributedText)
+                        .multilineTextAlignment(resolvedAlignment)
+                        .frame(maxWidth: .infinity, alignment: resolvedHorizontalAlignment)
                 } else {
                     Text(plainTextFromHTML(secondaryText))
                         .font(.body)
                         .foregroundStyle(.martiniDefaultDescriptionColor)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
