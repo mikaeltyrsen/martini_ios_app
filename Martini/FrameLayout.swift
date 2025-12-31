@@ -287,7 +287,7 @@ struct FrameLayout: View {
     private func captionOverlay(for text: String) -> some View {
         let captionText: Text
 
-        if let attributedTitle = attributedString(fromHTML: text, defaultColor: UIColor.white) {
+        if let attributedTitle = attributedStringFromHTML(text, defaultColor: UIColor.white) {
             captionText = Text(attributedTitle)
         } else {
             captionText = Text(text)
@@ -317,7 +317,7 @@ struct FrameLayout: View {
     private var textBlock: some View {
         VStack(alignment: .leading, spacing: 8) {
             if let resolvedTitle {
-                if let attributedTitle = attributedString(fromHTML: resolvedTitle) {
+                if let attributedTitle = attributedStringFromHTML(resolvedTitle) {
                     Text(attributedTitle)
                         .font(.system(size: 14, weight: .semibold))
                 } else {
@@ -328,7 +328,7 @@ struct FrameLayout: View {
 
             if let resolvedSubtitle {
                 let subtitleSize = dynamicSubtitleFontSize(for: 200)
-                if let attributedSubtitle = attributedString(fromHTML: resolvedSubtitle, defaultColor: defaultDescriptionUIColor) {
+                if let attributedSubtitle = attributedStringFromHTML(resolvedSubtitle, defaultColor: defaultDescriptionUIColor) {
                     Text(attributedSubtitle)
                         .font(.system(size: subtitleSize, weight: .semibold))
                         .foregroundColor(descriptionColor)
@@ -711,49 +711,6 @@ struct FrameLayout: View {
                     }
             }
         }
-    }
-
-    private func attributedString(fromHTML html: String, defaultColor: UIColor? = nil) -> AttributedString? {
-        let styledHTML = """
-        <html>
-        <head>
-        <style>
-        body { font-family: -apple-system; font-size: 1em; }
-        p { margin: 0; }
-        .ql-align-center { text-align: center; }
-        .ql-align-left { text-align: left; }
-        .ql-align-right { text-align: right; }
-        </style>
-        </head>
-        <body>
-        \(html)
-        </body>
-        </html>
-        """
-
-        guard let data = styledHTML.data(using: .utf8) else {
-            return nil
-        }
-
-        let options: [NSAttributedString.DocumentReadingOptionKey: Any] = [
-            .documentType: NSAttributedString.DocumentType.html,
-            .characterEncoding: String.Encoding.utf8.rawValue
-        ]
-
-        guard let attributed = try? NSMutableAttributedString(data: data, options: options, documentAttributes: nil) else {
-            return nil
-        }
-
-        if let defaultColor {
-            let fullRange = NSRange(location: 0, length: attributed.length)
-            attributed.enumerateAttribute(.foregroundColor, in: fullRange, options: []) { value, range, _ in
-                if value == nil {
-                    attributed.addAttribute(.foregroundColor, value: defaultColor, range: range)
-                }
-            }
-        }
-
-        return AttributedString(attributed)
     }
 
     private var descriptionColor: Color {

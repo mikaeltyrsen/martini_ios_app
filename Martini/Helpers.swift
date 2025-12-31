@@ -45,6 +45,55 @@ public func formattedTimeFrom24Hour(_ timeString: String) -> String {
     return outputFormatter.string(from: date)
 }
 
+public func attributedStringFromHTML(
+    _ html: String,
+    defaultColor: UIColor? = nil,
+    baseFontSize: CGFloat? = nil
+) -> AttributedString? {
+    let fontSize = baseFontSize.map { "\($0)px" } ?? "1em"
+    let styledHTML = """
+    <html>
+    <head>
+    <style>
+    body { font-family: -apple-system; font-size: \(fontSize); }
+    p { margin: 0 0 1em 0; }
+    p:last-child { margin-bottom: 0; }
+    .ql-align-center { text-align: center; }
+    .ql-align-left { text-align: left; }
+    .ql-align-right { text-align: right; }
+    </style>
+    </head>
+    <body>
+    \(html)
+    </body>
+    </html>
+    """
+
+    guard let data = styledHTML.data(using: .utf8) else {
+        return nil
+    }
+
+    let options: [NSAttributedString.DocumentReadingOptionKey: Any] = [
+        .documentType: NSAttributedString.DocumentType.html,
+        .characterEncoding: String.Encoding.utf8.rawValue
+    ]
+
+    guard let attributed = try? NSMutableAttributedString(data: data, options: options, documentAttributes: nil) else {
+        return nil
+    }
+
+    if let defaultColor {
+        let fullRange = NSRange(location: 0, length: attributed.length)
+        attributed.enumerateAttribute(.foregroundColor, in: fullRange, options: []) { value, range, _ in
+            if value == nil {
+                attributed.addAttribute(.foregroundColor, value: defaultColor, range: range)
+            }
+        }
+    }
+
+    return AttributedString(attributed)
+}
+
 /// Converts a simple HTML string to plain text by removing tags,
 /// translating common line breaks to newlines, decoding common entities,
 /// and collapsing excessive whitespace.
