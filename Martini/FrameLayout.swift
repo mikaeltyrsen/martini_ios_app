@@ -169,6 +169,10 @@ struct FrameLayout: View {
                 captionOverlay(for: resolvedTitle)
             }
 
+            if showStatusBadge {
+                statusOverlay(for: frame.statusEnum)
+            }
+
             if showFrameNumberOverlay {
                 GeometryReader { geo in
                     let diameter = max(18, geo.size.width * 0.08) // 8% of width with a minimum
@@ -215,7 +219,7 @@ struct FrameLayout: View {
             }
 
             if showFrameTimeOverlay {
-                if frameTimeOverlay{
+                if frameTimeOverlay {
                     GeometryReader { geo in
                         let minDimension = min(geo.size.width, geo.size.height)
                         let badgeHeight = max(18, minDimension * 0.12)
@@ -232,11 +236,6 @@ struct FrameLayout: View {
                     }
                 }
             }
-
-            if showStatusBadge {
-                statusOverlay(for: frame.statusEnum)
-            }
-
         }
         let animatedCard = card
             .aspectRatio(aspectRatio, contentMode: .fit)
