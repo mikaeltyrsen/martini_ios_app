@@ -939,12 +939,12 @@ struct FrameView: View {
         .frame(maxWidth: .infinity)
         .frame(height: overlayHeight)
         .background(Color(.systemBackground))
-        .scrollDisabled(allowsExpansion ? !isDescriptionExpanded : false)
+        .scrollDisabled(allowsExpansion ? !isDescriptionExpanded || isDraggingDescription : false)
         .onPreferenceChange(DescriptionScrollOffsetKey.self) { offset in
             descriptionScrollOffset = offset
             handleDescriptionScroll(offset: offset)
         }
-        .simultaneousGesture(
+        .highPriorityGesture(
             descriptionDragGesture(containerHeight: containerHeight),
             including: allowsExpansion ? .all : .none
         )
