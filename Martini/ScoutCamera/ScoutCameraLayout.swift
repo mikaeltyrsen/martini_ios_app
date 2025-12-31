@@ -21,7 +21,7 @@ struct ScoutCameraLayout: View {
     @State private var lensToastMessage: String?
     @State private var showLensToast = false
     @State private var previewOrientation: AVCaptureVideoOrientation = .landscapeRight
-    @State private var showReferenceOverlay = false
+    @AppStorage("scoutCameraShowReferenceOverlay") private var showReferenceOverlay = false
     @AppStorage("scoutCameraShowBoardGuide") private var showBoardGuide = false
     @AppStorage("scoutCameraDebugMode") private var debugMode = true
     @State private var previewLayer: AVCaptureVideoPreviewLayer?
@@ -799,7 +799,7 @@ struct ScoutCameraLayout: View {
                     ReferenceImageGuide(
                         url: selection.url,
                         crop: selection.crop,
-                        aspectRatio: viewModel.selectedFrameLine.aspectRatio
+                        aspectRatio: viewModel.selectedFrameLine.aspectRatio ?? targetAspectRatio
                     )
                         .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
                         .allowsHitTesting(false)
@@ -984,7 +984,12 @@ struct ScoutCameraLayout: View {
             Spacer()
             HStack {
                 Spacer()
-                ReferenceImagePreview(url: selection.url, crop: selection.crop, maxLength: maxLength)
+                ReferenceImagePreview(
+                    url: selection.url,
+                    crop: selection.crop,
+                    maxLength: maxLength,
+                    aspectRatio: viewModel.selectedFrameLine.aspectRatio ?? targetAspectRatio
+                )
                     .onTapGesture {
                         showBoardGuide.toggle()
                     }
@@ -1004,16 +1009,18 @@ struct ScoutCameraLayout: View {
         let url: URL
         let crop: String?
         let maxLength: CGFloat
+        let aspectRatio: CGFloat?
 
         @State private var displayImage: UIImage?
-        @State private var aspectRatio: CGFloat = 1
+        @State private var imageAspectRatio: CGFloat = 1
 
         var body: some View {
             Group {
                 if let displayImage {
                     Image(uiImage: displayImage)
                         .resizable()
-                        .scaledToFit()
+                        .scaledToFill()
+                        .clipped()
                 } else {
                     ProgressView()
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
@@ -1026,7 +1033,7 @@ struct ScoutCameraLayout: View {
         }
 
         private var previewSize: CGSize {
-            let ratio = max(aspectRatio, 0.01)
+            let ratio = max(aspectRatio ?? imageAspectRatio, 0.01)
             if ratio >= 1 {
                 return CGSize(width: maxLength, height: maxLength / ratio)
             }
@@ -1042,7 +1049,7 @@ struct ScoutCameraLayout: View {
             let cropped = image
             await MainActor.run {
                 displayImage = cropped
-                aspectRatio = cropped.size.width / max(cropped.size.height, 1)
+                imageAspectRatio = cropped.size.width / max(cropped.size.height, 1)
             }
         }
     }
