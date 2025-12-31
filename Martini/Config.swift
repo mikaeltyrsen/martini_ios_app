@@ -27,6 +27,7 @@ enum AppConfig {
 
 extension Color {
     static let martiniDefaultColor = Color("MartiniDefaultColor")
+    static let martiniDefaultDescriptionColor = Color("MartiniDefaultDescriptionColor")
     static let martiniBlueColor = Color("MartiniBlue")
     static let martiniCyanColor = Color("MartiniCyan")
     static let martiniGrayColor = Color("MartiniGray")

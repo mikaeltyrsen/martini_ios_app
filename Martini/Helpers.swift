@@ -50,11 +50,10 @@ public func attributedStringFromHTML(
     defaultColor: UIColor? = nil,
     baseFontSize: CGFloat? = nil
 ) -> AttributedString? {
-    _ = baseFontSize
     let resolvedTraits = UITraitCollection.current
     let resolvedDefaultColor = defaultColor?.resolvedColor(with: resolvedTraits)
     let colorKey = resolvedDefaultColor.map(rgbaCacheKey) ?? "nil"
-    let fontSizeKey = "preferred"
+    let fontSizeKey = baseFontSize.map { String(format: "%.2f", $0) } ?? "preferred"
     let cacheKey = "\(resolvedTraits.userInterfaceStyle.rawValue)|\(fontSizeKey)|\(colorKey)|\(html)" as NSString
 
     if let cached = HTMLAttributedStringCache.shared.value(forKey: cacheKey) {
@@ -62,7 +61,7 @@ public func attributedStringFromHTML(
     }
 
     let preferredFont = UIFont.preferredFont(forTextStyle: .body)
-    let resolvedFontSize = preferredFont.pointSize
+    let resolvedFontSize = baseFontSize ?? preferredFont.pointSize
     let baseFont = preferredFont.withSize(resolvedFontSize)
     let fontSize = "\(resolvedFontSize)px"
     let sanitizedHTML = html.replacingOccurrences(of: "\u{0000}", with: "")
@@ -99,9 +98,10 @@ public func attributedStringFromHTML(
 
     let fullRange = NSRange(location: 0, length: attributed.length)
     attributed.enumerateAttribute(.font, in: fullRange, options: []) { value, range, _ in
-        if let font = value as? UIFont,
-           let descriptor = baseFont.fontDescriptor.withSymbolicTraits(font.fontDescriptor.symbolicTraits) {
-            attributed.addAttribute(.font, value: UIFont(descriptor: descriptor, size: baseFont.pointSize), range: range)
+        if let font = value as? UIFont {
+            if font.pointSize != resolvedFontSize {
+                attributed.addAttribute(.font, value: font.withSize(resolvedFontSize), range: range)
+            }
         } else {
             attributed.addAttribute(.font, value: baseFont, range: range)
         }
@@ -124,6 +124,41 @@ public func attributedStringFromHTML(
     let attributedString = AttributedString(attributed)
     HTMLAttributedStringCache.shared.insert(attributedString, forKey: cacheKey)
     return attributedString
+}
+
+public func textAlignment(from attributedString: AttributedString) -> TextAlignment {
+    let nsAttributedString = NSAttributedString(attributedString)
+    let range = NSRange(location: 0, length: nsAttributedString.length)
+    var resolvedAlignment: NSTextAlignment = .natural
+
+    nsAttributedString.enumerateAttribute(.paragraphStyle, in: range, options: []) { value, _, stop in
+        if let style = value as? NSParagraphStyle {
+            resolvedAlignment = style.alignment
+            stop.pointee = true
+        }
+    }
+
+    switch resolvedAlignment {
+    case .center:
+        return .center
+    case .right:
+        return .trailing
+    case .justified, .left, .natural:
+        return .leading
+    @unknown default:
+        return .leading
+    }
+}
+
+public func horizontalAlignment(from attributedString: AttributedString) -> Alignment {
+    switch textAlignment(from: attributedString) {
+    case .center:
+        return .center
+    case .trailing:
+        return .trailing
+    case .leading:
+        return .leading
+    }
 }
 
 private func dynamicReadableTextColor() -> UIColor {

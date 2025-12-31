@@ -712,9 +712,10 @@ struct FrameView: View {
     private var descriptionSection: some View {
         if let secondaryText {
             let baseFontSize = UIFont.preferredFont(forTextStyle: .body).pointSize
+            let descriptionUIColor = UIColor(named: "MartiniDefaultDescriptionColor") ?? .label
             let attributedText = attributedStringFromHTML(
                 secondaryText,
-                defaultColor: UIColor.secondaryLabel,
+                defaultColor: descriptionUIColor,
                 baseFontSize: baseFontSize
             )
             VStack(alignment: .leading, spacing: 8) {
@@ -723,11 +724,17 @@ struct FrameView: View {
                     .foregroundStyle(.primary)
 
                 if let attributedText {
+                    let resolvedAlignment = textAlignment(from: attributedText)
+                    let resolvedHorizontalAlignment = horizontalAlignment(from: attributedText)
                     Text(attributedText)
+                        .multilineTextAlignment(resolvedAlignment)
+                        .frame(maxWidth: .infinity, alignment: resolvedHorizontalAlignment)
                 } else {
                     Text(plainTextFromHTML(secondaryText))
                         .font(.body)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.martiniDefaultDescriptionColor)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -739,7 +746,7 @@ struct FrameView: View {
 
                 Text("No description provided for this frame.")
                     .font(.body)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.martiniDefaultDescriptionColor)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
