@@ -1516,8 +1516,16 @@ private extension FrameView {
         DragGesture()
             .onChanged { value in
                 guard canDragDescription else { return }
-                if isDraggingDescription == false { isDraggingDescription = true }
-                if dragStartRatio == nil { dragStartRatio = descriptionHeightRatio }
+                if dragStartRatio == nil {
+                    let handleHitAreaHeight: CGFloat = 60
+                    guard descriptionScrollOffset >= 0,
+                          value.startLocation.y <= handleHitAreaHeight else {
+                        return
+                    }
+                    isDraggingDescription = true
+                    dragStartRatio = descriptionHeightRatio
+                }
+                guard isDraggingDescription else { return }
 
                 let startingRatio: CGFloat = dragStartRatio ?? descriptionHeightRatio
                 let translationRatio: CGFloat = -value.translation.height / containerHeight
