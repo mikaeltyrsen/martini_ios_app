@@ -24,6 +24,7 @@ struct ScoutCameraLayout: View {
     @State private var showReferenceOverlay = false
     @AppStorage("scoutCameraDebugMode") private var debugMode = true
     private let previewMargin: CGFloat = 40
+    private let referenceOverlayPadding = EdgeInsets(top: 0, leading: 0, bottom: 120, trailing: 72)
 
     init(projectId: String, frameId: String, targetAspectRatio: CGFloat, creativeId: String? = nil) {
         self.frameId = frameId
@@ -73,6 +74,10 @@ struct ScoutCameraLayout: View {
                             rightControlBar
                         }
                     }
+                }
+
+                if showReferenceOverlay, let selection = referenceImageSelection {
+                    referenceImageOverlay(selection: selection, in: proxy.size)
                 }
             }
 
@@ -237,7 +242,7 @@ struct ScoutCameraLayout: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Reference Image")
                 .accessibilityValue(showReferenceOverlay ? "On" : "Off")
-                .disabled(referenceImageURL == nil)
+                .disabled(referenceImageSelection == nil)
 
                 Button {
                     debugMode.toggle()
@@ -796,14 +801,6 @@ struct ScoutCameraLayout: View {
                     portraitOverlay
                 }
             }
-            .overlay(alignment: .bottomTrailing) {
-                if showReferenceOverlay, let referenceImageURL {
-                    let referenceSize = min(proxy.size.width, proxy.size.height) * 0.28
-                    referenceImagePreview(url: referenceImageURL)
-                        .frame(width: referenceSize, height: referenceSize)
-                        .padding(12)
-                }
-            }
         }
         .aspectRatio(viewModel.sensorAspectRatio ?? targetAspectRatio, contentMode: .fit)
     }
@@ -880,7 +877,7 @@ struct ScoutCameraLayout: View {
         .allowsHitTesting(true)
     }
 
-    private var referenceImageURL: URL? {
+    private var referenceImageSelection: ReferenceImageSelection? {
         guard let frame = authService.frames.first(where: { $0.id == frameId }) else {
             return nil
         }
@@ -893,10 +890,13 @@ struct ScoutCameraLayout: View {
             }
             if let pinnedURLString,
                let pinnedURL = URL(string: pinnedURLString) {
-            return pinnedURL
+                return ReferenceImageSelection(url: pinnedURL, crop: pinnedBoard.fileCrop)
             }
         }
-        return frame.availableAssets.first(where: { !$0.isVideo })?.url
+        if let fallbackURL = frame.availableAssets.first(where: { !$0.isVideo })?.url {
+            return ReferenceImageSelection(url: fallbackURL, crop: frame.photoboardCrop ?? frame.crop)
+        }
+        return nil
     }
 
     private func isVideoBoard(_ board: FrameBoard) -> Bool {
@@ -911,32 +911,163 @@ struct ScoutCameraLayout: View {
         return ["mp4", "mov", "m4v", "webm", "mkv", "m3u8"].contains(extensionValue)
     }
 
-    @ViewBuilder
-    private func referenceImagePreview(url: URL) -> some View {
-        CachedAsyncImage(url: url) { phase in
-            switch phase {
-            case let .success(image):
-                image.resizable().scaledToFit()
-            case .empty:
-                ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-            case .failure:
-                Image(systemName: "photo")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.7))
-            @unknown default:
-                Image(systemName: "photo")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.7))
+    private func referenceImageOverlay(selection: ReferenceImageSelection, in size: CGSize) -> some View {
+        let maxLength = min(size.width, size.height) * 0.28
+        return VStack {
+            Spacer()
+            HStack {
+                Spacer()
+                ReferenceImagePreview(url: selection.url, crop: selection.crop, maxLength: maxLength)
             }
         }
-        .padding(6)
-        .background(Color.black.opacity(0.4))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(Color.white.opacity(0.35), lineWidth: 1)
-        )
+        .padding(referenceOverlayPadding)
+    }
+
+    private struct ReferenceImageSelection {
+        let url: URL
+        let crop: String?
+    }
+
+    private struct ReferenceImagePreview: View {
+        let url: URL
+        let crop: String?
+        let maxLength: CGFloat
+
+        @State private var displayImage: UIImage?
+        @State private var aspectRatio: CGFloat = 1
+
+        var body: some View {
+            Group {
+                if let displayImage {
+                    Image(uiImage: displayImage)
+                        .resizable()
+                        .scaledToFit()
+                } else {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                }
+            }
+            .frame(width: previewSize.width, height: previewSize.height)
+            .task(id: taskIdentifier) {
+                await loadImage()
+            }
+        }
+
+        private var previewSize: CGSize {
+            let ratio = max(aspectRatio, 0.01)
+            if ratio >= 1 {
+                return CGSize(width: maxLength, height: maxLength / ratio)
+            }
+            return CGSize(width: maxLength * ratio, height: maxLength)
+        }
+
+        private var taskIdentifier: String {
+            "\(url.absoluteString)-\(crop ?? "")"
+        }
+
+        private func loadImage() async {
+            guard let image = await ImageCache.shared.image(for: url) else { return }
+            let cropped = cropImage(image, using: parseCrop(crop)) ?? image
+            await MainActor.run {
+                displayImage = cropped
+                aspectRatio = cropped.size.width / max(cropped.size.height, 1)
+            }
+        }
+
+        private func cropImage(_ image: UIImage, using crop: ReferenceImageCrop?) -> UIImage? {
+            guard let crop, let cgImage = image.cgImage else { return nil }
+            let imageWidth = CGFloat(cgImage.width)
+            let imageHeight = CGFloat(cgImage.height)
+
+            var rect = crop.rect(in: CGSize(width: imageWidth, height: imageHeight))
+            rect = rect.intersection(CGRect(x: 0, y: 0, width: imageWidth, height: imageHeight))
+            guard rect.width > 1, rect.height > 1 else { return nil }
+
+            guard let cropped = cgImage.cropping(to: rect.integral) else { return nil }
+            return UIImage(cgImage: cropped, scale: image.scale, orientation: image.imageOrientation)
+        }
+
+        private func parseCrop(_ value: String?) -> ReferenceImageCrop? {
+            guard let value, !value.isEmpty else { return nil }
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return nil }
+
+            if let data = trimmed.data(using: .utf8),
+               let json = try? JSONSerialization.jsonObject(with: data) {
+                if let dict = json as? [String: Any] {
+                    let x = number(from: dict["x"]) ?? number(from: dict["left"])
+                    let y = number(from: dict["y"]) ?? number(from: dict["top"])
+                    let width = number(from: dict["width"]) ?? number(from: dict["w"])
+                    let height = number(from: dict["height"]) ?? number(from: dict["h"])
+                    if let x, let y, let width, let height {
+                        return ReferenceImageCrop(x: x, y: y, width: width, height: height)
+                    }
+                } else if let array = json as? [Any], array.count >= 4 {
+                    let values = array.compactMap { number(from: $0) }
+                    if values.count >= 4 {
+                        return ReferenceImageCrop(x: values[0], y: values[1], width: values[2], height: values[3])
+                    }
+                }
+            }
+
+            let separators = CharacterSet(charactersIn: ",|:")
+            let parts = trimmed.components(separatedBy: separators).compactMap { Double($0.trimmingCharacters(in: .whitespacesAndNewlines)) }
+            if parts.count >= 4 {
+                return ReferenceImageCrop(x: parts[0], y: parts[1], width: parts[2], height: parts[3])
+            }
+
+            return nil
+        }
+
+        private func number(from value: Any?) -> CGFloat? {
+            switch value {
+            case let number as NSNumber:
+                return CGFloat(truncating: number)
+            case let string as String:
+                guard let value = Double(string.trimmingCharacters(in: .whitespacesAndNewlines)) else {
+                    return nil
+                }
+                return CGFloat(value)
+            default:
+                return nil
+            }
+        }
+    }
+
+    private struct ReferenceImageCrop {
+        let x: CGFloat
+        let y: CGFloat
+        let width: CGFloat
+        let height: CGFloat
+
+        func rect(in size: CGSize) -> CGRect {
+            let imageWidth = max(size.width, 1)
+            let imageHeight = max(size.height, 1)
+
+            var cropX = x
+            var cropY = y
+            var cropWidth = width
+            var cropHeight = height
+
+            if cropWidth <= 1, cropHeight <= 1 {
+                cropX *= imageWidth
+                cropY *= imageHeight
+                cropWidth *= imageWidth
+                cropHeight *= imageHeight
+            } else if cropWidth <= 100, cropHeight <= 100 {
+                cropX = cropX / 100 * imageWidth
+                cropY = cropY / 100 * imageHeight
+                cropWidth = cropWidth / 100 * imageWidth
+                cropHeight = cropHeight / 100 * imageHeight
+            }
+
+            cropWidth = max(1, min(cropWidth, imageWidth))
+            cropHeight = max(1, min(cropHeight, imageHeight))
+            cropX = max(0, min(cropX, imageWidth - cropWidth))
+            cropY = max(0, min(cropY, imageHeight - cropHeight))
+
+            return CGRect(x: cropX, y: cropY, width: cropWidth, height: cropHeight)
+        }
     }
 
     private func handleCameraRoleChange(_ newRole: String?) {
