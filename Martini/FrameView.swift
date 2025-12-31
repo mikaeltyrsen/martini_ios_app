@@ -65,6 +65,8 @@ struct FrameView: View {
     private let dimmerAnim = Animation.easeInOut(duration: 0.28)
     private let sheetAnim = Animation.spring(response: 0.42, dampingFraction: 0.92, blendDuration: 0.20)
     private let takePictureCardID = "take-picture"
+    private let tabRowHeight: CGFloat = 100
+    private let boardsTabsSpacing: CGFloat = 12
     private let selectionStore = ProjectKitSelectionStore.shared
     private let dataStore = LocalJSONStore.shared
 
@@ -480,7 +482,6 @@ struct FrameView: View {
         GeometryReader { proxy in
             let isLandscape: Bool = proxy.size.width > proxy.size.height
             let overlayHeight: CGFloat = proxy.size.height * descriptionHeightRatio
-            let boardsHeight: CGFloat = max(0, proxy.size.height - overlayHeight)
             let descriptionProgress: CGFloat = max(
                 0,
                 min(
@@ -489,6 +490,7 @@ struct FrameView: View {
                 )
             )
             let dimmerOpacity: CGFloat = descriptionProgress * 0.5
+            let boardScale: CGFloat = 1 - (descriptionProgress * 0.04)
 
             Group {
                 if isLandscape {
@@ -506,7 +508,8 @@ struct FrameView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 } else {
                     ZStack(alignment: .bottom) {
-                        boardsSection(height: boardsHeight)
+                        boardsSection(height: proxy.size.height)
+                            .scaleEffect(boardScale)
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
                         Color.black
@@ -587,7 +590,9 @@ struct FrameView: View {
     }
 
     private func boardsSection(height: CGFloat) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
+        let scrollerHeight = max(0, height - tabRowHeight - boardsTabsSpacing)
+
+        return VStack(alignment: .leading, spacing: boardsTabsSpacing) {
             //Spacer()
             StackedAssetScroller(
                 frame: frame,
@@ -606,6 +611,7 @@ struct FrameView: View {
                     boardContextMenu(for: asset)
                 }
             )
+            .frame(height: scrollerHeight)
 
             if isReorderingBoards {
                 HStack(spacing: 12) {
@@ -1043,8 +1049,10 @@ struct FrameView: View {
                     .padding(.horizontal, 20)
                     // Force content to be at least viewport width so Spacers can center it
                     .frame(minWidth: geo.size.width, alignment: .center)
+                    .frame(maxHeight: .infinity, alignment: .center)
                     .scrollTargetLayout()
                 }
+                .frame(maxHeight: .infinity, alignment: .center)
                 .scrollTargetBehavior(.viewAligned(limitBehavior: .always))
                 // iOS 17+ onChange API (two params)
                 .onChange(of: visibleAssetID) { _, newValue in
@@ -1067,8 +1075,7 @@ struct FrameView: View {
                 }
             }
             // Give GeometryReader a deterministic height (match your tab row height)
-            .frame(height: 56)
-            .background(Color.martiniRed)
+            .frame(height: tabRowHeight)
         }
     }
 
@@ -2164,8 +2171,7 @@ private struct StackedAssetScroller<ContextMenuContent: View>: View {
             let cardWidth: CGFloat = proxy.size.width * 0.82
             let idealHeight: CGFloat = cardWidth * 1.15
             let availableHeight: CGFloat = proxy.size.height
-            let maxHeight: CGFloat = availableHeight > 0 ? availableHeight * 0.92 : idealHeight
-            let cardHeight: CGFloat = min(idealHeight, maxHeight)
+            let cardHeight: CGFloat = min(idealHeight, availableHeight)
             let cardCornerRadius: CGFloat = 16
             let aspectRatio: CGFloat = FrameLayout.aspectRatio(from: frame.creativeAspectRatio ?? "") ?? (16.0 / 9.0)
 
@@ -2209,7 +2215,7 @@ private struct StackedAssetScroller<ContextMenuContent: View>: View {
             .scrollIndicators(.hidden)
             .scrollTargetBehavior(.paging)
             .scrollPosition(id: $visibleAssetID)
-            .frame(maxWidth: .infinity, minHeight: cardHeight, maxHeight: cardHeight)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             .background(Color(.black))
         }
     }
