@@ -876,12 +876,12 @@ struct MainView: View {
                     .simultaneousGesture(
                         MagnificationGesture()
                             .onChanged { value in
-                                guard viewMode == .grid else { return }
+                                guard viewMode != .grid else { return }
                                 isGridPinching = true
                                 handleGridMagnificationChange(value)
                             }
                             .onEnded { _ in
-                                guard viewMode == .grid else { return }
+                                guard viewMode != .grid else { return }
                                 gridMagnification = 1.0
                                 isGridPinching = false
                             }
@@ -898,9 +898,7 @@ struct MainView: View {
                         }
                     }
                     .onChange(of: viewMode) { _ in
-                        if viewMode != .grid {
-                            isGridPinching = false
-                        }
+                        isGridPinching = false
                         if viewMode == .grid {
                             DispatchQueue.main.async {
                                 scrollToGridTop()
