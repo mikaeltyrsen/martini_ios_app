@@ -1766,21 +1766,10 @@ struct GridFrameCell: View {
             }
             if showDescription, let desc = frame.description, !desc.isEmpty {
                 let baseFontSize = 12 * fontScale
-                let descriptionUIColor = UIColor(named: "MartiniDefaultDescriptionColor") ?? .label
-                let attributedText = attributedStringFromHTML(
-                    desc,
-                    defaultColor: descriptionUIColor,
-                    baseFontSize: baseFontSize
-                )
-                if let attributedText {
-                    Text(attributedText)
-                        .lineLimit(showFullDescription ? nil : 3)
-                } else {
-                    Text(plainTextFromHTML(desc))
-                        .font(.system(size: baseFontSize))
-                        .foregroundColor(.martiniDefaultDescriptionColor)
-                        .lineLimit(showFullDescription ? nil : 3)
-                }
+                Text(plainTextFromHTML(desc))
+                    .font(.system(size: baseFontSize))
+                    .foregroundColor(.martiniDefaultDescriptionColor)
+                    .lineLimit(showFullDescription ? nil : 3)
             }
             Spacer(minLength: 0)
         }
