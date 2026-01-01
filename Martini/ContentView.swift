@@ -1748,6 +1748,8 @@ struct GridFrameCell: View {
     let coordinateSpaceName: String
     let viewportHeight: CGFloat
     var onStatusSelected: (FrameStatus) -> Void
+    @State private var descriptionAttributedText: AttributedString?
+    @State private var descriptionPlainText: String = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -1766,17 +1768,11 @@ struct GridFrameCell: View {
             }
             if showDescription, let desc = frame.description, !desc.isEmpty {
                 let baseFontSize = 12 * fontScale
-                let descriptionUIColor = UIColor(named: "MartiniDefaultDescriptionColor") ?? .label
-                let attributedText = attributedStringFromHTML(
-                    desc,
-                    defaultColor: descriptionUIColor,
-                    baseFontSize: baseFontSize
-                )
-                if let attributedText {
+                if let attributedText = descriptionAttributedText {
                     Text(attributedText)
                         .lineLimit(showFullDescription ? nil : 3)
                 } else {
-                    Text(plainTextFromHTML(desc))
+                    Text(descriptionPlainText.isEmpty ? plainTextFromHTML(desc) : descriptionPlainText)
                         .font(.system(size: baseFontSize))
                         .foregroundColor(.martiniDefaultDescriptionColor)
                         .lineLimit(showFullDescription ? nil : 3)
@@ -1785,6 +1781,18 @@ struct GridFrameCell: View {
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .onAppear {
+            refreshDescriptionText()
+        }
+        .onChange(of: frame.description) { _ in
+            refreshDescriptionText()
+        }
+        .onChange(of: showDescription) { _ in
+            refreshDescriptionText()
+        }
+        .onChange(of: fontScale) { _ in
+            refreshDescriptionText()
+        }
         .background(
             GeometryReader { geo in
                 Color.clear.preference(
@@ -1797,6 +1805,27 @@ struct GridFrameCell: View {
 
     private func isVisible(_ rect: CGRect) -> Bool {
         rect.maxY >= 0 && rect.minY <= viewportHeight
+    }
+
+    private func refreshDescriptionText() {
+        guard showDescription, let desc = frame.description, !desc.isEmpty else {
+            descriptionAttributedText = nil
+            descriptionPlainText = ""
+            return
+        }
+
+        let baseFontSize = 12 * fontScale
+        let descriptionUIColor = UIColor(named: "MartiniDefaultDescriptionColor") ?? .label
+        descriptionAttributedText = attributedStringFromHTML(
+            desc,
+            defaultColor: descriptionUIColor,
+            baseFontSize: baseFontSize
+        )
+        if descriptionAttributedText == nil {
+            descriptionPlainText = plainTextFromHTML(desc)
+        } else {
+            descriptionPlainText = ""
+        }
     }
 
     private var statusMenu: some View {
