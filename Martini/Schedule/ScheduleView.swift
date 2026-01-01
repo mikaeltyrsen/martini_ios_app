@@ -6,6 +6,8 @@ struct ScheduleView: View {
 
     @EnvironmentObject private var authService: AuthService
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
     @State private var frameAssetOrders: [String: [FrameAssetKind]] = [:]
     private var scheduleGroups: [ScheduleGroup] { item.groups ?? schedule.groups ?? [] }
 
@@ -20,6 +22,18 @@ struct ScheduleView: View {
 
     private var formattedStartTime: String? {
         scheduleStartTime.map { formattedTimeFrom24Hour($0) }
+    }
+
+    private var isLandscape: Bool {
+        verticalSizeClass == .compact
+    }
+
+    private var showsWideLayout: Bool {
+        horizontalSizeClass == .regular || isLandscape
+    }
+
+    private var isPortraitPhone: Bool {
+        horizontalSizeClass == .compact && !isLandscape
     }
 
     var body: some View {
@@ -42,14 +56,13 @@ struct ScheduleView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(schedule.name)
-                .font(.headline)
             Text(scheduleTitle)
                 .font(.title2.bold())
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             if let date = formattedDate {
-                Label(date, systemImage: "calendar")
+                Text(date)
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
 
@@ -91,20 +104,35 @@ struct ScheduleView: View {
     private func blockView(for block: ScheduleBlock) -> some View {
         switch block.type {
         case .title:
-            HStack(alignment: .center, spacing: 8) {
-                if let time = block.calculatedStart {
-                    Text(formattedTimeFrom24Hour(time))
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                }
-                Text(block.title ?? "")
-                    .font(.headline)
-                Spacer(minLength: 0)
-                
-                if let description = block.description, !description.isEmpty {
-                    Text(description)
-                        .font(.subheadline)
-                        .foregroundStyle(Color.martiniDefaultDescriptionColor)
+            HStack(alignment: .center, spacing: 12) {
+                if isPortraitPhone {
+                    VStack(alignment: .center, spacing: 4) {
+                        if let time = block.calculatedStart {
+                            Text(formattedTimeFrom24Hour(time))
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                        }
+                        Text(block.title ?? "")
+                            .font(.headline)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .center)
+                } else {
+                    VStack(alignment: .leading, spacing: 4) {
+                        if let time = block.calculatedStart {
+                            Text(formattedTimeFrom24Hour(time))
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                        }
+                        Text(block.title ?? "")
+                            .font(.headline)
+                    }
+                    Spacer(minLength: 0)
+
+                    if showsWideLayout, let description = block.description, !description.isEmpty {
+                        Text(description)
+                            .font(.subheadline)
+                            .foregroundStyle(Color.martiniDefaultDescriptionColor)
+                    }
                 }
             }
             .padding(.vertical, 10)
@@ -112,28 +140,52 @@ struct ScheduleView: View {
             .background(blockColor(block.color))
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         case .shot, .unknown:
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 8) {
-                    if let time = block.calculatedStart {
-                        Label(formattedTimeFrom24Hour(time), systemImage: "clock")
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                    }
+            Group {
+                if showsWideLayout {
+                    HStack(alignment: .top, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            if let time = block.calculatedStart {
+                                Label(formattedTimeFrom24Hour(time), systemImage: "clock")
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                            }
 
-                    if let duration = block.duration {
-                        Label(formattedDuration(fromMinutes: duration), systemImage: "timer")
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(.secondary)
+                            if let duration = block.duration {
+                                Label(formattedDuration(fromMinutes: duration), systemImage: "timer")
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            if let description = block.description, !description.isEmpty {
+                                Text(description)
+                                    .font(.subheadline)
+                                    .foregroundStyle(Color.martiniDefaultDescriptionColor)
+                            }
+
+                            storyboardGrid(for: block)
+                        }
+                    }
+                } else {
+                    VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            if let time = block.calculatedStart {
+                                Label(formattedTimeFrom24Hour(time), systemImage: "clock")
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            if let duration = block.duration {
+                                Label(formattedDuration(fromMinutes: duration), systemImage: "timer")
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        storyboardGrid(for: block)
                     }
                 }
-
-                if let description = block.description, !description.isEmpty {
-                    Text(description)
-                        .font(.subheadline)
-                        .foregroundStyle(Color.martiniDefaultDescriptionColor)
-                }
-
-                storyboardGrid(for: block)
             }
             .padding(.vertical, 8)
             .background(blockColor(block.color))
