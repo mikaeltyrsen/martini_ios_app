@@ -5,6 +5,7 @@ struct SchedulesView: View {
     let onSelect: (ProjectScheduleItem) -> Void
 
     @EnvironmentObject private var authService: AuthService
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     private func entryDuration(for entry: ProjectScheduleItem) -> Int? {
         entry.durationMinutes ?? entry.duration
@@ -75,10 +76,13 @@ struct SchedulesView: View {
                                     .foregroundStyle(.white)
 
                                 if let timeAndDuration = timeAndDurationText(for: entry) {
-                                    let icon = entry.startTime != nil ? "clock" : "timer"
-                                    Label(timeAndDuration, systemImage: icon)
+                                    Text(timeAndDuration)
                                         .foregroundStyle(.gray)
                                         .font(.footnote)
+                                        .frame(
+                                            maxWidth: .infinity,
+                                            alignment: horizontalSizeClass == .compact ? .center : .leading
+                                        )
                                 }
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
