@@ -1020,7 +1020,7 @@ struct FrameView: View {
                     }
                 )
             }
-            .simultaneousGesture(
+            .gesture(
                 TapGesture().onEnded {
                     guard allowsExpansion else { return }
                     toggleDescriptionExpanded()
