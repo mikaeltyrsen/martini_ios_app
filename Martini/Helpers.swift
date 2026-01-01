@@ -281,6 +281,37 @@ public func plainTextFromHTML(_ html: String) -> String {
     return collapsed.trimmingCharacters(in: .whitespacesAndNewlines)
 }
 
+/// Converts HTML into plain text while preserving line breaks for script-style rendering.
+public func scriptTextFromHTML(_ html: String) -> String {
+    var text = html
+    text = text.replacingOccurrences(of: "\r\n", with: "\n")
+    text = text.replacingOccurrences(of: "<br>", with: "\n", options: .caseInsensitive)
+    text = text.replacingOccurrences(of: "<br/>", with: "\n", options: .caseInsensitive)
+    text = text.replacingOccurrences(of: "<br />", with: "\n", options: .caseInsensitive)
+    text = text.replacingOccurrences(of: "</p>", with: "\n\n", options: .caseInsensitive)
+    text = text.replacingOccurrences(of: "</div>", with: "\n\n", options: .caseInsensitive)
+    text = text.replacingOccurrences(of: "</li>", with: "\n", options: .caseInsensitive)
+
+    if let regex = try? NSRegularExpression(pattern: "<[^>]+>", options: []) {
+        let range = NSRange(location: 0, length: (text as NSString).length)
+        text = regex.stringByReplacingMatches(in: text, options: [], range: range, withTemplate: "")
+    }
+
+    let entities: [String: String] = [
+        "&amp;": "&",
+        "&lt;": "<",
+        "&gt;": ">",
+        "&quot;": "\"",
+        "&#39;": "'"
+    ]
+    for (entity, value) in entities {
+        text = text.replacingOccurrences(of: entity, with: value)
+    }
+
+    text = text.replacingOccurrences(of: "\n\n\n+", with: "\n\n", options: .regularExpression)
+    return text.trimmingCharacters(in: .whitespacesAndNewlines)
+}
+
 struct ProgressCounts {
     let completed: Int
     let total: Int

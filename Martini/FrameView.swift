@@ -61,6 +61,7 @@ struct FrameView: View {
     @State private var descriptionAttributedText: AttributedString?
     @State private var descriptionTextAlignment: TextAlignment = .leading
     @State private var descriptionHorizontalAlignment: Alignment = .leading
+    @State private var scriptNavigationTarget: ScriptNavigationTarget?
     @Environment(\.openURL) private var openURL
     @Environment(\.colorScheme) private var colorScheme
 
@@ -72,6 +73,7 @@ struct FrameView: View {
     private let boardsTabsSpacing: CGFloat = 12
     private let selectionStore = ProjectKitSelectionStore.shared
     private let dataStore = LocalJSONStore.shared
+    private let scriptPreviewFontSize = UIFont.preferredFont(forTextStyle: .body).pointSize
 
     init(
         frame: Frame,
@@ -120,6 +122,9 @@ struct FrameView: View {
                 }
             } message: {
                 Text("Select at least one camera and lens in settings to use Scout Camera.")
+            }
+            .navigationDestination(item: $scriptNavigationTarget) { target in
+                ScriptView(targetDialogId: target.dialogId)
             }
     }
 
@@ -749,8 +754,12 @@ struct FrameView: View {
 //                Text("Description")
 //                    .font(.headline)
 //                    .foregroundStyle(.primary)
-
-                if let attributedText = descriptionAttributedText {
+                let scriptBlocks = ScriptParser.blocks(from: secondaryText, frameId: frame.id)
+                if scriptBlocks.contains(where: { $0.isDialog }) {
+                    ScriptDescriptionPreview(blocks: scriptBlocks, fontSize: scriptPreviewFontSize) { dialogId in
+                        scriptNavigationTarget = ScriptNavigationTarget(dialogId: dialogId)
+                    }
+                } else if let attributedText = descriptionAttributedText {
                     Text(attributedText)
                         .multilineTextAlignment(descriptionTextAlignment)
                         .frame(maxWidth: .infinity, alignment: descriptionHorizontalAlignment)
@@ -777,6 +786,11 @@ struct FrameView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.top, 10)
         }
+    }
+
+    private struct ScriptNavigationTarget: Identifiable {
+        let id = UUID()
+        let dialogId: String
     }
 
     private var frameTagGroups: [FrameTagGroup] {
