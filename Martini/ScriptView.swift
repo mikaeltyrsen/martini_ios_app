@@ -186,7 +186,7 @@ enum ScriptParser {
             return []
         }
 
-        let pattern = "<(pre|div|span)[^>]*class=\"[^\"]*qr-syntax[^\"]*\"[^>]*>(.*?)</\\1>"
+        let pattern = "<([a-zA-Z0-9]+)[^>]*class=\"[^\"]*qr-syntax[^\"]*\"[^>]*>(.*?)</\\1>"
         guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive, .dotMatchesLineSeparators]) else {
             return [ScriptBlock(
                 id: "\(frameId)-block-0",
