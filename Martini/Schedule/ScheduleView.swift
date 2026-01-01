@@ -36,6 +36,22 @@ struct ScheduleView: View {
         horizontalSizeClass == .compact && !isLandscape
     }
 
+    private func timeAndDurationText(startTime: String?, duration: Int?) -> String? {
+        let timeText = startTime.map { formattedTimeFrom24Hour($0) }
+        let durationText = duration.map { formattedDuration(fromMinutes: $0) }
+
+        switch (timeText, durationText) {
+        case let (time?, duration?):
+            return "\(time) • \(duration)"
+        case let (time?, nil):
+            return time
+        case let (nil, duration?):
+            return duration
+        default:
+            return nil
+        }
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -107,28 +123,19 @@ struct ScheduleView: View {
             HStack(alignment: .center, spacing: 12) {
                 if isPortraitPhone {
                     VStack(alignment: .center, spacing: 4) {
-                        if let time = block.calculatedStart {
-                            Text(formattedTimeFrom24Hour(time))
-                                .font(.footnote.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                        }
+                        titleRowTimeAndDuration(for: block)
                         Text(block.title ?? "")
                             .font(.headline)
                     }
                     .frame(maxWidth: .infinity, alignment: .center)
                 } else {
                     VStack(alignment: .leading, spacing: 4) {
-                        if let time = block.calculatedStart {
-                            Text(formattedTimeFrom24Hour(time))
-                                .font(.footnote.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                        }
+                        titleRowTimeAndDuration(for: block)
                         Text(block.title ?? "")
                             .font(.headline)
                     }
-                    Spacer(minLength: 0)
-
                     if showsWideLayout, let description = block.description, !description.isEmpty {
+                        Spacer(minLength: 0)
                         Text(description)
                             .font(.subheadline)
                             .foregroundStyle(Color.martiniDefaultDescriptionColor)
@@ -144,17 +151,7 @@ struct ScheduleView: View {
                 if showsWideLayout {
                     HStack(alignment: .top, spacing: 12) {
                         VStack(alignment: .leading, spacing: 8) {
-                            if let time = block.calculatedStart {
-                                Label(formattedTimeFrom24Hour(time), systemImage: "clock")
-                                    .font(.footnote.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                            }
-
-                            if let duration = block.duration {
-                                Label(formattedDuration(fromMinutes: duration), systemImage: "timer")
-                                    .font(.footnote.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                            }
+                            storyboardTimeAndDuration(for: block)
                         }
 
                         VStack(alignment: .leading, spacing: 8) {
@@ -170,17 +167,7 @@ struct ScheduleView: View {
                 } else {
                     VStack(alignment: .leading, spacing: 8) {
                         VStack(alignment: .leading, spacing: 8) {
-                            if let time = block.calculatedStart {
-                                Label(formattedTimeFrom24Hour(time), systemImage: "clock")
-                                    .font(.footnote.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                            }
-
-                            if let duration = block.duration {
-                                Label(formattedDuration(fromMinutes: duration), systemImage: "timer")
-                                    .font(.footnote.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                            }
+                            storyboardTimeAndDuration(for: block)
                         }
 
                         storyboardGrid(for: block)
@@ -215,9 +202,10 @@ struct ScheduleView: View {
                             frame: frame,
                             showStatusBadge: false,
                             showFrameTimeOverlay: false,
+                            showTextBlock: false,
                             enablesFullScreen: false
                         )
-                        .frame(maxWidth: 100)
+                        .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.plain)
                 }
@@ -258,5 +246,24 @@ struct ScheduleView: View {
             get: { assetOrder(for: frame) },
             set: { frameAssetOrders[frame.id] = $0 }
         )
+    }
+
+    @ViewBuilder
+    private func titleRowTimeAndDuration(for block: ScheduleBlock) -> some View {
+        if let text = timeAndDurationText(startTime: block.calculatedStart, duration: block.duration) {
+            Text(text)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    @ViewBuilder
+    private func storyboardTimeAndDuration(for block: ScheduleBlock) -> some View {
+        if let timeText = timeAndDurationText(startTime: block.calculatedStart, duration: block.duration) {
+            let icon = block.calculatedStart != nil ? "clock" : "timer"
+            Label(timeText, systemImage: icon)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.secondary)
+        }
     }
 }

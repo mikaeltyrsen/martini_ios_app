@@ -8,6 +8,22 @@ struct SchedulesView: View {
         entry.durationMinutes ?? entry.duration
     }
 
+    private func timeAndDurationText(for entry: ProjectScheduleItem) -> String? {
+        let timeText = entry.startTime.map { formattedTimeFrom24Hour($0) }
+        let durationText = entryDuration(for: entry).map { formattedDuration(fromMinutes: $0) }
+
+        switch (timeText, durationText) {
+        case let (time?, duration?):
+            return "\(time) • \(duration)"
+        case let (time?, nil):
+            return time
+        case let (nil, duration?):
+            return duration
+        default:
+            return nil
+        }
+    }
+
     var body: some View {
         Section(){
             VStack(alignment: .leading, spacing: 10){
@@ -38,15 +54,10 @@ struct SchedulesView: View {
                                 Text(entry.title)
                                     .font(.system(size: 24, weight: .semibold))
                                     .foregroundStyle(.white)
-                                
-                                if let startTime = entry.startTime {
-                                    Label(formattedTimeFrom24Hour(startTime), systemImage: "clock")
-                                        .foregroundStyle(.gray)
-                                        .font(.footnote)
-                                }
-                                
-                                if let duration = entryDuration(for: entry) {
-                                    Label("Duration: \(formattedDuration(fromMinutes: duration))", systemImage: "timer")
+
+                                if let timeAndDuration = timeAndDurationText(for: entry) {
+                                    let icon = entry.startTime != nil ? "clock" : "timer"
+                                    Label(timeAndDuration, systemImage: icon)
                                         .foregroundStyle(.gray)
                                         .font(.footnote)
                                 }
