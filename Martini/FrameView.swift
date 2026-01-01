@@ -1001,8 +1001,23 @@ struct FrameView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     descriptionSection
                         .padding(.horizontal, 20)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            guard allowsExpansion else { return }
+                            toggleDescriptionExpanded()
+                        }
 
                     if !allowsExpansion || isDescriptionExpanded {
+                        Button {
+                            scriptNavigationTarget = ScriptNavigationTarget(dialogId: frame.id)
+                        } label: {
+                            Label("Go to Script", systemImage: "text.book.closed")
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(.martiniDefaultColor)
+                        .padding(.horizontal, 20)
+
                         tagsSection
                             .padding(.horizontal, 20)
                             .padding(.bottom, 24)
