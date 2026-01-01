@@ -3,7 +3,9 @@ import SwiftUI
 struct SchedulesView: View {
     let schedule: ProjectSchedule
     let onSelect: (ProjectScheduleItem) -> Void
-    
+
+    @EnvironmentObject private var authService: AuthService
+
     private func entryDuration(for entry: ProjectScheduleItem) -> Int? {
         entry.durationMinutes ?? entry.duration
     }
@@ -22,6 +24,23 @@ struct SchedulesView: View {
         default:
             return nil
         }
+    }
+
+    private func isEntryComplete(_ entry: ProjectScheduleItem) -> Bool {
+        let groups = entry.groups ?? schedule.groups ?? []
+        let storyboardIds = Set(groups.flatMap { group in
+            group.blocks.flatMap { $0.storyboards ?? [] }
+        })
+
+        guard !storyboardIds.isEmpty else { return false }
+
+        let frames = storyboardIds.compactMap { id in
+            authService.frames.first { $0.id == id }
+        }
+
+        guard frames.count == storyboardIds.count else { return false }
+
+        return frames.allSatisfy { $0.statusEnum == .done }
     }
 
     var body: some View {
@@ -68,6 +87,7 @@ struct SchedulesView: View {
                     .padding(10)
                     .background(.markerPopup)
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .opacity(isEntryComplete(entry) ? 0.5 : 1)
                 }
             }
             Spacer()
