@@ -1020,12 +1020,6 @@ struct FrameView: View {
                     }
                 )
             }
-            .gesture(
-                TapGesture().onEnded {
-                    guard allowsExpansion else { return }
-                    toggleDescriptionExpanded()
-                }
-            )
             .coordinateSpace(name: "descriptionScroll")
             .scrollDisabled(allowsExpansion ? !isDescriptionExpanded || isDraggingDescription : false)
             .onPreferenceChange(DescriptionScrollOffsetKey.self) { offset in
