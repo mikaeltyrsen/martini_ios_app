@@ -274,6 +274,7 @@ struct ScriptDescriptionPreview: View {
             ForEach(blocks) { block in
                 if let dialogId = block.dialogId {
                     Button {
+                        logDescriptionTap(text: block.text, isDialog: true, dialogId: dialogId)
                         onDialogTap(dialogId)
                     } label: {
                         Text(block.text)
@@ -287,8 +288,16 @@ struct ScriptDescriptionPreview: View {
                         .font(.system(size: fontSize))
                         .foregroundStyle(Color.martiniDefaultDescriptionColor)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .onTapGesture {
+                            logDescriptionTap(text: block.text, isDialog: false, dialogId: nil)
+                        }
                 }
             }
         }
+    }
+
+    private func logDescriptionTap(text: String, isDialog: Bool, dialogId: String?) {
+        let sanitizedText = text.replacingOccurrences(of: "\n", with: "\\n")
+        print("ScriptDescriptionPreview tap: isDialog=\(isDialog) dialogId=\(dialogId ?? "nil") text=\"\(sanitizedText)\"")
     }
 }
