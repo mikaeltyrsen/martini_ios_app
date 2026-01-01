@@ -788,7 +788,7 @@ struct FrameView: View {
         }
     }
 
-    private struct ScriptNavigationTarget: Identifiable {
+    private struct ScriptNavigationTarget: Identifiable, Hashable {
         let id = UUID()
         let dialogId: String
     }
