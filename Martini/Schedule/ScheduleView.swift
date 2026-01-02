@@ -134,6 +134,14 @@ struct ScheduleView: View {
                 .padding(.vertical, 4)
             }
         }
+        .coordinateSpace(name: "timeline")
+        .backgroundPreferenceValue(TimelineRowAnchorKey.self) { anchors in
+            GeometryReader { proxy in
+                if showsTimelineProgress {
+                    timelineProgressLine(with: anchors, proxy: proxy)
+                }
+            }
+        }
     }
 
     @ViewBuilder
@@ -141,6 +149,9 @@ struct ScheduleView: View {
         HStack(alignment: .top, spacing: 12) {
             if showsTimelineProgress {
                 timelineIndicator(for: block)
+                    .anchorPreference(key: TimelineRowAnchorKey.self, value: .bounds) { anchor in
+                        [block.id: anchor]
+                    }
             }
             blockView(for: block)
         }
@@ -327,6 +338,18 @@ struct ScheduleView: View {
         case onTime
     }
 
+    private struct TimelineRowAnchorKey: PreferenceKey {
+        static var defaultValue: [String: Anchor<CGRect>] = [:]
+
+        static func reduce(value: inout [String: Anchor<CGRect>], nextValue: () -> [String: Anchor<CGRect>]) {
+            value.merge(nextValue(), uniquingKeysWith: { $1 })
+        }
+    }
+
+    private let timelineIndicatorWidth: CGFloat = 28
+    private let timelineLineWidth: CGFloat = 3
+    private let timelineMarkerSize: CGFloat = 24
+
     private var scheduleBaseDate: Date {
         if let scheduleDate,
            let date = ScheduleView.scheduleDateFormatter.date(from: scheduleDate) {
@@ -440,14 +463,14 @@ struct ScheduleView: View {
     }
 
     private func marker(for block: ScheduleBlock) -> TimelineMarker? {
-        if isBlockOverdue(block) {
-            return .warning
-        }
         if let hereBlock, block.id == hereBlock.id {
             return .here
         }
         if let currentTimeBlockId, block.id == currentTimeBlockId {
             return .currentTime
+        }
+        if isBlockOverdue(block) {
+            return .warning
         }
         return nil
     }
@@ -463,36 +486,75 @@ struct ScheduleView: View {
 
     private func timelineIndicator(for block: ScheduleBlock) -> some View {
         let marker = marker(for: block)
-        let lineBaseColor = Color.gray.opacity(0.35)
-        let lineFillColor = (isInProgressRange(block) ? progressColor : nil)
-
         return ZStack {
-            Rectangle()
-                .fill(lineBaseColor)
-                .frame(width: 3)
-                .frame(maxHeight: .infinity)
-                .clipShape(Capsule())
-
-            if let lineFillColor {
-                Rectangle()
-                    .fill(lineFillColor)
-                    .frame(width: 3)
-                    .frame(maxHeight: .infinity)
-                    .clipShape(Capsule())
-            }
-        }
-        .frame(width: 28)
-        .overlay(alignment: .center) {
             if let marker {
                 Circle()
                     .fill(markerColor(for: marker))
-                    .frame(width: 24, height: 24)
+                    .frame(width: timelineMarkerSize, height: timelineMarkerSize)
                     .overlay {
                         Image(systemName: marker.icon)
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(.white)
                     }
                     .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+            }
+        }
+        .frame(width: timelineIndicatorWidth)
+    }
+
+    @ViewBuilder
+    private func timelineProgressLine(
+        with anchors: [String: Anchor<CGRect>],
+        proxy: GeometryProxy
+    ) -> some View {
+        let timelineBlocks = scheduleGroups.flatMap(\.blocks)
+        let positions = timelineBlocks.compactMap { block -> (block: ScheduleBlock, midY: CGFloat)? in
+            guard let anchor = anchors[block.id] else { return nil }
+            let rect = proxy[anchor]
+            return (block, rect.midY)
+        }
+        guard let first = positions.first, let last = positions.last else {
+            EmptyView()
+            return
+        }
+
+        let x = timelineIndicatorWidth / 2
+        let basePath = Path { path in
+            path.move(to: CGPoint(x: x, y: first.midY))
+            path.addLine(to: CGPoint(x: x, y: last.midY))
+        }
+        basePath
+            .stroke(Color.gray.opacity(0.35), style: StrokeStyle(lineWidth: timelineLineWidth, lineCap: .round))
+
+        if let progressColor {
+            let positionsById = Dictionary(uniqueKeysWithValues: positions.map { ($0.block.id, $0.midY) })
+            let markerRadius = timelineMarkerSize / 2
+            var fillStart = hereBlock.flatMap { positionsById[$0.id] }
+            var fillEnd = currentTimeBlockId.flatMap { positionsById[$0] }
+
+            if fillStart == nil || fillEnd == nil {
+                let inRange = positions.filter { isInProgressRange($0.block) }.map(\.midY)
+                fillStart = inRange.min()
+                fillEnd = inRange.max()
+            }
+
+            if var fillStart, var fillEnd {
+                if fillStart < fillEnd {
+                    fillStart += markerRadius
+                    fillEnd -= markerRadius
+                } else if fillStart > fillEnd {
+                    fillStart -= markerRadius
+                    fillEnd += markerRadius
+                }
+
+                if fillStart != fillEnd {
+                    let fillPath = Path { path in
+                        path.move(to: CGPoint(x: x, y: fillStart))
+                        path.addLine(to: CGPoint(x: x, y: fillEnd))
+                    }
+                    fillPath
+                        .stroke(progressColor, style: StrokeStyle(lineWidth: timelineLineWidth, lineCap: .round))
+                }
             }
         }
     }
