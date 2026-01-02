@@ -165,7 +165,7 @@ struct ScoutCameraLayout: View {
         }
         .fullScreenCover(isPresented: Binding(
             get: { viewModel.capturedImage != nil },
-            set: { if !$0 { viewModel.capturedImage = nil } }
+            set: { _ in }
         )) {
             if let image = viewModel.capturedImage {
                 ScoutCameraReviewView(

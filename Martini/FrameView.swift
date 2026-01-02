@@ -184,7 +184,7 @@ struct FrameView: View {
                 selectedStatus = updated.statusEnum
 
                 let newStack: [FrameAssetItem] = FrameView.orderedAssets(for: updated, order: assetOrder)
-                if assetStack.map(\.id) != newStack.map(\.id) {
+                if assetStack != newStack {
                     assetStack = newStack
                     if visibleAssetID == nil { visibleAssetID = newStack.first?.id }
                 }
