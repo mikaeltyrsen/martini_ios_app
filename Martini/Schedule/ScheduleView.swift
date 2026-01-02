@@ -523,6 +523,9 @@ struct ScheduleView: View {
                 }
             }
             if isCurrent && !hasPriorWarnings {
+                if progressState == .ahead {
+                    return .green
+                }
                 return .martiniDefaultColor
             }
             if isWarning {
