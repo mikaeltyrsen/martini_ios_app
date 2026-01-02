@@ -130,7 +130,6 @@ struct FrameView: View {
             .sheet(item: $metadataSheetItem) { item in
                 BoardMetadataSheet(item: item)
             }
-            .tint(.martiniDefaultColor)
     }
 
     private var scoutCameraContent: some View {
