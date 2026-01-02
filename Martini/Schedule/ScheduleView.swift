@@ -9,12 +9,22 @@ struct ScheduleView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @State private var frameAssetOrders: [String: [FrameAssetKind]] = [:]
+    @State private var showsTimelineProgress = true
     private var scheduleGroups: [ScheduleGroup] { item.groups ?? schedule.groups ?? [] }
 
     private var scheduleTitle: String { item.title.isEmpty ? (schedule.title ?? schedule.name) : item.title }
     private var scheduleDate: String? { schedule.date ?? item.date }
     private var scheduleStartTime: String? { schedule.startTime ?? item.startTime }
     private var scheduleDuration: Int? { schedule.durationMinutes ?? item.durationMinutes ?? item.duration }
+    private var flattenedBlocks: [ScheduleBlock] { scheduleGroups.flatMap(\.blocks) }
+
+    private static let scheduleDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
 
     private var formattedDate: String? {
         scheduleDate.map { formattedScheduleDate(from: $0, includeYear: true) }
@@ -68,6 +78,16 @@ struct ScheduleView: View {
         }
         .navigationTitle(scheduleTitle)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .bottomBar) {
+                Button {
+                    showsTimelineProgress.toggle()
+                } label: {
+                    Image(systemName: showsTimelineProgress ? "clock.fill" : "clock")
+                }
+                .accessibilityLabel(showsTimelineProgress ? "Hide schedule progress" : "Show schedule progress")
+            }
+        }
     }
 
     private var header: some View {
@@ -105,7 +125,7 @@ struct ScheduleView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     VStack(alignment: .leading, spacing: 12) {
                         ForEach(group.blocks) { block in
-                            blockView(for: block)
+                            blockRow(for: block)
                         }
                     }
                     .padding(.horizontal, 6)
@@ -113,6 +133,16 @@ struct ScheduleView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, 4)
             }
+        }
+    }
+
+    @ViewBuilder
+    private func blockRow(for block: ScheduleBlock) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            if showsTimelineProgress {
+                timelineIndicator(for: block)
+            }
+            blockView(for: block)
         }
     }
 
@@ -271,6 +301,199 @@ struct ScheduleView: View {
             Text(timeText)
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(.secondary)
+        }
+    }
+
+    private enum TimelineMarker {
+        case warning
+        case currentTime
+        case here
+
+        var icon: String {
+            switch self {
+            case .warning:
+                return "exclamationmark.triangle.fill"
+            case .currentTime:
+                return "clock"
+            case .here:
+                return "camera.fill"
+            }
+        }
+    }
+
+    private enum TimelineProgressState {
+        case ahead
+        case behind
+        case onTime
+    }
+
+    private var scheduleBaseDate: Date {
+        if let scheduleDate,
+           let date = ScheduleView.scheduleDateFormatter.date(from: scheduleDate) {
+            return date
+        }
+        return Calendar.current.startOfDay(for: Date())
+    }
+
+    private var currentScheduleTime: Date {
+        let nowComponents = Calendar.current.dateComponents([.hour, .minute, .second], from: Date())
+        return Calendar.current.date(
+            bySettingHour: nowComponents.hour ?? 0,
+            minute: nowComponents.minute ?? 0,
+            second: nowComponents.second ?? 0,
+            of: scheduleBaseDate
+        ) ?? Date()
+    }
+
+    private func dateForScheduleTime(_ timeString: String?) -> Date? {
+        guard let timeString, !timeString.isEmpty else { return nil }
+        let components = timeString.split(separator: ":")
+        guard components.count >= 2,
+              let hour = Int(components[0]),
+              let minute = Int(components[1]) else {
+            return nil
+        }
+        let second = components.count > 2 ? Int(components[2]) ?? 0 : 0
+        return Calendar.current.date(bySettingHour: hour, minute: minute, second: second, of: scheduleBaseDate)
+    }
+
+    private func startDate(for block: ScheduleBlock) -> Date? {
+        guard block.ignoreTime != true else { return nil }
+        return dateForScheduleTime(block.calculatedStart)
+    }
+
+    private var blocksWithStartTimes: [(block: ScheduleBlock, date: Date)] {
+        flattenedBlocks.compactMap { block in
+            guard let date = startDate(for: block) else { return nil }
+            return (block, date)
+        }
+    }
+
+    private var hereBlock: ScheduleBlock? {
+        flattenedBlocks.first { block in
+            frames(for: block).contains { $0.statusEnum == .here }
+        }
+    }
+
+    private var hereTime: Date? {
+        guard let block = hereBlock else { return nil }
+        return startDate(for: block)
+    }
+
+    private var progressState: TimelineProgressState? {
+        guard let hereTime else { return nil }
+        if hereTime > currentScheduleTime {
+            return .ahead
+        }
+        if hereTime < currentScheduleTime {
+            return .behind
+        }
+        return .onTime
+    }
+
+    private var progressColor: Color? {
+        switch progressState {
+        case .ahead, .onTime:
+            return .green
+        case .behind:
+            return .red
+        case .none:
+            return nil
+        }
+    }
+
+    private var progressRange: ClosedRange<Date>? {
+        guard let hereTime else { return nil }
+        let now = currentScheduleTime
+        if hereTime <= now {
+            return hereTime...now
+        }
+        return now...hereTime
+    }
+
+    private var currentTimeBlockId: String? {
+        guard let closest = blocksWithStartTimes.min(by: { lhs, rhs in
+            abs(lhs.date.timeIntervalSince(currentScheduleTime)) < abs(rhs.date.timeIntervalSince(currentScheduleTime))
+        }) else {
+            return nil
+        }
+        return closest.block.id
+    }
+
+    private func isBlockOverdue(_ block: ScheduleBlock) -> Bool {
+        guard progressState == .ahead,
+              let blockDate = startDate(for: block),
+              blockDate < currentScheduleTime else {
+            return false
+        }
+        let blockFrames = frames(for: block)
+        guard !blockFrames.isEmpty else { return false }
+        return !blockFrames.allSatisfy { $0.statusEnum == .done }
+    }
+
+    private func isInProgressRange(_ block: ScheduleBlock) -> Bool {
+        guard let range = progressRange,
+              let blockDate = startDate(for: block) else {
+            return false
+        }
+        return range.contains(blockDate)
+    }
+
+    private func marker(for block: ScheduleBlock) -> TimelineMarker? {
+        if isBlockOverdue(block) {
+            return .warning
+        }
+        if let hereBlock, block.id == hereBlock.id {
+            return .here
+        }
+        if let currentTimeBlockId, block.id == currentTimeBlockId {
+            return .currentTime
+        }
+        return nil
+    }
+
+    private func markerColor(for marker: TimelineMarker) -> Color {
+        switch marker {
+        case .warning:
+            return .orange
+        case .currentTime, .here:
+            return progressColor ?? .martiniDefaultColor
+        }
+    }
+
+    private func timelineIndicator(for block: ScheduleBlock) -> some View {
+        let marker = marker(for: block)
+        let lineBaseColor = Color.gray.opacity(0.35)
+        let lineFillColor = (isInProgressRange(block) ? progressColor : nil)
+
+        return ZStack {
+            Rectangle()
+                .fill(lineBaseColor)
+                .frame(width: 3)
+                .frame(maxHeight: .infinity)
+                .clipShape(Capsule())
+
+            if let lineFillColor {
+                Rectangle()
+                    .fill(lineFillColor)
+                    .frame(width: 3)
+                    .frame(maxHeight: .infinity)
+                    .clipShape(Capsule())
+            }
+        }
+        .frame(width: 28)
+        .overlay(alignment: .center) {
+            if let marker {
+                Circle()
+                    .fill(markerColor(for: marker))
+                    .frame(width: 24, height: 24)
+                    .overlay {
+                        Image(systemName: marker.icon)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(.white)
+                    }
+                    .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+            }
         }
     }
 }
