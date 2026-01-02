@@ -126,6 +126,7 @@ struct FrameView: View {
             .navigationDestination(item: $scriptNavigationTarget) { target in
                 ScriptView(targetDialogId: target.dialogId)
             }
+            .tint(.martiniDefaultColor)
     }
 
     private var scoutCameraContent: some View {
