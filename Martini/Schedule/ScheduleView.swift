@@ -160,6 +160,7 @@ struct ScheduleView: View {
             blockView(for: block)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .compositingGroup()
         .opacity(isStoryboardRowComplete(for: block) ? 0.5 : 1)
     }
 
