@@ -1237,8 +1237,23 @@ private extension MainView {
             currentCreativeId = frame.creativeId
         }
 
-        withAnimation {
-            proxy.scrollTo(frame.id, anchor: anchor)
+        let shouldPrimeSection = frameSortMode == .story
+            && !visibleFrameIds.contains(frame.id)
+            && gridSections.contains(where: { $0.id == frame.creativeId })
+
+        if shouldPrimeSection {
+            withAnimation {
+                proxy.scrollTo(frame.creativeId, anchor: .top)
+            }
+            DispatchQueue.main.async {
+                withAnimation {
+                    proxy.scrollTo(frame.id, anchor: anchor)
+                }
+            }
+        } else {
+            withAnimation {
+                proxy.scrollTo(frame.id, anchor: anchor)
+            }
         }
     }
 
