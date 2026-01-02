@@ -476,8 +476,16 @@ struct ScheduleView: View {
         return blockDate <= currentScheduleTime
     }
 
-    private var hasVisibleWarnings: Bool {
-        flattenedBlocks.contains { shouldShowWarning(for: $0) }
+    private func hasPriorWarnings(before block: ScheduleBlock) -> Bool {
+        guard let blockDate = startDate(for: block) else { return false }
+        return flattenedBlocks.contains { otherBlock in
+            guard otherBlock.id != block.id,
+                  let otherDate = startDate(for: otherBlock),
+                  otherDate < blockDate else {
+                return false
+            }
+            return shouldShowWarning(for: otherBlock)
+        }
     }
 
     private func isInProgressRange(_ block: ScheduleBlock) -> Bool {
@@ -498,19 +506,23 @@ struct ScheduleView: View {
             if isWarning { return .warning }
             return nil
         }()
+        let hasPriorWarnings = hasPriorWarnings(before: block)
         let markerColor: Color = {
-            if isHere && isCurrent && !hasVisibleWarnings {
+            if isHere && isCurrent && !hasPriorWarnings {
                 return .green
             }
             if isHere {
                 switch progressState {
                 case .behind:
                     return .red
-                case .onTime where hasVisibleWarnings:
+                case .onTime where hasPriorWarnings:
                     return .orange
                 default:
                     return progressColor ?? .martiniDefaultColor
                 }
+            }
+            if isCurrent && !hasPriorWarnings {
+                return .martiniDefaultColor
             }
             if isWarning {
                 return .orange
