@@ -106,6 +106,8 @@ struct FrameLayout: View {
     var showFrameNumberOverlay: Bool = true
     var showFrameTimeOverlay: Bool = true
     var showPinnedBoardOverlay: Bool = false
+    var showMetadataOverlay: Bool = false
+    var metadataTapAction: (() -> Void)? = nil
     var showTextBlock: Bool = true
     var cornerRadius: CGFloat = 8
     var enablesFullScreen: Bool = true
@@ -189,6 +191,33 @@ struct FrameLayout: View {
                                     .foregroundColor(.white)
                                     .minimumScaleFactor(0.5)
                             }
+                        }
+                        .padding(max(2, diameter * 0.25))
+                        Spacer()
+                    }
+                }
+            }
+
+            if showMetadataOverlay {
+                GeometryReader { geo in
+                    let diameter = max(18, geo.size.width * 0.08)
+
+                    VStack {
+                        HStack {
+                            Button {
+                                metadataTapAction?()
+                            } label: {
+                                Circle()
+                                    .fill(Color.black.opacity(0.8))
+                                    .frame(width: diameter, height: diameter)
+                                    .overlay(
+                                        Image(systemName: "chevron.left.forwardslash.chevron.right")
+                                            .font(.system(size: diameter * 0.42, weight: .semibold))
+                                            .foregroundColor(.white)
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                            Spacer()
                         }
                         .padding(max(2, diameter * 0.25))
                         Spacer()

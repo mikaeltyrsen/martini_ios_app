@@ -37,7 +37,6 @@ final class ScoutCameraViewModel: ObservableObject {
     @Published var matchResult: FOVMatchResult?
     @Published var debugInfo: ScoutCameraDebugInfo?
     @Published var capturedImage: UIImage?
-    @Published var processedImage: UIImage?
     @Published var isCapturing: Bool = false
     @Published var errorMessage: String?
 
@@ -225,7 +224,6 @@ final class ScoutCameraViewModel: ObservableObject {
                     return
                 }
                 self.capturedImage = image
-                self.processedImage = await self.processImage(image)
                 self.isCapturing = false
             }
         }
@@ -254,12 +252,13 @@ final class ScoutCameraViewModel: ObservableObject {
         )
     }
 
-    func uploadProcessedImage(token: String?) async -> Bool {
-        guard let processedImage, let data = processedImage.jpegData(compressionQuality: 0.9) else { return false }
+    func uploadCapturedImage(token: String?) async -> Bool {
+        guard let capturedImage, let data = capturedImage.jpegData(compressionQuality: 0.9) else { return false }
         guard let creativeId else {
             errorMessage = "Missing creative ID for upload."
             return false
         }
+        let metadata = metadataJSONString()
         do {
             try await uploadService.uploadPhotoboard(
                 imageData: data,
@@ -267,13 +266,92 @@ final class ScoutCameraViewModel: ObservableObject {
                 shootId: projectId,
                 creativeId: creativeId,
                 frameId: frameId,
-                bearerToken: token
+                bearerToken: token,
+                metadata: metadata
             )
             return true
         } catch {
             errorMessage = error.localizedDescription
             return false
         }
+    }
+
+    func prepareShareImage() async -> UIImage? {
+        guard let capturedImage else { return nil }
+        return await processImage(capturedImage)
+    }
+
+    private func metadataJSONString() -> String? {
+        guard let camera = selectedCamera, let mode = selectedMode, let lens = selectedLens else { return nil }
+        let squeeze = effectiveSqueeze(mode: mode, lens: lens)
+        let captureData: [String: Any] = compactMetadata([
+            "timestamp": ISO8601DateFormatter().string(from: Date()),
+            "focal_length_mm": focalLengthMm,
+            "active_focal_length_mm": activeFocalLengthMm,
+            "squeeze": squeeze,
+            "selected_frame_line": selectedFrameLine.rawValue,
+            "frame_line_aspect_ratio": selectedFrameLine.aspectRatio,
+            "target_aspect_ratio": targetAspectRatio,
+            "matched_camera_role": matchResult?.cameraRole,
+            "matched_zoom_factor": matchResult?.zoomFactor
+        ])
+        let modeData: [String: Any] = compactMetadata([
+            "id": mode.id,
+            "name": mode.name,
+            "sensor_width_mm": mode.sensorWidthMm,
+            "sensor_height_mm": mode.sensorHeightMm,
+            "resolution": mode.resolution,
+            "aspect_ratio": mode.aspectRatio,
+            "capture_gate": mode.captureGate,
+            "anamorphic_preview_squeeze": mode.anamorphicPreviewSqueeze,
+            "delivery_aspect_ratio": mode.deliveryAspectRatio,
+            "recommended_lens_coverage": mode.recommendedLensCoverage,
+            "vignette_risk": mode.vignetteRisk,
+            "notes": mode.notes,
+            "extraction": mode.extraction?.rawValue
+        ])
+        let cameraData: [String: Any] = compactMetadata([
+            "id": camera.id,
+            "brand": camera.brand,
+            "model": camera.model,
+            "sensor_type": camera.sensorType,
+            "mount": camera.mount,
+            "sensor_width_mm": camera.sensorWidthMm,
+            "sensor_height_mm": camera.sensorHeightMm,
+            "mode": modeData
+        ])
+        let lensData: [String: Any] = compactMetadata([
+            "id": lens.id,
+            "type": lens.type,
+            "brand": lens.brand,
+            "series": lens.series,
+            "format": lens.format,
+            "mounts": lens.mounts,
+            "focal_length_mm": lens.focalLengthMm,
+            "focal_length_min_mm": lens.focalLengthMinMm,
+            "focal_length_max_mm": lens.focalLengthMaxMm,
+            "max_t_stop": lens.maxTStop,
+            "squeeze": lens.squeeze,
+            "is_zoom": lens.isZoom
+        ])
+        let payload: [String: Any] = [
+            "scout_camera": [
+                [
+                    "capture": [captureData],
+                    "camera": [cameraData],
+                    "lens": [lensData]
+                ]
+            ]
+        ]
+        guard JSONSerialization.isValidJSONObject(payload),
+              let data = try? JSONSerialization.data(withJSONObject: payload, options: []) else {
+            return nil
+        }
+        return String(data: data, encoding: .utf8)
+    }
+
+    private func compactMetadata(_ values: [String: Any?]) -> [String: Any] {
+        values.compactMapValues { $0 }
     }
 
     private func currentFocalLength() -> Double {
