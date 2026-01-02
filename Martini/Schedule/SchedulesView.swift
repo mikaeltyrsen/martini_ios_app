@@ -41,7 +41,11 @@ struct SchedulesView: View {
 
         guard frames.count == storyboardIds.count else { return false }
 
-        return frames.allSatisfy { $0.statusEnum == .done }
+        return frames.allSatisfy(isFrameComplete)
+    }
+
+    private func isFrameComplete(_ frame: Frame) -> Bool {
+        frame.statusEnum == .done || frame.statusEnum == .omit
     }
 
     var body: some View {

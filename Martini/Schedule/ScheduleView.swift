@@ -263,7 +263,7 @@ struct ScheduleView: View {
     private func isStoryboardRowComplete(for block: ScheduleBlock) -> Bool {
         let rowFrames = frames(for: block)
         guard !rowFrames.isEmpty else { return false }
-        return rowFrames.allSatisfy { $0.statusEnum == .done }
+        return rowFrames.allSatisfy(isFrameComplete)
     }
 
     private func blockColor(_ name: String?) -> Color {
@@ -444,14 +444,17 @@ struct ScheduleView: View {
     }
 
     private func isBlockOverdue(_ block: ScheduleBlock) -> Bool {
-        guard progressState == .behind,
-              let blockDate = startDate(for: block),
+        guard let blockDate = startDate(for: block),
               blockDate < currentScheduleTime else {
             return false
         }
         let blockFrames = frames(for: block)
         guard !blockFrames.isEmpty else { return false }
-        return !blockFrames.allSatisfy { $0.statusEnum == .done }
+        return !blockFrames.allSatisfy(isFrameComplete)
+    }
+
+    private func isFrameComplete(_ frame: Frame) -> Bool {
+        frame.statusEnum == .done || frame.statusEnum == .omit
     }
 
     private func isInProgressRange(_ block: ScheduleBlock) -> Bool {
