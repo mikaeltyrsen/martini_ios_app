@@ -438,12 +438,11 @@ struct ScheduleView: View {
     }
 
     private var currentTimeBlockId: String? {
-        guard let closest = blocksWithStartTimes.min(by: { lhs, rhs in
-            abs(lhs.date.timeIntervalSince(currentScheduleTime)) < abs(rhs.date.timeIntervalSince(currentScheduleTime))
-        }) else {
-            return nil
+        let sortedBlocks = blocksWithStartTimes.sorted { $0.date < $1.date }
+        if let active = sortedBlocks.last(where: { $0.date <= currentScheduleTime }) {
+            return active.block.id
         }
-        return closest.block.id
+        return sortedBlocks.first?.block.id
     }
 
     private func isBlockOverdue(_ block: ScheduleBlock) -> Bool {
