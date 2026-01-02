@@ -499,6 +499,9 @@ struct ScheduleView: View {
             return nil
         }()
         let markerColor: Color = {
+            if isHere && isCurrent && !hasVisibleWarnings {
+                return .green
+            }
             if isHere {
                 switch progressState {
                 case .behind:
@@ -508,9 +511,6 @@ struct ScheduleView: View {
                 default:
                     return progressColor ?? .martiniDefaultColor
                 }
-            }
-            if isHere && isCurrent {
-                return .green
             }
             if isWarning {
                 return .orange
@@ -551,7 +551,7 @@ struct ScheduleView: View {
                 path.addLine(to: CGPoint(x: x, y: last.midY))
             }
             basePath
-                .stroke(Color.gray.opacity(0.35), style: StrokeStyle(lineWidth: timelineLineWidth, lineCap: .round))
+                .stroke(Color(.systemBackground), style: StrokeStyle(lineWidth: timelineLineWidth, lineCap: .round))
 
             if let warningRange = warningFillRange(for: positions),
                let adjustedRange = adjustedFillRange(
