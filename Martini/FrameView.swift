@@ -999,7 +999,7 @@ struct FrameView: View {
             }
 
             ScrollView(.vertical, showsIndicators: true) {
-                VStack(alignment: .leading, spacing: 16) {
+                let contentStack = VStack(alignment: .leading, spacing: 16) {
                     descriptionSection
                         .padding(.horizontal, 20)
                         .contentShape(Rectangle())
@@ -1029,6 +1029,19 @@ struct FrameView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+
+                Group {
+                    if allowsExpansion {
+                        contentStack
+                    } else {
+                        VStack(spacing: 0) {
+                            Spacer(minLength: 0)
+                            contentStack
+                            Spacer(minLength: 0)
+                        }
+                        .frame(minHeight: overlayHeight)
+                    }
+                }
                 .background(
                     GeometryReader { proxy in
                         Color.clear
