@@ -158,10 +158,10 @@ struct ScheduleView: View {
                     }
             }
             blockView(for: block)
+                .compositingGroup()
+                .opacity(shouldFadeBlock(block) ? 0.5 : 1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .compositingGroup()
-        .opacity(shouldFadeBlock(block) ? 0.5 : 1)
     }
 
     @ViewBuilder
