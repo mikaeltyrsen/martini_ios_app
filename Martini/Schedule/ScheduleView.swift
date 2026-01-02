@@ -160,6 +160,7 @@ struct ScheduleView: View {
             blockView(for: block)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .opacity(isStoryboardRowComplete(for: block) ? 0.5 : 1)
     }
 
     @ViewBuilder
@@ -222,7 +223,6 @@ struct ScheduleView: View {
             .padding(12)
             .background(blockColor(block.color))
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .opacity(isStoryboardRowComplete(for: block) ? 0.5 : 1)
         }
     }
 
@@ -246,7 +246,7 @@ struct ScheduleView: View {
                     } label: {
                         FrameLayout(
                             frame: frame,
-                            showStatusBadge: false,
+                            showStatusBadge: true,
                             showFrameTimeOverlay: false,
                             showTextBlock: false,
                             enablesFullScreen: false
