@@ -2522,11 +2522,11 @@ private struct AssetCardView: View {
             title: primaryText,
             showStatusBadge: true,
             showFrameNumberOverlay: true,
-            cornerRadius: cardCornerRadius,
-            enablesFullScreen: enablesFullScreen,
             showMetadataOverlay: showMetadataOverlay,
+            metadataTapAction: onMetadataTap,
             showTextBlock: false,
-            metadataTapAction: onMetadataTap
+            cornerRadius: cardCornerRadius,
+            enablesFullScreen: enablesFullScreen
         )
 
         let styledCard = card
