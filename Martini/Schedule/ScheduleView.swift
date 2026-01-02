@@ -10,6 +10,7 @@ struct ScheduleView: View {
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @State private var frameAssetOrders: [String: [FrameAssetKind]] = [:]
     @State private var showsTimelineProgress = true
+    @State private var now = Date()
     private var scheduleGroups: [ScheduleGroup] { item.groups ?? schedule.groups ?? [] }
 
     private var scheduleTitle: String { item.title.isEmpty ? (schedule.title ?? schedule.name) : item.title }
@@ -87,6 +88,9 @@ struct ScheduleView: View {
                 }
                 .accessibilityLabel(showsTimelineProgress ? "Hide schedule progress" : "Show schedule progress")
             }
+        }
+        .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { now in
+            self.now = now
         }
     }
 
@@ -362,7 +366,7 @@ struct ScheduleView: View {
     }
 
     private var currentScheduleTime: Date {
-        let nowComponents = Calendar.current.dateComponents([.hour, .minute, .second], from: Date())
+        let nowComponents = Calendar.current.dateComponents([.hour, .minute, .second], from: now)
         return Calendar.current.date(
             bySettingHour: nowComponents.hour ?? 0,
             minute: nowComponents.minute ?? 0,
