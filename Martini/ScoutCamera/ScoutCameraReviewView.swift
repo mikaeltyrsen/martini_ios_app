@@ -72,6 +72,7 @@ struct ScoutCameraReviewView: View {
         .sheet(item: $shareItem) { item in
             ActivityView(activityItems: [item.image])
         }
+        .interactiveDismissDisabled(true)
     }
 }
 
