@@ -508,13 +508,13 @@ struct ScheduleView: View {
         proxy: GeometryProxy
     ) -> some View {
         let timelineBlocks = scheduleGroups.flatMap(\.blocks)
-        let positions = timelineBlocks.compactMap { block -> (block: ScheduleBlock, midY: CGFloat)? in
+        let positions = timelineBlocks.compactMap { block -> (block: ScheduleBlock, midX: CGFloat, midY: CGFloat)? in
             guard let anchor = anchors[block.id] else { return nil }
             let rect = proxy[anchor]
-            return (block, rect.midY)
+            return (block, rect.midX, rect.midY)
         }
         if let first = positions.first, let last = positions.last {
-            let x = timelineIndicatorWidth / 2
+            let x = first.midX
             let basePath = Path { path in
                 path.move(to: CGPoint(x: x, y: first.midY))
                 path.addLine(to: CGPoint(x: x, y: last.midY))
@@ -554,7 +554,7 @@ struct ScheduleView: View {
     }
 
     private func progressFillRange(
-        for positions: [(block: ScheduleBlock, midY: CGFloat)]
+        for positions: [(block: ScheduleBlock, midX: CGFloat, midY: CGFloat)]
     ) -> (start: CGFloat, end: CGFloat)? {
         let positionsById = Dictionary(uniqueKeysWithValues: positions.map { ($0.block.id, $0.midY) })
         let start = hereBlock.flatMap { positionsById[$0.id] }
@@ -572,7 +572,7 @@ struct ScheduleView: View {
     }
 
     private func warningFillRange(
-        for positions: [(block: ScheduleBlock, midY: CGFloat)]
+        for positions: [(block: ScheduleBlock, midX: CGFloat, midY: CGFloat)]
     ) -> (start: CGFloat, end: CGFloat)? {
         let warningPositions = positions.filter { isBlockOverdue($0.block) }.map(\.midY)
         guard warningPositions.count > 1,
