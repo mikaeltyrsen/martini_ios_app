@@ -52,6 +52,16 @@ struct ProjectKitSettingsView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
+                        .swipeActions {
+                            if let pack = store.lensPack(for: lens) {
+                                Button("Delete Pack", role: .destructive) {
+                                    store.removeLensPack(id: pack.id, projectId: authService.projectId)
+                                }
+                            }
+                            Button("Delete Lens", role: .destructive) {
+                                store.removeLens(id: lens.id, projectId: authService.projectId)
+                            }
+                        }
                     }
                     .onDelete { indexSet in
                         removeLenses(at: indexSet, from: selected)

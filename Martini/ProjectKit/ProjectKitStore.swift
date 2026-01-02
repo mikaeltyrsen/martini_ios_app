@@ -76,6 +76,12 @@ final class ProjectKitStore: ObservableObject {
         persist(projectId: projectId ?? currentProjectId)
     }
 
+    func removeLensPack(id: String, projectId: String?) {
+        let packLensIds = lensIds(forPackId: id)
+        selectedLensIds.subtract(packLensIds)
+        persist(projectId: projectId ?? currentProjectId)
+    }
+
     func toggleLens(_ lens: DBLens, projectId: String?) {
         if selectedLensIds.contains(lens.id) {
             selectedLensIds.remove(lens.id)
@@ -100,6 +106,18 @@ final class ProjectKitStore: ObservableObject {
     func selectedLenses() -> [DBLens] {
         availableLenses.filter { selectedLensIds.contains($0.id) }
             .sorted { "\($0.brand) \($0.series)" < "\($1.brand) \($1.series)" }
+    }
+
+    func lensPack(for lens: DBLens) -> LensPackGroup? {
+        guard let packId = dataStore.lensPackItems.first(where: { $0.lensId == lens.id })?.packId else {
+            return nil
+        }
+        let lensLookup = Dictionary(uniqueKeysWithValues: availableLenses.map { ($0.id, $0) })
+        let itemsByPack = Dictionary(grouping: dataStore.lensPackItems, by: \.packId)
+        guard let pack = dataStore.lensPacks.first(where: { $0.id == packId }) else { return nil }
+        let sortedItems = (itemsByPack[packId] ?? []).sorted { $0.sortOrder < $1.sortOrder }
+        let lenses = sortedItems.compactMap { lensLookup[$0.lensId] }
+        return LensPackGroup(id: pack.id, pack: pack, lenses: lenses)
     }
 
     func availableLensPacks() -> [LensPackGroup] {
@@ -127,6 +145,10 @@ final class ProjectKitStore: ObservableObject {
     private func loadAvailableKit() {
         availableCameras = Self.deduplicate(dataStore.fetchCameras())
         availableLenses = Self.deduplicate(dataStore.fetchLenses())
+    }
+
+    private func lensIds(forPackId packId: String) -> Set<String> {
+        Set(dataStore.lensPackItems.filter { $0.packId == packId }.map(\.lensId))
     }
 
     private func reloadSelections(projectId: String) {
