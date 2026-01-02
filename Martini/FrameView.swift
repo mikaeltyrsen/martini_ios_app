@@ -2522,10 +2522,10 @@ private struct AssetCardView: View {
             title: primaryText,
             showStatusBadge: true,
             showFrameNumberOverlay: true,
-            showTextBlock: false,
             cornerRadius: cardCornerRadius,
             enablesFullScreen: enablesFullScreen,
             showMetadataOverlay: showMetadataOverlay,
+            showTextBlock: false,
             metadataTapAction: onMetadataTap
         )
 
