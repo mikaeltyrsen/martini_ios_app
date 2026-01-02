@@ -535,6 +535,15 @@ struct FrameLayout: View {
             // Transparent overlay layer
             Color.red.opacity(0.3 * omitOverlayOpacity)
                 .cornerRadius(cornerRadius)
+                .overlay {
+                    GeometryReader { geometry in
+                        let fontSize = min(geometry.size.width, geometry.size.height) * 0.4
+                        Text("OMIT")
+                            .font(.system(size: fontSize, weight: .bold))
+                            .foregroundColor(.red)
+                            .frame(width: geometry.size.width, height: geometry.size.height)
+                    }
+                }
 
         case .here, .next, .none:
             EmptyView()
