@@ -516,47 +516,44 @@ struct ScheduleView: View {
             let rect = proxy[anchor]
             return (block, rect.midY)
         }
-        guard let first = positions.first, let last = positions.last else {
-            EmptyView()
-            return
-        }
-
-        let x = timelineIndicatorWidth / 2
-        let basePath = Path { path in
-            path.move(to: CGPoint(x: x, y: first.midY))
-            path.addLine(to: CGPoint(x: x, y: last.midY))
-        }
-        basePath
-            .stroke(Color.gray.opacity(0.35), style: StrokeStyle(lineWidth: timelineLineWidth, lineCap: .round))
-
-        if let progressColor {
-            let positionsById = Dictionary(uniqueKeysWithValues: positions.map { ($0.block.id, $0.midY) })
-            let markerRadius = timelineMarkerSize / 2
-            var fillStart = hereBlock.flatMap { positionsById[$0.id] }
-            var fillEnd = currentTimeBlockId.flatMap { positionsById[$0] }
-
-            if fillStart == nil || fillEnd == nil {
-                let inRange = positions.filter { isInProgressRange($0.block) }.map(\.midY)
-                fillStart = inRange.min()
-                fillEnd = inRange.max()
+        if let first = positions.first, let last = positions.last {
+            let x = timelineIndicatorWidth / 2
+            let basePath = Path { path in
+                path.move(to: CGPoint(x: x, y: first.midY))
+                path.addLine(to: CGPoint(x: x, y: last.midY))
             }
+            basePath
+                .stroke(Color.gray.opacity(0.35), style: StrokeStyle(lineWidth: timelineLineWidth, lineCap: .round))
 
-            if var fillStart, var fillEnd {
-                if fillStart < fillEnd {
-                    fillStart += markerRadius
-                    fillEnd -= markerRadius
-                } else if fillStart > fillEnd {
-                    fillStart -= markerRadius
-                    fillEnd += markerRadius
+            if let progressColor {
+                let positionsById = Dictionary(uniqueKeysWithValues: positions.map { ($0.block.id, $0.midY) })
+                let markerRadius = timelineMarkerSize / 2
+                var fillStart = hereBlock.flatMap { positionsById[$0.id] }
+                var fillEnd = currentTimeBlockId.flatMap { positionsById[$0] }
+
+                if fillStart == nil || fillEnd == nil {
+                    let inRange = positions.filter { isInProgressRange($0.block) }.map(\.midY)
+                    fillStart = inRange.min()
+                    fillEnd = inRange.max()
                 }
 
-                if fillStart != fillEnd {
-                    let fillPath = Path { path in
-                        path.move(to: CGPoint(x: x, y: fillStart))
-                        path.addLine(to: CGPoint(x: x, y: fillEnd))
+                if var fillStart, var fillEnd {
+                    if fillStart < fillEnd {
+                        fillStart += markerRadius
+                        fillEnd -= markerRadius
+                    } else if fillStart > fillEnd {
+                        fillStart -= markerRadius
+                        fillEnd += markerRadius
                     }
-                    fillPath
-                        .stroke(progressColor, style: StrokeStyle(lineWidth: timelineLineWidth, lineCap: .round))
+
+                    if fillStart != fillEnd {
+                        let fillPath = Path { path in
+                            path.move(to: CGPoint(x: x, y: fillStart))
+                            path.addLine(to: CGPoint(x: x, y: fillEnd))
+                        }
+                        fillPath
+                            .stroke(progressColor, style: StrokeStyle(lineWidth: timelineLineWidth, lineCap: .round))
+                    }
                 }
             }
         }
