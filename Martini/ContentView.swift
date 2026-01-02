@@ -118,6 +118,7 @@ struct MainView: View {
     @State private var selectedTagIds: Set<String> = []
     @State private var gridMagnification: CGFloat = 1.0
     @State private var isGridPinching: Bool = false
+    @State private var isGridStatusUpdating: Bool = false
 
     enum ViewMode {
         case list
@@ -929,6 +930,15 @@ struct MainView: View {
                             }
                         }
                     }
+                    if isGridStatusUpdating {
+                        Color.black.opacity(0.4)
+                            .ignoresSafeArea()
+                        ProgressView()
+                            .progressViewStyle(.circular)
+                            .tint(.white)
+                            .scaleEffect(1.2)
+                            .accessibilityLabel("Updating status")
+                    }
                 }
             }
         }
@@ -1321,6 +1331,19 @@ private extension MainView {
 
     private func updateFrameStatus(_ frame: Frame, to status: FrameStatus) {
         Task {
+            let shouldShowGridOverlay = viewMode == .grid
+            if shouldShowGridOverlay {
+                await MainActor.run {
+                    isGridStatusUpdating = true
+                }
+            }
+            defer {
+                if shouldShowGridOverlay {
+                    Task { @MainActor in
+                        isGridStatusUpdating = false
+                    }
+                }
+            }
             do {
                 let updatedFrame = try await authService.updateFrameStatus(id: frame.id, to: status)
                 if selectedFrame?.id == frame.id {
