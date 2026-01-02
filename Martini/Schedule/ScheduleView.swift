@@ -499,6 +499,9 @@ struct ScheduleView: View {
             return nil
         }()
         let markerColor: Color = {
+            if isHere && isCurrent && !hasVisibleWarnings {
+                return .green
+            }
             if isHere {
                 switch progressState {
                 case .behind:
@@ -508,9 +511,6 @@ struct ScheduleView: View {
                 default:
                     return progressColor ?? .martiniDefaultColor
                 }
-            }
-            if isHere && isCurrent {
-                return .green
             }
             if isWarning {
                 return .orange
