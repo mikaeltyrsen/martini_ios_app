@@ -177,6 +177,7 @@ struct ScheduleView: View {
             .padding(.vertical, 8)
             .background(blockColor(block.color))
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .opacity(isStoryboardRowComplete(for: block) ? 0.5 : 1)
         }
     }
 
@@ -219,6 +220,12 @@ struct ScheduleView: View {
         return storyboardIds.compactMap { id in
             authService.frames.first { $0.id == id }
         }
+    }
+
+    private func isStoryboardRowComplete(for block: ScheduleBlock) -> Bool {
+        let rowFrames = frames(for: block)
+        guard !rowFrames.isEmpty else { return false }
+        return rowFrames.allSatisfy { $0.statusEnum == .done }
     }
 
     private func blockColor(_ name: String?) -> Color {
