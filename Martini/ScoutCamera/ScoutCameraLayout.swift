@@ -164,19 +164,18 @@ struct ScoutCameraLayout: View {
             Text(viewModel.errorMessage ?? "Unknown error")
         }
         .fullScreenCover(isPresented: Binding(
-            get: { viewModel.processedImage != nil },
-            set: { if !$0 { viewModel.processedImage = nil; viewModel.capturedImage = nil } }
+            get: { viewModel.capturedImage != nil },
+            set: { if !$0 { viewModel.capturedImage = nil } }
         )) {
-            if let image = viewModel.processedImage {
+            if let image = viewModel.capturedImage {
                 ScoutCameraReviewView(
                     image: image,
                     onImport: { await handleImport() },
+                    onPrepareShare: { await viewModel.prepareShareImage() },
                     onRetake: {
-                        viewModel.processedImage = nil
                         viewModel.capturedImage = nil
                     },
                     onCancel: {
-                        viewModel.processedImage = nil
                         viewModel.capturedImage = nil
                         dismiss()
                     }
@@ -1280,7 +1279,7 @@ struct ScoutCameraLayout: View {
     }
 
     private func handleImport() async {
-        let success = await viewModel.uploadProcessedImage(token: authService.currentBearerToken())
+        let success = await viewModel.uploadCapturedImage(token: authService.currentBearerToken())
         if success {
             try? await authService.fetchFrames()
             dismiss()

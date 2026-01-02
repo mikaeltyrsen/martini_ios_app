@@ -57,6 +57,7 @@ struct FrameView: View {
     @State private var boardDeleteTarget: FrameAssetItem?
     @State private var boardActionError: String?
     @State private var selectedBoardPreview: BoardPreviewItem?
+    @State private var metadataSheetItem: BoardMetadataItem?
     @State private var boardPhotoAccessAlert: PhotoLibraryHelper.PhotoAccessAlert?
     @State private var descriptionAttributedText: AttributedString?
     @State private var descriptionTextAlignment: TextAlignment = .leading
@@ -125,6 +126,9 @@ struct FrameView: View {
             }
             .navigationDestination(item: $scriptNavigationTarget) { target in
                 ScriptView(targetDialogId: target.dialogId)
+            }
+            .sheet(item: $metadataSheetItem) { item in
+                BoardMetadataSheet(item: item)
             }
             .tint(.martiniDefaultColor)
     }
@@ -623,6 +627,12 @@ struct FrameView: View {
                 onAssetTap: { asset in
                     guard asset.kind == .board else { return }
                     openBoardPreview(asset)
+                },
+                onMetadataTap: { asset, metadata in
+                    metadataSheetItem = BoardMetadataItem(
+                        boardName: asset.displayLabel,
+                        metadata: metadata
+                    )
                 },
                 contextMenuContent: { asset in
                     boardContextMenu(for: asset)
@@ -2108,6 +2118,47 @@ private struct BoardPreviewItem: Identifiable {
     let isVideo: Bool
 }
 
+private struct BoardMetadataItem: Identifiable {
+    let id = UUID()
+    let boardName: String
+    let metadata: JSONValue
+}
+
+private struct BoardMetadataSheet: View {
+    let item: BoardMetadataItem
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                Text(formattedMetadata)
+                    .font(.system(.footnote, design: .monospaced))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding()
+                    .textSelection(.enabled)
+            }
+            .navigationTitle("\(item.boardName) Metadata")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    private var formattedMetadata: String {
+        let object = item.metadata.anyValue
+        if JSONSerialization.isValidJSONObject(object),
+           let data = try? JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys]),
+           let string = String(data: data, encoding: .utf8) {
+            return string
+        }
+        return String(describing: object)
+    }
+}
+
 private struct ShareItem: Identifiable {
     let id = UUID()
     let url: URL
@@ -2377,6 +2428,7 @@ private struct StackedAssetScroller<ContextMenuContent: View>: View {
     let takePictureID: String
     let takePictureAction: (() -> Void)?
     let onAssetTap: ((FrameAssetItem) -> Void)?
+    let onMetadataTap: ((FrameAssetItem, JSONValue) -> Void)?
     let contextMenuContent: (FrameAssetItem) -> ContextMenuContent
 
     var body: some View {
@@ -2393,12 +2445,19 @@ private struct StackedAssetScroller<ContextMenuContent: View>: View {
                     ForEach(assetStack) { asset in
                         let shouldEnablePreview = asset.kind == .preview
                         let shouldHandleTap = asset.kind == .board
+                        let metadata = metadataForAsset(asset)
                         AssetCardView(
                             frame: frame,
                             asset: asset,
                             cardWidth: cardWidth,
                             primaryText: primaryText,
                             enablesFullScreen: shouldEnablePreview,
+                            showMetadataOverlay: metadata != nil,
+                            onMetadataTap: {
+                                if let metadata {
+                                    onMetadataTap?(asset, metadata)
+                                }
+                            },
                             onTap: shouldHandleTap ? {
                                 onAssetTap?(asset)
                             } : nil
@@ -2432,6 +2491,17 @@ private struct StackedAssetScroller<ContextMenuContent: View>: View {
             //.background(Color(.black))
         }
     }
+
+    private func metadataForAsset(_ asset: FrameAssetItem) -> JSONValue? {
+        guard asset.kind == .board else { return nil }
+        guard let metadata = frame.boards?.first(where: { $0.id == asset.id })?.metadata else {
+            return nil
+        }
+        if case .null = metadata {
+            return nil
+        }
+        return metadata
+    }
 }
 
 private struct AssetCardView: View {
@@ -2440,6 +2510,8 @@ private struct AssetCardView: View {
     let cardWidth: CGFloat
     let primaryText: String?
     let enablesFullScreen: Bool
+    let showMetadataOverlay: Bool
+    let onMetadataTap: (() -> Void)?
     let onTap: (() -> Void)?
     private let cardCornerRadius: CGFloat = 16
 
@@ -2452,7 +2524,9 @@ private struct AssetCardView: View {
             showFrameNumberOverlay: true,
             showTextBlock: false,
             cornerRadius: cardCornerRadius,
-            enablesFullScreen: enablesFullScreen
+            enablesFullScreen: enablesFullScreen,
+            showMetadataOverlay: showMetadataOverlay,
+            metadataTapAction: onMetadataTap
         )
 
         let styledCard = card

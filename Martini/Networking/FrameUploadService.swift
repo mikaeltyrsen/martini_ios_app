@@ -9,7 +9,8 @@ struct FrameUploadService {
         shootId: String,
         creativeId: String,
         frameId: String,
-        bearerToken: String?
+        bearerToken: String?,
+        metadata: String?
     ) async throws {
         guard let url = URL(string: "\(baseScriptsURL)frames/upload.php") else {
             throw URLError(.badURL)
@@ -30,6 +31,9 @@ struct FrameUploadService {
         body.append(formField(name: "shootId", value: shootId, boundary: boundary))
         body.append(formField(name: "creativeId", value: creativeId, boundary: boundary))
         body.append(formField(name: "frameId", value: frameId, boundary: boundary))
+        if let metadata {
+            body.append(formField(name: "metadata", value: metadata, boundary: boundary))
+        }
         body.append(fileField(name: "file", filename: "photoboard.jpg", mimeType: "image/jpeg", data: imageData, boundary: boundary))
         body.append("--\(boundary)--\r\n".data(using: .utf8) ?? Data())
         request.httpBody = body

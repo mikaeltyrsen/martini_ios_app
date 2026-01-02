@@ -872,6 +872,83 @@ struct TagGroupDefinition: Codable, Identifiable, Hashable {
     }
 }
 
+enum JSONValue: Codable, Hashable {
+    case string(String)
+    case number(Double)
+    case bool(Bool)
+    case object([String: JSONValue])
+    case array([JSONValue])
+    case null
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if container.decodeNil() {
+            self = .null
+            return
+        }
+        if let boolValue = try? container.decode(Bool.self) {
+            self = .bool(boolValue)
+            return
+        }
+        if let intValue = try? container.decode(Int.self) {
+            self = .number(Double(intValue))
+            return
+        }
+        if let doubleValue = try? container.decode(Double.self) {
+            self = .number(doubleValue)
+            return
+        }
+        if let stringValue = try? container.decode(String.self) {
+            self = .string(stringValue)
+            return
+        }
+        if let arrayValue = try? container.decode([JSONValue].self) {
+            self = .array(arrayValue)
+            return
+        }
+        if let objectValue = try? container.decode([String: JSONValue].self) {
+            self = .object(objectValue)
+            return
+        }
+        throw DecodingError.dataCorruptedError(in: container, debugDescription: "Unsupported JSON value")
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .string(let value):
+            try container.encode(value)
+        case .number(let value):
+            try container.encode(value)
+        case .bool(let value):
+            try container.encode(value)
+        case .object(let value):
+            try container.encode(value)
+        case .array(let value):
+            try container.encode(value)
+        case .null:
+            try container.encodeNil()
+        }
+    }
+
+    var anyValue: Any {
+        switch self {
+        case .string(let value):
+            return value
+        case .number(let value):
+            return value
+        case .bool(let value):
+            return value
+        case .object(let value):
+            return value.mapValues { $0.anyValue }
+        case .array(let value):
+            return value.map { $0.anyValue }
+        case .null:
+            return NSNull()
+        }
+    }
+}
+
 // MARK: - Frame Board
 
 struct FrameBoard: Codable, Identifiable, Hashable {
@@ -885,6 +962,7 @@ struct FrameBoard: Codable, Identifiable, Hashable {
     let fileType: String?
     @SafeOptionalInt var fileSize: Int?
     let fileCrop: String?
+    let metadata: JSONValue?
     let createdBy: String?
     let createdAt: String?
     let lastUpdated: String?
@@ -900,6 +978,7 @@ struct FrameBoard: Codable, Identifiable, Hashable {
         case fileType = "file_type"
         case fileSize = "file_size"
         case fileCrop = "file_crop"
+        case metadata
         case createdBy = "created_by"
         case createdAt = "created_at"
         case lastUpdated = "last_updated"

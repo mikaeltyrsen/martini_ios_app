@@ -4,11 +4,13 @@ import UIKit
 struct ScoutCameraReviewView: View {
     let image: UIImage
     let onImport: () async -> Void
+    let onPrepareShare: () async -> UIImage?
     let onRetake: () -> Void
     let onCancel: () -> Void
 
     @State private var isUploading = false
-    @State private var isShareSheetPresented = false
+    @State private var isPreparingShare = false
+    @State private var shareItem: ShareItem?
 
     var body: some View {
         ZStack {
@@ -32,8 +34,20 @@ struct ScoutCameraReviewView: View {
                     }
                     .buttonStyle(.bordered)
 
-                    Button("Save/Share") {
-                        isShareSheetPresented = true
+                    Button {
+                        Task {
+                            isPreparingShare = true
+                            if let shareImage = await onPrepareShare() {
+                                shareItem = ShareItem(image: shareImage)
+                            }
+                            isPreparingShare = false
+                        }
+                    } label: {
+                        if isPreparingShare {
+                            ProgressView()
+                        } else {
+                            Text("Save/Share")
+                        }
                     }
                     .buttonStyle(.bordered)
 
@@ -55,10 +69,15 @@ struct ScoutCameraReviewView: View {
                 .padding(.bottom, 24)
             }
         }
-        .sheet(isPresented: $isShareSheetPresented) {
-            ActivityView(activityItems: [image])
+        .sheet(item: $shareItem) { item in
+            ActivityView(activityItems: [item.image])
         }
     }
+}
+
+private struct ShareItem: Identifiable {
+    let id = UUID()
+    let image: UIImage
 }
 
 private struct ActivityView: UIViewControllerRepresentable {
