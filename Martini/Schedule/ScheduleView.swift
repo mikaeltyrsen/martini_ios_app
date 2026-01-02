@@ -142,8 +142,7 @@ struct ScheduleView: View {
                     }
                 }
             }
-            .padding(.vertical, 10)
-            .padding(.horizontal, 12)
+            .padding(12)
             .background(blockColor(block.color))
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         case .shot, .unknown:
@@ -154,14 +153,12 @@ struct ScheduleView: View {
                             storyboardTimeAndDuration(for: block)
                         }
 
-                        VStack(alignment: .leading, spacing: 8) {
-                            if let description = block.description, !description.isEmpty {
-                                Text(description)
-                                    .font(.subheadline)
-                                    .foregroundStyle(Color.martiniDefaultDescriptionColor)
-                            }
-
-                            storyboardGrid(for: block)
+                        storyboardGrid(for: block)
+                        
+                        if let description = block.description, !description.isEmpty {
+                            Text(description)
+                                .font(.subheadline)
+                                .foregroundStyle(Color.martiniDefaultDescriptionColor)
                         }
                     }
                 } else {
@@ -174,7 +171,7 @@ struct ScheduleView: View {
                     }
                 }
             }
-            .padding(.vertical, 8)
+            .padding(12)
             .background(blockColor(block.color))
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             .opacity(isStoryboardRowComplete(for: block) ? 0.5 : 1)
@@ -267,8 +264,11 @@ struct ScheduleView: View {
     @ViewBuilder
     private func storyboardTimeAndDuration(for block: ScheduleBlock) -> some View {
         if let timeText = timeAndDurationText(startTime: block.calculatedStart, duration: block.duration) {
-            let icon = block.calculatedStart != nil ? "clock" : "timer"
-            Label(timeText, systemImage: icon)
+//            let icon = block.calculatedStart != nil ? "clock" : "timer"
+//            Label(timeText, systemImage: icon)
+//                .font(.footnote.weight(.semibold))
+//                .foregroundStyle(.secondary)
+            Text(timeText)
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(.secondary)
         }
