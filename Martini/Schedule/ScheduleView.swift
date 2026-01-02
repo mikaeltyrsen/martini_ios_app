@@ -161,7 +161,7 @@ struct ScheduleView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .compositingGroup()
-        .opacity(isStoryboardRowComplete(for: block) ? 0.5 : 1)
+        .opacity(shouldFadeBlock(block) ? 0.5 : 1)
     }
 
     @ViewBuilder
@@ -272,6 +272,23 @@ struct ScheduleView: View {
         let rowFrames = frames(for: block)
         guard !rowFrames.isEmpty else { return false }
         return rowFrames.allSatisfy(isFrameComplete)
+    }
+
+    private func shouldFadeBlock(_ block: ScheduleBlock) -> Bool {
+        if isStoryboardRowComplete(for: block) {
+            return true
+        }
+        guard block.type == .title,
+              let blockDate = startDate(for: block) else {
+            return false
+        }
+        if currentScheduleTime >= blockDate {
+            return true
+        }
+        if let hereTime, hereTime >= blockDate {
+            return true
+        }
+        return false
     }
 
     private func blockColor(_ name: String?) -> Color {
