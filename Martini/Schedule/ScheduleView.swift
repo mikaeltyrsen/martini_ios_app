@@ -551,7 +551,7 @@ struct ScheduleView: View {
                 path.addLine(to: CGPoint(x: x, y: last.midY))
             }
             basePath
-                .stroke(Color.gray.opacity(0.35), style: StrokeStyle(lineWidth: timelineLineWidth, lineCap: .round))
+                .stroke(Color(.systemBackground), style: StrokeStyle(lineWidth: timelineLineWidth, lineCap: .round))
 
             if let warningRange = warningFillRange(for: positions),
                let adjustedRange = adjustedFillRange(
