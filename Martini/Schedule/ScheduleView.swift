@@ -421,7 +421,7 @@ struct ScheduleView: View {
     }
 
     private func isBlockOverdue(_ block: ScheduleBlock) -> Bool {
-        guard progressState == .ahead,
+        guard progressState == .behind,
               let blockDate = startDate(for: block),
               blockDate < currentScheduleTime else {
             return false

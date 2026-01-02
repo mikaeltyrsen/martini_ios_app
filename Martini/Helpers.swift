@@ -40,7 +40,7 @@ public func formattedTimeFrom24Hour(_ timeString: String) -> String {
 
     let outputFormatter = DateFormatter()
     outputFormatter.locale = .current
-    outputFormatter.timeZone = .current
+    outputFormatter.timeZone = TimeZone(secondsFromGMT: 0)
     outputFormatter.dateFormat = "h:mm a"
 
     return outputFormatter.string(from: date)
