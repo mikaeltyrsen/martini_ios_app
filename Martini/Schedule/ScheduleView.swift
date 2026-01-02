@@ -146,7 +146,7 @@ struct ScheduleView: View {
 
     @ViewBuilder
     private func blockRow(for block: ScheduleBlock) -> some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .center, spacing: 12) {
             if showsTimelineProgress {
                 timelineIndicator(for: block)
                     .anchorPreference(key: TimelineRowAnchorKey.self, value: .bounds) { anchor in
@@ -330,7 +330,7 @@ struct ScheduleView: View {
             case .currentTime:
                 return "clock"
             case .here:
-                return "camera.fill"
+                return "video.fill"
             }
         }
     }
@@ -468,34 +468,29 @@ struct ScheduleView: View {
         return range.contains(blockDate)
     }
 
-    private func marker(for block: ScheduleBlock) -> TimelineMarker? {
-        if let hereBlock, block.id == hereBlock.id {
-            return .here
-        }
-        if let currentTimeBlockId, block.id == currentTimeBlockId {
-            return .currentTime
-        }
-        if isBlockOverdue(block) {
-            return .warning
-        }
-        return nil
-    }
-
-    private func markerColor(for marker: TimelineMarker) -> Color {
-        switch marker {
-        case .warning:
-            return .orange
-        case .currentTime, .here:
-            return progressColor ?? .martiniDefaultColor
-        }
-    }
-
     private func timelineIndicator(for block: ScheduleBlock) -> some View {
-        let marker = marker(for: block)
+        let isHere = hereBlock?.id == block.id
+        let isCurrent = currentTimeBlockId == block.id
+        let isWarning = isBlockOverdue(block)
+        let marker: TimelineMarker? = {
+            if isHere { return .here }
+            if isCurrent { return .currentTime }
+            if isWarning { return .warning }
+            return nil
+        }()
+        let markerColor: Color = {
+            if isWarning {
+                return .orange
+            }
+            if isHere && isCurrent {
+                return .green
+            }
+            return progressColor ?? .martiniDefaultColor
+        }()
         return ZStack {
             if let marker {
                 Circle()
-                    .fill(markerColor(for: marker))
+                    .fill(markerColor)
                     .frame(width: timelineMarkerSize, height: timelineMarkerSize)
                     .overlay {
                         Image(systemName: marker.icon)
@@ -527,6 +522,20 @@ struct ScheduleView: View {
             }
             basePath
                 .stroke(Color.gray.opacity(0.35), style: StrokeStyle(lineWidth: timelineLineWidth, lineCap: .round))
+
+            if let warningRange = warningFillRange(for: positions),
+               let adjustedRange = adjustedFillRange(
+                   start: warningRange.start,
+                   end: warningRange.end,
+                   markerRadius: timelineMarkerSize / 2
+               ) {
+                let warningPath = Path { path in
+                    path.move(to: CGPoint(x: x, y: adjustedRange.start))
+                    path.addLine(to: CGPoint(x: x, y: adjustedRange.end))
+                }
+                warningPath
+                    .stroke(.orange, style: StrokeStyle(lineWidth: timelineLineWidth, lineCap: .round))
+            }
 
             if let progressColor,
                let fillRange = progressFillRange(for: positions),
@@ -561,6 +570,18 @@ struct ScheduleView: View {
             return nil
         }
         return (rangeStart, rangeEnd)
+    }
+
+    private func warningFillRange(
+        for positions: [(block: ScheduleBlock, midY: CGFloat)]
+    ) -> (start: CGFloat, end: CGFloat)? {
+        let warningPositions = positions.filter { isBlockOverdue($0.block) }.map(\.midY)
+        guard warningPositions.count > 1,
+              let start = warningPositions.min(),
+              let end = warningPositions.max() else {
+            return nil
+        }
+        return (start, end)
     }
 
     private func adjustedFillRange(
