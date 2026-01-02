@@ -2122,6 +2122,7 @@ struct SettingsView: View {
 //                }
 //            }
         }
+        .tint(.martiniDefaultColor)
     }
 
     private var gridSizeLabel: String {
