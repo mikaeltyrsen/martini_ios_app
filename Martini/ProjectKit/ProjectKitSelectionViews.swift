@@ -99,6 +99,7 @@ struct ProjectKitLensSelectionView: View {
     @State private var searchText = ""
     @State private var selectedIds: Set<String> = []
     @State private var showingProjectAlert = false
+    @State private var shouldDismissToSettings = false
 
     private var availableLenses: [DBLens] {
         let filtered = store.availableLenses.filter { lens in
@@ -129,7 +130,8 @@ struct ProjectKitLensSelectionView: View {
                             LensPackDetailView(
                                 pack: pack,
                                 selectedIds: $selectedIds,
-                                onAdd: addSelectedLenses
+                                shouldDismissToSettings: $shouldDismissToSettings,
+                                onAdd: { addSelectedLenses(dismissAfter: false) }
                             )
                         } label: {
                             HStack {
@@ -177,6 +179,10 @@ struct ProjectKitLensSelectionView: View {
         .onChange(of: authService.projectId) { _ in
             store.load(for: authService.projectId)
         }
+        .onChange(of: shouldDismissToSettings) { shouldDismiss in
+            guard shouldDismiss else { return }
+            dismiss()
+        }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 if !selectedIds.isEmpty {
@@ -202,12 +208,18 @@ struct ProjectKitLensSelectionView: View {
     }
 
     private func addSelectedLenses() {
+        addSelectedLenses(dismissAfter: true)
+    }
+
+    private func addSelectedLenses(dismissAfter: Bool) {
         guard authService.projectId != nil else {
             showingProjectAlert = true
             return
         }
         store.addLenses(ids: Array(selectedIds), projectId: authService.projectId)
-        dismiss()
+        if dismissAfter {
+            dismiss()
+        }
     }
 
     private func lensLabel(for lens: DBLens) -> String {
@@ -223,8 +235,10 @@ struct ProjectKitLensSelectionView: View {
 }
 
 private struct LensPackDetailView: View {
+    @Environment(\.dismiss) private var dismiss
     let pack: ProjectKitStore.LensPackGroup
     @Binding var selectedIds: Set<String>
+    @Binding var shouldDismissToSettings: Bool
     let onAdd: () -> Void
 
     var body: some View {
@@ -265,6 +279,8 @@ private struct LensPackDetailView: View {
                 if !selectedIds.isEmpty {
                     Button("Add") {
                         onAdd()
+                        shouldDismissToSettings = true
+                        dismiss()
                     }
                 }
             }
