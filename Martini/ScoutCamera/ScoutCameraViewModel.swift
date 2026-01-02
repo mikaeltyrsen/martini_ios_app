@@ -284,6 +284,12 @@ final class ScoutCameraViewModel: ObservableObject {
     private func metadataJSONString() -> String? {
         guard let camera = selectedCamera, let mode = selectedMode, let lens = selectedLens else { return nil }
         let squeeze = effectiveSqueeze(mode: mode, lens: lens)
+        let extractionData: [String: Any]? = mode.extraction.map { hint in
+            compactMetadata([
+                "inside": hint.inside,
+                "targets": hint.targets
+            ])
+        }
         let captureData: [String: Any] = compactMetadata([
             "timestamp": ISO8601DateFormatter().string(from: Date()),
             "focal_length_mm": focalLengthMm,
@@ -308,7 +314,7 @@ final class ScoutCameraViewModel: ObservableObject {
             "recommended_lens_coverage": mode.recommendedLensCoverage,
             "vignette_risk": mode.vignetteRisk,
             "notes": mode.notes,
-            "extraction": mode.extraction?.rawValue
+            "extraction": extractionData
         ])
         let cameraData: [String: Any] = compactMetadata([
             "id": camera.id,
