@@ -463,6 +463,23 @@ struct ScheduleView: View {
         frame.statusEnum == .done || frame.statusEnum == .omit
     }
 
+    private func shouldShowWarning(for block: ScheduleBlock) -> Bool {
+        guard isBlockOverdue(block),
+              let blockDate = startDate(for: block) else {
+            return false
+        }
+
+        if let hereTime {
+            return blockDate <= hereTime
+        }
+
+        return blockDate <= currentScheduleTime
+    }
+
+    private var hasVisibleWarnings: Bool {
+        flattenedBlocks.contains { shouldShowWarning(for: $0) }
+    }
+
     private func isInProgressRange(_ block: ScheduleBlock) -> Bool {
         guard let range = progressRange,
               let blockDate = startDate(for: block) else {
@@ -474,7 +491,7 @@ struct ScheduleView: View {
     private func timelineIndicator(for block: ScheduleBlock) -> some View {
         let isHere = hereBlock?.id == block.id
         let isCurrent = currentTimeBlockId == block.id
-        let isWarning = isBlockOverdue(block)
+        let isWarning = shouldShowWarning(for: block)
         let marker: TimelineMarker? = {
             if isHere { return .here }
             if isCurrent { return .currentTime }
@@ -482,11 +499,21 @@ struct ScheduleView: View {
             return nil
         }()
         let markerColor: Color = {
-            if isWarning {
-                return .orange
+            if isHere {
+                switch progressState {
+                case .behind:
+                    return .red
+                case .onTime where hasVisibleWarnings:
+                    return .orange
+                default:
+                    return progressColor ?? .martiniDefaultColor
+                }
             }
             if isHere && isCurrent {
                 return .green
+            }
+            if isWarning {
+                return .orange
             }
             return progressColor ?? .martiniDefaultColor
         }()
@@ -578,7 +605,7 @@ struct ScheduleView: View {
     private func warningFillRange(
         for positions: [(block: ScheduleBlock, midX: CGFloat, midY: CGFloat)]
     ) -> (start: CGFloat, end: CGFloat)? {
-        let warningPositions = positions.filter { isBlockOverdue($0.block) }.map(\.midY)
+        let warningPositions = positions.filter { shouldShowWarning(for: $0.block) }.map(\.midY)
         guard warningPositions.count > 1,
               let start = warningPositions.min(),
               let end = warningPositions.max() else {
