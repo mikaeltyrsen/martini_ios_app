@@ -525,37 +525,61 @@ struct ScheduleView: View {
             basePath
                 .stroke(Color.gray.opacity(0.35), style: StrokeStyle(lineWidth: timelineLineWidth, lineCap: .round))
 
-            if let progressColor {
-                let positionsById = Dictionary(uniqueKeysWithValues: positions.map { ($0.block.id, $0.midY) })
-                let markerRadius = timelineMarkerSize / 2
-                var fillStart = hereBlock.flatMap { positionsById[$0.id] }
-                var fillEnd = currentTimeBlockId.flatMap { positionsById[$0] }
-
-                if fillStart == nil || fillEnd == nil {
-                    let inRange = positions.filter { isInProgressRange($0.block) }.map(\.midY)
-                    fillStart = inRange.min()
-                    fillEnd = inRange.max()
+            if let progressColor,
+               let fillRange = progressFillRange(for: positions),
+               let adjustedRange = adjustedFillRange(
+                   start: fillRange.start,
+                   end: fillRange.end,
+                   markerRadius: timelineMarkerSize / 2
+               ) {
+                let fillPath = Path { path in
+                    path.move(to: CGPoint(x: x, y: adjustedRange.start))
+                    path.addLine(to: CGPoint(x: x, y: adjustedRange.end))
                 }
-
-                if var fillStart, var fillEnd {
-                    if fillStart < fillEnd {
-                        fillStart += markerRadius
-                        fillEnd -= markerRadius
-                    } else if fillStart > fillEnd {
-                        fillStart -= markerRadius
-                        fillEnd += markerRadius
-                    }
-
-                    if fillStart != fillEnd {
-                        let fillPath = Path { path in
-                            path.move(to: CGPoint(x: x, y: fillStart))
-                            path.addLine(to: CGPoint(x: x, y: fillEnd))
-                        }
-                        fillPath
-                            .stroke(progressColor, style: StrokeStyle(lineWidth: timelineLineWidth, lineCap: .round))
-                    }
-                }
+                fillPath
+                    .stroke(progressColor, style: StrokeStyle(lineWidth: timelineLineWidth, lineCap: .round))
             }
         }
+    }
+
+    private func progressFillRange(
+        for positions: [(block: ScheduleBlock, midY: CGFloat)]
+    ) -> (start: CGFloat, end: CGFloat)? {
+        let positionsById = Dictionary(uniqueKeysWithValues: positions.map { ($0.block.id, $0.midY) })
+        let start = hereBlock.flatMap { positionsById[$0.id] }
+        let end = currentTimeBlockId.flatMap { positionsById[$0] }
+
+        if let start, let end {
+            return (start, end)
+        }
+
+        let inRange = positions.filter { isInProgressRange($0.block) }.map(\.midY)
+        guard let rangeStart = inRange.min(), let rangeEnd = inRange.max() else {
+            return nil
+        }
+        return (rangeStart, rangeEnd)
+    }
+
+    private func adjustedFillRange(
+        start: CGFloat,
+        end: CGFloat,
+        markerRadius: CGFloat
+    ) -> (start: CGFloat, end: CGFloat)? {
+        var adjustedStart = start
+        var adjustedEnd = end
+
+        if adjustedStart < adjustedEnd {
+            adjustedStart += markerRadius
+            adjustedEnd -= markerRadius
+        } else if adjustedStart > adjustedEnd {
+            adjustedStart -= markerRadius
+            adjustedEnd += markerRadius
+        }
+
+        guard adjustedStart != adjustedEnd else {
+            return nil
+        }
+
+        return (adjustedStart, adjustedEnd)
     }
 }
