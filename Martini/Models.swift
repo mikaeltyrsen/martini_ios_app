@@ -788,29 +788,6 @@ struct ScheduleBlock: Codable, Hashable, Identifiable {
     let lockedStartTime: String?
     let storyboards: [String]?
 
-    enum CodingKeys: String, CodingKey {
-        case id
-        case type
-        case duration
-        case description
-        case color
-        case ignoreTime
-        case title
-        case calculatedStart
-        case lockedStartTime
-        case storyboards
-    }
-}
-
-extension ScheduleGroup {
-    init(id: String, title: String, blocks: [ScheduleBlock]) {
-        self.id = id
-        self.title = title
-        self.blocks = blocks
-    }
-}
-
-extension ScheduleBlock {
     init(
         id: String = UUID().uuidString,
         type: BlockType,
@@ -833,6 +810,27 @@ extension ScheduleBlock {
         self.calculatedStart = calculatedStart
         self.lockedStartTime = lockedStartTime
         self.storyboards = storyboards
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case type
+        case duration
+        case description
+        case color
+        case ignoreTime
+        case title
+        case calculatedStart
+        case lockedStartTime
+        case storyboards
+    }
+}
+
+extension ScheduleGroup {
+    init(id: String, title: String, blocks: [ScheduleBlock]) {
+        self.id = id
+        self.title = title
+        self.blocks = blocks
     }
 }
 
