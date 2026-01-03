@@ -28,7 +28,7 @@ struct ScheduleView: View {
     private static let scheduleDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = .current
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter
     }()
@@ -122,7 +122,9 @@ struct ScheduleView: View {
             return "calendar"
         }
 
-        let day = Calendar.current.component(.day, from: date)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .current
+        let day = calendar.component(.day, from: date)
         return "\(day).calendar"
     }
 
