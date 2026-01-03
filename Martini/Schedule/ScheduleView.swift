@@ -11,6 +11,7 @@ struct ScheduleView: View {
     @State private var frameAssetOrders: [String: [FrameAssetKind]] = [:]
     @State private var showsTimelineProgress = true
     @State private var now = Date()
+    @State private var framesById: [String: Frame] = [:]
     private var scheduleGroups: [ScheduleGroup] { item.groups ?? schedule.groups ?? [] }
 
     private var scheduleTitle: String { item.title.isEmpty ? (schedule.title ?? schedule.name) : item.title }
@@ -97,6 +98,9 @@ struct ScheduleView: View {
         }
         .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { now in
             self.now = now
+        }
+        .onReceive(authService.$frames) { frames in
+            framesById = Dictionary(uniqueKeysWithValues: frames.map { ($0.id, $0) })
         }
     }
 
@@ -273,9 +277,7 @@ struct ScheduleView: View {
     private func frames(for block: ScheduleBlock) -> [Frame] {
         guard let storyboardIds = block.storyboards else { return [] }
 
-        return storyboardIds.compactMap { id in
-            authService.frames.first { $0.id == id }
-        }
+        return storyboardIds.compactMap { framesById[$0] }
     }
 
     private func isStoryboardRowComplete(for block: ScheduleBlock) -> Bool {
@@ -735,9 +737,7 @@ struct ScheduleView: View {
     private var areAllBoardsComplete: Bool {
         let storyboardIds = Set(flattenedBlocks.flatMap { $0.storyboards ?? [] })
         guard !storyboardIds.isEmpty else { return false }
-        let frames = storyboardIds.compactMap { id in
-            authService.frames.first { $0.id == id }
-        }
+        let frames = storyboardIds.compactMap { framesById[$0] }
         guard frames.count == storyboardIds.count else { return false }
         return frames.allSatisfy(isFrameComplete)
     }
