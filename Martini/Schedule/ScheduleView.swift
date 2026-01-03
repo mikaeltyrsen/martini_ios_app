@@ -118,13 +118,9 @@ struct ScheduleView: View {
     private func scheduleMenuIcon(for entry: ProjectScheduleItem) -> String {
         let dateString = schedule.date ?? entry.date
         guard let dateString,
-              let date = Self.scheduleDateFormatter.date(from: dateString) else {
+              let day = dateString.split(separator: "-").last.flatMap({ Int($0) }) else {
             return "calendar"
         }
-
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .current
-        let day = calendar.component(.day, from: date)
         return "\(day).calendar"
     }
 
