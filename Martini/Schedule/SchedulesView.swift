@@ -77,7 +77,6 @@ struct SchedulesView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(entry.title)
                                     .font(.system(size: 24, weight: .semibold))
-                                    .foregroundStyle(.white)
 
                                 if let timeAndDuration = timeAndDurationText(for: entry) {
                                     Text(timeAndDuration)

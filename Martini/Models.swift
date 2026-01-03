@@ -802,6 +802,40 @@ struct ScheduleBlock: Codable, Hashable, Identifiable {
     }
 }
 
+extension ScheduleGroup {
+    init(id: String, title: String, blocks: [ScheduleBlock]) {
+        self.id = id
+        self.title = title
+        self.blocks = blocks
+    }
+}
+
+extension ScheduleBlock {
+    init(
+        id: String = UUID().uuidString,
+        type: BlockType,
+        duration: Int? = nil,
+        description: String? = nil,
+        color: String? = nil,
+        ignoreTime: Bool? = nil,
+        title: String? = nil,
+        calculatedStart: String? = nil,
+        lockedStartTime: String? = nil,
+        storyboards: [String]? = nil
+    ) {
+        self.id = id
+        self.type = type
+        self.duration = duration
+        self.description = description
+        self.color = color
+        self.ignoreTime = ignoreTime
+        self.title = title
+        self.calculatedStart = calculatedStart
+        self.lockedStartTime = lockedStartTime
+        self.storyboards = storyboards
+    }
+}
+
 // MARK: - Tag Model
 
 struct FrameTag: Codable, Identifiable, Hashable {
