@@ -100,6 +100,7 @@ struct MainView: View {
     @State private var frameAssetOrders: [String: [FrameAssetKind]] = [:]
     @AppStorage("gridAssetPriority") private var gridAssetPriorityRawValue: String = FrameAssetKind.board.rawValue
     @State private var isLoadingSchedule = false
+    @State private var manuallySelectedScheduleId: String? = nil
 
     @AppStorage("showDescriptions") private var showDescriptions: Bool = true
     @AppStorage("showFullDescriptions") private var showFullDescriptions: Bool = false
@@ -134,6 +135,14 @@ struct MainView: View {
         case list(ProjectSchedule)
         case detail(ProjectSchedule, ProjectScheduleItem)
     }
+
+    private static let scheduleDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
     
     // MARK: - Mock Data (for design purposes)
     private var mockCreatives: [Creative] {
@@ -504,7 +513,9 @@ struct MainView: View {
                             navigationPath.append(ScheduleRoute.detail(schedule, item))
                         }
                     case .detail(let schedule, let item):
-                        ScheduleView(schedule: schedule, item: item)
+                        ScheduleView(schedule: schedule, item: item) { selectedItem in
+                            applyManualScheduleSelection(selectedItem, schedule: schedule)
+                        }
                     }
                 }
         }
@@ -658,18 +669,14 @@ struct MainView: View {
     }
 
     private func showSchedule(_ schedule: ProjectSchedule, replaceExistingRoutes: Bool = false) {
-        guard let entries = schedule.schedules, !entries.isEmpty else { return }
+        guard let selectedItem = resolvedScheduleItem(in: schedule) else { return }
 
         if replaceExistingRoutes, navigationPathContainsScheduleRoute {
-            navigationPath = updatedNavigationPath(with: schedule)
+            navigationPath = updatedNavigationPath(with: schedule, fallbackItem: selectedItem)
             return
         }
 
-        if entries.count == 1, let first = entries.first {
-            navigationPath.append(ScheduleRoute.detail(schedule, first))
-        } else {
-            navigationPath.append(ScheduleRoute.list(schedule))
-        }
+        navigationPath.append(ScheduleRoute.detail(schedule, selectedItem))
     }
 
     private var navigationPathContainsScheduleRoute: Bool { !navigationPath.isEmpty }
@@ -687,23 +694,107 @@ struct MainView: View {
         return nil
     }
 
-    private func updatedNavigationPath(with schedule: ProjectSchedule) -> [ScheduleRoute] {
+    private func updatedNavigationPath(with schedule: ProjectSchedule, fallbackItem: ProjectScheduleItem?) -> [ScheduleRoute] {
         var newPath: [ScheduleRoute] = []
+        let fallbackItem = fallbackItem ?? resolvedScheduleItem(in: schedule)
 
         for route in navigationPath {
             switch route {
             case .list:
-                newPath.append(.list(schedule))
+                if let fallbackItem {
+                    newPath.append(.detail(schedule, fallbackItem))
+                }
             case .detail(_, let item):
-                if let updatedItem = schedule.schedules?.first(where: { $0.id == item.id || $0.title == item.title }) {
+                if let updatedItem = schedule.schedules?.first(where: { $0.listIdentifier == item.listIdentifier || $0.id == item.id || $0.title == item.title }) {
                     newPath.append(.detail(schedule, updatedItem))
-                } else {
-                    newPath.append(.detail(schedule, item))
+                } else if let fallbackItem {
+                    newPath.append(.detail(schedule, fallbackItem))
                 }
             }
         }
 
+        if newPath.isEmpty, let fallbackItem {
+            newPath = [.detail(schedule, fallbackItem)]
+        }
+
         return newPath
+    }
+
+    private func applyManualScheduleSelection(_ item: ProjectScheduleItem, schedule: ProjectSchedule) {
+        manuallySelectedScheduleId = item.listIdentifier
+        replaceScheduleRoute(schedule: schedule, item: item)
+    }
+
+    private func replaceScheduleRoute(schedule: ProjectSchedule, item: ProjectScheduleItem) {
+        guard navigationPathContainsScheduleRoute else {
+            navigationPath = [.detail(schedule, item)]
+            return
+        }
+
+        var updatedPath = navigationPath
+        if !updatedPath.isEmpty {
+            updatedPath.removeLast()
+        }
+        updatedPath.append(.detail(schedule, item))
+        navigationPath = updatedPath
+    }
+
+    private func resolvedScheduleItem(in schedule: ProjectSchedule) -> ProjectScheduleItem? {
+        guard let entries = schedule.schedules, !entries.isEmpty else { return nil }
+
+        if let manualId = manuallySelectedScheduleId {
+            if let match = entries.first(where: { $0.listIdentifier == manualId || $0.id == manualId }) {
+                return match
+            }
+            manuallySelectedScheduleId = nil
+        }
+
+        if let matching = firstMatchingSchedule(in: entries, schedule: schedule) {
+            return matching
+        }
+
+        if let future = closestFutureSchedule(in: entries, schedule: schedule) {
+            return future
+        }
+
+        return entries.first
+    }
+
+    private func firstMatchingSchedule(in entries: [ProjectScheduleItem], schedule: ProjectSchedule) -> ProjectScheduleItem? {
+        let now = Date()
+        let calendar = Calendar.current
+
+        for entry in entries {
+            guard let date = scheduleDate(for: entry, in: schedule) else { continue }
+            if calendar.isDate(date, inSameDayAs: now) {
+                return entry
+            }
+        }
+
+        return nil
+    }
+
+    private func closestFutureSchedule(in entries: [ProjectScheduleItem], schedule: ProjectSchedule) -> ProjectScheduleItem? {
+        let now = Date()
+        var closest: (item: ProjectScheduleItem, date: Date)?
+
+        for entry in entries {
+            guard let date = scheduleDate(for: entry, in: schedule), date > now else { continue }
+            if let currentClosest = closest {
+                if date < currentClosest.date {
+                    closest = (entry, date)
+                }
+            } else {
+                closest = (entry, date)
+            }
+        }
+
+        return closest?.item
+    }
+
+    private func scheduleDate(for entry: ProjectScheduleItem, in schedule: ProjectSchedule) -> Date? {
+        guard let dateString = schedule.date ?? entry.date else { return nil }
+        return ContentView.scheduleDateFormatter.date(from: dateString)
     }
 
     private func handleScheduleUpdateEvent(_ event: ScheduleUpdateEvent) {
