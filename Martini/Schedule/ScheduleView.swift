@@ -58,6 +58,7 @@ struct ScheduleView: View {
     }
 
     private let wideColumnSpacing: CGFloat = 12
+    private let scheduleContentPadding: CGFloat = 16
 
     private var wideLayoutAvailableWidth: CGFloat? {
         guard scheduleContentWidth > 0 else { return nil }
@@ -94,67 +95,75 @@ struct ScheduleView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                header
-                
-                if scheduleGroups.isEmpty {
-                    Text("No schedule blocks available.")
-                        .foregroundStyle(.secondary)
-                } else {
-                    scheduleContent
-                }
-            }
-            .padding()
-        }
-        .navigationTitle(scheduleTitle)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button {
-                    isShowingSchedulePicker = true
-                } label: {
-                    Image(systemName: "list.bullet")
-                }
-                .accessibilityLabel("Select schedule")
-            }
+        GeometryReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    header
 
-            if isScheduleDateRelevant {
-                ToolbarItem(placement: .bottomBar) {
-                    Button {
-                        showsTimelineProgress.toggle()
-                    } label: {
-                        Image(systemName: showsTimelineProgress ? "clock.fill" : "clock")
+                    if scheduleGroups.isEmpty {
+                        Text("No schedule blocks available.")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        scheduleContent
                     }
-                    .accessibilityLabel(showsTimelineProgress ? "Hide schedule progress" : "Show schedule progress")
+                }
+                .padding(scheduleContentPadding)
+            }
+            .navigationTitle(scheduleTitle)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        isShowingSchedulePicker = true
+                    } label: {
+                        Image(systemName: "list.bullet")
+                    }
+                    .accessibilityLabel("Select schedule")
+                }
+
+                if isScheduleDateRelevant {
+                    ToolbarItem(placement: .bottomBar) {
+                        Button {
+                            showsTimelineProgress.toggle()
+                        } label: {
+                            Image(systemName: showsTimelineProgress ? "clock.fill" : "clock")
+                        }
+                        .accessibilityLabel(showsTimelineProgress ? "Hide schedule progress" : "Show schedule progress")
+                    }
                 }
             }
-        }
-        .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { now in
-            self.now = now
-        }
-        .onReceive(authService.$frames) { frames in
-            framesById = Dictionary(uniqueKeysWithValues: frames.map { ($0.id, $0) })
-        }
-        .alert("Unable to update frame status", isPresented: Binding(
-            get: { statusUpdateError != nil },
-            set: { isPresented in
-                if !isPresented {
-                    statusUpdateError = nil
-                }
+            .onAppear {
+                updateScheduleContentWidth(for: proxy.size.width)
             }
-        )) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(statusUpdateError ?? "Unknown error")
-        }
-        .confirmationDialog("Select schedule", isPresented: $isShowingSchedulePicker, titleVisibility: .visible) {
-            ForEach(schedule.schedules ?? [], id: \.listIdentifier) { entry in
-                Button(entry.title) {
-                    onSelectSchedule(entry)
-                }
+            .onChange(of: proxy.size.width) { newValue in
+                updateScheduleContentWidth(for: newValue)
             }
-            Button("Cancel", role: .cancel) {}
+            .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { now in
+                self.now = now
+            }
+            .onReceive(authService.$frames) { frames in
+                framesById = Dictionary(uniqueKeysWithValues: frames.map { ($0.id, $0) })
+            }
+            .alert("Unable to update frame status", isPresented: Binding(
+                get: { statusUpdateError != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        statusUpdateError = nil
+                    }
+                }
+            )) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(statusUpdateError ?? "Unknown error")
+            }
+            .confirmationDialog("Select schedule", isPresented: $isShowingSchedulePicker, titleVisibility: .visible) {
+                ForEach(schedule.schedules ?? [], id: \.listIdentifier) { entry in
+                    Button(entry.title) {
+                        onSelectSchedule(entry)
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            }
         }
     }
 
@@ -202,17 +211,6 @@ struct ScheduleView: View {
                 .padding(.vertical, 4)
             }
         }
-        .background(
-            GeometryReader { proxy in
-                Color.clear
-                    .onAppear {
-                        scheduleContentWidth = proxy.size.width
-                    }
-                    .onChange(of: proxy.size.width) { newValue in
-                        scheduleContentWidth = newValue
-                    }
-            }
-        )
         .coordinateSpace(name: "timeline")
         .backgroundPreferenceValue(TimelineRowAnchorKey.self) { anchors in
             GeometryReader { proxy in
@@ -493,6 +491,13 @@ struct ScheduleView: View {
             .foregroundStyle(Color.martiniDefaultDescriptionColor)
             .multilineTextAlignment(.leading)
             .opacity(0.75)
+    }
+
+    private func updateScheduleContentWidth(for containerWidth: CGFloat) {
+        let width = max(containerWidth - (scheduleContentPadding * 2), 0)
+        if scheduleContentWidth != width {
+            scheduleContentWidth = width
+        }
     }
 
     private enum TimelineMarker {
