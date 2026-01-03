@@ -115,6 +115,29 @@ struct ScheduleView: View {
             .replacingOccurrences(of: " pm", with: "pm")
     }
 
+    private func scheduleMenuIcon(for entry: ProjectScheduleItem) -> String {
+        let dateString = schedule.date ?? entry.date
+        guard let dateString,
+              let date = Self.scheduleDateFormatter.date(from: dateString) else {
+            return "calendar"
+        }
+
+        let day = Calendar.current.component(.day, from: date)
+        return "\(day).calendar"
+    }
+
+    private func isSelectedScheduleEntry(_ entry: ProjectScheduleItem) -> Bool {
+        if entry.listIdentifier == item.listIdentifier {
+            return true
+        }
+
+        if let entryId = entry.id, let itemId = item.id, !entryId.isEmpty, entryId == itemId {
+            return true
+        }
+
+        return !entry.title.isEmpty && entry.title == item.title
+    }
+
     var body: some View {
         GeometryReader { proxy in
             ScrollView {
@@ -187,14 +210,19 @@ struct ScheduleView: View {
                 Button {
                     onSelectSchedule(entry)
                 } label: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(entry.title)
-                            .font(.body)
-                        if let subtitle = scheduleMenuSubtitle(for: entry) {
-                            Text(subtitle)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                    Label {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(entry.title)
+                                .font(.body)
+                            if let subtitle = scheduleMenuSubtitle(for: entry) {
+                                Text(subtitle)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
+                    } icon: {
+                        let iconName = isSelectedScheduleEntry(entry) ? "checkmark" : scheduleMenuIcon(for: entry)
+                        Image(systemName: iconName)
                     }
                 }
             }
