@@ -794,7 +794,7 @@ struct MainView: View {
 
     private func scheduleDate(for entry: ProjectScheduleItem, in schedule: ProjectSchedule) -> Date? {
         guard let dateString = schedule.date ?? entry.date else { return nil }
-        return ContentView.scheduleDateFormatter.date(from: dateString)
+        return Self.scheduleDateFormatter.date(from: dateString)
     }
 
     private func handleScheduleUpdateEvent(_ event: ScheduleUpdateEvent) {
