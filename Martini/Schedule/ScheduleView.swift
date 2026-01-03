@@ -3,6 +3,7 @@ import SwiftUI
 struct ScheduleView: View {
     let schedule: ProjectSchedule
     let item: ProjectScheduleItem
+    let onSelectSchedule: (ProjectScheduleItem) -> Void
 
     @EnvironmentObject private var authService: AuthService
     @Environment(\.dismiss) private var dismiss
@@ -14,6 +15,7 @@ struct ScheduleView: View {
     @State private var framesById: [String: Frame] = [:]
     @State private var statusUpdateError: String?
     @State private var updatingFrameIds: Set<String> = []
+    @State private var isShowingSchedulePicker = false
     private var scheduleGroups: [ScheduleGroup] { item.groups ?? schedule.groups ?? [] }
 
     private var scheduleTitle: String { item.title.isEmpty ? (schedule.title ?? schedule.name) : item.title }
@@ -87,6 +89,15 @@ struct ScheduleView: View {
         .navigationTitle(scheduleTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    isShowingSchedulePicker = true
+                } label: {
+                    Image(systemName: "list.bullet")
+                }
+                .accessibilityLabel("Select schedule")
+            }
+
             if isScheduleDateRelevant {
                 ToolbarItem(placement: .bottomBar) {
                     Button {
@@ -115,6 +126,14 @@ struct ScheduleView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(statusUpdateError ?? "Unknown error")
+        }
+        .confirmationDialog("Select schedule", isPresented: $isShowingSchedulePicker, titleVisibility: .visible) {
+            ForEach(schedule.schedules ?? [], id: \.listIdentifier) { entry in
+                Button(entry.title) {
+                    onSelectSchedule(entry)
+                }
+            }
+            Button("Cancel", role: .cancel) {}
         }
     }
 
