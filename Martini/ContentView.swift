@@ -118,7 +118,7 @@ struct MainView: View {
     @State private var selectedTagIds: Set<String> = []
     @State private var gridMagnification: CGFloat = 1.0
     @State private var isGridPinching: Bool = false
-    @State private var isGridStatusUpdating: Bool = false
+    @State private var gridUpdatingFrameIds: Set<String> = []
 
     enum ViewMode {
         case list
@@ -865,7 +865,8 @@ struct MainView: View {
                                             updateFrameStatus(frame, to: status)
                                         },
                                         showSkeleton: shouldShowFrameSkeleton && section.frames.isEmpty,
-                                        isPinching: isGridPinching
+                                        isPinching: isGridPinching,
+                                        updatingFrameIds: gridUpdatingFrameIds
                                     )
                                 }
                                 .id(section.id)
@@ -929,15 +930,6 @@ struct MainView: View {
                                 synchronizeCreativeSelection()
                             }
                         }
-                    }
-                    if isGridStatusUpdating {
-                        Color.black.opacity(0.4)
-                            .ignoresSafeArea()
-                        ProgressView()
-                            .progressViewStyle(.circular)
-                            .tint(.white)
-                            .scaleEffect(1.2)
-                            .accessibilityLabel("Updating status")
                     }
                 }
             }
@@ -1349,13 +1341,13 @@ private extension MainView {
             let shouldShowGridOverlay = viewMode == .grid
             if shouldShowGridOverlay {
                 await MainActor.run {
-                    isGridStatusUpdating = true
+                    gridUpdatingFrameIds.insert(frame.id)
                 }
             }
             defer {
                 if shouldShowGridOverlay {
                     Task { @MainActor in
-                        isGridStatusUpdating = false
+                        gridUpdatingFrameIds.remove(frame.id)
                     }
                 }
             }
@@ -1658,6 +1650,7 @@ struct CreativeGridSection: View {
     let onStatusSelected: (Frame, FrameStatus) -> Void
     let showSkeleton: Bool
     let isPinching: Bool
+    let updatingFrameIds: Set<String>
 
     init(
         section: GridSectionData,
@@ -1673,7 +1666,8 @@ struct CreativeGridSection: View {
         primaryAsset: @escaping (Frame) -> FrameAssetItem?,
         onStatusSelected: @escaping (Frame, FrameStatus) -> Void,
         showSkeleton: Bool,
-        isPinching: Bool
+        isPinching: Bool,
+        updatingFrameIds: Set<String>
     ) {
         self.section = section
         self.onFrameTap = onFrameTap
@@ -1689,6 +1683,7 @@ struct CreativeGridSection: View {
         self.onStatusSelected = onStatusSelected
         self.showSkeleton = showSkeleton
         self.isPinching = isPinching
+        self.updatingFrameIds = updatingFrameIds
     }
 
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
@@ -1756,13 +1751,14 @@ struct CreativeGridSection: View {
                                     fontScale: fontScale,
                                     coordinateSpaceName: coordinateSpaceName,
                                     viewportHeight: viewportHeight,
-                                onStatusSelected: { status in
-                                    onStatusSelected(frame, status)
-                                }
+                                    isUpdating: updatingFrameIds.contains(frame.id),
+                                    onStatusSelected: { status in
+                                        onStatusSelected(frame, status)
+                                    }
                             )
                         }
                         .id(frame.id)
-                        .allowsHitTesting(!isPinching)
+                        .allowsHitTesting(!isPinching && !updatingFrameIds.contains(frame.id))
                     }
                 }
             }
@@ -1783,6 +1779,7 @@ struct GridFrameCell: View {
     var fontScale: CGFloat
     let coordinateSpaceName: String
     let viewportHeight: CGFloat
+    var isUpdating: Bool = false
     var onStatusSelected: (FrameStatus) -> Void
 
     var body: some View {
@@ -1797,6 +1794,19 @@ struct GridFrameCell: View {
                 enablesFullScreen: false,
                 doneCrossLineWidthOverride: forceThinCrosses ? 1 : nil
             )
+            .overlay {
+                if isUpdating {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color.black.opacity(0.6))
+                        ProgressView()
+                            .progressViewStyle(.circular)
+                            .tint(.white)
+                            .scaleEffect(1.1)
+                            .accessibilityLabel("Updating status")
+                    }
+                }
+            }
             .contextMenu {
                 statusMenu
             }
