@@ -400,7 +400,8 @@ struct ScheduleView: View {
                         FrameView(
                             frame: frame,
                             assetOrder: assetOrderBinding(for: frame),
-                            onClose: { dismiss() }
+                            onClose: { dismiss() },
+                            showsCloseButton: false
                         )
                     } label: {
                         FrameLayout(

@@ -14,6 +14,7 @@ struct FrameView: View {
     @State private var frame: Frame
     @Binding var assetOrder: [FrameAssetKind]
     let onClose: () -> Void
+    let showsCloseButton: Bool
     let hasPreviousFrame: Bool
     let hasNextFrame: Bool
     let onNavigate: (FrameNavigationDirection) -> Void
@@ -80,6 +81,7 @@ struct FrameView: View {
         frame: Frame,
         assetOrder: Binding<[FrameAssetKind]>,
         onClose: @escaping () -> Void,
+        showsCloseButton: Bool = true,
         hasPreviousFrame: Bool = false,
         hasNextFrame: Bool = false,
         onNavigate: @escaping (FrameNavigationDirection) -> Void = { _ in },
@@ -89,6 +91,7 @@ struct FrameView: View {
         _frame = State(initialValue: frame)
         _assetOrder = assetOrder
         self.onClose = onClose
+        self.showsCloseButton = showsCloseButton
         self.hasPreviousFrame = hasPreviousFrame
         self.hasNextFrame = hasNextFrame
         self.onNavigate = onNavigate
@@ -367,8 +370,15 @@ struct FrameView: View {
 
     @ToolbarContentBuilder
     private var topToolbar: some ToolbarContent {
-        ToolbarItem(placement: .topBarLeading) {
-            Button("Close") { onClose() }
+        if showsCloseButton {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    onClose()
+                } label: {
+                    Image(systemName: "xmark")
+                }
+                .accessibilityLabel("Close")
+            }
         }
 
         ToolbarItemGroup(placement: .topBarTrailing) {
