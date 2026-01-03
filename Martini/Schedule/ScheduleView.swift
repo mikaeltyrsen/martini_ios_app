@@ -35,6 +35,10 @@ struct ScheduleView: View {
         scheduleStartTime.map { formattedTimeFrom24Hour($0) }
     }
 
+    private var timelineIsVisible: Bool {
+        showsTimelineProgress && isScheduleDateRelevant
+    }
+
     private var isLandscape: Bool {
         verticalSizeClass == .compact
     }
@@ -80,13 +84,15 @@ struct ScheduleView: View {
         .navigationTitle(scheduleTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .bottomBar) {
-                Button {
-                    showsTimelineProgress.toggle()
-                } label: {
-                    Image(systemName: showsTimelineProgress ? "clock.fill" : "clock")
+            if isScheduleDateRelevant {
+                ToolbarItem(placement: .bottomBar) {
+                    Button {
+                        showsTimelineProgress.toggle()
+                    } label: {
+                        Image(systemName: showsTimelineProgress ? "clock.fill" : "clock")
+                    }
+                    .accessibilityLabel(showsTimelineProgress ? "Hide schedule progress" : "Show schedule progress")
                 }
-                .accessibilityLabel(showsTimelineProgress ? "Hide schedule progress" : "Show schedule progress")
             }
         }
         .onReceive(Timer.publish(every: 60, on: .main, in: .common).autoconnect()) { now in
@@ -125,7 +131,7 @@ struct ScheduleView: View {
 
     private var scheduleContent: some View {
         VStack(alignment: .leading, spacing: 16) {
-            ForEach(scheduleGroups) { group in
+            ForEach(displayScheduleGroups) { group in
                 VStack(alignment: .leading, spacing: 10) {
                     VStack(alignment: .leading, spacing: 12) {
                         ForEach(group.blocks) { block in
@@ -141,8 +147,12 @@ struct ScheduleView: View {
         .coordinateSpace(name: "timeline")
         .backgroundPreferenceValue(TimelineRowAnchorKey.self) { anchors in
             GeometryReader { proxy in
-                if showsTimelineProgress {
-                    timelineProgressLine(with: anchors, proxy: proxy)
+                if timelineIsVisible {
+                    timelineProgressLine(
+                        with: anchors,
+                        proxy: proxy,
+                        blocks: displayScheduleGroups.flatMap(\.blocks)
+                    )
                 }
             }
         }
@@ -151,7 +161,7 @@ struct ScheduleView: View {
     @ViewBuilder
     private func blockRow(for block: ScheduleBlock) -> some View {
         HStack(alignment: .center, spacing: 12) {
-            if showsTimelineProgress {
+            if timelineIsVisible {
                 timelineIndicator(for: block)
                     .anchorPreference(key: TimelineRowAnchorKey.self, value: .bounds) { anchor in
                         [block.id: anchor]
@@ -374,6 +384,13 @@ struct ScheduleView: View {
     private let timelineIndicatorWidth: CGFloat = 28
     private let timelineLineWidth: CGFloat = 3
     private let timelineMarkerSize: CGFloat = 24
+    private static let currentTimeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = .current
+        formatter.timeZone = .current
+        formatter.dateFormat = "h:mm a"
+        return formatter
+    }()
 
     private var scheduleBaseDate: Date {
         if let scheduleDate,
@@ -385,11 +402,12 @@ struct ScheduleView: View {
 
     private var currentScheduleTime: Date {
         let nowComponents = Calendar.current.dateComponents([.hour, .minute, .second], from: now)
+        let baseDate = activeScheduleBaseDate
         return Calendar.current.date(
             bySettingHour: nowComponents.hour ?? 0,
             minute: nowComponents.minute ?? 0,
             second: nowComponents.second ?? 0,
-            of: scheduleBaseDate
+            of: baseDate
         ) ?? Date()
     }
 
@@ -464,7 +482,7 @@ struct ScheduleView: View {
         if let active = sortedBlocks.last(where: { $0.date <= currentScheduleTime }) {
             return active.block.id
         }
-        return sortedBlocks.first?.block.id
+        return nil
     }
 
     private func isBlockOverdue(_ block: ScheduleBlock) -> Bool {
@@ -569,10 +587,10 @@ struct ScheduleView: View {
     @ViewBuilder
     private func timelineProgressLine(
         with anchors: [String: Anchor<CGRect>],
-        proxy: GeometryProxy
+        proxy: GeometryProxy,
+        blocks: [ScheduleBlock]
     ) -> some View {
-        let timelineBlocks = scheduleGroups.flatMap(\.blocks)
-        let positions = timelineBlocks.compactMap { block -> (block: ScheduleBlock, midX: CGFloat, midY: CGFloat)? in
+        let positions = blocks.compactMap { block -> (block: ScheduleBlock, midX: CGFloat, midY: CGFloat)? in
             guard let anchor = anchors[block.id] else { return nil }
             let rect = proxy[anchor]
             return (block, rect.midX, rect.midY)
@@ -668,5 +686,91 @@ struct ScheduleView: View {
         }
 
         return (adjustedStart, adjustedEnd)
+    }
+
+    private var activeScheduleBaseDate: Date {
+        guard scheduleDate != nil,
+              let endDate = scheduleEndDate,
+              endDate > scheduleBaseDate,
+              isScheduleDateRelevant else {
+            return scheduleBaseDate
+        }
+        let offset = Calendar.current.dateComponents([.day], from: scheduleBaseDate, to: now).day ?? 0
+        guard offset > 0 else {
+            return scheduleBaseDate
+        }
+        return Calendar.current.date(byAdding: .day, value: offset, to: scheduleBaseDate) ?? scheduleBaseDate
+    }
+
+    private var scheduleEndDate: Date? {
+        var endDates: [Date] = []
+        if let duration = scheduleDuration,
+           let endDate = Calendar.current.date(byAdding: .minute, value: duration, to: scheduleBaseDate) {
+            endDates.append(endDate)
+        }
+        let blockEndDates = blocksWithStartTimes.map { entry -> Date in
+            if let duration = entry.block.duration,
+               let endDate = Calendar.current.date(byAdding: .minute, value: duration, to: entry.date) {
+                return endDate
+            }
+            return entry.date
+        }
+        endDates.append(contentsOf: blockEndDates)
+        return endDates.max()
+    }
+
+    private var isScheduleDateRelevant: Bool {
+        guard scheduleDate != nil else { return true }
+        if Calendar.current.isDate(now, inSameDayAs: scheduleBaseDate) {
+            return true
+        }
+        if let endDate = scheduleEndDate,
+           endDate > scheduleBaseDate,
+           Calendar.current.isDate(now, inSameDayAs: endDate) {
+            return true
+        }
+        return false
+    }
+
+    private var areAllBoardsComplete: Bool {
+        let storyboardIds = Set(flattenedBlocks.flatMap { $0.storyboards ?? [] })
+        guard !storyboardIds.isEmpty else { return false }
+        let frames = storyboardIds.compactMap { id in
+            authService.frames.first { $0.id == id }
+        }
+        guard frames.count == storyboardIds.count else { return false }
+        return frames.allSatisfy(isFrameComplete)
+    }
+
+    private var shouldShowOverrunRow: Bool {
+        guard isScheduleDateRelevant else { return false }
+        guard !areAllBoardsComplete else { return false }
+        guard let endDate = scheduleEndDate else { return false }
+        return now > endDate
+    }
+
+    private var currentTimeTitle: String {
+        ScheduleView.currentTimeFormatter.string(from: now)
+    }
+
+    private var displayScheduleGroups: [ScheduleGroup] {
+        guard shouldShowOverrunRow,
+              let lastGroup = scheduleGroups.last else {
+            return scheduleGroups
+        }
+        let overrunBlock = ScheduleBlock(
+            type: .title,
+            color: "red",
+            ignoreTime: true,
+            title: currentTimeTitle
+        )
+        var updatedGroups = scheduleGroups
+        let updatedLastGroup = ScheduleGroup(
+            id: lastGroup.id,
+            title: lastGroup.title,
+            blocks: lastGroup.blocks + [overrunBlock]
+        )
+        updatedGroups[updatedGroups.count - 1] = updatedLastGroup
+        return updatedGroups
     }
 }
