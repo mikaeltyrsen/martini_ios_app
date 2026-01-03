@@ -16,6 +16,7 @@ struct ScheduleView: View {
     @State private var statusUpdateError: String?
     @State private var updatingFrameIds: Set<String> = []
     @State private var isShowingSchedulePicker = false
+    @State private var scheduleContentWidth: CGFloat = 0
     private var scheduleGroups: [ScheduleGroup] { item.groups ?? schedule.groups ?? [] }
 
     private var scheduleTitle: String { item.title.isEmpty ? (schedule.title ?? schedule.name) : item.title }
@@ -54,6 +55,26 @@ struct ScheduleView: View {
 
     private var isPortraitPhone: Bool {
         horizontalSizeClass == .compact && !isLandscape
+    }
+
+    private let wideColumnSpacing: CGFloat = 12
+
+    private var wideLayoutAvailableWidth: CGFloat? {
+        guard scheduleContentWidth > 0 else { return nil }
+        let timelineInset = timelineIsVisible ? (timelineIndicatorWidth + wideColumnSpacing) : 0
+        return max(scheduleContentWidth - timelineInset, 0)
+    }
+
+    private var timeColumnWidth: CGFloat? {
+        guard let width = wideLayoutAvailableWidth else { return nil }
+        return min(width * 0.2, 100)
+    }
+
+    private var contentColumnWidth: CGFloat? {
+        guard let width = wideLayoutAvailableWidth,
+              let timeColumnWidth else { return nil }
+        let remaining = max(width - timeColumnWidth - (wideColumnSpacing * 2), 0)
+        return remaining / 2
     }
 
     private func timeAndDurationText(startTime: String?, duration: Int?) -> String? {
@@ -181,6 +202,17 @@ struct ScheduleView: View {
                 .padding(.vertical, 4)
             }
         }
+        .background(
+            GeometryReader { proxy in
+                Color.clear
+                    .onAppear {
+                        scheduleContentWidth = proxy.size.width
+                    }
+                    .onChange(of: proxy.size.width) { newValue in
+                        scheduleContentWidth = newValue
+                    }
+            }
+        )
         .coordinateSpace(name: "timeline")
         .backgroundPreferenceValue(TimelineRowAnchorKey.self) { anchors in
             GeometryReader { proxy in
@@ -215,7 +247,7 @@ struct ScheduleView: View {
     private func blockView(for block: ScheduleBlock) -> some View {
         switch block.type {
         case .title:
-            HStack(alignment: .center, spacing: 12) {
+            HStack(alignment: .center, spacing: wideColumnSpacing) {
                 if isPortraitPhone {
                     VStack(alignment: .center, spacing: 4) {
                         titleRowTimeAndDuration(for: block)
@@ -223,17 +255,26 @@ struct ScheduleView: View {
                             .font(.headline)
                     }
                     .frame(maxWidth: .infinity, alignment: .center)
+                } else if showsWideLayout {
+                    wideColumnView(
+                        VStack(alignment: .leading, spacing: 4) {
+                            titleRowTimeAndDuration(for: block)
+                        },
+                        width: timeColumnWidth
+                    )
+
+                    wideColumnView(
+                        Text(block.title ?? "")
+                            .font(.headline),
+                        width: contentColumnWidth
+                    )
+
+                    descriptionColumn(block.description, width: contentColumnWidth)
                 } else {
                     VStack(alignment: .leading, spacing: 4) {
                         titleRowTimeAndDuration(for: block)
                         Text(block.title ?? "")
                             .font(.headline)
-                    }
-                    if showsWideLayout, let description = block.description, !description.isEmpty {
-                        Spacer(minLength: 0)
-                        Text(description)
-                            .font(.subheadline)
-                            .foregroundStyle(Color.martiniDefaultDescriptionColor)
                     }
                 }
             }
@@ -244,18 +285,20 @@ struct ScheduleView: View {
         case .shot, .unknown:
             Group {
                 if showsWideLayout {
-                    HStack(alignment: .top, spacing: 12) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            storyboardTimeAndDuration(for: block)
-                        }
+                    HStack(alignment: .top, spacing: wideColumnSpacing) {
+                        wideColumnView(
+                            VStack(alignment: .leading, spacing: 8) {
+                                storyboardTimeAndDuration(for: block)
+                            },
+                            width: timeColumnWidth
+                        )
 
-                        storyboardGrid(for: block)
-                        
-                        if let description = block.description, !description.isEmpty {
-                            Text(description)
-                                .font(.subheadline)
-                                .foregroundStyle(Color.martiniDefaultDescriptionColor)
-                        }
+                        wideColumnView(
+                            storyboardGrid(for: block),
+                            width: contentColumnWidth
+                        )
+
+                        descriptionColumn(block.description, width: contentColumnWidth)
                     }
                 } else {
                     VStack(alignment: .leading, spacing: 8) {
@@ -416,6 +459,40 @@ struct ScheduleView: View {
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(.secondary)
         }
+    }
+
+    @ViewBuilder
+    private func wideColumnView<Content: View>(_ content: Content, width: CGFloat?) -> some View {
+        if let width {
+            content
+                .frame(width: width, alignment: .leading)
+        } else {
+            content
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    @ViewBuilder
+    private func descriptionColumn(_ description: String?, width: CGFloat?) -> some View {
+        if let description, !description.isEmpty {
+            wideColumnView(
+                descriptionText(description),
+                width: width
+            )
+        } else if let width {
+            Spacer(minLength: 0)
+                .frame(width: width)
+        } else {
+            Spacer(minLength: 0)
+        }
+    }
+
+    private func descriptionText(_ description: String) -> some View {
+        Text(description)
+            .font(.subheadline)
+            .foregroundStyle(Color.martiniDefaultDescriptionColor)
+            .multilineTextAlignment(.leading)
+            .opacity(0.75)
     }
 
     private enum TimelineMarker {
