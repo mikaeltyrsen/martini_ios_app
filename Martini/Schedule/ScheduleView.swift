@@ -12,6 +12,8 @@ struct ScheduleView: View {
     @State private var showsTimelineProgress = true
     @State private var now = Date()
     @State private var framesById: [String: Frame] = [:]
+    @State private var statusUpdateError: String?
+    @State private var updatingFrameIds: Set<String> = []
     private var scheduleGroups: [ScheduleGroup] { item.groups ?? schedule.groups ?? [] }
 
     private var scheduleTitle: String { item.title.isEmpty ? (schedule.title ?? schedule.name) : item.title }
@@ -101,6 +103,18 @@ struct ScheduleView: View {
         }
         .onReceive(authService.$frames) { frames in
             framesById = Dictionary(uniqueKeysWithValues: frames.map { ($0.id, $0) })
+        }
+        .alert("Unable to update frame status", isPresented: Binding(
+            get: { statusUpdateError != nil },
+            set: { isPresented in
+                if !isPresented {
+                    statusUpdateError = nil
+                }
+            }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(statusUpdateError ?? "Unknown error")
         }
     }
 
@@ -267,6 +281,20 @@ struct ScheduleView: View {
                             enablesFullScreen: false
                         )
                         .frame(maxWidth: .infinity)
+                        .overlay {
+                            if updatingFrameIds.contains(frame.id) {
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color.black.opacity(0.6))
+                                    ProgressView()
+                                        .progressViewStyle(.circular)
+                                        .tint(.white)
+                                }
+                            }
+                        }
+                        .contextMenu {
+                            statusMenu(for: frame)
+                        }
                     }
                     .buttonStyle(.plain)
                 }
@@ -278,6 +306,25 @@ struct ScheduleView: View {
         guard let storyboardIds = block.storyboards else { return [] }
 
         return storyboardIds.compactMap { framesById[$0] }
+    }
+
+    private func statusMenu(for frame: Frame) -> some View {
+        ForEach(statusOptions(for: frame), id: \.self) { status in
+            Button {
+                triggerStatusHaptic(for: status)
+                updateFrameStatus(frame, to: status)
+            } label: {
+                Label(status.displayName, systemImage: status.systemImageName)
+            }
+        }
+    }
+
+    private func statusOptions(for frame: Frame) -> [FrameStatus] {
+        var options: [FrameStatus] = [.done, .here, .next, .omit]
+        if frame.statusEnum != .none {
+            options.append(.none)
+        }
+        return options
     }
 
     private func isStoryboardRowComplete(for block: ScheduleBlock) -> Bool {
@@ -499,6 +546,26 @@ struct ScheduleView: View {
 
     private func isFrameComplete(_ frame: Frame) -> Bool {
         frame.statusEnum == .done || frame.statusEnum == .omit
+    }
+
+    private func updateFrameStatus(_ frame: Frame, to status: FrameStatus) {
+        Task {
+            await MainActor.run {
+                updatingFrameIds.insert(frame.id)
+            }
+            defer {
+                Task { @MainActor in
+                    updatingFrameIds.remove(frame.id)
+                }
+            }
+            do {
+                _ = try await authService.updateFrameStatus(id: frame.id, to: status)
+            } catch {
+                await MainActor.run {
+                    statusUpdateError = error.localizedDescription
+                }
+            }
+        }
     }
 
     private func shouldShowWarning(for block: ScheduleBlock) -> Bool {
