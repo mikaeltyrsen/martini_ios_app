@@ -15,7 +15,6 @@ struct ScheduleView: View {
     @State private var framesById: [String: Frame] = [:]
     @State private var statusUpdateError: String?
     @State private var updatingFrameIds: Set<String> = []
-    @State private var isShowingSchedulePicker = false
     @State private var scheduleContentWidth: CGFloat = 0
     private var scheduleGroups: [ScheduleGroup] { item.groups ?? schedule.groups ?? [] }
 
@@ -24,6 +23,7 @@ struct ScheduleView: View {
     private var scheduleStartTime: String? { schedule.startTime ?? item.startTime }
     private var scheduleDuration: Int? { schedule.durationMinutes ?? item.durationMinutes ?? item.duration }
     private var flattenedBlocks: [ScheduleBlock] { scheduleGroups.flatMap(\.blocks) }
+    private var schedulePickerTitle: String { schedule.title ?? schedule.name }
 
     private static let scheduleDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -94,6 +94,26 @@ struct ScheduleView: View {
         }
     }
 
+    private func scheduleMenuSubtitle(for entry: ProjectScheduleItem) -> String? {
+        let dateText = (schedule.date ?? entry.date).map { formattedScheduleDate(from: $0, includeYear: false) }
+        let timeText = formattedMenuTime(schedule.startTime ?? entry.startTime)
+        let durationText = (schedule.durationMinutes ?? entry.durationMinutes ?? entry.duration)
+            .map { formattedDuration(fromMinutes: $0) }
+
+        let parts = [dateText, timeText, durationText].compactMap { $0 }
+        return parts.isEmpty ? nil : parts.joined(separator: " • ")
+    }
+
+    private func formattedMenuTime(_ time: String?) -> String? {
+        guard let time else { return nil }
+        let formatted = formattedTimeFrom24Hour(time)
+            .lowercased()
+            .replacingOccurrences(of: ":00", with: "")
+        return formatted
+            .replacingOccurrences(of: " am", with: "am")
+            .replacingOccurrences(of: " pm", with: "pm")
+    }
+
     var body: some View {
         GeometryReader { proxy in
             ScrollView {
@@ -113,8 +133,8 @@ struct ScheduleView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        isShowingSchedulePicker = true
+                    Menu {
+                        scheduleMenuContent
                     } label: {
                         Image(systemName: "list.bullet")
                     }
@@ -156,13 +176,26 @@ struct ScheduleView: View {
             } message: {
                 Text(statusUpdateError ?? "Unknown error")
             }
-            .confirmationDialog("Select schedule", isPresented: $isShowingSchedulePicker, titleVisibility: .visible) {
-                ForEach(schedule.schedules ?? [], id: \.listIdentifier) { entry in
-                    Button(entry.title) {
-                        onSelectSchedule(entry)
+        }
+    }
+
+    @ViewBuilder
+    private var scheduleMenuContent: some View {
+        Section(schedulePickerTitle) {
+            ForEach(schedule.schedules ?? [], id: \.listIdentifier) { entry in
+                Button {
+                    onSelectSchedule(entry)
+                } label: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(entry.title)
+                            .font(.body)
+                        if let subtitle = scheduleMenuSubtitle(for: entry) {
+                            Text(subtitle)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
-                Button("Cancel", role: .cancel) {}
             }
         }
     }
