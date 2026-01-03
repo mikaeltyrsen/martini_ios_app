@@ -71,11 +71,12 @@ struct ScheduleView: View {
         return min(width * 0.2, 100)
     }
 
-    private var contentColumnWidth: CGFloat? {
+    private func contentColumnWidth(hasDescription: Bool) -> CGFloat? {
         guard let width = wideLayoutAvailableWidth,
               let timeColumnWidth else { return nil }
-        let remaining = max(width - timeColumnWidth - (wideColumnSpacing * 2), 0)
-        return remaining / 2
+        let spacing = wideColumnSpacing * (hasDescription ? 2 : 1)
+        let remaining = max(width - timeColumnWidth - spacing, 0)
+        return hasDescription ? (remaining / 2) : remaining
     }
 
     private func timeAndDurationText(startTime: String?, duration: Int?) -> String? {
@@ -287,6 +288,9 @@ struct ScheduleView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .center)
                 } else if showsWideLayout {
+                    let hasDescription = !(block.description?.isEmpty ?? true)
+                    let columnWidth = contentColumnWidth(hasDescription: hasDescription)
+
                     wideColumnView(
                         VStack(alignment: .leading, spacing: 4) {
                             titleRowTimeAndDuration(for: block)
@@ -297,10 +301,12 @@ struct ScheduleView: View {
                     wideColumnView(
                         Text(block.title ?? "")
                             .font(.headline),
-                        width: contentColumnWidth
+                        width: columnWidth
                     )
 
-                    descriptionColumn(block.description, width: contentColumnWidth)
+                    if let description = block.description, !description.isEmpty {
+                        descriptionColumn(description, width: columnWidth)
+                    }
                 } else {
                     VStack(alignment: .leading, spacing: 4) {
                         titleRowTimeAndDuration(for: block)
@@ -316,6 +322,9 @@ struct ScheduleView: View {
         case .shot, .unknown:
             Group {
                 if showsWideLayout {
+                    let hasDescription = !(block.description?.isEmpty ?? true)
+                    let columnWidth = contentColumnWidth(hasDescription: hasDescription)
+
                     HStack(alignment: .top, spacing: wideColumnSpacing) {
                         wideColumnView(
                             VStack(alignment: .leading, spacing: 8) {
@@ -326,10 +335,12 @@ struct ScheduleView: View {
 
                         wideColumnView(
                             storyboardGrid(for: block),
-                            width: contentColumnWidth
+                            width: columnWidth
                         )
 
-                        descriptionColumn(block.description, width: contentColumnWidth)
+                        if let description = block.description, !description.isEmpty {
+                            descriptionColumn(description, width: columnWidth)
+                        }
                     }
                 } else {
                     VStack(alignment: .leading, spacing: 8) {
@@ -504,18 +515,11 @@ struct ScheduleView: View {
     }
 
     @ViewBuilder
-    private func descriptionColumn(_ description: String?, width: CGFloat?) -> some View {
-        if let description, !description.isEmpty {
-            wideColumnView(
-                descriptionText(description),
-                width: width
-            )
-        } else if let width {
-            Spacer(minLength: 0)
-                .frame(width: width)
-        } else {
-            Spacer(minLength: 0)
-        }
+    private func descriptionColumn(_ description: String, width: CGFloat?) -> some View {
+        wideColumnView(
+            descriptionText(description),
+            width: width
+        )
     }
 
     private func descriptionText(_ description: String) -> some View {
