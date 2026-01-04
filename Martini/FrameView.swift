@@ -46,6 +46,11 @@ struct FrameView: View {
     @State private var showingScoutCamera: Bool = false
     @State private var showingScoutCameraWarning: Bool = false
     @State private var showingScoutCameraSettings: Bool = false
+    @State private var showingAddBoardOptions: Bool = false
+    @State private var showingSystemCamera: Bool = false
+    @State private var showingUploadPicker: Bool = false
+    @State private var capturedPhoto: UIImage?
+    @State private var showingCapturedReview: Bool = false
     @State private var showingBoardRenameAlert: Bool = false
     @State private var boardRenameText: String = ""
     @State private var boardRenameTarget: FrameAssetItem?
@@ -76,6 +81,7 @@ struct FrameView: View {
     private let selectionStore = ProjectKitSelectionStore.shared
     private let dataStore = LocalJSONStore.shared
     private let scriptPreviewFontSize = UIFont.preferredFont(forTextStyle: .body).pointSize
+    private let uploadService = FrameUploadService()
 
     init(
         frame: Frame,
@@ -127,11 +133,68 @@ struct FrameView: View {
             } message: {
                 Text("Select at least one camera and lens in settings to use Scout Camera.")
             }
+            .confirmationDialog("Add Board", isPresented: $showingAddBoardOptions, titleVisibility: .visible) {
+                Button("Take Photo") {
+                    showingSystemCamera = true
+                }
+                Button("Scout Camera") {
+                    openScoutCamera()
+                }
+                Button("Upload") {
+                    showingUploadPicker = true
+                }
+                Button("Cancel", role: .cancel) {}
+            }
+            .fullScreenCover(isPresented: $showingCapturedReview) {
+                if let capturedPhoto {
+                    ScoutCameraReviewView(
+                        image: capturedPhoto,
+                        onImport: {
+                            await importCapturedPhoto(capturedPhoto)
+                        },
+                        onPrepareShare: {
+                            capturedPhoto
+                        },
+                        onRetake: {
+                            showingCapturedReview = false
+                            capturedPhoto = nil
+                            showingSystemCamera = true
+                        },
+                        onCancel: {
+                            showingCapturedReview = false
+                            capturedPhoto = nil
+                        }
+                    )
+                }
+            }
             .navigationDestination(item: $scriptNavigationTarget) { target in
                 ScriptView(targetDialogId: target.dialogId)
             }
             .sheet(item: $metadataSheetItem) { item in
                 BoardMetadataSheet(item: item)
+            }
+            .sheet(isPresented: $showingSystemCamera) {
+                MediaPicker(
+                    sourceType: .camera,
+                    allowsVideo: false,
+                    onImagePicked: { image in
+                        capturedPhoto = image
+                        showingCapturedReview = true
+                    },
+                    onVideoPicked: { _ in }
+                )
+            }
+            .sheet(isPresented: $showingUploadPicker) {
+                MediaPicker(
+                    sourceType: .photoLibrary,
+                    allowsVideo: true,
+                    onImagePicked: { image in
+                        Task { await uploadBoardImage(image) }
+                    },
+                    onVideoPicked: { url in
+                        Task { await uploadBoardVideo(url) }
+                    }
+                )
             }
     }
 
@@ -631,7 +694,7 @@ struct FrameView: View {
                 primaryText: primaryText,
                 takePictureID: takePictureCardID,
                 takePictureAction: {
-                    openScoutCamera()
+                    showingAddBoardOptions = true
                 },
                 onAssetTap: { asset in
                     guard asset.kind == .board else { return }
@@ -1164,9 +1227,9 @@ struct FrameView: View {
                                 }
 
                                 Button {
-                                    openScoutCamera()
+                                    showingAddBoardOptions = true
                                 } label: {
-                                    Label("Add Photo", systemImage: "plus")
+                                    Text("+")
                                         .font(.system(size: 14, weight: .semibold))
                                         .foregroundStyle(Color.primary)
                                         .lineLimit(1)
@@ -1380,6 +1443,115 @@ struct FrameView: View {
             return
         }
         showingScoutCamera = true
+    }
+
+    private func importCapturedPhoto(_ image: UIImage) async {
+        let didUpload = await uploadBoardImage(image)
+        if didUpload {
+            showingCapturedReview = false
+            capturedPhoto = nil
+        }
+    }
+
+    private func uploadBoardImage(_ image: UIImage) async -> Bool {
+        guard let projectId = authService.projectId else {
+            boardActionError = "Missing project ID for upload."
+            return false
+        }
+        guard let data = compressedImageData(from: image, maxPixelDimension: 2000) else {
+            boardActionError = "Failed to compress image."
+            return false
+        }
+        do {
+            try await uploadService.uploadBoardAsset(
+                data: data,
+                filename: "photoboard.jpg",
+                mimeType: "image/jpeg",
+                boardLabel: "Photoboard",
+                shootId: projectId,
+                creativeId: frame.creativeId,
+                frameId: frame.id,
+                bearerToken: authService.currentBearerToken(),
+                metadata: nil
+            )
+            return true
+        } catch {
+            boardActionError = error.localizedDescription
+            return false
+        }
+    }
+
+    private func uploadBoardVideo(_ sourceURL: URL) async -> Bool {
+        guard let projectId = authService.projectId else {
+            boardActionError = "Missing project ID for upload."
+            return false
+        }
+        do {
+            let compressedURL = try await compressVideoForUpload(sourceURL: sourceURL)
+            let data = try Data(contentsOf: compressedURL)
+            try await uploadService.uploadBoardAsset(
+                data: data,
+                filename: "board.mp4",
+                mimeType: "video/mp4",
+                boardLabel: "Photoboard",
+                shootId: projectId,
+                creativeId: frame.creativeId,
+                frameId: frame.id,
+                bearerToken: authService.currentBearerToken(),
+                metadata: nil
+            )
+            return true
+        } catch {
+            boardActionError = error.localizedDescription
+            return false
+        }
+    }
+
+    private func compressedImageData(from image: UIImage, maxPixelDimension: CGFloat) -> Data? {
+        let resized = resizedImageForUpload(from: image, maxPixelDimension: maxPixelDimension)
+        return resized.jpegData(compressionQuality: 0.85)
+    }
+
+    private func resizedImageForUpload(from image: UIImage, maxPixelDimension: CGFloat) -> UIImage {
+        let size = image.size
+        let maxDimension = max(size.width, size.height)
+        guard maxDimension > maxPixelDimension else { return image }
+
+        let scale = maxPixelDimension / maxDimension
+        let newSize = CGSize(width: size.width * scale, height: size.height * scale)
+        let renderer = UIGraphicsImageRenderer(size: newSize)
+        return renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: newSize))
+        }
+    }
+
+    private func compressVideoForUpload(sourceURL: URL) async throws -> URL {
+        let asset = AVURLAsset(url: sourceURL)
+        guard let exportSession = AVAssetExportSession(asset: asset, presetName: AVAssetExportPreset1920x1080) else {
+            throw NSError(domain: "VideoExport", code: 1, userInfo: [NSLocalizedDescriptionKey: "Unable to create export session."])
+        }
+        let outputURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("mp4")
+        if FileManager.default.fileExists(atPath: outputURL.path) {
+            try FileManager.default.removeItem(at: outputURL)
+        }
+        exportSession.outputURL = outputURL
+        exportSession.outputFileType = .mp4
+        exportSession.shouldOptimizeForNetworkUse = true
+
+        return try await withCheckedThrowingContinuation { continuation in
+            exportSession.exportAsynchronously {
+                switch exportSession.status {
+                case .completed:
+                    continuation.resume(returning: outputURL)
+                case .failed, .cancelled:
+                    continuation.resume(throwing: exportSession.error ?? NSError(domain: "VideoExport", code: 2, userInfo: nil))
+                default:
+                    break
+                }
+            }
+        }
     }
 
     @ViewBuilder
@@ -2567,10 +2739,10 @@ private struct TakePictureCardView: View {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .fill(Color.secondary.opacity(0.15))
                 VStack(spacing: 12) {
-                    Image(systemName: "camera.viewfinder")
+                    Image(systemName: "plus")
                         .font(.system(size: 32, weight: .semibold))
                         .foregroundStyle(Color.primary)
-                    Text("Scout Camera")
+                    Text("Add Board")
                         .font(.headline)
                         .foregroundStyle(Color.primary)
                 }
@@ -2681,6 +2853,67 @@ private struct BoardReorderDropDelegate: DropDelegate {
     func performDrop(info: DropInfo) -> Bool {
         activeBoard = nil
         return true
+    }
+}
+
+private struct MediaPicker: UIViewControllerRepresentable {
+    let sourceType: UIImagePickerController.SourceType
+    let allowsVideo: Bool
+    let onImagePicked: (UIImage) -> Void
+    let onVideoPicked: (URL) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.delegate = context.coordinator
+        if UIImagePickerController.isSourceTypeAvailable(sourceType) {
+            picker.sourceType = sourceType
+        } else {
+            picker.sourceType = .photoLibrary
+        }
+        if allowsVideo {
+            picker.mediaTypes = [UTType.image.identifier, UTType.movie.identifier]
+        } else {
+            picker.mediaTypes = [UTType.image.identifier]
+        }
+        picker.allowsEditing = false
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(parent: self)
+    }
+
+    final class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
+        private let parent: MediaPicker
+
+        init(parent: MediaPicker) {
+            self.parent = parent
+        }
+
+        func imagePickerController(
+            _ picker: UIImagePickerController,
+            didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
+        ) {
+            defer { parent.dismiss() }
+            if let mediaType = info[.mediaType] as? String {
+                if mediaType == UTType.image.identifier {
+                    if let image = info[.originalImage] as? UIImage {
+                        parent.onImagePicked(image)
+                    }
+                } else if mediaType == UTType.movie.identifier {
+                    if let url = info[.mediaURL] as? URL {
+                        parent.onVideoPicked(url)
+                    }
+                }
+            }
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            parent.dismiss()
+        }
     }
 }
 //
