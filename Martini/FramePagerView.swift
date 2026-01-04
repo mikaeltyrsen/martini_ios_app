@@ -9,6 +9,7 @@ struct FramePagerView: View {
     let onSelectionChanged: (Frame.ID) -> Void
 
     @State private var selection: Frame.ID
+    @Environment(\.fullscreenMediaCoordinator) private var fullscreenCoordinator
 
     init(
         frames: [Frame],
@@ -33,47 +34,78 @@ struct FramePagerView: View {
     }
 
     var body: some View {
-        if frames.isEmpty {
-            ContentUnavailableView("No Frames", systemImage: "film")
-        } else {
-            TabView(selection: $selection) {
-                ForEach(Array(frames.enumerated()), id: \.element.id) { index, frame in
-                    FrameView(
-                        frame: frame,
-                        assetOrder: assetOrderBinding(frame),
-                        onClose: onClose,
-                        showsCloseButton: showsCloseButton,
-                        hasPreviousFrame: index > 0,
-                        hasNextFrame: index + 1 < frames.count,
-                        showsTopToolbar: false,
-                        activeFrameID: selection,
-                        onNavigate: { direction in
-                            switch direction {
-                            case .previous:
-                                guard index > 0 else { return }
-                                withAnimation(.easeInOut(duration: 0.25)) {
-                                    selection = frames[index - 1].id
+        Group {
+            if frames.isEmpty {
+                ContentUnavailableView("No Frames", systemImage: "film")
+            } else {
+                TabView(selection: $selection) {
+                    ForEach(Array(frames.enumerated()), id: \.element.id) { index, frame in
+                        FrameView(
+                            frame: frame,
+                            assetOrder: assetOrderBinding(frame),
+                            onClose: onClose,
+                            showsCloseButton: showsCloseButton,
+                            hasPreviousFrame: index > 0,
+                            hasNextFrame: index + 1 < frames.count,
+                            showsTopToolbar: false,
+                            activeFrameID: selection,
+                            onNavigate: { direction in
+                                switch direction {
+                                case .previous:
+                                    guard index > 0 else { return }
+                                    withAnimation(.easeInOut(duration: 0.25)) {
+                                        selection = frames[index - 1].id
+                                    }
+                                case .next:
+                                    guard index + 1 < frames.count else { return }
+                                    withAnimation(.easeInOut(duration: 0.25)) {
+                                        selection = frames[index + 1].id
+                                    }
                                 }
-                            case .next:
-                                guard index + 1 < frames.count else { return }
-                                withAnimation(.easeInOut(duration: 0.25)) {
-                                    selection = frames[index + 1].id
-                                }
-                            }
-                        },
-                        onStatusSelected: onStatusSelected
-                    )
-                    .tag(frame.id)
+                            },
+                            onStatusSelected: onStatusSelected
+                        )
+                        .tag(frame.id)
+                    }
+                }
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                .toolbar {
+                    topToolbar
+                }
+                .onChange(of: selection) { newValue in
+                    onSelectionChanged(newValue)
                 }
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-            .toolbar {
-                topToolbar
-            }
-            .onChange(of: selection) { newValue in
-                onSelectionChanged(newValue)
+        }
+        .fullScreenCover(item: fullscreenConfigurationBinding) { configuration in
+            NavigationStack {
+                FullscreenMediaViewer(
+                    isPresented: fullscreenPresentationBinding,
+                    media: configuration.media,
+                    config: configuration.config
+                )
             }
         }
+    }
+
+    private var fullscreenConfigurationBinding: Binding<FullscreenMediaConfiguration?> {
+        Binding(
+            get: { fullscreenCoordinator?.configuration },
+            set: { newValue in
+                fullscreenCoordinator?.configuration = newValue
+            }
+        )
+    }
+
+    private var fullscreenPresentationBinding: Binding<Bool> {
+        Binding(
+            get: { fullscreenCoordinator?.configuration != nil },
+            set: { isPresented in
+                if !isPresented {
+                    fullscreenCoordinator?.configuration = nil
+                }
+            }
+        )
     }
 
     private var selectedIndex: Int? {
