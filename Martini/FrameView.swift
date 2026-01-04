@@ -211,13 +211,9 @@ struct FrameView: View {
 
     private var overlayContent: some View {
         eventDrivenContent
-            .overlay(alignment: .center) {
-                fullscreenOverlay
-            }
             .overlay(alignment: .bottom) {
                 statusSheetOverlay
             }
-            .animation(.easeInOut(duration: 0.25), value: fullscreenCoordinator?.configuration?.id)
     }
 
     private var eventDrivenContent: some View {
@@ -1809,26 +1805,6 @@ private extension FrameView {
             media: media,
             config: .default
         )
-    }
-
-    @ViewBuilder
-    private var fullscreenOverlay: some View {
-        if let configuration = fullscreenCoordinator?.configuration {
-            FullscreenMediaViewer(
-                isPresented: Binding(
-                    get: { fullscreenCoordinator?.configuration != nil },
-                    set: { isPresented in
-                        if !isPresented {
-                            fullscreenCoordinator?.configuration = nil
-                        }
-                    }
-                ),
-                media: configuration.media,
-                config: configuration.config
-            )
-            .transition(.opacity)
-            .zIndex(1)
-        }
     }
 
     private func descriptionDragGesture(containerHeight: CGFloat) -> some Gesture {

@@ -59,7 +59,7 @@ struct FullscreenMediaViewer: View {
 
     var body: some View {
         GeometryReader { proxy in
-            ZStack(alignment: .top) {
+            ZStack {
                 Color(.systemBackground)
                     .opacity(isVisible ? 1 : 0)
                     .ignoresSafeArea()
@@ -69,13 +69,6 @@ struct FullscreenMediaViewer: View {
                     .opacity(isVisible ? 1 : 0)
                     .scaleEffect(isVisible ? 1 : 0.98)
 
-                if config.showsTopToolbar {
-                    topToolbar(topPadding: proxy.safeAreaInsets.top)
-                        .padding(.horizontal, 16)
-                        .opacity(isToolbarVisible ? 1 : 0)
-                        .offset(y: isToolbarVisible ? 0 : -12)
-                        .animation(.easeInOut(duration: 0.2), value: isToolbarVisible)
-                }
             }
             .contentShape(Rectangle())
             .simultaneousGesture(
@@ -99,6 +92,26 @@ struct FullscreenMediaViewer: View {
         }
         .ignoresSafeArea()
         .interactiveDismissDisabled(true)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbar(isToolbarVisible ? .visible : .hidden, for: .navigationBar)
+        .toolbar {
+            if config.showsTopToolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        dismissViewer()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .padding(8)
+                            .background(.ultraThinMaterial, in: Circle())
+                    }
+                    .accessibilityLabel("Close fullscreen")
+                }
+            }
+        }
     }
 
     @ViewBuilder
@@ -127,26 +140,6 @@ struct FullscreenMediaViewer: View {
             FullscreenVideoView(url: url, config: config)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-    }
-
-    private func topToolbar(topPadding: CGFloat) -> some View {
-        HStack {
-            Spacer()
-            Button {
-                dismissViewer()
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.primary)
-                    .padding(10)
-                    .background(
-                        Circle()
-                            .fill(.ultraThinMaterial)
-                    )
-            }
-            .accessibilityLabel("Close fullscreen")
-        }
-        .padding(.top, max(12, topPadding + 8))
     }
 
     private func dismissViewer() {
