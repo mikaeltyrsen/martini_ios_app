@@ -60,19 +60,17 @@ struct ContentView: View {
     @ViewBuilder
     private var fullscreenOverlay: some View {
         if let configuration = fullscreenCoordinator?.configuration {
-            FullscreenMediaView(
-                url: configuration.url,
-                isVideo: configuration.isVideo,
-                aspectRatio: configuration.aspectRatio,
-                title: configuration.title,
-                frameNumberLabel: configuration.frameNumberLabel,
-                namespace: configuration.namespace,
-                heroID: configuration.heroID,
-                onDismiss: {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        fullscreenCoordinator?.configuration = nil
+            FullscreenMediaViewer(
+                isPresented: Binding(
+                    get: { fullscreenCoordinator?.configuration != nil },
+                    set: { isPresented in
+                        if !isPresented {
+                            fullscreenCoordinator?.configuration = nil
+                        }
                     }
-                }
+                ),
+                media: configuration.media,
+                config: configuration.config
             )
             .transition(.opacity)
             .zIndex(1)
