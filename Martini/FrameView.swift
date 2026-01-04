@@ -49,8 +49,7 @@ struct FrameView: View {
     @State private var showingAddBoardOptions: Bool = false
     @State private var showingSystemCamera: Bool = false
     @State private var showingUploadPicker: Bool = false
-    @State private var capturedPhoto: UIImage?
-    @State private var showingCapturedReview: Bool = false
+    @State private var capturedPhoto: CapturedPhoto?
     @State private var showingBoardRenameAlert: Bool = false
     @State private var boardRenameText: String = ""
     @State private var boardRenameTarget: FrameAssetItem?
@@ -145,27 +144,23 @@ struct FrameView: View {
                 }
                 Button("Cancel", role: .cancel) {}
             }
-            .fullScreenCover(isPresented: $showingCapturedReview) {
-                if let currentPhoto = capturedPhoto {
-                    ScoutCameraReviewView(
-                        image: currentPhoto,
-                        onImport: {
-                            await importCapturedPhoto(currentPhoto)
-                        },
-                        onPrepareShare: {
-                            currentPhoto
-                        },
-                        onRetake: {
-                            showingCapturedReview = false
-                            capturedPhoto = nil
-                            showingSystemCamera = true
-                        },
-                        onCancel: {
-                            showingCapturedReview = false
-                            capturedPhoto = nil
-                        }
-                    )
-                }
+            .fullScreenCover(item: $capturedPhoto) { currentPhoto in
+                ScoutCameraReviewView(
+                    image: currentPhoto.image,
+                    onImport: {
+                        await importCapturedPhoto(currentPhoto.image)
+                    },
+                    onPrepareShare: {
+                        currentPhoto.image
+                    },
+                    onRetake: {
+                        capturedPhoto = nil
+                        showingSystemCamera = true
+                    },
+                    onCancel: {
+                        capturedPhoto = nil
+                    }
+                )
             }
             .navigationDestination(item: $scriptNavigationTarget) { target in
                 ScriptView(targetDialogId: target.dialogId)
@@ -173,13 +168,12 @@ struct FrameView: View {
             .sheet(item: $metadataSheetItem) { item in
                 BoardMetadataSheet(item: item)
             }
-            .sheet(isPresented: $showingSystemCamera) {
+            .fullScreenCover(isPresented: $showingSystemCamera) {
                 MediaPicker(
                     sourceType: .camera,
                     allowsVideo: false,
                     onImagePicked: { image in
-                        capturedPhoto = image
-                        showingCapturedReview = true
+                        capturedPhoto = CapturedPhoto(image: image)
                     },
                     onVideoPicked: { _ in }
                 )
@@ -1448,7 +1442,6 @@ struct FrameView: View {
     private func importCapturedPhoto(_ image: UIImage) async {
         let didUpload = await uploadBoardImage(image)
         if didUpload {
-            showingCapturedReview = false
             capturedPhoto = nil
         }
     }
@@ -2864,7 +2857,7 @@ private struct MediaPicker: UIViewControllerRepresentable {
     @Environment(\.dismiss) private var dismiss
 
     func makeUIViewController(context: Context) -> UIImagePickerController {
-        let picker = UIImagePickerController()
+        let picker = RotatingImagePickerController()
         picker.delegate = context.coordinator
         if UIImagePickerController.isSourceTypeAvailable(sourceType) {
             picker.sourceType = sourceType
@@ -2877,6 +2870,7 @@ private struct MediaPicker: UIViewControllerRepresentable {
             picker.mediaTypes = [UTType.image.identifier]
         }
         picker.allowsEditing = false
+        picker.modalPresentationStyle = .fullScreen
         return picker
     }
 
@@ -2914,6 +2908,21 @@ private struct MediaPicker: UIViewControllerRepresentable {
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
             parent.dismiss()
         }
+    }
+}
+
+private struct CapturedPhoto: Identifiable {
+    let id = UUID()
+    let image: UIImage
+}
+
+private final class RotatingImagePickerController: UIImagePickerController {
+    override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+        .all
+    }
+
+    override var shouldAutorotate: Bool {
+        true
     }
 }
 //
