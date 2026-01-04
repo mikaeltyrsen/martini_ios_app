@@ -33,26 +33,28 @@ struct Uiplayground: View {
         audioEnabled: true
     )
 
-    private let thumbnails: [MediaThumbnail] = [
-        MediaThumbnail(
-            title: "Storyboard",
-            media: .imageURL(URL(string: "https://picsum.photos/id/1025/1200/800")!),
-            config: .default,
-            thumbnailURL: URL(string: "https://picsum.photos/id/1025/400/300")!
-        ),
-        MediaThumbnail(
-            title: "Silent Loop Preview",
-            media: .videoURL(URL(string: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4")!),
-            config: silentLoopConfig,
-            thumbnailURL: URL(string: "https://picsum.photos/id/1040/400/300")!
-        ),
-        MediaThumbnail(
-            title: "Playback + Sound",
-            media: .videoURL(URL(string: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4")!),
-            config: normalPlaybackConfig,
-            thumbnailURL: URL(string: "https://picsum.photos/id/1062/400/300")!
-        )
-    ]
+    private var thumbnails: [MediaThumbnail] {
+        [
+            MediaThumbnail(
+                title: "Storyboard",
+                media: .imageURL(URL(string: "https://picsum.photos/id/1025/1200/800")!),
+                config: .default,
+                thumbnailURL: URL(string: "https://picsum.photos/id/1025/400/300")!
+            ),
+            MediaThumbnail(
+                title: "Silent Loop Preview",
+                media: .videoURL(URL(string: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4")!),
+                config: silentLoopConfig,
+                thumbnailURL: URL(string: "https://picsum.photos/id/1040/400/300")!
+            ),
+            MediaThumbnail(
+                title: "Playback + Sound",
+                media: .videoURL(URL(string: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4")!),
+                config: normalPlaybackConfig,
+                thumbnailURL: URL(string: "https://picsum.photos/id/1062/400/300")!
+            )
+        ]
+    }
 
     @State private var selectedMedia: MediaThumbnail?
     @State private var isViewerPresented = false
