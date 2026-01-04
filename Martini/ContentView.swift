@@ -64,17 +64,17 @@ struct ContentView: View {
 
     private var fullscreenConfigurationBinding: Binding<FullscreenMediaConfiguration?> {
         Binding(
-            get: { fullscreenCoordinator?.configuration },
-            set: { fullscreenCoordinator?.configuration = $0 }
+            get: { fullscreenCoordinator.configuration },
+            set: { fullscreenCoordinator.configuration = $0 }
         )
     }
 
     private var fullscreenPresentationBinding: Binding<Bool> {
         Binding(
-            get: { fullscreenCoordinator?.configuration != nil },
+            get: { fullscreenCoordinator.configuration != nil },
             set: { isPresented in
                 if !isPresented {
-                    fullscreenCoordinator?.configuration = nil
+                    fullscreenCoordinator.configuration = nil
                 }
             }
         )
