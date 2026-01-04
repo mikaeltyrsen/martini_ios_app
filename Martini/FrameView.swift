@@ -61,7 +61,6 @@ struct FrameView: View {
     @State private var showingBoardDeleteAlert: Bool = false
     @State private var boardDeleteTarget: FrameAssetItem?
     @State private var boardActionError: String?
-    @State private var selectedBoardPreview: BoardPreviewItem?
     @State private var metadataSheetItem: BoardMetadataItem?
     @State private var boardPhotoAccessAlert: PhotoLibraryHelper.PhotoAccessAlert?
     @State private var descriptionAttributedText: AttributedString?
@@ -317,13 +316,13 @@ struct FrameView: View {
                     clips: $clips,
                     isLoading: $isLoadingClips,
                     errorMessage: $clipsError,
-                    onReload: { await loadClips(force: true) }
+                    onReload: { await loadClips(force: true) },
+                    onMediaPreview: { clip in
+                        openClipPreview(clip)
+                    }
                 )
                 .presentationDetents([.medium, .large], selection: $filesSheetDetent)
                 .presentationDragIndicator(.visible)
-            }
-            .sheet(item: $selectedBoardPreview) { previewItem in
-                BoardPreviewView(url: previewItem.url, isVideo: previewItem.isVideo)
             }
             .onChange(of: showingFiles) { isShowing in
                 if isShowing {
@@ -1796,7 +1795,20 @@ private extension FrameView {
 
     private func openBoardPreview(_ asset: FrameAssetItem) {
         guard let url = asset.url else { return }
-        selectedBoardPreview = BoardPreviewItem(url: url, isVideo: asset.isVideo)
+        let media: MediaItem = asset.isVideo ? .videoURL(url) : .imageURL(url)
+        fullscreenCoordinator?.configuration = FullscreenMediaConfiguration(
+            media: media,
+            config: .default
+        )
+    }
+
+    private func openClipPreview(_ clip: Clip) {
+        guard let url = clip.fileURL else { return }
+        let media: MediaItem = clip.isVideo ? .videoURL(url) : .imageURL(url)
+        fullscreenCoordinator?.configuration = FullscreenMediaConfiguration(
+            media: media,
+            config: .default
+        )
     }
 
     @ViewBuilder
@@ -1899,6 +1911,7 @@ private struct FilesSheet: View {
     @Binding var isLoading: Bool
     @Binding var errorMessage: String?
     let onReload: () async -> Void
+    let onMediaPreview: (Clip) -> Void
     @State private var selectedClip: Clip?
     var body: some View {
         NavigationStack {
@@ -1924,7 +1937,7 @@ private struct FilesSheet: View {
             if !clips.isEmpty {
                 List(clips) { clip in
                     ClipRow(clip: clip) {
-                        selectedClip = clip
+                        handlePreview(clip)
                     }
                 }
                 .listStyle(.plain)
@@ -1950,6 +1963,14 @@ private struct FilesSheet: View {
         .sheet(item: $selectedClip) { clip in
             ClipPreviewView(clip: clip)
                 .presentationDragIndicator(.visible)
+        }
+    }
+
+    private func handlePreview(_ clip: Clip) {
+        if clip.isVideo || clip.isImage {
+            onMediaPreview(clip)
+        } else {
+            selectedClip = clip
         }
     }
 }
@@ -2252,48 +2273,6 @@ private struct QuickLookPreview: UIViewControllerRepresentable {
             url as QLPreviewItem
         }
     }
-}
-
-private struct BoardPreviewView: View {
-    let url: URL
-    let isVideo: Bool
-
-    var body: some View {
-        ZStack {
-            Color("PreviewBackground")
-                .ignoresSafeArea()
-            VStack {
-                if isVideo {
-                    CachedVideoPlayerView(url: url)
-                } else {
-                    CachedAsyncImage(url: url) { phase in
-                        switch phase {
-                        case let .success(image):
-                            image
-                                .resizable()
-                                .scaledToFit()
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        case .empty:
-                            ProgressView()
-                        case .failure:
-                            Text("Unable to load image.")
-                                .foregroundStyle(.secondary)
-                        @unknown default:
-                            Text("Unable to load image.")
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-            }
-            .padding()
-        }
-    }
-}
-
-private struct BoardPreviewItem: Identifiable {
-    let id = UUID()
-    let url: URL
-    let isVideo: Bool
 }
 
 private struct BoardMetadataItem: Identifiable {
