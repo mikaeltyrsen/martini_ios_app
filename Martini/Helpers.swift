@@ -10,7 +10,7 @@ import UIKit
 public func formattedScheduleDate(from dateString: String, includeYear: Bool = true) -> String {
     let inputFormatter = DateFormatter()
     inputFormatter.locale = Locale(identifier: "en_US_POSIX")
-    inputFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+    inputFormatter.timeZone = .current
     inputFormatter.dateFormat = "yyyy-MM-dd"
 
     guard let date = inputFormatter.date(from: dateString) else {
@@ -31,7 +31,7 @@ public func formattedScheduleDate(from dateString: String, includeYear: Bool = t
 public func formattedTimeFrom24Hour(_ timeString: String) -> String {
     let inputFormatter = DateFormatter()
     inputFormatter.locale = Locale(identifier: "en_US_POSIX")
-    inputFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+    inputFormatter.timeZone = .current
     inputFormatter.dateFormat = "HH:mm"
 
     guard let date = inputFormatter.date(from: timeString) else {
@@ -40,7 +40,7 @@ public func formattedTimeFrom24Hour(_ timeString: String) -> String {
 
     let outputFormatter = DateFormatter()
     outputFormatter.locale = .current
-    outputFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+    outputFormatter.timeZone = .current
     outputFormatter.dateFormat = "h:mm a"
 
     return outputFormatter.string(from: date)
