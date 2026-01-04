@@ -25,6 +25,7 @@ struct ScoutCameraLayout: View {
     @AppStorage("scoutCameraShowBoardGuide") private var showBoardGuide = false
     @AppStorage("scoutCameraDebugMode") private var debugMode = true
     @State private var previewLayer: AVCaptureVideoPreviewLayer?
+    @State private var capturedPhoto: CapturedPhoto?
     private let previewMargin: CGFloat = 40
     private let referenceOverlayPadding = EdgeInsets(top: 0, leading: 0, bottom: 120, trailing: 72)
 
@@ -126,6 +127,9 @@ struct ScoutCameraLayout: View {
         .onChange(of: viewModel.matchResult?.cameraRole) { newRole in
             handleCameraRoleChange(newRole)
         }
+        .onChange(of: viewModel.capturedImage) { newValue in
+            capturedPhoto = newValue.map { CapturedPhoto(image: $0) }
+        }
         .onChange(of: previewOrientation) { newValue in
             viewModel.captureManager.updateVideoOrientation(newValue)
             if viewModel.captureManager.isRunning {
@@ -163,24 +167,21 @@ struct ScoutCameraLayout: View {
         } message: {
             Text(viewModel.errorMessage ?? "Unknown error")
         }
-        .fullScreenCover(isPresented: Binding(
-            get: { viewModel.capturedImage != nil },
-            set: { _ in }
-        )) {
-            if let image = viewModel.capturedImage {
-                ScoutCameraReviewView(
-                    image: image,
-                    onImport: { await handleImport() },
-                    onPrepareShare: { await viewModel.prepareShareImage() },
-                    onRetake: {
-                        viewModel.capturedImage = nil
-                    },
-                    onCancel: {
-                        viewModel.capturedImage = nil
-                        dismiss()
-                    }
-                )
-            }
+        .fullScreenCover(item: $capturedPhoto) { photo in
+            ScoutCameraReviewView(
+                image: photo.image,
+                onImport: { await handleImport() },
+                onPrepareShare: { await viewModel.prepareShareImage() },
+                onRetake: {
+                    capturedPhoto = nil
+                    viewModel.capturedImage = nil
+                },
+                onCancel: {
+                    capturedPhoto = nil
+                    viewModel.capturedImage = nil
+                    dismiss()
+                }
+            )
         }
         .sheet(isPresented: $isCameraSelectionPresented) {
             CameraSelectionSheet(viewModel: viewModel)
@@ -1002,6 +1003,11 @@ struct ScoutCameraLayout: View {
     private struct ReferenceImageSelection {
         let url: URL
         let crop: String?
+    }
+
+    private struct CapturedPhoto: Identifiable {
+        let id = UUID()
+        let image: UIImage
     }
 
     private struct ReferenceImagePreview: View {
