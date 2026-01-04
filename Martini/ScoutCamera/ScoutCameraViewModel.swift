@@ -253,7 +253,9 @@ final class ScoutCameraViewModel: ObservableObject {
     }
 
     func uploadCapturedImage(token: String?) async -> Bool {
-        guard let capturedImage, let data = capturedImage.jpegData(compressionQuality: 0.9) else { return false }
+        guard let capturedImage else { return false }
+        let resizedImage = resizedImageForUpload(from: capturedImage, maxPixelDimension: 2000)
+        guard let data = resizedImage.jpegData(compressionQuality: 0.85) else { return false }
         guard let creativeId else {
             errorMessage = "Missing creative ID for upload."
             return false
@@ -358,6 +360,22 @@ final class ScoutCameraViewModel: ObservableObject {
 
     private func compactMetadata(_ values: [String: Any?]) -> [String: Any] {
         values.compactMapValues { $0 }
+    }
+
+    private func resizedImageForUpload(from image: UIImage, maxPixelDimension: CGFloat) -> UIImage {
+        let pixelWidth = image.size.width * image.scale
+        let pixelHeight = image.size.height * image.scale
+        let maxDimension = max(pixelWidth, pixelHeight)
+        guard maxDimension > maxPixelDimension else { return image }
+        let scaleRatio = maxPixelDimension / maxDimension
+        let targetSize = CGSize(width: pixelWidth * scaleRatio, height: pixelHeight * scaleRatio)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        format.opaque = false
+        let renderer = UIGraphicsImageRenderer(size: targetSize, format: format)
+        return renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: targetSize))
+        }
     }
 
     private func currentFocalLength() -> Double {
