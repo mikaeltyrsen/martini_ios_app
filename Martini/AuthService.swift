@@ -1037,6 +1037,29 @@ class AuthService: ObservableObject {
         return nil
     }
 
+    func cachedScheduleAsync(for scheduleId: String) async -> ProjectSchedule? {
+        if let inMemory = fetchedSchedules.first(where: { $0.id == scheduleId }) {
+            return inMemory
+        }
+
+        if let cachedSchedule, cachedSchedule.id == scheduleId {
+            return cachedSchedule
+        }
+
+        let stored = await Task.detached(priority: .utility) { [scheduleCache] in
+            scheduleCache.cachedSchedule(withId: scheduleId)
+        }.value
+
+        guard let stored else { return nil }
+
+        await MainActor.run {
+            cachedSchedule = stored
+            fetchedSchedules.append(stored)
+        }
+
+        return stored
+    }
+
     func clearCachedSchedules(keeping scheduleId: String?) {
         if cachedSchedule?.id != scheduleId {
             cachedSchedule = nil
