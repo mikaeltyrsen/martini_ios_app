@@ -10,7 +10,8 @@ struct ScheduleView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @State private var frameAssetOrders: [String: [FrameAssetKind]] = [:]
-    @State private var showsTimelineProgress = true
+    @State private var showsTimelineProgress = false
+    private let timelineFeatureEnabled = false
     @State private var now = Date()
     @State private var framesById: [String: Frame] = [:]
     @State private var statusUpdateError: String?
@@ -28,7 +29,7 @@ struct ScheduleView: View {
     private static let scheduleDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.timeZone = .current
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter
     }()
@@ -42,7 +43,7 @@ struct ScheduleView: View {
     }
 
     private var timelineIsVisible: Bool {
-        showsTimelineProgress && isScheduleDateRelevant
+        timelineFeatureEnabled && showsTimelineProgress && isScheduleDateRelevant
     }
 
     private var isLandscape: Bool {
@@ -163,16 +164,17 @@ struct ScheduleView: View {
                     .accessibilityLabel("Select schedule")
                 }
 
-                if isScheduleDateRelevant {
-                    ToolbarItem(placement: .bottomBar) {
-                        Button {
-                            showsTimelineProgress.toggle()
-                        } label: {
-                            Image(systemName: showsTimelineProgress ? "clock.fill" : "clock")
-                        }
-                        .accessibilityLabel(showsTimelineProgress ? "Hide schedule progress" : "Show schedule progress")
-                    }
-                }
+                // Timeline toggle disabled for now.
+//                if isScheduleDateRelevant {
+//                    ToolbarItem(placement: .bottomBar) {
+//                        Button {
+//                            showsTimelineProgress.toggle()
+//                        } label: {
+//                            Image(systemName: showsTimelineProgress ? "clock.fill" : "clock")
+//                        }
+//                        .accessibilityLabel(showsTimelineProgress ? "Hide schedule progress" : "Show schedule progress")
+//                    }
+//                }
             }
             .onAppear {
                 updateScheduleContentWidth(for: proxy.size.width)
@@ -1018,7 +1020,8 @@ struct ScheduleView: View {
     }
 
     private var displayScheduleGroups: [ScheduleGroup] {
-        guard shouldShowOverrunRow,
+        guard timelineFeatureEnabled,
+              shouldShowOverrunRow,
               let lastGroup = scheduleGroups.last else {
             return scheduleGroups
         }
