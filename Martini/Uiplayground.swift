@@ -21,16 +21,16 @@ struct Uiplayground: View {
         showsPlayButtonOverlay: false,
         autoplay: true,
         loop: true,
-        audioEnabled: false,
-        startMuted: true
+        startMuted: true,
+        audioEnabled: false
     )
 
     private let normalPlaybackConfig = MediaViewerConfig(
         showsVideoControls: true,
         autoplay: false,
         loop: false,
-        audioEnabled: true,
-        startMuted: false
+        startMuted: false,
+        audioEnabled: true
     )
 
     private let thumbnails: [MediaThumbnail] = [
