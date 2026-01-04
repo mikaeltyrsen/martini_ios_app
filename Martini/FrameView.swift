@@ -2898,6 +2898,15 @@ private final class RotatingImagePickerController: UIImagePickerController {
     override var shouldAutorotate: Bool {
         true
     }
+
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        coordinator.animate(alongsideTransition: { _ in
+            self.view.frame = CGRect(origin: .zero, size: size)
+            self.view.setNeedsLayout()
+            self.view.layoutIfNeeded()
+        })
+    }
 }
 //
 //#Preview {
