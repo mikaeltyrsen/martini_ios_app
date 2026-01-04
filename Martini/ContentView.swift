@@ -12,7 +12,7 @@ struct ContentView: View {
     @EnvironmentObject var authService: AuthService
     @EnvironmentObject var realtimeService: RealtimeService
     @EnvironmentObject var connectionMonitor: ConnectionMonitor
-    @Environment(\.fullscreenMediaCoordinator) private var fullscreenCoordinator
+    @EnvironmentObject var fullscreenCoordinator: FullscreenMediaCoordinator
     
     var body: some View {
         Group {
