@@ -195,7 +195,7 @@ struct FrameLayout: View {
             RoundedRectangle(cornerRadius: cornerRadius)
                 .fill(Color.gray.opacity(0.2))
                 .overlay(alignment: .center) {
-                    heroMedia(contentMode: .fill, isFullscreen: false)
+                    heroMedia(isFullscreen: false)
                 }
                 .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
 
@@ -621,12 +621,10 @@ struct FrameLayout: View {
     private var mediaHeroID: String { "frame-media-\(frame.id)" }
 
     @ViewBuilder
-    private func heroMedia(contentMode: ContentMode, isFullscreen: Bool) -> some View {
+    private func heroMedia(isFullscreen: Bool) -> some View {
         HeroMediaView(
             url: resolvedMediaURL,
             isVideo: shouldPlayAsVideo,
-            aspectRatio: aspectRatio,
-            contentMode: contentMode,
             cornerRadius: isFullscreen ? 0 : cornerRadius,
             namespace: fullscreenNamespace,
             heroID: mediaHeroID,
@@ -645,8 +643,6 @@ struct FrameLayout: View {
     struct HeroMediaView: View {
         let url: URL?
         let isVideo: Bool
-        let aspectRatio: CGFloat
-        let contentMode: ContentMode
         let cornerRadius: CGFloat
         let namespace: Namespace.ID
         let heroID: String
@@ -693,11 +689,11 @@ struct FrameLayout: View {
                             }
                         }
                     }
-                } else {
-                    placeholder
-                }
+            } else {
+                placeholder
             }
-            .aspectRatio(aspectRatio, contentMode: contentMode)
+        }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
             .modifier(MatchedGeometryModifier(useMatchedGeometry: useMatchedGeometry, heroID: heroID, namespace: namespace, isSource: isSource))
         }
