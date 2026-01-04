@@ -150,12 +150,7 @@ struct FullscreenMediaViewer: View {
     }
 
     private var shouldShowCloseButton: Bool {
-        switch media {
-        case .videoURL:
-            return !config.showsVideoControls
-        case .imageURL:
-            return true
-        }
+        true
     }
 }
 
