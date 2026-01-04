@@ -35,10 +35,15 @@ struct ContentView: View {
         .onOpenURL { url in
             handleIncomingURL(url)
         }
-        .overlay(alignment: .center) {
-            fullscreenOverlay
+        .fullScreenCover(item: fullscreenConfigurationBinding) { configuration in
+            NavigationStack {
+                FullscreenMediaViewer(
+                    isPresented: fullscreenPresentationBinding,
+                    media: configuration.media,
+                    config: configuration.config
+                )
+            }
         }
-        .animation(.easeInOut(duration: 0.25), value: fullscreenCoordinator?.configuration?.id)
     }
 
     private func synchronizeRealtimeConnection() {
@@ -57,24 +62,22 @@ struct ContentView: View {
         authService.handleDeepLink(url)
     }
 
-    @ViewBuilder
-    private var fullscreenOverlay: some View {
-        if let configuration = fullscreenCoordinator?.configuration {
-            FullscreenMediaViewer(
-                isPresented: Binding(
-                    get: { fullscreenCoordinator?.configuration != nil },
-                    set: { isPresented in
-                        if !isPresented {
-                            fullscreenCoordinator?.configuration = nil
-                        }
-                    }
-                ),
-                media: configuration.media,
-                config: configuration.config
-            )
-            .transition(.opacity)
-            .zIndex(1)
-        }
+    private var fullscreenConfigurationBinding: Binding<FullscreenMediaConfiguration?> {
+        Binding(
+            get: { fullscreenCoordinator?.configuration },
+            set: { fullscreenCoordinator?.configuration = $0 }
+        )
+    }
+
+    private var fullscreenPresentationBinding: Binding<Bool> {
+        Binding(
+            get: { fullscreenCoordinator?.configuration != nil },
+            set: { isPresented in
+                if !isPresented {
+                    fullscreenCoordinator?.configuration = nil
+                }
+            }
+        )
     }
 }
 
