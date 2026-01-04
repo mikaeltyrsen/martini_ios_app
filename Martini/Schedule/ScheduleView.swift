@@ -14,6 +14,7 @@ struct ScheduleView: View {
     private let timelineFeatureEnabled = false
     @State private var now = Date()
     @State private var framesById: [String: Frame] = [:]
+    @State private var selectedFrame: Frame?
     @State private var statusUpdateError: String?
     @State private var updatingFrameIds: Set<String> = []
     @State private var scheduleContentWidth: CGFloat = 0
@@ -187,6 +188,22 @@ struct ScheduleView: View {
             }
             .onReceive(authService.$frames) { frames in
                 framesById = Dictionary(uniqueKeysWithValues: frames.map { ($0.id, $0) })
+            }
+            .fullScreenCover(item: $selectedFrame) { frame in
+                NavigationStack {
+                    let scheduleFrames = framesInSchedule()
+                    FramePagerView(
+                        frames: scheduleFrames,
+                        initialFrameID: frame.id,
+                        assetOrderBinding: { assetOrderBinding(for: $0) },
+                        onClose: {
+                            selectedFrame = nil
+                        },
+                        onStatusSelected: { updatedFrame, status in
+                            updateFrameStatus(updatedFrame, to: status)
+                        }
+                    )
+                }
             }
             .alert("Unable to update frame status", isPresented: Binding(
                 get: { statusUpdateError != nil },
@@ -393,7 +410,6 @@ struct ScheduleView: View {
     @ViewBuilder
     private func storyboardGrid(for block: ScheduleBlock) -> some View {
         let frames = frames(for: block)
-        let scheduleFrames = framesInSchedule()
 
         if frames.isEmpty {
             Text("No matching storyboards found.")
@@ -402,14 +418,8 @@ struct ScheduleView: View {
         } else {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 12)], spacing: 12) {
                 ForEach(frames) { frame in
-                    NavigationLink {
-                        FramePagerView(
-                            frames: scheduleFrames,
-                            initialFrameID: frame.id,
-                            assetOrderBinding: { assetOrderBinding(for: $0) },
-                            onClose: {},
-                            showsCloseButton: false
-                        )
+                    Button {
+                        selectedFrame = frame
                     } label: {
                         FrameLayout(
                             frame: frame,
