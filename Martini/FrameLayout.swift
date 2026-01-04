@@ -666,9 +666,19 @@ struct FrameLayout: View {
                         CachedAsyncImage(url: url) { phase in
                             switch phase {
                             case let .success(image):
+                                let baseImage = image.resizable()
                                 let renderedImage: AnyView = imageShouldFill
-                                    ? AnyView(image.resizable().scaledToFill())
-                                    : AnyView(image.resizable().scaledToFit())
+                                    ? AnyView(
+                                        baseImage
+                                            .scaledToFill()
+                                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                                            .clipped()
+                                    )
+                                    : AnyView(
+                                        baseImage
+                                            .scaledToFit()
+                                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                                    )
                                 renderedImage
                             case .empty:
                                 AnyView(
