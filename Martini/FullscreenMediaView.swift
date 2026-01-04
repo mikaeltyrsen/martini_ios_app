@@ -93,12 +93,11 @@ struct FullscreenMediaViewer: View {
         .ignoresSafeArea()
         .interactiveDismissDisabled(true)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar(isToolbarVisible ? .visible : .hidden, for: .navigationBar)
         .toolbar {
             if config.showsTopToolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .topBarLeading) {
                     Button {
                         dismissViewer()
                     } label: {
@@ -106,7 +105,6 @@ struct FullscreenMediaViewer: View {
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundStyle(.primary)
                             .padding(8)
-                            .background(.ultraThinMaterial, in: Circle())
                     }
                     .accessibilityLabel("Close fullscreen")
                 }
