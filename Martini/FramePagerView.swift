@@ -46,6 +46,7 @@ struct FramePagerView: View {
                         hasPreviousFrame: index > 0,
                         hasNextFrame: index + 1 < frames.count,
                         showsTopToolbar: false,
+                        activeFrameID: selection,
                         onNavigate: { direction in
                             switch direction {
                             case .previous:

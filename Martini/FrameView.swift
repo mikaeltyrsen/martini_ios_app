@@ -18,6 +18,7 @@ struct FrameView: View {
     let hasPreviousFrame: Bool
     let hasNextFrame: Bool
     let showsTopToolbar: Bool
+    let activeFrameID: Frame.ID?
     let onNavigate: (FrameNavigationDirection) -> Void
     let onStatusSelected: (Frame, FrameStatus) -> Void
     @State private var selectedStatus: FrameStatus
@@ -90,6 +91,7 @@ struct FrameView: View {
         hasPreviousFrame: Bool = false,
         hasNextFrame: Bool = false,
         showsTopToolbar: Bool = true,
+        activeFrameID: Frame.ID? = nil,
         onNavigate: @escaping (FrameNavigationDirection) -> Void = { _ in },
         onStatusSelected: @escaping (Frame, FrameStatus) -> Void = { _, _ in }
     ) {
@@ -101,6 +103,7 @@ struct FrameView: View {
         self.hasPreviousFrame = hasPreviousFrame
         self.hasNextFrame = hasNextFrame
         self.showsTopToolbar = showsTopToolbar
+        self.activeFrameID = activeFrameID
         self.onNavigate = onNavigate
         self.onStatusSelected = onStatusSelected
         _selectedStatus = State(initialValue: frame.statusEnum)
@@ -414,8 +417,15 @@ struct FrameView: View {
                 if showsTopToolbar {
                     topToolbar
                 }
-                bottomToolbar
+                if shouldShowBottomToolbar {
+                    bottomToolbar
+                }
             }
+    }
+
+    private var shouldShowBottomToolbar: Bool {
+        guard let activeFrameID else { return true }
+        return activeFrameID == frame.id
     }
 
     private var statusUpdateAlertBinding: Binding<Bool> {
