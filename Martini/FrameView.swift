@@ -1345,6 +1345,12 @@ struct FrameView: View {
         } catch is CancellationError {
             return
         } catch {
+            if Task.isCancelled {
+                return
+            }
+            if let urlError = error as? URLError, urlError.code == .cancelled {
+                return
+            }
             clipsError = error.localizedDescription
         }
     }
