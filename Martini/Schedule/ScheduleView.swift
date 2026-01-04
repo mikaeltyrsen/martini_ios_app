@@ -393,6 +393,7 @@ struct ScheduleView: View {
     @ViewBuilder
     private func storyboardGrid(for block: ScheduleBlock) -> some View {
         let frames = frames(for: block)
+        let scheduleFrames = framesInSchedule()
 
         if frames.isEmpty {
             Text("No matching storyboards found.")
@@ -403,7 +404,7 @@ struct ScheduleView: View {
                 ForEach(frames) { frame in
                     NavigationLink {
                         FramePagerView(
-                            frames: frames,
+                            frames: scheduleFrames,
                             initialFrameID: frame.id,
                             assetOrderBinding: { assetOrderBinding(for: $0) },
                             onClose: {},
@@ -443,6 +444,23 @@ struct ScheduleView: View {
         guard let storyboardIds = block.storyboards else { return [] }
 
         return storyboardIds.compactMap { framesById[$0] }
+    }
+
+    private func framesInSchedule() -> [Frame] {
+        var seen = Set<String>()
+        var ordered: [Frame] = []
+
+        for block in flattenedBlocks {
+            guard let storyboardIds = block.storyboards else { continue }
+            for storyboardId in storyboardIds where !seen.contains(storyboardId) {
+                if let frame = framesById[storyboardId] {
+                    ordered.append(frame)
+                    seen.insert(storyboardId)
+                }
+            }
+        }
+
+        return ordered
     }
 
     private func statusMenu(for frame: Frame) -> some View {
