@@ -189,10 +189,10 @@ struct FrameView: View {
                     sourceType: .photoLibrary,
                     allowsVideo: true,
                     onImagePicked: { image in
-                        Task { await uploadBoardImage(image) }
+                        Task { await uploadBoardImage(image, boardLabel: "Upload") }
                     },
                     onVideoPicked: { url in
-                        Task { await uploadBoardVideo(url) }
+                        Task { await uploadBoardVideo(url, boardLabel: "Upload") }
                     }
                 )
             }
@@ -246,8 +246,14 @@ struct FrameView: View {
 
                 let newStack: [FrameAssetItem] = FrameView.orderedAssets(for: updated, order: assetOrder)
                 if assetStack != newStack {
+                    let previousStack = assetStack
                     assetStack = newStack
-                    if visibleAssetID == nil { visibleAssetID = newStack.first?.id }
+                    let previousIDs = Set(previousStack.map(\.id))
+                    if let newBoard = newStack.first(where: { $0.kind == .board && !previousIDs.contains($0.id) }) {
+                        visibleAssetID = newBoard.id
+                    } else if visibleAssetID == nil {
+                        visibleAssetID = newStack.first?.id
+                    }
                 }
             }
             .onReceive(authService.$frameUpdateEvent) { event in
@@ -1480,13 +1486,13 @@ struct FrameView: View {
     }
 
     private func importCapturedPhoto(_ image: UIImage) async {
-        let didUpload = await uploadBoardImage(image)
+        let didUpload = await uploadBoardImage(image, boardLabel: "Photoboard")
         if didUpload {
             capturedPhoto = nil
         }
     }
 
-    private func uploadBoardImage(_ image: UIImage) async -> Bool {
+    private func uploadBoardImage(_ image: UIImage, boardLabel: String) async -> Bool {
         guard let projectId = authService.projectId else {
             boardActionError = "Missing project ID for upload."
             return false
@@ -1502,7 +1508,7 @@ struct FrameView: View {
                 data: data,
                 filename: "photoboard.jpg",
                 mimeType: "image/jpeg",
-                boardLabel: "Photoboard",
+                boardLabel: boardLabel,
                 shootId: projectId,
                 creativeId: frame.creativeId,
                 frameId: frame.id,
@@ -1516,7 +1522,7 @@ struct FrameView: View {
         }
     }
 
-    private func uploadBoardVideo(_ sourceURL: URL) async -> Bool {
+    private func uploadBoardVideo(_ sourceURL: URL, boardLabel: String) async -> Bool {
         guard let projectId = authService.projectId else {
             boardActionError = "Missing project ID for upload."
             return false
@@ -1530,7 +1536,7 @@ struct FrameView: View {
                 data: data,
                 filename: "board.mp4",
                 mimeType: "video/mp4",
-                boardLabel: "Photoboard",
+                boardLabel: boardLabel,
                 shootId: projectId,
                 creativeId: frame.creativeId,
                 frameId: frame.id,
