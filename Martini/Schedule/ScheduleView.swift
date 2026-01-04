@@ -257,12 +257,14 @@ struct ScheduleView: View {
     }
 
     private var scheduleContent: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        let timelineContext = makeTimelineContext()
+
+        return VStack(alignment: .leading, spacing: 16) {
             ForEach(displayScheduleGroups) { group in
                 VStack(alignment: .leading, spacing: 10) {
                     VStack(alignment: .leading, spacing: 12) {
                         ForEach(group.blocks) { block in
-                            blockRow(for: block)
+                            blockRow(for: block, context: timelineContext)
                         }
                     }
                     .padding(.horizontal, 6)
@@ -278,7 +280,8 @@ struct ScheduleView: View {
                     timelineProgressLine(
                         with: anchors,
                         proxy: proxy,
-                        blocks: displayScheduleGroups.flatMap(\.blocks)
+                        blocks: displayScheduleGroups.flatMap(\.blocks),
+                        context: timelineContext
                     )
                 }
             }
@@ -286,17 +289,17 @@ struct ScheduleView: View {
     }
 
     @ViewBuilder
-    private func blockRow(for block: ScheduleBlock) -> some View {
+    private func blockRow(for block: ScheduleBlock, context: TimelineContext) -> some View {
         HStack(alignment: .center, spacing: 12) {
             if timelineIsVisible {
-                timelineIndicator(for: block)
+                timelineIndicator(for: block, context: context)
                     .anchorPreference(key: TimelineRowAnchorKey.self, value: .bounds) { anchor in
                         [block.id: anchor]
                     }
             }
             blockView(for: block)
                 .compositingGroup()
-                .opacity(shouldFadeBlock(block) ? 0.5 : 1)
+                .opacity(shouldFadeBlock(block, context: context) ? 0.5 : 1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -464,18 +467,18 @@ struct ScheduleView: View {
         return rowFrames.allSatisfy(isFrameComplete)
     }
 
-    private func shouldFadeBlock(_ block: ScheduleBlock) -> Bool {
+    private func shouldFadeBlock(_ block: ScheduleBlock, context: TimelineContext) -> Bool {
         if isStoryboardRowComplete(for: block) {
             return true
         }
         guard block.type == .title,
-              let blockDate = startDate(for: block) else {
+              let blockDate = context.blockStartDates[block.id] else {
             return false
         }
-        if currentScheduleTime >= blockDate {
+        if context.currentScheduleTime >= blockDate {
             return true
         }
-        if let hereTime, hereTime >= blockDate {
+        if let hereTime = context.hereTime, hereTime >= blockDate {
             return true
         }
         return false
@@ -587,6 +590,18 @@ struct ScheduleView: View {
         case onTime
     }
 
+    private struct TimelineContext {
+        let currentScheduleTime: Date
+        let hereBlockId: String?
+        let hereTime: Date?
+        let currentTimeBlockId: String?
+        let progressState: TimelineProgressState?
+        let progressRange: ClosedRange<Date>?
+        let warningBlockIds: Set<String>
+        let hasPriorWarningByBlockId: [String: Bool]
+        let blockStartDates: [String: Date]
+    }
+
     private struct TimelineRowAnchorKey: PreferenceKey {
         static var defaultValue: [String: Anchor<CGRect>] = [:]
 
@@ -649,30 +664,77 @@ struct ScheduleView: View {
         }
     }
 
-    private var hereBlock: ScheduleBlock? {
-        flattenedBlocks.first { block in
+    private func makeTimelineContext() -> TimelineContext {
+        let currentTime = currentScheduleTime
+        let blockStartDates = Dictionary(uniqueKeysWithValues: blocksWithStartTimes.map { ($0.block.id, $0.date) })
+        let sortedBlocks = blocksWithStartTimes.sorted { $0.date < $1.date }
+        let currentTimeBlockId = sortedBlocks.last(where: { $0.date <= currentTime })?.block.id
+        let hereBlockId = flattenedBlocks.first { block in
             frames(for: block).contains { $0.statusEnum == .here }
+        }?.id
+        let hereTime = hereBlockId.flatMap { blockStartDates[$0] }
+        let progressState: TimelineProgressState? = {
+            guard let hereTime else { return nil }
+            if hereTime > currentTime {
+                return .ahead
+            }
+            if hereTime < currentTime {
+                return .behind
+            }
+            return .onTime
+        }()
+        let progressRange: ClosedRange<Date>? = {
+            guard let hereTime else { return nil }
+            if hereTime <= currentTime {
+                return hereTime...currentTime
+            }
+            return currentTime...hereTime
+        }()
+        var warningBlockIds = Set<String>()
+        var hasPriorWarningByBlockId: [String: Bool] = [:]
+        var hasPriorWarning = false
+        for block in flattenedBlocks {
+            hasPriorWarningByBlockId[block.id] = hasPriorWarning
+            if shouldShowWarning(
+                for: block,
+                blockStartDates: blockStartDates,
+                hereTime: hereTime,
+                currentTime: currentTime
+            ) {
+                warningBlockIds.insert(block.id)
+                hasPriorWarning = true
+            }
         }
+
+        return TimelineContext(
+            currentScheduleTime: currentTime,
+            hereBlockId: hereBlockId,
+            hereTime: hereTime,
+            currentTimeBlockId: currentTimeBlockId,
+            progressState: progressState,
+            progressRange: progressRange,
+            warningBlockIds: warningBlockIds,
+            hasPriorWarningByBlockId: hasPriorWarningByBlockId,
+            blockStartDates: blockStartDates
+        )
     }
 
-    private var hereTime: Date? {
-        guard let block = hereBlock else { return nil }
-        return startDate(for: block)
+    private func isBlockOverdue(
+        _ block: ScheduleBlock,
+        blockStartDates: [String: Date],
+        currentTime: Date
+    ) -> Bool {
+        guard let blockDate = blockStartDates[block.id],
+              blockDate < currentTime else {
+            return false
+        }
+        let blockFrames = frames(for: block)
+        guard !blockFrames.isEmpty else { return false }
+        return !blockFrames.allSatisfy(isFrameComplete)
     }
 
-    private var progressState: TimelineProgressState? {
-        guard let hereTime else { return nil }
-        if hereTime > currentScheduleTime {
-            return .ahead
-        }
-        if hereTime < currentScheduleTime {
-            return .behind
-        }
-        return .onTime
-    }
-
-    private var progressColor: Color? {
-        switch progressState {
+    private func progressColor(for context: TimelineContext) -> Color? {
+        switch context.progressState {
         case .ahead, .onTime:
             return .green
         case .behind:
@@ -680,33 +742,6 @@ struct ScheduleView: View {
         case .none:
             return nil
         }
-    }
-
-    private var progressRange: ClosedRange<Date>? {
-        guard let hereTime else { return nil }
-        let now = currentScheduleTime
-        if hereTime <= now {
-            return hereTime...now
-        }
-        return now...hereTime
-    }
-
-    private var currentTimeBlockId: String? {
-        let sortedBlocks = blocksWithStartTimes.sorted { $0.date < $1.date }
-        if let active = sortedBlocks.last(where: { $0.date <= currentScheduleTime }) {
-            return active.block.id
-        }
-        return nil
-    }
-
-    private func isBlockOverdue(_ block: ScheduleBlock) -> Bool {
-        guard let blockDate = startDate(for: block),
-              blockDate < currentScheduleTime else {
-            return false
-        }
-        let blockFrames = frames(for: block)
-        guard !blockFrames.isEmpty else { return false }
-        return !blockFrames.allSatisfy(isFrameComplete)
     }
 
     private func isFrameComplete(_ frame: Frame) -> Bool {
@@ -733,9 +768,14 @@ struct ScheduleView: View {
         }
     }
 
-    private func shouldShowWarning(for block: ScheduleBlock) -> Bool {
-        guard isBlockOverdue(block),
-              let blockDate = startDate(for: block) else {
+    private func shouldShowWarning(
+        for block: ScheduleBlock,
+        blockStartDates: [String: Date],
+        hereTime: Date?,
+        currentTime: Date
+    ) -> Bool {
+        guard isBlockOverdue(block, blockStartDates: blockStartDates, currentTime: currentTime),
+              let blockDate = blockStartDates[block.id] else {
             return false
         }
 
@@ -743,46 +783,35 @@ struct ScheduleView: View {
             return blockDate <= hereTime
         }
 
-        return blockDate <= currentScheduleTime
+        return blockDate <= currentTime
     }
 
-    private func hasPriorWarnings(before block: ScheduleBlock) -> Bool {
-        guard let blockDate = startDate(for: block) else { return false }
-        return flattenedBlocks.contains { otherBlock in
-            guard otherBlock.id != block.id,
-                  let otherDate = startDate(for: otherBlock),
-                  otherDate < blockDate else {
-                return false
-            }
-            return shouldShowWarning(for: otherBlock)
-        }
-    }
-
-    private func isInProgressRange(_ block: ScheduleBlock) -> Bool {
-        guard let range = progressRange,
-              let blockDate = startDate(for: block) else {
+    private func isInProgressRange(_ block: ScheduleBlock, context: TimelineContext) -> Bool {
+        guard let range = context.progressRange,
+              let blockDate = context.blockStartDates[block.id] else {
             return false
         }
         return range.contains(blockDate)
     }
 
-    private func timelineIndicator(for block: ScheduleBlock) -> some View {
-        let isHere = hereBlock?.id == block.id
-        let isCurrent = currentTimeBlockId == block.id
-        let isWarning = shouldShowWarning(for: block)
+    private func timelineIndicator(for block: ScheduleBlock, context: TimelineContext) -> some View {
+        let isHere = context.hereBlockId == block.id
+        let isCurrent = context.currentTimeBlockId == block.id
+        let isWarning = context.warningBlockIds.contains(block.id)
         let marker: TimelineMarker? = {
             if isHere { return .here }
             if isCurrent { return .currentTime }
             if isWarning { return .warning }
             return nil
         }()
-        let hasPriorWarnings = hasPriorWarnings(before: block)
+        let hasPriorWarnings = context.hasPriorWarningByBlockId[block.id] ?? false
+        let progressColor = progressColor(for: context)
         let markerColor: Color = {
             if isHere && isCurrent && !hasPriorWarnings {
                 return .green
             }
             if isHere {
-                switch progressState {
+                switch context.progressState {
                 case .behind:
                     return .red
                 case .onTime where hasPriorWarnings:
@@ -792,7 +821,7 @@ struct ScheduleView: View {
                 }
             }
             if isCurrent && !hasPriorWarnings {
-                if progressState == .ahead {
+                if context.progressState == .ahead {
                     return .green
                 }
                 return .martiniDefaultColor
@@ -822,7 +851,8 @@ struct ScheduleView: View {
     private func timelineProgressLine(
         with anchors: [String: Anchor<CGRect>],
         proxy: GeometryProxy,
-        blocks: [ScheduleBlock]
+        blocks: [ScheduleBlock],
+        context: TimelineContext
     ) -> some View {
         let positions = blocks.compactMap { block -> (block: ScheduleBlock, midX: CGFloat, midY: CGFloat)? in
             guard let anchor = anchors[block.id] else { return nil }
@@ -838,7 +868,7 @@ struct ScheduleView: View {
             basePath
                 .stroke(Color(.systemBackground), style: StrokeStyle(lineWidth: timelineLineWidth, lineCap: .round))
 
-            if let warningRange = warningFillRange(for: positions),
+            if let warningRange = warningFillRange(for: positions, context: context),
                let adjustedRange = adjustedFillRange(
                    start: warningRange.start,
                    end: warningRange.end,
@@ -852,8 +882,8 @@ struct ScheduleView: View {
                     .stroke(.orange, style: StrokeStyle(lineWidth: timelineLineWidth, lineCap: .round))
             }
 
-            if let progressColor,
-               let fillRange = progressFillRange(for: positions),
+            if let progressColor = progressColor(for: context),
+               let fillRange = progressFillRange(for: positions, context: context),
                let adjustedRange = adjustedFillRange(
                    start: fillRange.start,
                    end: fillRange.end,
@@ -870,17 +900,18 @@ struct ScheduleView: View {
     }
 
     private func progressFillRange(
-        for positions: [(block: ScheduleBlock, midX: CGFloat, midY: CGFloat)]
+        for positions: [(block: ScheduleBlock, midX: CGFloat, midY: CGFloat)],
+        context: TimelineContext
     ) -> (start: CGFloat, end: CGFloat)? {
         let positionsById = Dictionary(uniqueKeysWithValues: positions.map { ($0.block.id, $0.midY) })
-        let start = hereBlock.flatMap { positionsById[$0.id] }
-        let end = currentTimeBlockId.flatMap { positionsById[$0] }
+        let start = context.hereBlockId.flatMap { positionsById[$0] }
+        let end = context.currentTimeBlockId.flatMap { positionsById[$0] }
 
         if let start, let end {
             return (start, end)
         }
 
-        let inRange = positions.filter { isInProgressRange($0.block) }.map(\.midY)
+        let inRange = positions.filter { isInProgressRange($0.block, context: context) }.map(\.midY)
         guard let rangeStart = inRange.min(), let rangeEnd = inRange.max() else {
             return nil
         }
@@ -888,9 +919,10 @@ struct ScheduleView: View {
     }
 
     private func warningFillRange(
-        for positions: [(block: ScheduleBlock, midX: CGFloat, midY: CGFloat)]
+        for positions: [(block: ScheduleBlock, midX: CGFloat, midY: CGFloat)],
+        context: TimelineContext
     ) -> (start: CGFloat, end: CGFloat)? {
-        let warningPositions = positions.filter { shouldShowWarning(for: $0.block) }.map(\.midY)
+        let warningPositions = positions.filter { context.warningBlockIds.contains($0.block.id) }.map(\.midY)
         guard warningPositions.count > 1,
               let start = warningPositions.min(),
               let end = warningPositions.max() else {

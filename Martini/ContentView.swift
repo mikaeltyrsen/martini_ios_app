@@ -653,18 +653,23 @@ struct MainView: View {
 
     @MainActor
     private func loadSchedule(_ schedule: ProjectSchedule, replaceExistingRoutes: Bool = false) async {
-        let cached = authService.cachedSchedule(for: schedule.id) ?? schedule
-        showSchedule(cached, replaceExistingRoutes: replaceExistingRoutes)
+        showSchedule(schedule, replaceExistingRoutes: replaceExistingRoutes)
 
         isLoadingSchedule = true
         defer { isLoadingSchedule = false }
+
+        if let cached = await authService.cachedScheduleAsync(for: schedule.id) {
+            showSchedule(cached, replaceExistingRoutes: true)
+        }
 
         do {
             let latest = try await authService.fetchSchedule(for: schedule.id)
             showSchedule(latest, replaceExistingRoutes: true)
         } catch {
             dataError = error.localizedDescription
-            showSchedule(cached, replaceExistingRoutes: true)
+            if let cached = authService.cachedSchedule(for: schedule.id) {
+                showSchedule(cached, replaceExistingRoutes: true)
+            }
         }
     }
 
