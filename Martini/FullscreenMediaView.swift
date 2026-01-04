@@ -96,7 +96,7 @@ struct FullscreenMediaViewer: View {
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar(isToolbarVisible ? .visible : .hidden, for: .navigationBar)
         .toolbar {
-            if config.showsTopToolbar {
+            if config.showsTopToolbar, shouldShowCloseButton {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
                         dismissViewer()
@@ -146,6 +146,15 @@ struct FullscreenMediaViewer: View {
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration) {
             isPresented = false
+        }
+    }
+
+    private var shouldShowCloseButton: Bool {
+        switch media {
+        case .videoURL:
+            return !config.showsVideoControls
+        case .imageURL:
+            return true
         }
     }
 }
