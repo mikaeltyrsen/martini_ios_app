@@ -63,6 +63,7 @@ struct FrameView: View {
     @State private var showingBoardDeleteAlert: Bool = false
     @State private var boardDeleteTarget: FrameAssetItem?
     @State private var boardActionError: String?
+    @State private var isUploadingBoardAsset: Bool = false
     @State private var metadataSheetItem: BoardMetadataItem?
     @State private var boardPhotoAccessAlert: PhotoLibraryHelper.PhotoAccessAlert?
     @State private var descriptionAttributedText: AttributedString?
@@ -421,6 +422,29 @@ struct FrameView: View {
                     bottomToolbar
                 }
             }
+            .overlay {
+                if isUploadingBoardAsset {
+                    ZStack {
+                        Color.black.opacity(0.001)
+                            .ignoresSafeArea()
+                        uploadingBoardOverlay
+                    }
+                }
+            }
+    }
+
+    private var uploadingBoardOverlay: some View {
+        VStack(spacing: 12) {
+            ProgressView()
+                .progressViewStyle(.circular)
+                .tint(.white)
+            Text("Uploading")
+                .font(.headline)
+                .foregroundColor(.white)
+        }
+        .frame(width: 180, height: 180)
+        .background(Color.black.opacity(0.8))
+        .cornerRadius(20)
     }
 
     private var shouldShowBottomToolbar: Bool {
@@ -1471,6 +1495,8 @@ struct FrameView: View {
             boardActionError = "Failed to compress image."
             return false
         }
+        isUploadingBoardAsset = true
+        defer { isUploadingBoardAsset = false }
         do {
             try await uploadService.uploadBoardAsset(
                 data: data,
@@ -1495,6 +1521,8 @@ struct FrameView: View {
             boardActionError = "Missing project ID for upload."
             return false
         }
+        isUploadingBoardAsset = true
+        defer { isUploadingBoardAsset = false }
         do {
             let compressedURL = try await compressVideoForUpload(sourceURL: sourceURL)
             let data = try Data(contentsOf: compressedURL)
