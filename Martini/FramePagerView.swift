@@ -45,6 +45,7 @@ struct FramePagerView: View {
                         showsCloseButton: showsCloseButton,
                         hasPreviousFrame: index > 0,
                         hasNextFrame: index + 1 < frames.count,
+                        showsTopToolbar: false,
                         onNavigate: { direction in
                             switch direction {
                             case .previous:
@@ -65,9 +66,64 @@ struct FramePagerView: View {
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
+            .toolbar {
+                topToolbar
+            }
             .onChange(of: selection) { newValue in
                 onSelectionChanged(newValue)
             }
+        }
+    }
+
+    private var selectedIndex: Int? {
+        frames.firstIndex { $0.id == selection }
+    }
+
+    private func navigate(_ direction: FrameNavigationDirection) {
+        guard let index = selectedIndex else { return }
+        switch direction {
+        case .previous:
+            guard index > 0 else { return }
+            withAnimation(.easeInOut(duration: 0.25)) {
+                selection = frames[index - 1].id
+            }
+        case .next:
+            guard index + 1 < frames.count else { return }
+            withAnimation(.easeInOut(duration: 0.25)) {
+                selection = frames[index + 1].id
+            }
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var topToolbar: some ToolbarContent {
+        if showsCloseButton {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    onClose()
+                } label: {
+                    Image(systemName: "xmark")
+                }
+                .accessibilityLabel("Close")
+            }
+        }
+
+        ToolbarItemGroup(placement: .topBarTrailing) {
+            Button {
+                navigate(.previous)
+            } label: {
+                Image(systemName: "arrow.left")
+            }
+            .accessibilityLabel("Previous frame")
+            .disabled((selectedIndex ?? 0) == 0)
+
+            Button {
+                navigate(.next)
+            } label: {
+                Image(systemName: "arrow.right")
+            }
+            .accessibilityLabel("Next frame")
+            .disabled((selectedIndex ?? frames.count - 1) >= frames.count - 1)
         }
     }
 }

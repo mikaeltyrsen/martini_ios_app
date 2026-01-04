@@ -17,6 +17,7 @@ struct FrameView: View {
     let showsCloseButton: Bool
     let hasPreviousFrame: Bool
     let hasNextFrame: Bool
+    let showsTopToolbar: Bool
     let onNavigate: (FrameNavigationDirection) -> Void
     let onStatusSelected: (Frame, FrameStatus) -> Void
     @State private var selectedStatus: FrameStatus
@@ -88,6 +89,7 @@ struct FrameView: View {
         showsCloseButton: Bool = true,
         hasPreviousFrame: Bool = false,
         hasNextFrame: Bool = false,
+        showsTopToolbar: Bool = true,
         onNavigate: @escaping (FrameNavigationDirection) -> Void = { _ in },
         onStatusSelected: @escaping (Frame, FrameStatus) -> Void = { _, _ in }
     ) {
@@ -98,6 +100,7 @@ struct FrameView: View {
         self.showsCloseButton = showsCloseButton
         self.hasPreviousFrame = hasPreviousFrame
         self.hasNextFrame = hasNextFrame
+        self.showsTopToolbar = showsTopToolbar
         self.onNavigate = onNavigate
         self.onStatusSelected = onStatusSelected
         _selectedStatus = State(initialValue: frame.statusEnum)
@@ -408,7 +411,9 @@ struct FrameView: View {
             .navigationTitle(frameTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                topToolbar
+                if showsTopToolbar {
+                    topToolbar
+                }
                 bottomToolbar
             }
     }
