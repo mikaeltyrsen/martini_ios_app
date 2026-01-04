@@ -1125,15 +1125,15 @@ struct FrameView: View {
                         }
 
                     if !allowsExpansion || isDescriptionExpanded {
-                        Button {
-                            scriptNavigationTarget = ScriptNavigationTarget(dialogId: frame.id)
-                        } label: {
-                            Label("Go to Script", systemImage: "text.book.closed")
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        .buttonStyle(.bordered)
-                        .tint(.martiniDefaultColor)
-                        .padding(.horizontal, 20)
+//                        Button {
+//                            scriptNavigationTarget = ScriptNavigationTarget(dialogId: frame.id)
+//                        } label: {
+//                            Label("Go to Script", systemImage: "text.book.closed")
+//                                .frame(maxWidth: .infinity, alignment: .leading)
+//                        }
+//                        .buttonStyle(.bordered)
+//                        .tint(.martiniDefaultColor)
+//                        .padding(.horizontal, 20)
 
                         tagsSection
                             .padding(.horizontal, 20)
