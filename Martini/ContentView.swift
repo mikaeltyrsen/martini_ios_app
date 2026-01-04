@@ -444,34 +444,39 @@ struct MainView: View {
                 } message: {
                     Text(dataError ?? "Unknown error")
                 }
-                .fullScreenCover(item: $selectedFrame) { frame in
+                .fullScreenCover(
+                    isPresented: Binding(
+                        get: { selectedFrameId != nil },
+                        set: { isPresented in
+                            if !isPresented {
+                                selectedFrameId = nil
+                                selectedFrame = nil
+                            }
+                        }
+                    )
+                ) {
                     NavigationStack {
-                        let currentFrame = selectedFrame ?? frame
-                        let navigation = navigationContext(for: currentFrame)
-                        FrameView(
-                            frame: currentFrame,
-                            assetOrder: assetOrderBinding(for: currentFrame),
-                            onClose: { selectedFrame = nil },
-                            hasPreviousFrame: navigation.previous != nil,
-                            hasNextFrame: navigation.next != nil,
-                            onNavigate: { direction in
-                                let current = selectedFrame ?? frame
-                                let navigation = navigationContext(for: current)
-                                switch direction {
-                                case .previous:
-                                    if let previous = navigation.previous {
-                                        selectedFrame = previous
-                                    }
-                                case .next:
-                                    if let next = navigation.next {
-                                        selectedFrame = next
+                        let pagerFrames = displayedFramesInCurrentMode
+                        if let initialFrameId = selectedFrameId ?? selectedFrame?.id ?? pagerFrames.first?.id {
+                            FramePagerView(
+                                frames: pagerFrames,
+                                initialFrameID: initialFrameId,
+                                assetOrderBinding: { assetOrderBinding(for: $0) },
+                                onClose: {
+                                    selectedFrameId = nil
+                                    selectedFrame = nil
+                                },
+                                onStatusSelected: { updatedFrame, _ in
+                                    applyLocalStatusUpdate(updatedFrame)
+                                },
+                                onSelectionChanged: { frameId in
+                                    selectedFrameId = frameId
+                                    if let match = pagerFrames.first(where: { $0.id == frameId }) {
+                                        selectedFrame = match
                                     }
                                 }
-                            },
-                            onStatusSelected: { updatedFrame, _ in
-                                applyLocalStatusUpdate(updatedFrame)
-                            }
-                        )
+                            )
+                        }
                     }
                     .interactiveDismissDisabled(false)
                 }

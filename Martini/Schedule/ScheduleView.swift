@@ -402,10 +402,11 @@ struct ScheduleView: View {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 12)], spacing: 12) {
                 ForEach(frames) { frame in
                     NavigationLink {
-                        FrameView(
-                            frame: frame,
-                            assetOrder: assetOrderBinding(for: frame),
-                            onClose: { dismiss() },
+                        FramePagerView(
+                            frames: frames,
+                            initialFrameID: frame.id,
+                            assetOrderBinding: { assetOrderBinding(for: $0) },
+                            onClose: {},
                             showsCloseButton: false
                         )
                     } label: {
