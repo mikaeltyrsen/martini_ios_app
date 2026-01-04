@@ -146,14 +146,14 @@ struct FrameView: View {
                 Button("Cancel", role: .cancel) {}
             }
             .fullScreenCover(isPresented: $showingCapturedReview) {
-                if let capturedPhoto {
+                if let currentPhoto = capturedPhoto {
                     ScoutCameraReviewView(
-                        image: capturedPhoto,
+                        image: currentPhoto,
                         onImport: {
-                            await importCapturedPhoto(capturedPhoto)
+                            await importCapturedPhoto(currentPhoto)
                         },
                         onPrepareShare: {
-                            capturedPhoto
+                            currentPhoto
                         },
                         onRetake: {
                             showingCapturedReview = false
