@@ -8,33 +8,126 @@
 import SwiftUI
 
 struct Uiplayground: View {
+    private struct MediaThumbnail: Identifiable {
+        let id = UUID()
+        let title: String
+        let media: MediaItem
+        let config: MediaViewerConfig
+        let thumbnailURL: URL
+    }
+
+    private let silentLoopConfig = MediaViewerConfig(
+        showsVideoControls: false,
+        showsPlayButtonOverlay: false,
+        autoplay: true,
+        loop: true,
+        audioEnabled: false,
+        startMuted: true
+    )
+
+    private let normalPlaybackConfig = MediaViewerConfig(
+        showsVideoControls: true,
+        autoplay: false,
+        loop: false,
+        audioEnabled: true,
+        startMuted: false
+    )
+
+    private let thumbnails: [MediaThumbnail] = [
+        MediaThumbnail(
+            title: "Storyboard",
+            media: .imageURL(URL(string: "https://picsum.photos/id/1025/1200/800")!),
+            config: .default,
+            thumbnailURL: URL(string: "https://picsum.photos/id/1025/400/300")!
+        ),
+        MediaThumbnail(
+            title: "Silent Loop Preview",
+            media: .videoURL(URL(string: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4")!),
+            config: silentLoopConfig,
+            thumbnailURL: URL(string: "https://picsum.photos/id/1040/400/300")!
+        ),
+        MediaThumbnail(
+            title: "Playback + Sound",
+            media: .videoURL(URL(string: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4")!),
+            config: normalPlaybackConfig,
+            thumbnailURL: URL(string: "https://picsum.photos/id/1062/400/300")!
+        )
+    ]
+
+    @State private var selectedMedia: MediaThumbnail?
+    @State private var isViewerPresented = false
+
     var body: some View {
         NavigationStack {
-            Text("Hello, World!")
-                .navigationTitle("UI Playground")
-        }
-        
-        .toolbar {
-            // Bottom 3-button toolbar (left-aligned, intrinsic width)
-            ToolbarItem(placement: .bottomBar) {
-                Button {
-                    // TODO: Home action
-                } label: {
-                    Label("Home", systemImage: "house")
+            ScrollView {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 16)], spacing: 16) {
+                    ForEach(thumbnails) { item in
+                        Button {
+                            selectedMedia = item
+                            isViewerPresented = true
+                        } label: {
+                            VStack(spacing: 8) {
+                                AsyncImage(url: item.thumbnailURL) { phase in
+                                    switch phase {
+                                    case .empty:
+                                        ProgressView()
+                                            .frame(maxWidth: .infinity, maxHeight: 100)
+                                    case .success(let image):
+                                        image
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(height: 100)
+                                            .clipped()
+                                            .overlay(alignment: .bottomTrailing) {
+                                                if item.media.isVideo {
+                                                    Image(systemName: "play.fill")
+                                                        .font(.system(size: 12, weight: .bold))
+                                                        .foregroundStyle(.white)
+                                                        .padding(6)
+                                                        .background(Circle().fill(.black.opacity(0.6)))
+                                                        .padding(6)
+                                                }
+                                            }
+                                    case .failure:
+                                        Color.secondary.opacity(0.2)
+                                            .frame(height: 100)
+                                            .overlay(
+                                                Image(systemName: "photo")
+                                                    .foregroundStyle(.secondary)
+                                            )
+                                    @unknown default:
+                                        EmptyView()
+                                    }
+                                }
+                                Text(item.title)
+                                    .font(.footnote)
+                                    .foregroundStyle(.primary)
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(16)
+            }
+            .navigationTitle("UI Playground")
+            .overlay {
+                if let selectedMedia {
+                    FullscreenMediaViewer(
+                        isPresented: $isViewerPresented,
+                        media: selectedMedia.media,
+                        config: selectedMedia.config
+                    )
+                    .onDisappear {
+                        if !isViewerPresented {
+                            self.selectedMedia = nil
+                        }
+                    }
                 }
             }
-            ToolbarItem(placement: .bottomBar) {
-                Button {
-                    // TODO: Search action
-                } label: {
-                    Label("Search", systemImage: "magnifyingglass")
-                }
-            }
-            ToolbarItem(placement: .bottomBar) {
-                Button {
-                    // TODO: Profile action
-                } label: {
-                    Label("Profile", systemImage: "person.crop.circle")
+            .onChange(of: isViewerPresented) { isPresented in
+                if !isPresented {
+                    selectedMedia = nil
                 }
             }
         }

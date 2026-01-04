@@ -2,13 +2,8 @@ import SwiftUI
 
 struct FullscreenMediaConfiguration: Identifiable {
     let id = UUID()
-    let url: URL?
-    let isVideo: Bool
-    let aspectRatio: CGFloat
-    let title: String?
-    let frameNumberLabel: String?
-    let namespace: Namespace.ID
-    let heroID: String
+    let media: MediaItem
+    let config: MediaViewerConfig
 }
 
 final class FullscreenMediaCoordinator: ObservableObject {

@@ -330,14 +330,13 @@ struct FrameLayout: View {
         if enablesFullScreen, resolvedMediaURL != nil {
             animatedCard
                 .onTapGesture {
+                    guard let resolvedMediaURL else { return }
+                    let media: MediaItem = shouldPlayAsVideo
+                        ? .videoURL(resolvedMediaURL)
+                        : .imageURL(resolvedMediaURL)
                     fullscreenCoordinator?.configuration = FullscreenMediaConfiguration(
-                        url: resolvedMediaURL,
-                        isVideo: shouldPlayAsVideo,
-                        aspectRatio: aspectRatio,
-                        title: resolvedTitle,
-                        frameNumberLabel: frameNumberLabel,
-                        namespace: fullscreenNamespace,
-                        heroID: mediaHeroID
+                        media: media,
+                        config: .default
                     )
                 }
         } else {
