@@ -1778,7 +1778,7 @@ enum FrameAssetKind: String, CaseIterable, Hashable {
     var displayName: String {
         switch self {
         case .board:
-            return "Board"
+            return "Empty Board"
         case .preview:
             return "Preview"
         }
