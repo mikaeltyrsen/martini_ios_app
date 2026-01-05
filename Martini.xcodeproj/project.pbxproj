@@ -19,6 +19,7 @@
 		0730F4072F0B6800000B598F /* FrameDescriptionEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4052F0B6800000B598F /* FrameDescriptionEditorSheet.swift */; };
 		0730F4082F0B6800000B598F /* RichTextEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4062F0B6800000B598F /* RichTextEditor.swift */; };
 		0730F40A2F0B8736000B598F /* RichTextDisplayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4092F0B8736000B598F /* RichTextDisplayView.swift */; };
+		0730F40C2F0C6401000B598F /* FrameLineOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F40B2F0C6401000B598F /* FrameLineOverlayView.swift */; };
 		075456022EC9A6E200C45739 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075455FE2EC9A6E100C45739 /* AuthService.swift */; };
 		075456032EC9A6E200C45739 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075455FF2EC9A6E100C45739 /* LoginView.swift */; };
 		075456042EC9A6E200C45739 /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075456002EC9A6E100C45739 /* QRScannerView.swift */; };
@@ -82,6 +83,7 @@
 		0730F4052F0B6800000B598F /* FrameDescriptionEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameDescriptionEditorSheet.swift; sourceTree = "<group>"; };
 		0730F4062F0B6800000B598F /* RichTextEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichTextEditor.swift; sourceTree = "<group>"; };
 		0730F4092F0B8736000B598F /* RichTextDisplayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichTextDisplayView.swift; sourceTree = "<group>"; };
+		0730F40B2F0C6401000B598F /* FrameLineOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameLineOverlayView.swift; sourceTree = "<group>"; };
 		075455FE2EC9A6E100C45739 /* AuthService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		075455FF2EC9A6E100C45739 /* LoginView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		075456002EC9A6E100C45739 /* QRScannerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
@@ -180,6 +182,7 @@
 		07A6A6842EC9A272002C8EB9 /* Martini */ = {
 			isa = PBXGroup;
 			children = (
+				0730F40B2F0C6401000B598F /* FrameLineOverlayView.swift */,
 				0730F4092F0B8736000B598F /* RichTextDisplayView.swift */,
 				0730F4052F0B6800000B598F /* FrameDescriptionEditorSheet.swift */,
 				0730F4062F0B6800000B598F /* RichTextEditor.swift */,
@@ -341,6 +344,7 @@
 				07A6A6862EC9A272002C8EB9 /* MartiniApp.swift in Sources */,
 				075456042EC9A6E200C45739 /* QRScannerView.swift in Sources */,
 				13952330E1EF424FADD563ED /* ScoutCamera/ScoutCameraLayout.swift in Sources */,
+				0730F40C2F0C6401000B598F /* FrameLineOverlayView.swift in Sources */,
 				1F7A3C5E4D1B4C3A8B9C0D1E /* ScoutCamera/ScoutCameraSettingsView.swift in Sources */,
 				A1B2C3D4E5F60718293A4B5C /* ScoutCamera/ScoutCameraPhotoLayout.swift in Sources */,
 				B9D8650A752F4255AD620B9B /* ScoutCamera/ScoutCameraReviewView.swift in Sources */,
