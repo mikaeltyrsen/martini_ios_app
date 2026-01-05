@@ -7,6 +7,7 @@ final class RichTextEditorState: ObservableObject {
     weak var textView: UITextView?
     let baseFont: UIFont
     let baseColor: UIColor
+    var toolbarButtons: ToolbarButtons?
 
     init(text: NSAttributedString, baseFont: UIFont = .preferredFont(forTextStyle: .body), baseColor: UIColor = .label) {
         self.attributedText = text
@@ -177,6 +178,7 @@ final class RichTextEditorState: ObservableObject {
         textView.attributedText = text
         textView.selectedRange = selectedRange
         attributedText = text
+        updateToolbarState(from: textView)
     }
 
     private func fontByTogglingTrait(font: UIFont, trait: UIFontDescriptor.SymbolicTraits) -> UIFont {
@@ -204,6 +206,88 @@ final class RichTextEditorState: ObservableObject {
             .paragraphStyle: paragraphStyle
         ]
     }
+
+    func updateToolbarState(from textView: UITextView) {
+        guard let toolbarButtons else { return }
+
+        let attributes = currentAttributes(from: textView)
+        let font = (attributes[.font] as? UIFont) ?? baseFont
+        let traits = font.fontDescriptor.symbolicTraits
+        let isBold = traits.contains(.traitBold)
+        let isItalic = traits.contains(.traitItalic)
+        let isUnderline = (attributes[.underlineStyle] as? Int ?? 0) != 0
+        let isStrikethrough = (attributes[.strikethroughStyle] as? Int ?? 0) != 0
+
+        let paragraphStyle = (attributes[.paragraphStyle] as? NSParagraphStyle)
+        let alignment = paragraphStyle?.alignment ?? .natural
+        let isCustomAlignment = alignment != .natural && alignment != .left
+        let isQuote = (paragraphStyle?.firstLineHeadIndent ?? 0) > 0 || (paragraphStyle?.headIndent ?? 0) > 0
+
+        let foregroundColor = (attributes[.foregroundColor] as? UIColor) ?? baseColor
+        let isCustomColor = !colorsEqual(foregroundColor, baseColor, traitCollection: textView.traitCollection)
+
+        updateToolbarButton(toolbarButtons.bold, isActive: isBold)
+        updateToolbarButton(toolbarButtons.italic, isActive: isItalic)
+        updateToolbarButton(toolbarButtons.underline, isActive: isUnderline)
+        updateToolbarButton(toolbarButtons.strikethrough, isActive: isStrikethrough)
+        updateToolbarButton(toolbarButtons.color, isActive: isCustomColor)
+        updateToolbarButton(toolbarButtons.alignment, isActive: isCustomAlignment)
+        updateToolbarButton(toolbarButtons.quote, isActive: isQuote)
+    }
+
+    private func updateToolbarButton(_ button: UIButton, isActive: Bool) {
+        let highlightColor = UIColor(named: "MartiniDefaultColor") ?? UIColor.systemBlue
+        button.backgroundColor = isActive ? highlightColor : .clear
+        button.tintColor = isActive ? .white : .label
+    }
+
+    private func currentAttributes(from textView: UITextView) -> [NSAttributedString.Key: Any] {
+        if textView.attributedText.length == 0 {
+            return textView.typingAttributes
+        }
+
+        let selectedRange = textView.selectedRange
+        if selectedRange.length == 0 {
+            let location = min(max(selectedRange.location, 0), textView.attributedText.length - 1)
+            return textView.attributedText.attributes(at: location, effectiveRange: nil)
+        }
+
+        return textView.attributedText.attributes(at: selectedRange.location, effectiveRange: nil)
+    }
+
+    private func colorsEqual(_ lhs: UIColor, _ rhs: UIColor, traitCollection: UITraitCollection) -> Bool {
+        let lhsResolved = lhs.resolvedColor(with: traitCollection)
+        let rhsResolved = rhs.resolvedColor(with: traitCollection)
+        var lhsRed: CGFloat = 0
+        var lhsGreen: CGFloat = 0
+        var lhsBlue: CGFloat = 0
+        var lhsAlpha: CGFloat = 0
+        var rhsRed: CGFloat = 0
+        var rhsGreen: CGFloat = 0
+        var rhsBlue: CGFloat = 0
+        var rhsAlpha: CGFloat = 0
+
+        if lhsResolved.getRed(&lhsRed, green: &lhsGreen, blue: &lhsBlue, alpha: &lhsAlpha),
+           rhsResolved.getRed(&rhsRed, green: &rhsGreen, blue: &rhsBlue, alpha: &rhsAlpha) {
+            let epsilon: CGFloat = 0.01
+            return abs(lhsRed - rhsRed) < epsilon
+                && abs(lhsGreen - rhsGreen) < epsilon
+                && abs(lhsBlue - rhsBlue) < epsilon
+                && abs(lhsAlpha - rhsAlpha) < epsilon
+        }
+
+        return lhsResolved.isEqual(rhsResolved)
+    }
+}
+
+struct ToolbarButtons {
+    let bold: UIButton
+    let italic: UIButton
+    let underline: UIButton
+    let strikethrough: UIButton
+    let color: UIButton
+    let alignment: UIButton
+    let quote: UIButton
 }
 
 struct RichTextEditorView: UIViewRepresentable {
@@ -225,6 +309,7 @@ struct RichTextEditorView: UIViewRepresentable {
         ]
         textView.inputAccessoryView = makeAccessoryToolbar()
         state.textView = textView
+        state.updateToolbarState(from: textView)
         return textView
     }
 
@@ -238,70 +323,180 @@ struct RichTextEditorView: UIViewRepresentable {
         }
 
         state.textView = uiView
+        state.updateToolbarState(from: uiView)
     }
 
     func makeCoordinator() -> Coordinator {
         Coordinator(state: state)
     }
 
-    private func makeAccessoryToolbar() -> UIToolbar {
+    private func makeAccessoryToolbar() -> UIView {
         let toolbar = UIToolbar()
+        toolbar.isTranslucent = false
+        let appearance = UIToolbarAppearance()
+        appearance.configureWithDefaultBackground()
+        appearance.backgroundColor = .systemBackground
+        toolbar.standardAppearance = appearance
+        toolbar.scrollEdgeAppearance = appearance
+        toolbar.compactAppearance = appearance
+
+        let boldButton = accessoryButton(systemName: "bold") { [weak state] in
+            state?.toggleBold()
+        }
+        let italicButton = accessoryButton(systemName: "italic") { [weak state] in
+            state?.toggleItalic()
+        }
+        let underlineButton = accessoryButton(systemName: "underline") { [weak state] in
+            state?.toggleUnderline()
+        }
+        let strikethroughButton = accessoryButton(systemName: "strikethrough") { [weak state] in
+            state?.toggleStrikethrough()
+        }
+        let colorButton = accessoryMenuButton(
+            systemName: "paintpalette",
+            menu: makeColorMenu()
+        )
+        let alignmentButton = accessoryMenuButton(
+            systemName: "text.alignleft",
+            menu: makeAlignmentMenu()
+        )
+        let quoteButton = accessoryButton(systemName: "text.quote") { [weak state] in
+            state?.toggleBlockQuote()
+        }
+
+        state.toolbarButtons = ToolbarButtons(
+            bold: boldButton,
+            italic: italicButton,
+            underline: underlineButton,
+            strikethrough: strikethroughButton,
+            color: colorButton,
+            alignment: alignmentButton,
+            quote: quoteButton
+        )
+
         toolbar.items = [
-            accessoryButton(systemName: "bold") { state.toggleBold() },
-            accessoryButton(systemName: "italic") { state.toggleItalic() },
-            accessoryButton(systemName: "underline") { state.toggleUnderline() },
-            accessoryButton(systemName: "strikethrough") { state.toggleStrikethrough() },
-            UIBarButtonItem(
-                image: UIImage(systemName: "paintpalette"),
-                primaryAction: nil,
-                menu: UIMenu(children: [
-                    UIAction(title: "Default") { _ in
-                        state.applyColor(.label)
-                    },
-                    UIAction(title: "Red") { _ in
-                        state.applyColor(.systemRed)
-                    },
-                    UIAction(title: "Orange") { _ in
-                        state.applyColor(.systemOrange)
-                    },
-                    UIAction(title: "Green") { _ in
-                        state.applyColor(.systemGreen)
-                    },
-                    UIAction(title: "Blue") { _ in
-                        state.applyColor(.systemBlue)
-                    }
-                ])
-            ),
-            UIBarButtonItem(
-                image: UIImage(systemName: "text.alignleft"),
-                primaryAction: nil,
-                menu: UIMenu(children: [
-                    UIAction(title: "Left", image: UIImage(systemName: "text.alignleft")) { _ in
-                        state.applyAlignment(.left)
-                    },
-                    UIAction(title: "Center", image: UIImage(systemName: "text.aligncenter")) { _ in
-                        state.applyAlignment(.center)
-                    },
-                    UIAction(title: "Right", image: UIImage(systemName: "text.alignright")) { _ in
-                        state.applyAlignment(.right)
-                    },
-                    UIAction(title: "Justified", image: UIImage(systemName: "text.justify")) { _ in
-                        state.applyAlignment(.justified)
-                    }
-                ])
-            ),
-            accessoryButton(systemName: "text.quote") { state.toggleBlockQuote() },
-            accessoryButton(systemName: "eraser") { state.clearFormatting() }
+            UIBarButtonItem(customView: boldButton),
+            UIBarButtonItem(customView: italicButton),
+            UIBarButtonItem(customView: underlineButton),
+            UIBarButtonItem(customView: strikethroughButton),
+            UIBarButtonItem(customView: colorButton),
+            UIBarButtonItem(customView: alignmentButton),
+            UIBarButtonItem(customView: quoteButton)
         ]
         toolbar.sizeToFit()
-        return toolbar
+        toolbar.backgroundColor = .systemBackground
+
+        let container = UIView()
+        container.backgroundColor = toolbar.backgroundColor
+        let spacer = UIView()
+        spacer.translatesAutoresizingMaskIntoConstraints = false
+        toolbar.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(toolbar)
+        container.addSubview(spacer)
+
+        NSLayoutConstraint.activate([
+            toolbar.topAnchor.constraint(equalTo: container.topAnchor),
+            toolbar.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            toolbar.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            spacer.topAnchor.constraint(equalTo: toolbar.bottomAnchor),
+            spacer.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            spacer.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            spacer.heightAnchor.constraint(equalToConstant: 8),
+            spacer.bottomAnchor.constraint(equalTo: container.bottomAnchor)
+        ])
+
+        return container
     }
 
-    private func accessoryButton(systemName: String, action: @escaping () -> Void) -> UIBarButtonItem {
-        let action = UIAction { _ in
-            action()
-        }
-        return UIBarButtonItem(image: UIImage(systemName: systemName), primaryAction: action)
+    private func accessoryButton(systemName: String, action: @escaping () -> Void) -> UIButton {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: systemName), for: .normal)
+        button.tintColor = .label
+        button.backgroundColor = .clear
+        button.layer.cornerRadius = 8
+        button.contentEdgeInsets = .init(top: 6, left: 6, bottom: 6, right: 6)
+        button.addAction(UIAction { _ in action() }, for: .touchUpInside)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            button.heightAnchor.constraint(equalToConstant: 32),
+            button.widthAnchor.constraint(greaterThanOrEqualToConstant: 32)
+        ])
+        return button
+    }
+
+    private func accessoryMenuButton(systemName: String, menu: UIMenu) -> UIButton {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: systemName), for: .normal)
+        button.tintColor = .label
+        button.backgroundColor = .clear
+        button.layer.cornerRadius = 8
+        button.contentEdgeInsets = .init(top: 6, left: 6, bottom: 6, right: 6)
+        button.showsMenuAsPrimaryAction = true
+        button.menu = menu
+        button.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            button.heightAnchor.constraint(equalToConstant: 32),
+            button.widthAnchor.constraint(greaterThanOrEqualToConstant: 32)
+        ])
+        return button
+    }
+
+    private func makeColorMenu() -> UIMenu {
+        let defaultIcon = UIImage(systemName: "circle.slash")
+        let redIcon = coloredMenuIcon(color: .systemRed)
+        let orangeIcon = coloredMenuIcon(color: .systemOrange)
+        let greenIcon = coloredMenuIcon(color: .systemGreen)
+        let blueIcon = coloredMenuIcon(color: .systemBlue)
+        let pinkColor = UIColor(named: "MartiniPink") ?? .systemPink
+        let purpleColor = UIColor(named: "MartiniPurple") ?? .systemPurple
+        let pinkIcon = coloredMenuIcon(color: pinkColor)
+        let purpleIcon = coloredMenuIcon(color: purpleColor)
+
+        return UIMenu(children: [
+            UIAction(title: "Default", image: defaultIcon) { [weak state] _ in
+                guard let state else { return }
+                state.applyColor(state.baseColor)
+            },
+            UIAction(title: "Red", image: redIcon) { [weak state] _ in
+                state?.applyColor(.systemRed)
+            },
+            UIAction(title: "Orange", image: orangeIcon) { [weak state] _ in
+                state?.applyColor(.systemOrange)
+            },
+            UIAction(title: "Green", image: greenIcon) { [weak state] _ in
+                state?.applyColor(.systemGreen)
+            },
+            UIAction(title: "Blue", image: blueIcon) { [weak state] _ in
+                state?.applyColor(.systemBlue)
+            },
+            UIAction(title: "Purple", image: purpleIcon) { [weak state] _ in
+                state?.applyColor(purpleColor)
+            },
+            UIAction(title: "Pink", image: pinkIcon) { [weak state] _ in
+                state?.applyColor(pinkColor)
+            }
+        ])
+    }
+
+    private func makeAlignmentMenu() -> UIMenu {
+        UIMenu(children: [
+            UIAction(title: "Left", image: UIImage(systemName: "text.alignleft")) { [weak state] _ in
+                state?.applyAlignment(.left)
+            },
+            UIAction(title: "Center", image: UIImage(systemName: "text.aligncenter")) { [weak state] _ in
+                state?.applyAlignment(.center)
+            },
+            UIAction(title: "Right", image: UIImage(systemName: "text.alignright")) { [weak state] _ in
+                state?.applyAlignment(.right)
+            },
+            UIAction(title: "Justified", image: UIImage(systemName: "text.justify")) { [weak state] _ in
+                state?.applyAlignment(.justified)
+            }
+        ])
+    }
+
+    private func coloredMenuIcon(color: UIColor) -> UIImage? {
+        UIImage(systemName: "circle.fill")?.withTintColor(color, renderingMode: .alwaysOriginal)
     }
 
     final class Coordinator: NSObject, UITextViewDelegate {
@@ -313,6 +508,11 @@ struct RichTextEditorView: UIViewRepresentable {
 
         func textViewDidChange(_ textView: UITextView) {
             state.attributedText = textView.attributedText
+            state.updateToolbarState(from: textView)
+        }
+
+        func textViewDidChangeSelection(_ textView: UITextView) {
+            state.updateToolbarState(from: textView)
         }
     }
 }
