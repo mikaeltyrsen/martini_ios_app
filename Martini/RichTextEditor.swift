@@ -367,8 +367,8 @@ struct RichTextEditorView: UIViewRepresentable {
         let toolbar = UIToolbar()
         toolbar.isTranslucent = false
         let appearance = UIToolbarAppearance()
-        appearance.configureWithDefaultBackground()
-        appearance.backgroundColor = .systemBackground
+        appearance.configureWithTransparentBackground()
+        appearance.backgroundColor = .clear
         toolbar.standardAppearance = appearance
         toolbar.scrollEdgeAppearance = appearance
         toolbar.compactAppearance = appearance
@@ -417,12 +417,12 @@ struct RichTextEditorView: UIViewRepresentable {
             UIBarButtonItem(customView: quoteButton)
         ]
         toolbar.sizeToFit()
-        toolbar.backgroundColor = .systemBackground
+        toolbar.backgroundColor = .clear
 
         let spacerHeight: CGFloat = 8
         let containerHeight = toolbar.bounds.height + spacerHeight
         let container = UIView(frame: CGRect(x: 0, y: 0, width: 0, height: containerHeight))
-        container.backgroundColor = toolbar.backgroundColor
+        container.backgroundColor = .clear
         container.autoresizingMask = [.flexibleWidth]
 
         toolbar.frame = CGRect(x: 0, y: 0, width: container.bounds.width, height: toolbar.bounds.height)
@@ -430,7 +430,7 @@ struct RichTextEditorView: UIViewRepresentable {
         container.addSubview(toolbar)
 
         let spacer = UIView(frame: CGRect(x: 0, y: toolbar.bounds.height, width: container.bounds.width, height: spacerHeight))
-        spacer.backgroundColor = toolbar.backgroundColor
+        spacer.backgroundColor = .clear
         spacer.autoresizingMask = [.flexibleWidth]
         container.addSubview(spacer)
 
