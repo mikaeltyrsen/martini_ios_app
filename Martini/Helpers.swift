@@ -79,7 +79,7 @@ public func attributedStringFromHTML(
     body { font-family: -apple-system; font-size: \(fontSize); }
     p { margin: 0 0 1em 0; }
     p:last-child { margin-bottom: 0; }
-    blockquote { margin: 0 0 1em 0; padding-left: 16px; }
+    blockquote { margin: 0 0 1em 0; padding: 0; border: 0; font-weight: 700; }
     blockquote:last-child { margin-bottom: 0; }
     .ql-align-center { text-align: center; }
     .ql-align-left { text-align: left; }
@@ -131,9 +131,43 @@ public func attributedStringFromHTML(
         }
     }
 
+    applyDialogBlockquoteAttributes(to: attributed, sourceHTML: html)
+
     let attributedString = AttributedString(attributed)
     HTMLAttributedStringCache.shared.insert(attributedString, forKey: cacheKey)
     return attributedString
+}
+
+let dialogBlockquoteAttribute = NSAttributedString.Key("MartiniDialogBlockquote")
+
+private func applyDialogBlockquoteAttributes(to attributed: NSMutableAttributedString, sourceHTML: String) {
+    let pattern = "<blockquote[^>]*>(.*?)</blockquote>"
+    guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive, .dotMatchesLineSeparators]) else {
+        return
+    }
+
+    let nsHTML = sourceHTML as NSString
+    let fullRange = NSRange(location: 0, length: nsHTML.length)
+    let matches = regex.matches(in: sourceHTML, options: [], range: fullRange)
+    guard !matches.isEmpty else { return }
+
+    let attributedText = attributed.string as NSString
+    var searchLocation = 0
+
+    for match in matches {
+        let innerRange = match.range(at: 1)
+        guard innerRange.location != NSNotFound else { continue }
+        let innerHTML = nsHTML.substring(with: innerRange)
+        let innerText = scriptTextFromHTML(innerHTML).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !innerText.isEmpty else { continue }
+
+        let searchRange = NSRange(location: searchLocation, length: attributedText.length - searchLocation)
+        let foundRange = attributedText.range(of: innerText, options: [], range: searchRange)
+        guard foundRange.location != NSNotFound else { continue }
+
+        attributed.addAttribute(dialogBlockquoteAttribute, value: true, range: foundRange)
+        searchLocation = foundRange.location + foundRange.length
+    }
 }
 
 public func textAlignment(from attributedString: AttributedString) -> TextAlignment {

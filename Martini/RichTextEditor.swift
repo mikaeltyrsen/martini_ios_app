@@ -48,20 +48,34 @@ final class RichTextEditorState: ObservableObject {
     }
 
     func toggleBlockQuote() {
-        applyParagraphStyle { style in
-            let isQuoted = style.firstLineHeadIndent > 0 || style.headIndent > 0
-            if isQuoted {
-                style.firstLineHeadIndent = 0
-                style.headIndent = 0
-                style.paragraphSpacingBefore = 0
-                style.paragraphSpacing = 0
-            } else {
-                style.firstLineHeadIndent = 16
-                style.headIndent = 16
-                style.paragraphSpacingBefore = 4
-                style.paragraphSpacing = 8
-            }
+        guard let textView else { return }
+        let selectedRange = textView.selectedRange
+        let paragraphRange = (textView.text as NSString).paragraphRange(for: selectedRange)
+        let mutableText = NSMutableAttributedString(attributedString: textView.attributedText)
+        let currentStyle = (mutableText.attribute(.paragraphStyle, at: paragraphRange.location, effectiveRange: nil) as? NSParagraphStyle) ?? NSParagraphStyle()
+        let updatedStyle = currentStyle.mutableCopy() as? NSMutableParagraphStyle ?? NSMutableParagraphStyle()
+        let isQuoted = isDialogBlockquote(in: paragraphRange, using: mutableText)
+            || currentStyle.firstLineHeadIndent > 0
+            || currentStyle.headIndent > 0
+
+        if isQuoted {
+            updatedStyle.firstLineHeadIndent = 0
+            updatedStyle.headIndent = 0
+            updatedStyle.paragraphSpacingBefore = 0
+            updatedStyle.paragraphSpacing = 0
+            mutableText.removeAttribute(dialogBlockquoteAttribute, range: paragraphRange)
+            updateFontTrait(in: paragraphRange, text: mutableText, trait: .traitBold, shouldAdd: false)
+        } else {
+            updatedStyle.firstLineHeadIndent = 0
+            updatedStyle.headIndent = 0
+            updatedStyle.paragraphSpacingBefore = 4
+            updatedStyle.paragraphSpacing = 8
+            mutableText.addAttribute(dialogBlockquoteAttribute, value: true, range: paragraphRange)
+            updateFontTrait(in: paragraphRange, text: mutableText, trait: .traitBold, shouldAdd: true)
         }
+
+        mutableText.addAttribute(.paragraphStyle, value: updatedStyle, range: paragraphRange)
+        applyChanges(mutableText, selectedRange: selectedRange)
     }
 
     func clearFormatting() {
@@ -88,13 +102,17 @@ final class RichTextEditorState: ObservableObject {
         nsString.enumerateSubstrings(in: fullRange, options: .byParagraphs) { substring, range, _, _ in
             let paragraphStyle = self.attributedText.attribute(.paragraphStyle, at: max(range.location, 0), effectiveRange: nil) as? NSParagraphStyle
             let alignmentStyle = self.htmlParagraphAlignmentStyle(paragraphStyle)
-            let isBlockQuote = self.isBlockQuoteParagraph(paragraphStyle)
+            let isBlockQuote = self.isDialogBlockquote(in: range, using: self.attributedText)
+                || self.isBlockQuoteParagraph(paragraphStyle)
             let paragraphContent = self.htmlContent(in: range, source: nsString, traitCollection: traitCollection)
             let resolvedContent = paragraphContent.isEmpty ? "<br>" : paragraphContent
             let styleAttribute = alignmentStyle.map { " style=\"\($0)\"" } ?? ""
             let paragraphHTML = "<p\(styleAttribute)>\(resolvedContent)</p>"
             if isBlockQuote {
-                htmlParagraphs.append("<blockquote>\(paragraphHTML)</blockquote>")
+                let blockquoteStyle = alignmentStyle.map { " style=\"\($0)\"" } ?? ""
+                let blockquoteAttributes = " data-type=\"dialog\"\(blockquoteStyle)"
+                let blockquoteParagraphHTML = "<p>\(resolvedContent)</p>"
+                htmlParagraphs.append("<blockquote\(blockquoteAttributes)>\(blockquoteParagraphHTML)</blockquote>")
             } else {
                 htmlParagraphs.append(paragraphHTML)
             }
@@ -143,6 +161,17 @@ final class RichTextEditorState: ObservableObject {
     private func isBlockQuoteParagraph(_ style: NSParagraphStyle?) -> Bool {
         guard let style else { return false }
         return style.firstLineHeadIndent > 0 || style.headIndent > 0
+    }
+
+    private func isDialogBlockquote(in range: NSRange, using text: NSAttributedString) -> Bool {
+        var isDialog = false
+        text.enumerateAttribute(dialogBlockquoteAttribute, in: range, options: []) { value, _, stop in
+            if (value as? Bool) == true {
+                isDialog = true
+                stop.pointee = true
+            }
+        }
+        return isDialog
     }
 
     private func htmlContent(
@@ -320,6 +349,39 @@ final class RichTextEditorState: ObservableObject {
         return UIFont(descriptor: descriptor, size: font.pointSize)
     }
 
+    private func updateFontTrait(
+        in range: NSRange,
+        text: NSMutableAttributedString,
+        trait: UIFontDescriptor.SymbolicTraits,
+        shouldAdd: Bool
+    ) {
+        text.enumerateAttribute(.font, in: range, options: []) { value, subrange, _ in
+            let font = (value as? UIFont) ?? baseFont
+            let updatedFont = shouldAdd
+                ? fontByAddingTrait(font: font, trait: trait)
+                : fontByRemovingTrait(font: font, trait: trait)
+            text.addAttribute(.font, value: updatedFont, range: subrange)
+        }
+    }
+
+    private func fontByAddingTrait(font: UIFont, trait: UIFontDescriptor.SymbolicTraits) -> UIFont {
+        var traits = font.fontDescriptor.symbolicTraits
+        traits.insert(trait)
+        guard let descriptor = font.fontDescriptor.withSymbolicTraits(traits) else {
+            return font
+        }
+        return UIFont(descriptor: descriptor, size: font.pointSize)
+    }
+
+    private func fontByRemovingTrait(font: UIFont, trait: UIFontDescriptor.SymbolicTraits) -> UIFont {
+        var traits = font.fontDescriptor.symbolicTraits
+        traits.remove(trait)
+        guard let descriptor = font.fontDescriptor.withSymbolicTraits(traits) else {
+            return font
+        }
+        return UIFont(descriptor: descriptor, size: font.pointSize)
+    }
+
     private func defaultTextAttributes() -> [NSAttributedString.Key: Any] {
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.alignment = .natural
@@ -345,7 +407,10 @@ final class RichTextEditorState: ObservableObject {
         let paragraphStyle = (attributes[.paragraphStyle] as? NSParagraphStyle)
         let alignment = paragraphStyle?.alignment ?? .natural
         let isCustomAlignment = alignment != .natural && alignment != .left
-        let isQuote = (paragraphStyle?.firstLineHeadIndent ?? 0) > 0 || (paragraphStyle?.headIndent ?? 0) > 0
+        let paragraphRange = (textView.text as NSString).paragraphRange(for: textView.selectedRange)
+        let isQuote = isDialogBlockquote(in: paragraphRange, using: textView.attributedText)
+            || (paragraphStyle?.firstLineHeadIndent ?? 0) > 0
+            || (paragraphStyle?.headIndent ?? 0) > 0
 
         let foregroundColor = (attributes[.foregroundColor] as? UIColor) ?? baseColor
         let isCustomColor = !colorsEqual(foregroundColor, baseColor, traitCollection: textView.traitCollection)
