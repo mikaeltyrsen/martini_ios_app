@@ -648,6 +648,7 @@ struct FrameView: View {
             )
             let dimmerOpacity: CGFloat = descriptionProgress * 0.5
             let boardScale: CGFloat = 1 - (descriptionProgress * 0.04)
+            let boardOpacity: CGFloat = max(0, 1 - descriptionProgress)
 
             Group {
                 if isLandscape {
@@ -667,6 +668,7 @@ struct FrameView: View {
                     ZStack(alignment: .bottom) {
                         boardsSection(height: portraitBoardsHeight)
                             .scaleEffect(boardScale)
+                            .opacity(boardOpacity)
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
                         Color.black
