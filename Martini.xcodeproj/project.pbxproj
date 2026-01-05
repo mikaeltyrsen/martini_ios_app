@@ -20,6 +20,8 @@
 		0730F4082F0B6800000B598F /* RichTextEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4062F0B6800000B598F /* RichTextEditor.swift */; };
 		0730F40A2F0B8736000B598F /* RichTextDisplayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4092F0B8736000B598F /* RichTextDisplayView.swift */; };
 		0730F40C2F0C6401000B598F /* FrameLineOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F40B2F0C6401000B598F /* FrameLineOverlayView.swift */; };
+		0730F4112F0C6F7D000B598F /* CachedVideoPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4102F0C6F7D000B598F /* CachedVideoPlayerView.swift */; };
+		0730F4122F0C6F7D000B598F /* BoardMetadataSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F40F2F0C6F7D000B598F /* BoardMetadataSheet.swift */; };
 		075456022EC9A6E200C45739 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075455FE2EC9A6E100C45739 /* AuthService.swift */; };
 		075456032EC9A6E200C45739 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075455FF2EC9A6E100C45739 /* LoginView.swift */; };
 		075456042EC9A6E200C45739 /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075456002EC9A6E100C45739 /* QRScannerView.swift */; };
@@ -84,6 +86,8 @@
 		0730F4062F0B6800000B598F /* RichTextEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichTextEditor.swift; sourceTree = "<group>"; };
 		0730F4092F0B8736000B598F /* RichTextDisplayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichTextDisplayView.swift; sourceTree = "<group>"; };
 		0730F40B2F0C6401000B598F /* FrameLineOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameLineOverlayView.swift; sourceTree = "<group>"; };
+		0730F40F2F0C6F7D000B598F /* BoardMetadataSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardMetadataSheet.swift; sourceTree = "<group>"; };
+		0730F4102F0C6F7D000B598F /* CachedVideoPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedVideoPlayerView.swift; sourceTree = "<group>"; };
 		075455FE2EC9A6E100C45739 /* AuthService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		075455FF2EC9A6E100C45739 /* LoginView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		075456002EC9A6E100C45739 /* QRScannerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
@@ -182,6 +186,8 @@
 		07A6A6842EC9A272002C8EB9 /* Martini */ = {
 			isa = PBXGroup;
 			children = (
+				0730F40F2F0C6F7D000B598F /* BoardMetadataSheet.swift */,
+				0730F4102F0C6F7D000B598F /* CachedVideoPlayerView.swift */,
 				0730F40B2F0C6401000B598F /* FrameLineOverlayView.swift */,
 				0730F4092F0B8736000B598F /* RichTextDisplayView.swift */,
 				0730F4052F0B6800000B598F /* FrameDescriptionEditorSheet.swift */,
@@ -358,6 +364,8 @@
 				F8C07B4A4CB449BDB50BE3BB /* ScoutCamera/CameraKit/CameraDeviceSelector.swift in Sources */,
 				3953947E4AE944899289AFFB /* ScoutCamera/CameraKit/PhotoCaptureProcessor.swift in Sources */,
 				4F6E5CDE7B934DF1A75F1C1F /* ScoutCamera/CameraKit/MotionHeadingManager.swift in Sources */,
+				0730F4112F0C6F7D000B598F /* CachedVideoPlayerView.swift in Sources */,
+				0730F4122F0C6F7D000B598F /* BoardMetadataSheet.swift in Sources */,
 				2C5B05456FA04ED5ACD63C85 /* ScoutCamera/FOV/FOVEngine.swift in Sources */,
 				C0E3AD0331584BB39C1BE6BA /* ScoutCamera/FOV/FOVMath.swift in Sources */,
 				835B9B20D9AC43568A59A541 /* ScoutCamera/FOV/IPhoneCameraModelResolver.swift in Sources */,
