@@ -1145,6 +1145,21 @@ struct ScoutCameraLayout: View {
                     maxLength: maxLength,
                     aspectRatio: viewModel.primaryFrameLineOption.aspectRatio ?? targetAspectRatio
                 )
+                    .overlay {
+                        Rectangle()
+                            .stroke(Color.gray.opacity(0.8), lineWidth: 1)
+                    }
+                    .overlay(alignment: .bottomTrailing) {
+                        Image(systemName: showBoardGuide
+                            ? "arrow.down.right.and.arrow.up.left"
+                            : "arrow.up.left.and.arrow.down.right"
+                        )
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 24, height: 24)
+                        .background(Circle().fill(Color.black))
+                        .padding(6)
+                    }
                     .onTapGesture {
                         showBoardGuide.toggle()
                     }
