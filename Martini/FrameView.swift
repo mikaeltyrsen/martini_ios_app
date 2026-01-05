@@ -66,9 +66,7 @@ struct FrameView: View {
     @State private var isUploadingBoardAsset: Bool = false
     @State private var metadataSheetItem: BoardMetadataItem?
     @State private var boardPhotoAccessAlert: PhotoLibraryHelper.PhotoAccessAlert?
-    @State private var descriptionAttributedText: AttributedString?
-    @State private var descriptionTextAlignment: TextAlignment = .leading
-    @State private var descriptionHorizontalAlignment: Alignment = .leading
+    @State private var descriptionAttributedText: NSAttributedString?
     @State private var showingDescriptionEditor: Bool = false
     @State private var descriptionEditorText: NSAttributedString = NSAttributedString(string: "")
     @State private var descriptionUpdateError: String?
@@ -874,25 +872,16 @@ struct FrameView: View {
     private func refreshDescriptionAttributedText() {
         guard let secondaryText, !secondaryText.isEmpty else {
             descriptionAttributedText = nil
-            descriptionTextAlignment = .leading
-            descriptionHorizontalAlignment = .leading
             return
         }
 
         let descriptionUIColor = UIColor(named: "MartiniDefaultDescriptionColor") ?? .label
-        let attributedText = attributedStringFromHTML(
+        let attributedText = nsAttributedStringFromHTML(
             secondaryText,
             defaultColor: descriptionUIColor
         )
 
         descriptionAttributedText = attributedText
-        if let attributedText {
-            descriptionTextAlignment = textAlignment(from: attributedText)
-            descriptionHorizontalAlignment = horizontalAlignment(from: attributedText)
-        } else {
-            descriptionTextAlignment = .leading
-            descriptionHorizontalAlignment = .leading
-        }
     }
 
     private var descriptionCopyText: String? {
@@ -902,8 +891,8 @@ struct FrameView: View {
 
     private func openDescriptionEditor() {
         if let description = secondaryText, !description.isEmpty,
-           let attributed = attributedStringFromHTML(description) {
-            descriptionEditorText = NSAttributedString(attributed)
+           let attributed = nsAttributedStringFromHTML(description) {
+            descriptionEditorText = attributed
         } else if let description = secondaryText, !description.isEmpty {
             descriptionEditorText = NSAttributedString(string: plainTextFromHTML(description))
         } else {
@@ -926,9 +915,9 @@ struct FrameView: View {
                         scriptNavigationTarget = ScriptNavigationTarget(dialogId: dialogId)
                     }
                 } else if let attributedText = descriptionAttributedText {
-                    Text(attributedText)
-                        .multilineTextAlignment(descriptionTextAlignment)
-                        .frame(maxWidth: .infinity, alignment: descriptionHorizontalAlignment)
+                    RichTextDisplayView(attributedText: attributedText)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .fixedSize(horizontal: false, vertical: true)
                 } else {
                     Text(plainTextFromHTML(secondaryText))
                         .font(.body)
