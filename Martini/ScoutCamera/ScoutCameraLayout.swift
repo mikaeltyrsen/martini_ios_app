@@ -567,7 +567,7 @@ struct ScoutCameraLayout: View {
                 Section("Color") {
                     Picker("Color", selection: $configuration.color) {
                         ForEach(FrameLineColor.allCases) { color in
-                            HStack(spacing: 8) {
+                            HStack(spacing: 12) {
                                 Image(systemName: "circle.fill")
                                     .symbolRenderingMode(.palette)
                                     .foregroundStyle(color.swiftUIColor)
@@ -576,6 +576,32 @@ struct ScoutCameraLayout: View {
                             .tag(color)
                         }
                     }
+                    
+//                    HStack() {
+//                        Text("Color")
+//                        Menu {
+//                            ForEach(FrameLineColor.allCases) { color in
+//                                Button {
+//                                    configuration.color = color
+//                                } label: {
+//                                    HStack(spacing: 12) {
+//                                        Image(systemName: "circle.fill")
+//                                            .foregroundStyle(color.swiftUIColor)
+//                                        Text(color.displayName)
+//                                    }
+//                                }
+//                            }
+//                        } label: {
+//                            HStack(spacing: 12) {
+//                                Spacer()
+//                                Image(systemName: "circle.fill")
+//                                    .foregroundStyle(configuration.color.swiftUIColor)
+//                                Text(configuration.color.displayName)
+//                                    .foregroundStyle(.primary)
+//                            }
+//                        }
+//                    }
+                    
                 }
 
                 Section("Opacity") {
@@ -590,7 +616,7 @@ struct ScoutCameraLayout: View {
                 Section("Line Design") {
                     Picker("Line Design", selection: $configuration.design) {
                         ForEach(FrameLineDesign.allCases) { design in
-                            HStack(spacing: 8) {
+                            HStack(spacing: 12) {
                                 Image(systemName: design.symbolName)
                                 Text(design.displayName)
                             }
