@@ -199,7 +199,8 @@ struct FrameView: View {
             }
             .sheet(isPresented: $showingDescriptionEditor) {
                 FrameDescriptionEditorSheet(
-                    title: "Edit \(frameTitle) Description",
+                    //title: "Edit \(frameTitle) Description",
+                    title: "Edit Description",
                     initialText: descriptionEditorText,
                     onSave: { description in
                         let updatedFrame = try await authService.updateFrameDescription(

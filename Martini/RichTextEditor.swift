@@ -539,14 +539,14 @@ struct RichTextEditorView: UIViewRepresentable {
             state?.toggleStrikethrough()
         }
         let colorButton = accessoryMenuButton(
-            systemName: "paintpalette",
+            systemName: "pencil.line",
             menu: makeColorMenu()
         )
         let alignmentButton = accessoryMenuButton(
             systemName: "text.alignleft",
             menu: makeAlignmentMenu()
         )
-        let quoteButton = accessoryButton(systemName: "text.quote") { [weak state] in
+        let quoteButton = accessoryButton(systemName: "quote.bubble") { [weak state] in
             state?.toggleBlockQuote()
         }
 
