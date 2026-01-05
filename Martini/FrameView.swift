@@ -646,7 +646,7 @@ struct FrameView: View {
                     (descriptionHeightRatio - minDescriptionRatio) / (1 - minDescriptionRatio)
                 )
             )
-            let dimmerOpacity: CGFloat = descriptionProgress * 0.5
+            let dimmerOpacity: CGFloat = descriptionProgress * 1
             let boardScale: CGFloat = 1 - (descriptionProgress * 0.04)
 
             Group {
@@ -1233,7 +1233,7 @@ struct FrameView: View {
             }
             .background(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
+                .fill(Color(.descriptionBackground))
             )
             .contextMenu {
                 Button {
@@ -1250,7 +1250,7 @@ struct FrameView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: overlayHeight)
-        .padding(.vertical, 5)
+        .padding(.horizontal, 5)
 //        .padding(20)
     }
 
@@ -1340,13 +1340,10 @@ struct FrameView: View {
                                 Button {
                                     showingAddBoardOptions = true
                                 } label: {
-                                    Text("+")
-                                        .font(.system(size: 14, weight: .semibold))
-                                        .foregroundStyle(Color.primary)
-                                        .lineLimit(1)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 10)
-                                        .frame(minWidth: 100)
+                                    Image(systemName: "plus")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundStyle(.primary)
+                                        .padding(10)
                                         .background(
                                             Capsule()
                                                 .fill(Color.secondary.opacity(0.15))
