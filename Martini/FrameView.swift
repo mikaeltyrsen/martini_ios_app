@@ -926,16 +926,17 @@ struct FrameView: View {
 //            }
             .disabled(secondaryText.isEmpty)
         } else {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack {
 //                Text("Description")
 //                    .font(.headline)
 //                    .foregroundStyle(.primary)
 
-                Text("No description provided for this frame.")
-                    .font(.body)
+                Image(systemName: "character.cursor.ibeam")
+                    .font(.system(size: 48, weight: .regular))
                     .foregroundStyle(Color.martiniDefaultDescriptionColor)
+                    .opacity(0.3)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: 140, alignment: .center)
             .padding(.top, 20)
             .contextMenu {
                 Button {
