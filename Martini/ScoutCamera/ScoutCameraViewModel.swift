@@ -685,6 +685,8 @@ struct ScoutCameraFOVCandidate: Equatable {
 
 enum FrameLineOption: String, CaseIterable, Identifiable, Codable {
     case none = "Off"
+    case ratio1_0 = "1.00"
+    case ratio9_16 = "9:16"
     case ratio1_33 = "1.33"
     case ratio1_66 = "1.66"
     case ratio1_78 = "1.78"
@@ -698,6 +700,10 @@ enum FrameLineOption: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .none:
             return nil
+        case .ratio1_0:
+            return 1.0
+        case .ratio9_16:
+            return 9.0 / 16.0
         case .ratio1_33:
             return 1.33
         case .ratio1_66:
