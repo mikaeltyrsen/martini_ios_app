@@ -106,6 +106,7 @@ struct ScriptView: View {
     private func scriptBlockView(_ block: ScriptBlock) -> some View {
         let textView = Text(block.text)
             .font(.system(size: baseFontSize * effectiveScale))
+            .fontWeight(block.isDialog ? .bold : .regular)
             .foregroundStyle(block.isDialog ? Color.primary : Color.martiniDefaultDescriptionColor)
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -285,6 +286,7 @@ struct ScriptDescriptionPreview: View {
                     } label: {
                         Text(block.text)
                             .font(.system(size: fontSize))
+                            .fontWeight(.bold)
                             .foregroundStyle(.primary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
