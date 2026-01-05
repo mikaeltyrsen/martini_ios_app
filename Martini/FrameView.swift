@@ -1947,6 +1947,17 @@ private extension FrameView {
         }
     }
 
+    private func metadataForAsset(_ asset: FrameAssetItem) -> JSONValue? {
+        guard asset.kind == .board else { return nil }
+        guard let metadata = frame.boards?.first(where: { $0.id == asset.id })?.metadata else {
+            return nil
+        }
+        if case .null = metadata {
+            return nil
+        }
+        return metadata
+    }
+
     private func openBoardPreview(_ asset: FrameAssetItem) {
         guard let url = asset.url else { return }
         let media: MediaItem = asset.isVideo ? .videoURL(url) : .imageURL(url)
