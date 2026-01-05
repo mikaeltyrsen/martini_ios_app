@@ -1617,16 +1617,16 @@ private struct FrameShadingOverlay: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let rects = configurations.compactMap { configuration -> CGRect? in
-                guard let aspectRatio = configuration.option.aspectRatio else { return nil }
-                return frameRect(in: proxy.size, aspectRatio: aspectRatio)
-            }
-            if !rects.isEmpty {
+            let rect = configurations
+                .compactMap { configuration -> CGRect? in
+                    guard let aspectRatio = configuration.option.aspectRatio else { return nil }
+                    return frameRect(in: proxy.size, aspectRatio: aspectRatio)
+                }
+                .first
+            if let rect {
                 Path { path in
                     path.addRect(CGRect(origin: .zero, size: proxy.size))
-                    rects.forEach { rect in
-                        path.addRect(rect)
-                    }
+                    path.addRect(rect)
                 }
                 .fill(.black.opacity(0.7), style: FillStyle(eoFill: true))
             }
