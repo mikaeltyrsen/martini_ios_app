@@ -216,8 +216,8 @@ private func mutableAttributedStringFromHTML(
         }
     }
 
-    applyParagraphSpacing(to: attributed, baseFontSize: resolvedFontSize)
     applyDialogBlockquoteAttributes(to: attributed, sourceHTML: html)
+    applyParagraphSpacing(to: attributed, baseFontSize: resolvedFontSize)
 
     return attributed
 }
@@ -297,6 +297,9 @@ private func applyParagraphSpacing(to attributed: NSMutableAttributedString, bas
         let currentStyle = (value as? NSParagraphStyle) ?? NSParagraphStyle()
         let updatedStyle = currentStyle.mutableCopy() as? NSMutableParagraphStyle ?? NSMutableParagraphStyle()
         updatedStyle.paragraphSpacing = paragraphSpacing
+        if (attributed.attribute(dialogBlockquoteAttribute, at: range.location, effectiveRange: nil) as? Bool) == true {
+            updatedStyle.paragraphSpacingBefore = paragraphSpacing
+        }
         attributed.addAttribute(.paragraphStyle, value: updatedStyle, range: range)
     }
 
