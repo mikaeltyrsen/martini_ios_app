@@ -64,14 +64,12 @@ final class RichTextEditorState: ObservableObject {
             updatedStyle.paragraphSpacingBefore = 0
             updatedStyle.paragraphSpacing = 0
             mutableText.removeAttribute(dialogBlockquoteAttribute, range: paragraphRange)
-            updateFontTrait(in: paragraphRange, text: mutableText, trait: .traitBold, shouldAdd: false)
         } else {
             updatedStyle.firstLineHeadIndent = 0
             updatedStyle.headIndent = 0
             updatedStyle.paragraphSpacingBefore = 4
             updatedStyle.paragraphSpacing = 8
             mutableText.addAttribute(dialogBlockquoteAttribute, value: true, range: paragraphRange)
-            updateFontTrait(in: paragraphRange, text: mutableText, trait: .traitBold, shouldAdd: true)
         }
 
         mutableText.addAttribute(.paragraphStyle, value: updatedStyle, range: paragraphRange)
@@ -111,8 +109,7 @@ final class RichTextEditorState: ObservableObject {
             if isBlockQuote {
                 let blockquoteStyle = alignmentStyle.map { " style=\"\($0)\"" } ?? ""
                 let blockquoteAttributes = " data-type=\"dialog\"\(blockquoteStyle)"
-                let blockquoteParagraphHTML = "<p>\(resolvedContent)</p>"
-                htmlParagraphs.append("<blockquote\(blockquoteAttributes)>\(blockquoteParagraphHTML)</blockquote>")
+                htmlParagraphs.append("<blockquote\(blockquoteAttributes)>\(resolvedContent)</blockquote>")
             } else {
                 htmlParagraphs.append(paragraphHTML)
             }
