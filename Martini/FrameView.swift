@@ -125,6 +125,15 @@ struct FrameView: View {
         return "Frame"
     }
 
+    private var systemCameraBoardLabel: String {
+        switch UIDevice.current.userInterfaceIdiom {
+        case .pad:
+            return "iPad Camera"
+        default:
+            return "iPhone Camera"
+        }
+    }
+
     var body: some View {
         fullContent
     }
@@ -1583,7 +1592,7 @@ struct FrameView: View {
     }
 
     private func importCapturedPhoto(_ image: UIImage) async {
-        let didUpload = await uploadBoardImage(image, boardLabel: "Photoboard")
+        let didUpload = await uploadBoardImage(image, boardLabel: systemCameraBoardLabel)
         if didUpload {
             capturedPhoto = nil
         }
