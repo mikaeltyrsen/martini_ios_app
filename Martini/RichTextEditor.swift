@@ -86,9 +86,9 @@ final class RichTextEditorState: ObservableObject {
         var htmlParagraphs: [String] = []
 
         nsString.enumerateSubstrings(in: fullRange, options: .byParagraphs) { substring, range, _, _ in
-            let paragraphStyle = attributedText.attribute(.paragraphStyle, at: max(range.location, 0), effectiveRange: nil) as? NSParagraphStyle
-            let alignmentStyle = htmlParagraphAlignmentStyle(paragraphStyle)
-            let paragraphContent = htmlContent(in: range, source: nsString, traitCollection: traitCollection)
+            let paragraphStyle = self.attributedText.attribute(.paragraphStyle, at: max(range.location, 0), effectiveRange: nil) as? NSParagraphStyle
+            let alignmentStyle = self.htmlParagraphAlignmentStyle(paragraphStyle)
+            let paragraphContent = self.htmlContent(in: range, source: nsString, traitCollection: traitCollection)
             let resolvedContent = paragraphContent.isEmpty ? "<br>" : paragraphContent
             let styleAttribute = alignmentStyle.map { " style=\"\($0)\"" } ?? ""
             htmlParagraphs.append("<p\(styleAttribute)>\(resolvedContent)</p>")
