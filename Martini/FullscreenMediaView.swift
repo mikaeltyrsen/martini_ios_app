@@ -44,16 +44,24 @@ struct FullscreenMediaViewer: View {
     @Binding var isPresented: Bool
     let media: MediaItem
     let config: MediaViewerConfig
+    let metadataItem: BoardMetadataItem?
 
     @State private var isVisible: Bool = false
     @State private var isToolbarVisible: Bool
+    @State private var metadataSheetItem: BoardMetadataItem?
 
     private let animationDuration: Double = 0.25
 
-    init(isPresented: Binding<Bool>, media: MediaItem, config: MediaViewerConfig = .default) {
+    init(
+        isPresented: Binding<Bool>,
+        media: MediaItem,
+        config: MediaViewerConfig = .default,
+        metadataItem: BoardMetadataItem? = nil
+    ) {
         _isPresented = isPresented
         self.media = media
         self.config = config
+        self.metadataItem = metadataItem
         _isToolbarVisible = State(initialValue: config.showsTopToolbar)
     }
 
@@ -109,6 +117,19 @@ struct FullscreenMediaViewer: View {
                     .accessibilityLabel("Close fullscreen")
                 }
             }
+            if config.showsTopToolbar, let metadataItem {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        metadataSheetItem = metadataItem
+                    } label: {
+                        Label("Metadata", systemImage: "chevron.left.forwardslash.chevron.right")
+                    }
+                    .accessibilityLabel("Metadata")
+                }
+            }
+        }
+        .sheet(item: $metadataSheetItem) { item in
+            BoardMetadataSheet(item: item)
         }
     }
 

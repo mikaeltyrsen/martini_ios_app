@@ -1950,9 +1950,18 @@ private extension FrameView {
     private func openBoardPreview(_ asset: FrameAssetItem) {
         guard let url = asset.url else { return }
         let media: MediaItem = asset.isVideo ? .videoURL(url) : .imageURL(url)
+        let metadataItem = metadataForAsset(asset).map { metadata in
+            BoardMetadataItem(
+                boardName: asset.displayLabel,
+                metadata: metadata,
+                assetURL: asset.url,
+                assetIsVideo: asset.isVideo
+            )
+        }
         fullscreenCoordinator?.configuration = FullscreenMediaConfiguration(
             media: media,
-            config: .default
+            config: .default,
+            metadataItem: metadataItem
         )
     }
 
@@ -1961,7 +1970,8 @@ private extension FrameView {
         let media: MediaItem = clip.isVideo ? .videoURL(url) : .imageURL(url)
         fullscreenCoordinator?.configuration = FullscreenMediaConfiguration(
             media: media,
-            config: .default
+            config: .default,
+            metadataItem: nil
         )
     }
 

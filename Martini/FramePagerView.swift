@@ -82,7 +82,8 @@ struct FramePagerView: View {
                 FullscreenMediaViewer(
                     isPresented: fullscreenPresentationBinding,
                     media: configuration.media,
-                    config: configuration.config
+                    config: configuration.config,
+                    metadataItem: configuration.metadataItem
                 )
             }
         }

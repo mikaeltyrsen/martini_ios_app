@@ -336,7 +336,8 @@ struct FrameLayout: View {
                         : .imageURL(resolvedMediaURL)
                     fullscreenCoordinator?.configuration = FullscreenMediaConfiguration(
                         media: media,
-                        config: .default
+                        config: .default,
+                        metadataItem: nil
                     )
                 }
         } else {

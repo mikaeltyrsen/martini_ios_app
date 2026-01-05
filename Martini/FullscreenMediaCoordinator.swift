@@ -4,6 +4,7 @@ struct FullscreenMediaConfiguration: Identifiable {
     let id = UUID()
     let media: MediaItem
     let config: MediaViewerConfig
+    let metadataItem: BoardMetadataItem?
 }
 
 final class FullscreenMediaCoordinator: ObservableObject {
