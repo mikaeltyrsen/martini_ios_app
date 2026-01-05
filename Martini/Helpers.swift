@@ -71,7 +71,8 @@ public func attributedStringFromHTML(
     let resolvedFontSize = normalizedBaseFontSize ?? preferredFont.pointSize
     let baseFont = preferredFont.withSize(resolvedFontSize)
     let fontSize = "\(resolvedFontSize)px"
-    let sanitizedHTML = html.replacingOccurrences(of: "\u{0000}", with: "")
+    let normalizedHTML = htmlByApplyingAlignmentClasses(html)
+    let sanitizedHTML = normalizedHTML.replacingOccurrences(of: "\u{0000}", with: "")
     let styledHTML = """
     <html>
     <head>
@@ -169,6 +170,51 @@ private func applyDialogBlockquoteAttributes(to attributed: NSMutableAttributedS
         attributed.addAttribute(dialogBlockquoteAttribute, value: true, range: foundRange)
         searchLocation = foundRange.location + foundRange.length
     }
+}
+
+private func htmlByApplyingAlignmentClasses(_ html: String) -> String {
+    let pattern = "<[^>]+style=\"[^\"]*text-align\\s*:\\s*(center|right|left|justify)[^\"]*\"[^>]*>"
+    guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else {
+        return html
+    }
+
+    let classRegex = try? NSRegularExpression(pattern: "class=\"([^\"]*)\"", options: [.caseInsensitive])
+    let nsHTML = html as NSString
+    let matches = regex.matches(in: html, options: [], range: NSRange(location: 0, length: nsHTML.length))
+    guard !matches.isEmpty else { return html }
+
+    let mutableHTML = NSMutableString(string: html)
+
+    for match in matches.reversed() {
+        let tagRange = match.range
+        guard tagRange.location != NSNotFound,
+              let alignmentRange = Range(match.range(at: 1), in: html) else {
+            continue
+        }
+
+        let alignment = String(html[alignmentRange]).lowercased()
+        let alignmentClass = "ql-align-\(alignment)"
+        let originalTag = nsHTML.substring(with: tagRange)
+
+        if let classRegex,
+           let classMatch = classRegex.firstMatch(in: originalTag, options: [], range: NSRange(location: 0, length: (originalTag as NSString).length)) {
+            let classValueRange = classMatch.range(at: 1)
+            let classValue = (originalTag as NSString).substring(with: classValueRange)
+            if classValue.split(separator: " ").contains(where: { $0 == alignmentClass }) {
+                continue
+            }
+
+            let updatedClassValue = (classValue.isEmpty ? alignmentClass : "\(classValue) \(alignmentClass)")
+            let updatedTag = (originalTag as NSString).replacingCharacters(in: classValueRange, with: updatedClassValue)
+            mutableHTML.replaceCharacters(in: tagRange, with: updatedTag)
+        } else if let styleRange = originalTag.range(of: "style=\"", options: [.caseInsensitive]) {
+            let insertionIndex = originalTag.distance(from: originalTag.startIndex, to: styleRange.lowerBound)
+            let updatedTag = (originalTag as NSString).replacingCharacters(in: NSRange(location: insertionIndex, length: 0), with: "class=\"\(alignmentClass)\" ")
+            mutableHTML.replaceCharacters(in: tagRange, with: updatedTag)
+        }
+    }
+
+    return mutableHTML as String
 }
 
 private func applyParagraphSpacing(to attributed: NSMutableAttributedString, baseFontSize: CGFloat) {
