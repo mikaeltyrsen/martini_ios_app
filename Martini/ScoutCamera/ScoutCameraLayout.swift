@@ -569,6 +569,7 @@ struct ScoutCameraLayout: View {
                         ForEach(FrameLineColor.allCases) { color in
                             HStack(spacing: 8) {
                                 Image(systemName: "circle.fill")
+                                    .symbolRenderingMode(.palette)
                                     .foregroundStyle(color.swiftUIColor)
                                 Text(color.displayName)
                             }
