@@ -163,6 +163,7 @@ struct FrameView: View {
             .fullScreenCover(item: $capturedPhoto) { currentPhoto in
                 ScoutCameraReviewView(
                     image: currentPhoto.image,
+                    frameLineConfigurations: [],
                     onImport: {
                         await importCapturedPhoto(currentPhoto.image)
                     },
