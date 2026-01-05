@@ -3,6 +3,7 @@ import UIKit
 
 struct ScoutCameraReviewView: View {
     let image: UIImage
+    let frameLineConfigurations: [FrameLineConfiguration]
     let onImport: () async -> Void
     let onPrepareShare: () async -> UIImage?
     let onRetake: () -> Void
@@ -21,6 +22,12 @@ struct ScoutCameraReviewView: View {
                     .resizable()
                     .scaledToFit()
                     .cornerRadius(12)
+                    .overlay {
+                        if !frameLineConfigurations.isEmpty {
+                            FrameLineOverlayView(configurations: frameLineConfigurations)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                    }
                     .padding()
 
                 HStack(spacing: 16) {
