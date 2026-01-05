@@ -186,7 +186,7 @@ enum ScriptParser {
             return []
         }
 
-        let pattern = "<([a-zA-Z0-9]+)[^>]*class=\"[^\"]*qr-syntax[^\"]*\"[^>]*>(.*?)</\\1>"
+        let pattern = "(<blockquote[^>]*>(.*?)</blockquote>)|(<([a-zA-Z0-9]+)[^>]*class=\"[^\"]*qr-syntax[^\"]*\"[^>]*>(.*?)</\\4>)"
         guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive, .dotMatchesLineSeparators]) else {
             return [ScriptBlock(
                 id: "\(frameId)-block-0",
@@ -229,7 +229,13 @@ enum ScriptParser {
                 }
             }
 
-            let dialogHTML = nsHTML.substring(with: match.range(at: 2))
+            let blockquoteRange = match.range(at: 2)
+            let classRange = match.range(at: 5)
+            let dialogRange = blockquoteRange.location != NSNotFound ? blockquoteRange : classRange
+            guard dialogRange.location != NSNotFound else {
+                continue
+            }
+            let dialogHTML = nsHTML.substring(with: dialogRange)
             let dialogText = scriptTextFromHTML(dialogHTML)
             if !dialogText.isEmpty {
                 let dialogId = "\(frameId)-dialog-\(dialogIndex)"
