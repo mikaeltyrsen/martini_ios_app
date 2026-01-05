@@ -685,8 +685,9 @@ struct ScoutCameraFOVCandidate: Equatable {
 
 enum FrameLineOption: String, CaseIterable, Identifiable, Codable {
     case none = "Off"
+    case ratio0_56 = "0.56"
+    case ratio0_67 = "0.67"
     case ratio1_0 = "1.00"
-    case ratio9_16 = "9:16"
     case ratio1_33 = "1.33"
     case ratio1_66 = "1.66"
     case ratio1_78 = "1.78"
@@ -696,14 +697,38 @@ enum FrameLineOption: String, CaseIterable, Identifiable, Codable {
 
     var id: String { rawValue }
 
+    private enum CodingKeys: String, CodingKey {
+        case rawValue
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rawValue = try container.decode(String.self)
+        if rawValue == "9:16" {
+            self = .ratio0_56
+            return
+        }
+        guard let option = FrameLineOption(rawValue: rawValue) else {
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Invalid FrameLineOption: \(rawValue)")
+        }
+        self = option
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
     var aspectRatio: CGFloat? {
         switch self {
         case .none:
             return nil
+        case .ratio0_56:
+            return 9.0 / 16.0
+        case .ratio0_67:
+            return 2.0 / 3.0
         case .ratio1_0:
             return 1.0
-        case .ratio9_16:
-            return 9.0 / 16.0
         case .ratio1_33:
             return 1.33
         case .ratio1_66:
@@ -730,6 +755,14 @@ enum FrameLineColor: String, CaseIterable, Identifiable, Codable {
     case purple
 
     var id: String { rawValue }
+
+    static func selectableColors(including current: FrameLineColor) -> [FrameLineColor] {
+        let filtered = allCases.filter { $0 != .pink }
+        if current == .pink {
+            return filtered + [.pink]
+        }
+        return filtered
+    }
 
     var displayName: String {
         rawValue.capitalized
@@ -791,18 +824,50 @@ struct FrameLineConfiguration: Identifiable, Codable, Equatable {
     var color: FrameLineColor
     var opacity: Double
     var design: FrameLineDesign
+    var thickness: Double
 
     init(
         id: UUID = UUID(),
         option: FrameLineOption,
         color: FrameLineColor = .white,
         opacity: Double = 0.8,
-        design: FrameLineDesign = .solid
+        design: FrameLineDesign = .solid,
+        thickness: Double = 2
     ) {
         self.id = id
         self.option = option
         self.color = color
         self.opacity = opacity
         self.design = design
+        self.thickness = thickness
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case option
+        case color
+        case opacity
+        case design
+        case thickness
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        option = try container.decode(FrameLineOption.self, forKey: .option)
+        color = try container.decode(FrameLineColor.self, forKey: .color)
+        opacity = try container.decode(Double.self, forKey: .opacity)
+        design = try container.decode(FrameLineDesign.self, forKey: .design)
+        thickness = try container.decodeIfPresent(Double.self, forKey: .thickness) ?? 2
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(option, forKey: .option)
+        try container.encode(color, forKey: .color)
+        try container.encode(opacity, forKey: .opacity)
+        try container.encode(design, forKey: .design)
+        try container.encode(thickness, forKey: .thickness)
     }
 }

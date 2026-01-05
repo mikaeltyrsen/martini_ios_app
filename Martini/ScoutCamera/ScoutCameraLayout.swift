@@ -522,7 +522,7 @@ struct ScoutCameraLayout: View {
         }
 
         private var configurationSummary: String {
-            "\(configuration.color.displayName) • \(Int(configuration.opacity * 100))% • \(configuration.design.displayName)"
+            "\(configuration.color.displayName) • \(Int(configuration.opacity * 100))% • \(configuration.design.displayName) • \(Int(configuration.thickness)) pt"
         }
     }
 
@@ -566,7 +566,7 @@ struct ScoutCameraLayout: View {
             Form {
                 Section("Color") {
                     Picker("Color", selection: $configuration.color) {
-                        ForEach(FrameLineColor.allCases) { color in
+                        ForEach(FrameLineColor.selectableColors(including: configuration.color)) { color in
                             HStack(spacing: 12) {
                                 Image(systemName: "circle.fill")
                                     .symbolRenderingMode(.palette)
@@ -622,6 +622,14 @@ struct ScoutCameraLayout: View {
                             }
                                 .tag(design)
                         }
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Thickness")
+                        Slider(value: $configuration.thickness, in: 1...10, step: 1)
+                        Text("\(Int(configuration.thickness)) pt")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
@@ -954,7 +962,7 @@ struct ScoutCameraLayout: View {
 
                 if viewModel.showFrameShading,
                    !viewModel.frameLineConfigurations.isEmpty {
-                    FrameShadingOverlay(aspectRatio: viewModel.primaryFrameLineOption.aspectRatio)
+                    FrameShadingOverlay(configurations: viewModel.frameLineConfigurations)
                         .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
                 }
 
@@ -1521,7 +1529,7 @@ private struct FrameLineOverlay: View {
                         frameLinePath(in: rect, design: configuration.design)
                             .stroke(
                                 configuration.color.swiftUIColor.opacity(configuration.opacity),
-                                style: strokeStyle(for: configuration.design)
+                                style: strokeStyle(for: configuration.design, thickness: configuration.thickness)
                             )
                     }
                 }
@@ -1577,28 +1585,33 @@ private struct FrameLineOverlay: View {
         }
     }
 
-    private func strokeStyle(for design: FrameLineDesign) -> StrokeStyle {
+    private func strokeStyle(for design: FrameLineDesign, thickness: Double) -> StrokeStyle {
         switch design {
         case .solid:
-            return StrokeStyle(lineWidth: 2, lineJoin: .round)
+            return StrokeStyle(lineWidth: thickness, lineJoin: .round)
         case .dashed:
-            return StrokeStyle(lineWidth: 2, lineJoin: .round, dash: [8, 6])
+            return StrokeStyle(lineWidth: thickness, lineJoin: .round, dash: [8, 6])
         case .brackets:
-            return StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round)
+            return StrokeStyle(lineWidth: thickness, lineCap: .round, lineJoin: .round)
         }
     }
 }
 
 private struct FrameShadingOverlay: View {
-    let aspectRatio: CGFloat?
+    let configurations: [FrameLineConfiguration]
 
     var body: some View {
         GeometryReader { proxy in
-            if let aspectRatio,
-               let rect = frameRect(in: proxy.size, aspectRatio: aspectRatio) {
+            let rects = configurations.compactMap { configuration -> CGRect? in
+                guard let aspectRatio = configuration.option.aspectRatio else { return nil }
+                return frameRect(in: proxy.size, aspectRatio: aspectRatio)
+            }
+            if !rects.isEmpty {
                 Path { path in
                     path.addRect(CGRect(origin: .zero, size: proxy.size))
-                    path.addRect(rect)
+                    rects.forEach { rect in
+                        path.addRect(rect)
+                    }
                 }
                 .fill(.black.opacity(0.7), style: FillStyle(eoFill: true))
             }
