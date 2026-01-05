@@ -44,16 +44,22 @@ struct ProjectKitSettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                     .swipeActions {
+                        Button(
+                            "Lens", systemImage: "trash",
+                            role: .destructive
+                        ) {
+                            store.removeLens(id: lens.id, projectId: authService.projectId)
+                        }
+                        .tint(.red)
                         if let pack = store.lensPack(for: lens) {
-                            Button("Delete Pack", role: .destructive) {
+                            Button(
+                                "Lens Pack", systemImage: "trash",
+                                role: .destructive
+                            ) {
                                 store.removeLensPack(id: pack.id, projectId: authService.projectId)
                             }
                             .tint(.red)
                         }
-                        Button("Delete Lens", role: .destructive) {
-                            store.removeLens(id: lens.id, projectId: authService.projectId)
-                        }
-                        .tint(.red)
                     }
                 }
                 .onDelete { indexSet in

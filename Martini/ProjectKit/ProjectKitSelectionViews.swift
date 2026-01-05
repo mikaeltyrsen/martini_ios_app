@@ -316,7 +316,7 @@ private struct LensPackDetailView: View {
                     Button {
                         selectedIds.formUnion(pack.lenses.map(\.id))
                     } label: {
-                        Image(systemName: "checklist")
+                        Image(systemName: "checkmark.rectangle.stack")
                     }
                     .tint(.primary)
                 }

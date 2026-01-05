@@ -929,19 +929,19 @@ struct FrameView: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.top, 10)
-            .contextMenu {
-                Button {
-                    UIPasteboard.general.string = descriptionCopyText ?? ""
-                } label: {
-                    Label("Copy Description", systemImage: "doc.on.doc")
-                }
-                Button {
-                    openDescriptionEditor()
-                } label: {
-                    Label("Edit Description", systemImage: "pencil")
-                }
-            }
+            .padding(.top, 20)
+//            .contextMenu {
+//                Button {
+//                    UIPasteboard.general.string = descriptionCopyText ?? ""
+//                } label: {
+//                    Label("Copy Description", systemImage: "doc.on.doc")
+//                }
+//                Button {
+//                    openDescriptionEditor()
+//                } label: {
+//                    Label("Edit Description", systemImage: "pencil")
+//                }
+//            }
             .disabled(secondaryText.isEmpty)
         } else {
             VStack(alignment: .leading, spacing: 8) {
@@ -954,7 +954,7 @@ struct FrameView: View {
                     .foregroundStyle(Color.martiniDefaultDescriptionColor)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.top, 10)
+            .padding(.top, 20)
             .contextMenu {
                 Button {
                     openDescriptionEditor()
@@ -1161,7 +1161,7 @@ struct FrameView: View {
     }
 
     private func descriptionOverlay(containerHeight: CGFloat, overlayHeight: CGFloat, allowsExpansion: Bool) -> some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 10) {
             if allowsExpansion {
                 descriptionHandle
                     .gesture(descriptionDragGesture(containerHeight: containerHeight))
@@ -1231,10 +1231,27 @@ struct FrameView: View {
                 descriptionScrollOffset = offset
                 handleDescriptionScroll(offset: offset)
             }
+            .background(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color(.secondarySystemBackground))
+            )
+            .contextMenu {
+                Button {
+                    UIPasteboard.general.string = descriptionCopyText ?? ""
+                } label: {
+                    Label("Copy Description", systemImage: "doc.on.doc")
+                }
+                Button {
+                    openDescriptionEditor()
+                } label: {
+                    Label("Edit Description", systemImage: "pencil")
+                }
+            }
         }
         .frame(maxWidth: .infinity)
         .frame(height: overlayHeight)
-        .background(Color(.systemBackground))
+        .padding(.vertical, 5)
+//        .padding(20)
     }
 
     private var descriptionHandle: some View {
