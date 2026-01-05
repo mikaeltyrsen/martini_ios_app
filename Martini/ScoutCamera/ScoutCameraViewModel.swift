@@ -24,7 +24,7 @@ final class ScoutCameraViewModel: ObservableObject {
     @Published var focalLengthMm: Double = 35
     @Published var selectedFrameLines: [FrameLineOption] {
         didSet {
-            let normalized = normalizedFrameLines(selectedFrameLines)
+            let normalized = Self.normalizedFrameLines(selectedFrameLines)
             if normalized != selectedFrameLines {
                 selectedFrameLines = normalized
                 return
@@ -71,10 +71,10 @@ final class ScoutCameraViewModel: ObservableObject {
         self.showFrameShading = UserDefaults.standard.bool(forKey: PreferenceKey.showFrameShading)
         if let savedRawValues = UserDefaults.standard.stringArray(forKey: PreferenceKey.selectedFrameLines) {
             let savedOptions = savedRawValues.compactMap(FrameLineOption.init(rawValue:))
-            self.selectedFrameLines = normalizedFrameLines(savedOptions)
+            self.selectedFrameLines = Self.normalizedFrameLines(savedOptions)
         } else if let rawValue = UserDefaults.standard.string(forKey: PreferenceKey.selectedFrameLine),
                   let savedOption = FrameLineOption(rawValue: rawValue) {
-            self.selectedFrameLines = normalizedFrameLines([savedOption])
+            self.selectedFrameLines = Self.normalizedFrameLines([savedOption])
         } else {
             self.selectedFrameLines = [.none]
         }
@@ -399,7 +399,7 @@ final class ScoutCameraViewModel: ObservableObject {
     }
 
     var activeFrameLineOptions: [FrameLineOption] {
-        normalizedFrameLines(selectedFrameLines).filter { $0 != .none }
+        Self.normalizedFrameLines(selectedFrameLines).filter { $0 != .none }
     }
 
     var primaryFrameLineOption: FrameLineOption {
@@ -474,7 +474,7 @@ final class ScoutCameraViewModel: ObservableObject {
         return "\(Int(focalLengthMm))mm"
     }
 
-    private func normalizedFrameLines(_ options: [FrameLineOption]) -> [FrameLineOption] {
+    private static func normalizedFrameLines(_ options: [FrameLineOption]) -> [FrameLineOption] {
         let unique = Array(Set(options))
         let withoutNone = unique.filter { $0 != .none }
         if withoutNone.isEmpty {
