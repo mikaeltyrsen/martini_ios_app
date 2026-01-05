@@ -778,26 +778,6 @@ struct FrameView: View {
             )
             .frame(height: scrollerHeight)
 
-            if isReorderingBoards {
-                HStack(spacing: 12) {
-                    Text("Reorder boards")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.secondary)
-
-                    Spacer()
-
-                    Button("Cancel") {
-                        cancelBoardReorder()
-                    }
-                    .buttonStyle(.bordered)
-
-                    Button("Save") {
-                        commitBoardReorder()
-                    }
-                    .buttonStyle(.borderedProminent)
-                }
-                .padding(.horizontal, 20)
-            }
             //Spacer()
             boardCarouselTabs
             //Spacer()
@@ -1283,6 +1263,12 @@ struct FrameView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 0) {
                         Spacer(minLength: 0)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                if isReorderingBoards {
+                                    commitBoardReorder()
+                                }
+                            }
 
                         HStack(spacing: 8) {
                             if isReorderingBoards {
@@ -1322,6 +1308,34 @@ struct FrameView: View {
                                     )
                                     .id(board.id)
                                 }
+
+                                Button {
+                                    cancelBoardReorder()
+                                } label: {
+                                    Image(systemName: "xmark")
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundStyle(.primary)
+                                        .padding(10)
+                                        .background(
+                                            Capsule()
+                                                .fill(Color.secondary.opacity(0.15))
+                                        )
+                                }
+                                .buttonStyle(.plain)
+
+                                Button {
+                                    commitBoardReorder()
+                                } label: {
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 14, weight: .semibold))
+                                        .foregroundStyle(Color.white)
+                                        .padding(10)
+                                        .background(
+                                            Capsule()
+                                                .fill(Color.martiniDefaultColor)
+                                        )
+                                }
+                                .buttonStyle(.plain)
                             } else {
                                 ForEach(assetStack) { asset in
                                     let isSelected: Bool = (asset.id == visibleAssetID)
@@ -1357,6 +1371,12 @@ struct FrameView: View {
                         }
 
                         Spacer(minLength: 0)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                if isReorderingBoards {
+                                    commitBoardReorder()
+                                }
+                            }
                     }
                     .padding(.horizontal, 20)
                     // Force content to be at least viewport width so Spacers can center it
