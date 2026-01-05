@@ -917,11 +917,15 @@ struct FrameView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.top, 10)
             .contextMenu {
-                Button("Copy Description") {
+                Button {
                     UIPasteboard.general.string = descriptionCopyText ?? ""
+                } label: {
+                    Label("Copy Description", systemImage: "doc.on.doc")
                 }
-                Button("Edit Description") {
+                Button {
                     openDescriptionEditor()
+                } label: {
+                    Label("Edit Description", systemImage: "pencil")
                 }
             }
             .disabled(secondaryText.isEmpty)
@@ -938,8 +942,10 @@ struct FrameView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.top, 10)
             .contextMenu {
-                Button("Edit Description") {
+                Button {
                     openDescriptionEditor()
+                } label: {
+                    Label("Edit Description", systemImage: "pencil")
                 }
             }
         }
