@@ -89,7 +89,40 @@ final class RichTextEditorState: ObservableObject {
             return nil
         }
 
-        return String(data: data, encoding: .utf8)
+        guard let html = String(data: data, encoding: .utf8) else {
+            return nil
+        }
+
+        return sanitizedHTML(html)
+    }
+
+    private func sanitizedHTML(_ html: String) -> String {
+        let bodyContent = extractBodyContent(from: html) ?? html
+        let classStripped = stripClassAttributes(from: bodyContent)
+        return classStripped.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func extractBodyContent(from html: String) -> String? {
+        let pattern = "<body[^>]*>([\\s\\S]*)</body>"
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else {
+            return nil
+        }
+        let range = NSRange(html.startIndex..<html.endIndex, in: html)
+        guard let match = regex.firstMatch(in: html, options: [], range: range),
+              match.numberOfRanges > 1,
+              let bodyRange = Range(match.range(at: 1), in: html) else {
+            return nil
+        }
+        return String(html[bodyRange])
+    }
+
+    private func stripClassAttributes(from html: String) -> String {
+        let pattern = "\\sclass=\"[^\"]*\""
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
+            return html
+        }
+        let range = NSRange(html.startIndex..<html.endIndex, in: html)
+        return regex.stringByReplacingMatches(in: html, options: [], range: range, withTemplate: "")
     }
 
     private func toggleFontTrait(_ trait: UIFontDescriptor.SymbolicTraits) {
