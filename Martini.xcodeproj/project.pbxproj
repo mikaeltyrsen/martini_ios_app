@@ -16,6 +16,8 @@
 		0730F3FE2F0487F3000B598F /* ThemePreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F3FD2F0487F3000B598F /* ThemePreference.swift */; };
 		0730F4002F070A2E000B598F /* ScriptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F3FF2F070A2E000B598F /* ScriptView.swift */; };
 		0730F4042F0ABFBB000B598F /* FramePagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4032F0ABFBB000B598F /* FramePagerView.swift */; };
+		0730F4072F0B6800000B598F /* FrameDescriptionEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4052F0B6800000B598F /* FrameDescriptionEditorSheet.swift */; };
+		0730F4082F0B6800000B598F /* RichTextEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4062F0B6800000B598F /* RichTextEditor.swift */; };
 		075456022EC9A6E200C45739 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075455FE2EC9A6E100C45739 /* AuthService.swift */; };
 		075456032EC9A6E200C45739 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075455FF2EC9A6E100C45739 /* LoginView.swift */; };
 		075456042EC9A6E200C45739 /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075456002EC9A6E100C45739 /* QRScannerView.swift */; };
@@ -76,6 +78,8 @@
 		0730F3FD2F0487F3000B598F /* ThemePreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemePreference.swift; sourceTree = "<group>"; };
 		0730F3FF2F070A2E000B598F /* ScriptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptView.swift; sourceTree = "<group>"; };
 		0730F4032F0ABFBB000B598F /* FramePagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FramePagerView.swift; sourceTree = "<group>"; };
+		0730F4052F0B6800000B598F /* FrameDescriptionEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameDescriptionEditorSheet.swift; sourceTree = "<group>"; };
+		0730F4062F0B6800000B598F /* RichTextEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichTextEditor.swift; sourceTree = "<group>"; };
 		075455FE2EC9A6E100C45739 /* AuthService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		075455FF2EC9A6E100C45739 /* LoginView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		075456002EC9A6E100C45739 /* QRScannerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
@@ -174,6 +178,8 @@
 		07A6A6842EC9A272002C8EB9 /* Martini */ = {
 			isa = PBXGroup;
 			children = (
+				0730F4052F0B6800000B598F /* FrameDescriptionEditorSheet.swift */,
+				0730F4062F0B6800000B598F /* RichTextEditor.swift */,
 				0730F4032F0ABFBB000B598F /* FramePagerView.swift */,
 				0730F3FF2F070A2E000B598F /* ScriptView.swift */,
 				0730F3F72F0400FC000B598F /* Comments */,
@@ -338,6 +344,8 @@
 				A1B2C3D4E5F60718293A4B5E /* ScoutCamera/Calibration/FOVCalibrationStore.swift in Sources */,
 				B1C2D3E4F5061728394A5B6D /* ScoutCamera/Calibration/FOVCalibrationView.swift in Sources */,
 				C1D2E3F40516273849A5B6C8 /* ScoutCamera/Calibration/FOVCalibrationViewModel.swift in Sources */,
+				0730F4072F0B6800000B598F /* FrameDescriptionEditorSheet.swift in Sources */,
+				0730F4082F0B6800000B598F /* RichTextEditor.swift in Sources */,
 				B97E51D7EFDA491EBD6C974C /* ScoutCamera/CameraKit/CaptureSessionManager.swift in Sources */,
 				F8C07B4A4CB449BDB50BE3BB /* ScoutCamera/CameraKit/CameraDeviceSelector.swift in Sources */,
 				3953947E4AE944899289AFFB /* ScoutCamera/CameraKit/PhotoCaptureProcessor.swift in Sources */,
