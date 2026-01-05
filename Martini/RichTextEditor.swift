@@ -80,8 +80,21 @@ final class RichTextEditorState: ObservableObject {
     }
 
     func htmlRepresentation() -> String? {
-        let paragraphs = attributedText.string.components(separatedBy: .newlines)
-        let html = paragraphs.map { "<p>\(escapeHTML($0))</p>" }.joined()
+        let nsString = attributedText.string as NSString
+        let fullRange = NSRange(location: 0, length: nsString.length)
+        let traitCollection = textView?.traitCollection ?? UITraitCollection.current
+        var htmlParagraphs: [String] = []
+
+        nsString.enumerateSubstrings(in: fullRange, options: .byParagraphs) { substring, range, _, _ in
+            let paragraphStyle = attributedText.attribute(.paragraphStyle, at: max(range.location, 0), effectiveRange: nil) as? NSParagraphStyle
+            let alignmentStyle = htmlParagraphAlignmentStyle(paragraphStyle)
+            let paragraphContent = htmlContent(in: range, source: nsString, traitCollection: traitCollection)
+            let resolvedContent = paragraphContent.isEmpty ? "<br>" : paragraphContent
+            let styleAttribute = alignmentStyle.map { " style=\"\($0)\"" } ?? ""
+            htmlParagraphs.append("<p\(styleAttribute)>\(resolvedContent)</p>")
+        }
+
+        let html = htmlParagraphs.joined()
         return html.isEmpty ? nil : html
     }
 
@@ -100,6 +113,94 @@ final class RichTextEditorState: ObservableObject {
         }
 
         return escaped
+    }
+
+    private func htmlParagraphAlignmentStyle(_ style: NSParagraphStyle?) -> String? {
+        guard let alignment = style?.alignment else { return nil }
+
+        switch alignment {
+        case .center:
+            return "text-align: center;"
+        case .right:
+            return "text-align: right;"
+        case .justified:
+            return "text-align: justify;"
+        case .left, .natural:
+            return nil
+        @unknown default:
+            return nil
+        }
+    }
+
+    private func htmlContent(
+        in range: NSRange,
+        source: NSString,
+        traitCollection: UITraitCollection
+    ) -> String {
+        var segments: [String] = []
+
+        attributedText.enumerateAttributes(in: range, options: []) { attributes, runRange, _ in
+            let rawText = source.substring(with: runRange)
+            let escapedText = escapeHTML(rawText)
+            let styledText = applyHTMLStyles(
+                escapedText,
+                attributes: attributes,
+                traitCollection: traitCollection
+            )
+            segments.append(styledText)
+        }
+
+        return segments.joined()
+    }
+
+    private func applyHTMLStyles(
+        _ text: String,
+        attributes: [NSAttributedString.Key: Any],
+        traitCollection: UITraitCollection
+    ) -> String {
+        var wrappedText = text
+
+        if let color = attributes[.foregroundColor] as? UIColor,
+           let colorString = htmlRGBColorString(from: color, traitCollection: traitCollection),
+           !colorsEqual(color, baseColor, traitCollection: traitCollection) {
+            wrappedText = "<span style=\"color: \(colorString);\">\(wrappedText)</span>"
+        }
+
+        if let underlineStyle = attributes[.underlineStyle] as? Int, underlineStyle != 0 {
+            wrappedText = "<u>\(wrappedText)</u>"
+        }
+
+        if let strikethroughStyle = attributes[.strikethroughStyle] as? Int, strikethroughStyle != 0 {
+            wrappedText = "<s>\(wrappedText)</s>"
+        }
+
+        let font = (attributes[.font] as? UIFont) ?? baseFont
+        let traits = font.fontDescriptor.symbolicTraits
+        if traits.contains(.traitItalic) {
+            wrappedText = "<em>\(wrappedText)</em>"
+        }
+        if traits.contains(.traitBold) {
+            wrappedText = "<strong>\(wrappedText)</strong>"
+        }
+
+        return wrappedText
+    }
+
+    private func htmlRGBColorString(from color: UIColor, traitCollection: UITraitCollection) -> String? {
+        let resolvedColor = color.resolvedColor(with: traitCollection)
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+
+        guard resolvedColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else {
+            return nil
+        }
+
+        let redValue = Int(round(red * 255))
+        let greenValue = Int(round(green * 255))
+        let blueValue = Int(round(blue * 255))
+        return "rgb(\(redValue), \(greenValue), \(blueValue))"
     }
 
     private func toggleFontTrait(_ trait: UIFontDescriptor.SymbolicTraits) {
