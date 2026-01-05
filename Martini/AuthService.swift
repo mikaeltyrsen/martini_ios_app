@@ -827,10 +827,10 @@ class AuthService: ObservableObject {
         print("📥 Update description response received (\(httpResponse.statusCode)):")
         print(responseJSON)
 
-        let response = try JSONDecoder().decode(BasicResponse.self, from: data)
-        guard response.success else {
-            print("❌ Update description response failed: \(response.error ?? "Unknown error")")
-            throw AuthError.authenticationFailedWithMessage(response.error ?? "Failed to update description")
+        let basicResponse = try JSONDecoder().decode(BasicResponse.self, from: data)
+        guard basicResponse.success else {
+            print("❌ Update description response failed: \(basicResponse.error ?? "Unknown error")")
+            throw AuthError.authenticationFailedWithMessage(basicResponse.error ?? "Failed to update description")
         }
 
         guard let existingIndex = frames.firstIndex(where: { $0.id == frameId }) else {
