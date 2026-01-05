@@ -88,10 +88,16 @@ final class RichTextEditorState: ObservableObject {
         nsString.enumerateSubstrings(in: fullRange, options: .byParagraphs) { substring, range, _, _ in
             let paragraphStyle = self.attributedText.attribute(.paragraphStyle, at: max(range.location, 0), effectiveRange: nil) as? NSParagraphStyle
             let alignmentStyle = self.htmlParagraphAlignmentStyle(paragraphStyle)
+            let isBlockQuote = self.isBlockQuoteParagraph(paragraphStyle)
             let paragraphContent = self.htmlContent(in: range, source: nsString, traitCollection: traitCollection)
             let resolvedContent = paragraphContent.isEmpty ? "<br>" : paragraphContent
             let styleAttribute = alignmentStyle.map { " style=\"\($0)\"" } ?? ""
-            htmlParagraphs.append("<p\(styleAttribute)>\(resolvedContent)</p>")
+            let paragraphHTML = "<p\(styleAttribute)>\(resolvedContent)</p>"
+            if isBlockQuote {
+                htmlParagraphs.append("<blockquote>\(paragraphHTML)</blockquote>")
+            } else {
+                htmlParagraphs.append(paragraphHTML)
+            }
         }
 
         let html = htmlParagraphs.joined()
@@ -125,11 +131,18 @@ final class RichTextEditorState: ObservableObject {
             return "text-align: right;"
         case .justified:
             return "text-align: justify;"
-        case .left, .natural:
+        case .left:
+            return "text-align: left;"
+        case .natural:
             return nil
         @unknown default:
             return nil
         }
+    }
+
+    private func isBlockQuoteParagraph(_ style: NSParagraphStyle?) -> Bool {
+        guard let style else { return false }
+        return style.firstLineHeadIndent > 0 || style.headIndent > 0
     }
 
     private func htmlContent(

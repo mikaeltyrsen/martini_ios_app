@@ -79,8 +79,11 @@ public func attributedStringFromHTML(
     body { font-family: -apple-system; font-size: \(fontSize); }
     p { margin: 0 0 1em 0; }
     p:last-child { margin-bottom: 0; }
+    blockquote { margin: 0 0 1em 0; padding-left: 16px; }
+    blockquote:last-child { margin-bottom: 0; }
     .ql-align-center { text-align: center; }
     .ql-align-left { text-align: left; }
+    .ql-align-justify { text-align: justify; }
     .ql-align-right { text-align: right; }
     </style>
     </head>
