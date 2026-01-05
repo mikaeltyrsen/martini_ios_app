@@ -348,7 +348,7 @@ struct ScoutCameraLayout: View {
     }
 
     private var isFramingActive: Bool {
-        viewModel.selectedFrameLine != .none
+        !viewModel.activeFrameLineOptions.isEmpty
             || viewModel.showCrosshair
             || viewModel.showGrid
             || viewModel.showFrameShading
@@ -452,17 +452,9 @@ struct ScoutCameraLayout: View {
                 List {
                     Section {
                         NavigationLink {
-                            ScoutCameraLayout.SelectionList(
-                                items: FrameLineOption.allCases,
-                                selectedId: viewModel.selectedFrameLine.id,
-                                title: "Frame Lines",
-                                rowTitle: { $0.rawValue },
-                                rowSubtitle: { _ in nil }
-                            ) { option in
-                                viewModel.selectedFrameLine = option
-                            }
+                            FrameLineSelectionList(viewModel: viewModel)
                         } label: {
-                            SettingsSectionLabel(title: "Frame Lines", value: viewModel.selectedFrameLine.rawValue)
+                            SettingsSectionLabel(title: "Frame Lines", value: viewModel.frameLineSummary)
                         }
                     }
 
@@ -479,6 +471,47 @@ struct ScoutCameraLayout: View {
                         Button("Done") {
                             dismiss()
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    private struct FrameLineSelectionList: View {
+        @Environment(\.dismiss) private var dismiss
+        @ObservedObject var viewModel: ScoutCameraViewModel
+
+        var body: some View {
+            List {
+                Section {
+                    ForEach(FrameLineOption.allCases) { option in
+                        Button {
+                            viewModel.toggleFrameLine(option)
+                        } label: {
+                            HStack {
+                                Text(option.rawValue)
+                                Spacer()
+                                if viewModel.isFrameLineSelected(option) {
+                                    Image(systemName: "checkmark")
+                                        .font(.caption.weight(.semibold))
+                                }
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(viewModel.isFrameLineOptionDisabled(option))
+                    }
+                } footer: {
+                    Text("Select up to 3 frame lines.")
+                }
+            }
+            .listStyle(.insetGrouped)
+            .navigationTitle("Frame Lines")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
                     }
                 }
             }
@@ -801,25 +834,25 @@ struct ScoutCameraLayout: View {
                     ReferenceImageGuide(
                         url: selection.url,
                         crop: selection.crop,
-                        aspectRatio: viewModel.selectedFrameLine.aspectRatio ?? targetAspectRatio
+                        aspectRatio: viewModel.primaryFrameLineOption.aspectRatio ?? targetAspectRatio
                     )
                         .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
                         .allowsHitTesting(false)
                 }
 
-                if let frameLineAspect = viewModel.selectedFrameLine.aspectRatio {
-                    FrameLineOverlay(aspectRatio: frameLineAspect)
+                if !viewModel.activeFrameLineOptions.isEmpty {
+                    FrameLineOverlay(aspectRatios: viewModel.activeFrameLineOptions.compactMap(\.aspectRatio))
                         .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
                 }
 
                 if viewModel.showFrameShading,
-                   let frameLineAspect = viewModel.selectedFrameLine.aspectRatio {
-                    FrameShadingOverlay(aspectRatio: frameLineAspect)
+                   !viewModel.activeFrameLineOptions.isEmpty {
+                    FrameShadingOverlay(aspectRatios: viewModel.activeFrameLineOptions.compactMap(\.aspectRatio))
                         .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
                 }
 
                 if viewModel.showGrid {
-                    GridOverlay(aspectRatio: viewModel.selectedFrameLine.aspectRatio)
+                    GridOverlay(aspectRatio: viewModel.primaryFrameLineOption.aspectRatio)
                         .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
                 }
 
@@ -990,7 +1023,7 @@ struct ScoutCameraLayout: View {
                     url: selection.url,
                     crop: selection.crop,
                     maxLength: maxLength,
-                    aspectRatio: viewModel.selectedFrameLine.aspectRatio ?? targetAspectRatio
+                    aspectRatio: viewModel.primaryFrameLineOption.aspectRatio ?? targetAspectRatio
                 )
                     .onTapGesture {
                         showBoardGuide.toggle()
@@ -1365,20 +1398,22 @@ private struct CameraPreviewView: UIViewRepresentable {
 }
 
 private struct FrameLineOverlay: View {
-    let aspectRatio: CGFloat
+    let aspectRatios: [CGFloat]
 
     var body: some View {
         GeometryReader { proxy in
-            let rect = frameRect(in: proxy.size)
             Path { path in
-                path.addRect(rect)
+                aspectRatios.forEach { aspectRatio in
+                    let rect = frameRect(in: proxy.size, aspectRatio: aspectRatio)
+                    path.addRect(rect)
+                }
             }
             .stroke(.white.opacity(0.8), lineWidth: 2)
         }
         .allowsHitTesting(false)
     }
 
-    private func frameRect(in size: CGSize) -> CGRect {
+    private func frameRect(in size: CGSize, aspectRatio: CGFloat) -> CGRect {
         let containerAspect = size.width / max(size.height, 1)
         let width: CGFloat
         let height: CGFloat
@@ -1394,32 +1429,36 @@ private struct FrameLineOverlay: View {
 }
 
 private struct FrameShadingOverlay: View {
-    let aspectRatio: CGFloat
+    let aspectRatios: [CGFloat]
 
     var body: some View {
         GeometryReader { proxy in
-            let rect = frameRect(in: proxy.size)
-            Path { path in
-                path.addRect(CGRect(origin: .zero, size: proxy.size))
-                path.addRect(rect)
+            if let rect = smallestFrameRect(in: proxy.size) {
+                Path { path in
+                    path.addRect(CGRect(origin: .zero, size: proxy.size))
+                    path.addRect(rect)
+                }
+                .fill(.black.opacity(0.7), style: FillStyle(eoFill: true))
             }
-            .fill(.black.opacity(0.7), style: FillStyle(eoFill: true))
         }
         .allowsHitTesting(false)
     }
 
-    private func frameRect(in size: CGSize) -> CGRect {
-        let containerAspect = size.width / max(size.height, 1)
-        let width: CGFloat
-        let height: CGFloat
-        if containerAspect > aspectRatio {
-            height = size.height
-            width = height * aspectRatio
-        } else {
-            width = size.width
-            height = width / aspectRatio
+    private func smallestFrameRect(in size: CGSize) -> CGRect? {
+        aspectRatios.compactMap { aspectRatio in
+            let containerAspect = size.width / max(size.height, 1)
+            let width: CGFloat
+            let height: CGFloat
+            if containerAspect > aspectRatio {
+                height = size.height
+                width = height * aspectRatio
+            } else {
+                width = size.width
+                height = width / aspectRatio
+            }
+            return CGRect(x: (size.width - width) / 2, y: (size.height - height) / 2, width: width, height: height)
         }
-        return CGRect(x: (size.width - width) / 2, y: (size.height - height) / 2, width: width, height: height)
+        .min(by: { $0.width * $0.height < $1.width * $1.height })
     }
 }
 
