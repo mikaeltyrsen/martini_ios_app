@@ -450,11 +450,33 @@ struct ScoutCameraLayout: View {
         var body: some View {
             NavigationStack {
                 List {
-                    Section {
+                    Section("Frame Lines") {
                         NavigationLink {
-                            FrameLineSettingsList(viewModel: viewModel)
+                            FrameLineAddList(viewModel: viewModel)
                         } label: {
-                            SettingsSectionLabel(title: "Frame Lines", value: viewModel.frameLineSummary)
+                            Label("Add Frame Line", systemImage: "plus")
+                        }
+                    }
+
+                    Section("Selected Frame Lines") {
+                        if viewModel.frameLineConfigurations.isEmpty {
+                            Text("No frame lines selected.")
+                                .foregroundStyle(.secondary)
+                        } else {
+                            ForEach(viewModel.frameLineConfigurations) { configuration in
+                                NavigationLink {
+                                    FrameLineDetailView(configuration: viewModel.binding(for: configuration))
+                                } label: {
+                                    FrameLineRow(configuration: configuration)
+                                }
+                            }
+                            .onDelete { indexSet in
+                                for index in indexSet {
+                                    let configuration = viewModel.frameLineConfigurations[index]
+                                    viewModel.removeFrameLineConfiguration(configuration)
+                                }
+                            }
+                            .onMove(perform: viewModel.moveFrameLineConfigurations)
                         }
                     }
 
@@ -467,62 +489,13 @@ struct ScoutCameraLayout: View {
                 .navigationTitle("Camera Settings")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        EditButton()
+                    }
                     ToolbarItem(placement: .topBarTrailing) {
                         Button("Done") {
                             dismiss()
                         }
-                    }
-                }
-            }
-        }
-    }
-
-    private struct FrameLineSettingsList: View {
-        @Environment(\.dismiss) private var dismiss
-        @ObservedObject var viewModel: ScoutCameraViewModel
-
-        var body: some View {
-            List {
-                Section {
-                    NavigationLink {
-                        FrameLineAddList(viewModel: viewModel)
-                    } label: {
-                        Label("Add Frame Line", systemImage: "plus")
-                    }
-                }
-
-                Section("Selected Frame Lines") {
-                    if viewModel.frameLineConfigurations.isEmpty {
-                        Text("No frame lines selected.")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(viewModel.frameLineConfigurations) { configuration in
-                            NavigationLink {
-                                FrameLineDetailView(configuration: viewModel.binding(for: configuration))
-                            } label: {
-                                FrameLineRow(configuration: configuration)
-                            }
-                        }
-                        .onDelete { indexSet in
-                            for index in indexSet {
-                                let configuration = viewModel.frameLineConfigurations[index]
-                                viewModel.removeFrameLineConfiguration(configuration)
-                            }
-                        }
-                        .onMove(perform: viewModel.moveFrameLineConfigurations)
-                    }
-                }
-            }
-            .listStyle(.insetGrouped)
-            .navigationTitle("Frame Lines")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    EditButton()
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
-                        dismiss()
                     }
                 }
             }
@@ -594,10 +567,9 @@ struct ScoutCameraLayout: View {
                 Section("Color") {
                     Picker("Color", selection: $configuration.color) {
                         ForEach(FrameLineColor.allCases) { color in
-                            HStack {
-                                Circle()
-                                    .fill(color.swiftUIColor)
-                                    .frame(width: 12, height: 12)
+                            HStack(spacing: 8) {
+                                Image(systemName: "circle.fill")
+                                    .foregroundStyle(color.swiftUIColor)
                                 Text(color.displayName)
                             }
                             .tag(color)
@@ -617,7 +589,10 @@ struct ScoutCameraLayout: View {
                 Section("Line Design") {
                     Picker("Line Design", selection: $configuration.design) {
                         ForEach(FrameLineDesign.allCases) { design in
-                            Label(design.displayName, systemImage: design.symbolName)
+                            HStack(spacing: 8) {
+                                Image(systemName: design.symbolName)
+                                Text(design.displayName)
+                            }
                                 .tag(design)
                         }
                     }
