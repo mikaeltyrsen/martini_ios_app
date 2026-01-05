@@ -307,6 +307,17 @@ final class ScoutCameraViewModel: ObservableObject {
     private func metadataJSONString() -> String? {
         guard let camera = selectedCamera, let mode = selectedMode, let lens = selectedLens else { return nil }
         let squeeze = effectiveSqueeze(mode: mode, lens: lens)
+        let frameLineData = frameLineConfigurations.map { configuration in
+            compactMetadata([
+                "id": configuration.id.uuidString,
+                "label": configuration.option.rawValue,
+                "aspect_ratio": configuration.option.aspectRatio,
+                "color": configuration.color.rawValue,
+                "opacity": configuration.opacity,
+                "design": configuration.design.rawValue,
+                "thickness": configuration.thickness
+            ])
+        }
         let extractionData: [String: Any]? = mode.extraction.map { hint in
             compactMetadata([
                 "inside": hint.inside,
@@ -322,6 +333,7 @@ final class ScoutCameraViewModel: ObservableObject {
             "frame_line_aspect_ratio": primaryFrameLineOption.aspectRatio,
             "selected_frame_lines": activeFrameLineOptions.map(\.rawValue),
             "frame_line_aspect_ratios": activeFrameLineOptions.compactMap(\.aspectRatio),
+            "framelines": frameLineData,
             "target_aspect_ratio": targetAspectRatio,
             "matched_camera_role": matchResult?.cameraRole,
             "matched_zoom_factor": matchResult?.zoomFactor
