@@ -779,7 +779,9 @@ struct FrameView: View {
                 onMetadataTap: { asset, metadata in
                     metadataSheetItem = BoardMetadataItem(
                         boardName: asset.displayLabel,
-                        metadata: metadata
+                        metadata: metadata,
+                        assetURL: asset.url,
+                        assetIsVideo: asset.isVideo
                     )
                 },
                 contextMenuContent: { asset in
@@ -2407,46 +2409,6 @@ private struct QuickLookPreview: UIViewControllerRepresentable {
     }
 }
 
-private struct BoardMetadataItem: Identifiable {
-    let id = UUID()
-    let boardName: String
-    let metadata: JSONValue
-}
-
-private struct BoardMetadataSheet: View {
-    let item: BoardMetadataItem
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                Text(formattedMetadata)
-                    .font(.system(.footnote, design: .monospaced))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
-                    .textSelection(.enabled)
-            }
-            .navigationTitle("\(item.boardName) Metadata")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-
-    private var formattedMetadata: String {
-        let object = item.metadata.anyValue
-        if JSONSerialization.isValidJSONObject(object),
-           let data = try? JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys]),
-           let string = String(data: data, encoding: .utf8) {
-            return string
-        }
-        return String(describing: object)
-    }
-}
 
 private struct ShareItem: Identifiable {
     let id = UUID()
