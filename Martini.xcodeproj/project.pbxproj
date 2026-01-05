@@ -23,6 +23,7 @@
 		0730F4112F0C6F7D000B598F /* CachedVideoPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4102F0C6F7D000B598F /* CachedVideoPlayerView.swift */; };
 		0730F4122F0C6F7D000B598F /* BoardMetadataSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F40F2F0C6F7D000B598F /* BoardMetadataSheet.swift */; };
 		0730F4162F0C7EB7000B598F /* ScoutCameraMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4152F0C7EB7000B598F /* ScoutCameraMetadata.swift */; };
+		0730F41A2F0C843C000B598F /* ScoutCameraOverlays.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4182F0C843C000B598F /* ScoutCameraOverlays.swift */; };
 		075456022EC9A6E200C45739 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075455FE2EC9A6E100C45739 /* AuthService.swift */; };
 		075456032EC9A6E200C45739 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075455FF2EC9A6E100C45739 /* LoginView.swift */; };
 		075456042EC9A6E200C45739 /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075456002EC9A6E100C45739 /* QRScannerView.swift */; };
@@ -90,6 +91,7 @@
 		0730F40F2F0C6F7D000B598F /* BoardMetadataSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardMetadataSheet.swift; sourceTree = "<group>"; };
 		0730F4102F0C6F7D000B598F /* CachedVideoPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedVideoPlayerView.swift; sourceTree = "<group>"; };
 		0730F4152F0C7EB7000B598F /* ScoutCameraMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCameraMetadata.swift; sourceTree = "<group>"; };
+		0730F4182F0C843C000B598F /* ScoutCameraOverlays.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCameraOverlays.swift; sourceTree = "<group>"; };
 		075455FE2EC9A6E100C45739 /* AuthService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		075455FF2EC9A6E100C45739 /* LoginView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		075456002EC9A6E100C45739 /* QRScannerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
@@ -188,6 +190,7 @@
 		07A6A6842EC9A272002C8EB9 /* Martini */ = {
 			isa = PBXGroup;
 			children = (
+				0730F4182F0C843C000B598F /* ScoutCameraOverlays.swift */,
 				0730F4152F0C7EB7000B598F /* ScoutCameraMetadata.swift */,
 				0730F40F2F0C6F7D000B598F /* BoardMetadataSheet.swift */,
 				0730F4102F0C6F7D000B598F /* CachedVideoPlayerView.swift */,
@@ -377,6 +380,7 @@
 				0730F4002F070A2E000B598F /* ScriptView.swift in Sources */,
 				971BF5F118754777A65B3907 /* ScoutCamera/Processing/PhotoProcessor.swift in Sources */,
 				7F251D3597AB4FAA834B4741 /* LocalData/DBModels.swift in Sources */,
+				0730F41A2F0C843C000B598F /* ScoutCameraOverlays.swift in Sources */,
 				5C6E43A1C4B1418B89DCD0E8 /* LocalData/LocalJSONStore.swift in Sources */,
 				0730F3FE2F0487F3000B598F /* ThemePreference.swift in Sources */,
 				CB0A92282BEE469EB696343F /* ProjectKit/ProjectKitSettingsView.swift in Sources */,
