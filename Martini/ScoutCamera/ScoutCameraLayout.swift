@@ -626,7 +626,7 @@ struct ScoutCameraLayout: View {
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Thickness")
-                        Slider(value: $configuration.thickness, in: 1...10, step: 1)
+                        Slider(value: $configuration.thickness, in: 1...4, step: 1)
                         Text("\(Int(configuration.thickness)) pt")
                             .font(.caption)
                             .foregroundStyle(.secondary)
