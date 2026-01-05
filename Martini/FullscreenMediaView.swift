@@ -72,10 +72,19 @@ struct FullscreenMediaViewer: View {
                     .opacity(isVisible ? 1 : 0)
                     .ignoresSafeArea()
 
-                mediaView
-                    .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
-                    .opacity(isVisible ? 1 : 0)
-                    .scaleEffect(isVisible ? 1 : 0.98)
+                ZStack {
+                    mediaView
+                        .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
+
+                    if let scoutMetadata {
+                        if !scoutMetadata.frameLines.isEmpty {
+                            FrameLineOverlayView(configurations: scoutMetadata.frameLines)
+                        }
+                        fullscreenMetadataOverlay(scoutMetadata)
+                    }
+                }
+                .opacity(isVisible ? 1 : 0)
+                .scaleEffect(isVisible ? 1 : 0.98)
 
             }
             .contentShape(Rectangle())
@@ -172,6 +181,38 @@ struct FullscreenMediaViewer: View {
 
     private var shouldShowCloseButton: Bool {
         true
+    }
+
+    private var scoutMetadata: ScoutCameraMetadata? {
+        metadataItem.map { ScoutCameraMetadataParser.parse($0.metadata) }.flatMap { $0 }
+    }
+
+    @ViewBuilder
+    private func fullscreenMetadataOverlay(_ metadata: ScoutCameraMetadata) -> some View {
+        VStack {
+            Spacer()
+            VStack(alignment: .leading, spacing: 8) {
+                metadataRow(title: "Camera", value: metadata.cameraName)
+                metadataRow(title: "Camera Mode", value: metadata.cameraMode)
+                metadataRow(title: "Lens", value: metadata.lensName)
+                metadataRow(title: "Focal Length", value: metadata.focalLength)
+            }
+            .padding(12)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .padding([.horizontal, .bottom], 16)
+        }
+        .transition(.opacity)
+    }
+
+    private func metadataRow(title: String, value: String) -> some View {
+        HStack {
+            Text(title)
+                .foregroundStyle(.secondary)
+            Spacer()
+            Text(value)
+                .foregroundStyle(.primary)
+        }
+        .font(.system(size: 14, weight: .semibold))
     }
 }
 
