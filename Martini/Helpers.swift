@@ -131,6 +131,7 @@ public func attributedStringFromHTML(
         }
     }
 
+    applyParagraphSpacing(to: attributed, baseFontSize: resolvedFontSize)
     applyDialogBlockquoteAttributes(to: attributed, sourceHTML: html)
 
     let attributedString = AttributedString(attributed)
@@ -167,6 +168,29 @@ private func applyDialogBlockquoteAttributes(to attributed: NSMutableAttributedS
 
         attributed.addAttribute(dialogBlockquoteAttribute, value: true, range: foundRange)
         searchLocation = foundRange.location + foundRange.length
+    }
+}
+
+private func applyParagraphSpacing(to attributed: NSMutableAttributedString, baseFontSize: CGFloat) {
+    guard attributed.length > 0 else { return }
+
+    let nsString = attributed.string as NSString
+    let fullRange = NSRange(location: 0, length: nsString.length)
+    let paragraphSpacing = max(4, baseFontSize * 0.5)
+
+    attributed.enumerateAttribute(.paragraphStyle, in: fullRange, options: []) { value, range, _ in
+        let currentStyle = (value as? NSParagraphStyle) ?? NSParagraphStyle()
+        let updatedStyle = currentStyle.mutableCopy() as? NSMutableParagraphStyle ?? NSMutableParagraphStyle()
+        updatedStyle.paragraphSpacing = paragraphSpacing
+        attributed.addAttribute(.paragraphStyle, value: updatedStyle, range: range)
+    }
+
+    let lastParagraphRange = nsString.paragraphRange(for: NSRange(location: max(nsString.length - 1, 0), length: 1))
+    if lastParagraphRange.location != NSNotFound {
+        let currentStyle = (attributed.attribute(.paragraphStyle, at: lastParagraphRange.location, effectiveRange: nil) as? NSParagraphStyle) ?? NSParagraphStyle()
+        let updatedStyle = currentStyle.mutableCopy() as? NSMutableParagraphStyle ?? NSMutableParagraphStyle()
+        updatedStyle.paragraphSpacing = 0
+        attributed.addAttribute(.paragraphStyle, value: updatedStyle, range: lastParagraphRange)
     }
 }
 
