@@ -51,6 +51,9 @@ struct FullscreenMediaViewer: View {
     @State private var isToolbarVisible: Bool
     @State private var metadataSheetItem: BoardMetadataItem?
     @State private var mediaAspectRatio: CGFloat?
+    @AppStorage("scoutCameraFullscreenShowFrameLines") private var showFrameLines: Bool = true
+    @AppStorage("scoutCameraFullscreenShowCrosshair") private var showCrosshair: Bool = true
+    @AppStorage("scoutCameraFullscreenShowGrid") private var showGrid: Bool = true
 
     private let animationDuration: Double = 0.25
 
@@ -83,8 +86,20 @@ struct FullscreenMediaViewer: View {
                         .frame(width: mediaSize.width, height: mediaSize.height)
 
                     if let scoutMetadata {
-                        if !scoutMetadata.frameLines.isEmpty {
+                        let hasFrameLines = !scoutMetadata.frameLines.isEmpty
+                        let frameLineAspect = scoutMetadata.frameLines.first?.option.aspectRatio
+                        if hasFrameLines, showFrameLines {
+                            FrameShadingOverlay(configurations: scoutMetadata.frameLines)
+                                .frame(width: mediaSize.width, height: mediaSize.height)
                             FrameLineOverlayView(configurations: scoutMetadata.frameLines)
+                                .frame(width: mediaSize.width, height: mediaSize.height)
+                        }
+                        if hasFrameLines, showGrid {
+                            GridOverlay(aspectRatio: frameLineAspect)
+                                .frame(width: mediaSize.width, height: mediaSize.height)
+                        }
+                        if hasFrameLines, showCrosshair {
+                            CrosshairOverlay()
                                 .frame(width: mediaSize.width, height: mediaSize.height)
                         }
                         fullscreenMetadataOverlay(scoutMetadata)
@@ -207,12 +222,30 @@ struct FullscreenMediaViewer: View {
                 metadataRow(title: "Camera Mode", value: metadata.cameraMode)
                 metadataRow(title: "Lens", value: metadata.lensName)
                 metadataRow(title: "Focal Length", value: metadata.focalLength)
+                if !metadata.frameLines.isEmpty {
+                    overlayToggles
+                }
             }
             .padding(12)
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             .padding([.horizontal, .bottom], 16)
         }
         .transition(.opacity)
+    }
+
+    private var overlayToggles: some View {
+        HStack(spacing: 8) {
+            overlayToggle(title: "Frame Lines", isOn: $showFrameLines)
+            overlayToggle(title: "Cross Hair", isOn: $showCrosshair)
+            overlayToggle(title: "Grid", isOn: $showGrid)
+        }
+    }
+
+    private func overlayToggle(title: String, isOn: Binding<Bool>) -> some View {
+        Toggle(title, isOn: isOn)
+            .toggleStyle(.button)
+            .font(.system(size: 12, weight: .semibold))
+            .buttonBorderShape(.capsule)
     }
 
     private func metadataRow(title: String, value: String) -> some View {
