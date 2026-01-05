@@ -223,6 +223,7 @@ struct RichTextEditorView: UIViewRepresentable {
             .font: state.baseFont,
             .foregroundColor: state.baseColor
         ]
+        textView.inputAccessoryView = makeAccessoryToolbar()
         state.textView = textView
         return textView
     }
@@ -241,6 +242,66 @@ struct RichTextEditorView: UIViewRepresentable {
 
     func makeCoordinator() -> Coordinator {
         Coordinator(state: state)
+    }
+
+    private func makeAccessoryToolbar() -> UIToolbar {
+        let toolbar = UIToolbar()
+        toolbar.items = [
+            accessoryButton(systemName: "bold") { state.toggleBold() },
+            accessoryButton(systemName: "italic") { state.toggleItalic() },
+            accessoryButton(systemName: "underline") { state.toggleUnderline() },
+            accessoryButton(systemName: "strikethrough") { state.toggleStrikethrough() },
+            UIBarButtonItem(
+                image: UIImage(systemName: "paintpalette"),
+                primaryAction: nil,
+                menu: UIMenu(children: [
+                    UIAction(title: "Default") { _ in
+                        state.applyColor(.label)
+                    },
+                    UIAction(title: "Red") { _ in
+                        state.applyColor(.systemRed)
+                    },
+                    UIAction(title: "Orange") { _ in
+                        state.applyColor(.systemOrange)
+                    },
+                    UIAction(title: "Green") { _ in
+                        state.applyColor(.systemGreen)
+                    },
+                    UIAction(title: "Blue") { _ in
+                        state.applyColor(.systemBlue)
+                    }
+                ])
+            ),
+            UIBarButtonItem(
+                image: UIImage(systemName: "text.alignleft"),
+                primaryAction: nil,
+                menu: UIMenu(children: [
+                    UIAction(title: "Left", image: UIImage(systemName: "text.alignleft")) { _ in
+                        state.applyAlignment(.left)
+                    },
+                    UIAction(title: "Center", image: UIImage(systemName: "text.aligncenter")) { _ in
+                        state.applyAlignment(.center)
+                    },
+                    UIAction(title: "Right", image: UIImage(systemName: "text.alignright")) { _ in
+                        state.applyAlignment(.right)
+                    },
+                    UIAction(title: "Justified", image: UIImage(systemName: "text.justify")) { _ in
+                        state.applyAlignment(.justified)
+                    }
+                ])
+            ),
+            accessoryButton(systemName: "text.quote") { state.toggleBlockQuote() },
+            accessoryButton(systemName: "eraser") { state.clearFormatting() }
+        ]
+        toolbar.sizeToFit()
+        return toolbar
+    }
+
+    private func accessoryButton(systemName: String, action: @escaping () -> Void) -> UIBarButtonItem {
+        let action = UIAction { _ in
+            action()
+        }
+        return UIBarButtonItem(image: UIImage(systemName: systemName), primaryAction: action)
     }
 
     final class Coordinator: NSObject, UITextViewDelegate {
