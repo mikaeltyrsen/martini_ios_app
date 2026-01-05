@@ -53,20 +53,104 @@ public func attributedStringFromHTML(
 ) -> AttributedString? {
     let resolvedTraits = UITraitCollection.current
     let resolvedDefaultColor = defaultColor?.resolvedColor(with: resolvedTraits)
-    let colorKey = resolvedDefaultColor.map(rgbaCacheKey) ?? "nil"
-    let normalizedBaseFontSize: CGFloat? = {
-        guard let baseFontSize, baseFontSize.isFinite, baseFontSize > 0 else {
-            return nil
-        }
-        return baseFontSize
-    }()
-    let fontSizeKey = normalizedBaseFontSize.map { String(format: "%.2f", $0) } ?? "preferred"
-    let cacheKey = "\(resolvedTraits.userInterfaceStyle.rawValue)|\(fontSizeKey)|\(colorKey)|\(html)" as NSString
+    let normalizedBaseFontSize = normalizedBaseFontSizeValue(baseFontSize)
+    let cacheKey = htmlCacheKey(
+        html,
+        resolvedTraits: resolvedTraits,
+        resolvedDefaultColor: resolvedDefaultColor,
+        normalizedBaseFontSize: normalizedBaseFontSize
+    )
 
     if let cached = HTMLAttributedStringCache.shared.value(forKey: cacheKey) {
         return cached
     }
 
+    guard let attributed = mutableAttributedStringFromHTML(
+        html,
+        resolvedTraits: resolvedTraits,
+        resolvedDefaultColor: resolvedDefaultColor,
+        normalizedBaseFontSize: normalizedBaseFontSize
+    ) else {
+        return nil
+    }
+
+    let attributedString = AttributedString(attributed)
+    HTMLAttributedStringCache.shared.insert(attributedString, forKey: cacheKey)
+    return attributedString
+}
+
+public func nsAttributedStringFromHTML(
+    _ html: String,
+    defaultColor: UIColor? = nil,
+    baseFontSize: CGFloat? = nil
+) -> NSAttributedString? {
+    let resolvedTraits = UITraitCollection.current
+    let resolvedDefaultColor = defaultColor?.resolvedColor(with: resolvedTraits)
+    let normalizedBaseFontSize = normalizedBaseFontSizeValue(baseFontSize)
+    let cacheKey = htmlCacheKey(
+        html,
+        resolvedTraits: resolvedTraits,
+        resolvedDefaultColor: resolvedDefaultColor,
+        normalizedBaseFontSize: normalizedBaseFontSize,
+        prefix: "ns"
+    )
+
+    if let cached = HTMLNSAttributedStringCache.shared.value(forKey: cacheKey) {
+        return cached
+    }
+
+    guard let attributed = mutableAttributedStringFromHTML(
+        html,
+        resolvedTraits: resolvedTraits,
+        resolvedDefaultColor: resolvedDefaultColor,
+        normalizedBaseFontSize: normalizedBaseFontSize
+    ) else {
+        return nil
+    }
+
+    let immutable = NSAttributedString(attributedString: attributed)
+    HTMLNSAttributedStringCache.shared.insert(immutable, forKey: cacheKey)
+    return immutable
+}
+
+let dialogBlockquoteAttribute = NSAttributedString.Key("MartiniDialogBlockquote")
+
+private func applyDialogBlockquoteAttributes(to attributed: NSMutableAttributedString, sourceHTML: String) {
+    let pattern = "<blockquote[^>]*>(.*?)</blockquote>"
+    guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive, .dotMatchesLineSeparators]) else {
+        return
+    }
+
+    let nsHTML = sourceHTML as NSString
+    let fullRange = NSRange(location: 0, length: nsHTML.length)
+    let matches = regex.matches(in: sourceHTML, options: [], range: fullRange)
+    guard !matches.isEmpty else { return }
+
+    let attributedText = attributed.string as NSString
+    var searchLocation = 0
+
+    for match in matches {
+        let innerRange = match.range(at: 1)
+        guard innerRange.location != NSNotFound else { continue }
+        let innerHTML = nsHTML.substring(with: innerRange)
+        let innerText = scriptTextFromHTML(innerHTML).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !innerText.isEmpty else { continue }
+
+        let searchRange = NSRange(location: searchLocation, length: attributedText.length - searchLocation)
+        let foundRange = attributedText.range(of: innerText, options: [], range: searchRange)
+        guard foundRange.location != NSNotFound else { continue }
+
+        attributed.addAttribute(dialogBlockquoteAttribute, value: true, range: foundRange)
+        searchLocation = foundRange.location + foundRange.length
+    }
+}
+
+private func mutableAttributedStringFromHTML(
+    _ html: String,
+    resolvedTraits: UITraitCollection,
+    resolvedDefaultColor: UIColor?,
+    normalizedBaseFontSize: CGFloat?
+) -> NSMutableAttributedString? {
     let preferredFont = UIFont.preferredFont(forTextStyle: .body)
     let resolvedFontSize = normalizedBaseFontSize ?? preferredFont.pointSize
     let baseFont = preferredFont.withSize(resolvedFontSize)
@@ -135,41 +219,26 @@ public func attributedStringFromHTML(
     applyParagraphSpacing(to: attributed, baseFontSize: resolvedFontSize)
     applyDialogBlockquoteAttributes(to: attributed, sourceHTML: html)
 
-    let attributedString = AttributedString(attributed)
-    HTMLAttributedStringCache.shared.insert(attributedString, forKey: cacheKey)
-    return attributedString
+    return attributed
 }
 
-let dialogBlockquoteAttribute = NSAttributedString.Key("MartiniDialogBlockquote")
-
-private func applyDialogBlockquoteAttributes(to attributed: NSMutableAttributedString, sourceHTML: String) {
-    let pattern = "<blockquote[^>]*>(.*?)</blockquote>"
-    guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive, .dotMatchesLineSeparators]) else {
-        return
+private func normalizedBaseFontSizeValue(_ baseFontSize: CGFloat?) -> CGFloat? {
+    guard let baseFontSize, baseFontSize.isFinite, baseFontSize > 0 else {
+        return nil
     }
+    return baseFontSize
+}
 
-    let nsHTML = sourceHTML as NSString
-    let fullRange = NSRange(location: 0, length: nsHTML.length)
-    let matches = regex.matches(in: sourceHTML, options: [], range: fullRange)
-    guard !matches.isEmpty else { return }
-
-    let attributedText = attributed.string as NSString
-    var searchLocation = 0
-
-    for match in matches {
-        let innerRange = match.range(at: 1)
-        guard innerRange.location != NSNotFound else { continue }
-        let innerHTML = nsHTML.substring(with: innerRange)
-        let innerText = scriptTextFromHTML(innerHTML).trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !innerText.isEmpty else { continue }
-
-        let searchRange = NSRange(location: searchLocation, length: attributedText.length - searchLocation)
-        let foundRange = attributedText.range(of: innerText, options: [], range: searchRange)
-        guard foundRange.location != NSNotFound else { continue }
-
-        attributed.addAttribute(dialogBlockquoteAttribute, value: true, range: foundRange)
-        searchLocation = foundRange.location + foundRange.length
-    }
+private func htmlCacheKey(
+    _ html: String,
+    resolvedTraits: UITraitCollection,
+    resolvedDefaultColor: UIColor?,
+    normalizedBaseFontSize: CGFloat?,
+    prefix: String = "attr"
+) -> NSString {
+    let colorKey = resolvedDefaultColor.map(rgbaCacheKey) ?? "nil"
+    let fontSizeKey = normalizedBaseFontSize.map { String(format: "%.2f", $0) } ?? "preferred"
+    return "\(prefix)|\(resolvedTraits.userInterfaceStyle.rawValue)|\(fontSizeKey)|\(colorKey)|\(html)" as NSString
 }
 
 private func htmlByApplyingAlignmentClasses(_ html: String) -> String {
@@ -328,10 +397,34 @@ private final class HTMLAttributedStringCache {
     }
 }
 
+private final class HTMLNSAttributedStringCache {
+    static let shared = HTMLNSAttributedStringCache()
+
+    private let cache = NSCache<NSString, NSAttributedStringBox>()
+
+    private init() {}
+
+    func value(forKey key: NSString) -> NSAttributedString? {
+        cache.object(forKey: key)?.value
+    }
+
+    func insert(_ value: NSAttributedString, forKey key: NSString) {
+        cache.setObject(NSAttributedStringBox(value), forKey: key)
+    }
+}
+
 private final class AttributedStringBox: NSObject {
     let value: AttributedString
 
     init(_ value: AttributedString) {
+        self.value = value
+    }
+}
+
+private final class NSAttributedStringBox: NSObject {
+    let value: NSAttributedString
+
+    init(_ value: NSAttributedString) {
         self.value = value
     }
 }
