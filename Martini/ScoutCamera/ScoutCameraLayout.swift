@@ -927,7 +927,7 @@ struct ScoutCameraLayout: View {
 
                 if viewModel.showFrameShading,
                    !viewModel.frameLineConfigurations.isEmpty {
-                    FrameShadingOverlay(aspectRatios: viewModel.frameLineConfigurations.compactMap(\.option.aspectRatio))
+                    FrameShadingOverlay(aspectRatio: viewModel.primaryFrameLineOption.aspectRatio)
                         .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
                 }
 
@@ -1488,7 +1488,7 @@ private struct FrameLineOverlay: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack {
-                ForEach(configurations) { configuration in
+                ForEach(Array(configurations.reversed())) { configuration in
                     if let aspectRatio = configuration.option.aspectRatio {
                         let rect = frameRect(in: proxy.size, aspectRatio: aspectRatio)
                         frameLinePath(in: rect, design: configuration.design)
@@ -1563,11 +1563,12 @@ private struct FrameLineOverlay: View {
 }
 
 private struct FrameShadingOverlay: View {
-    let aspectRatios: [CGFloat]
+    let aspectRatio: CGFloat?
 
     var body: some View {
         GeometryReader { proxy in
-            if let rect = smallestFrameRect(in: proxy.size) {
+            if let aspectRatio,
+               let rect = frameRect(in: proxy.size, aspectRatio: aspectRatio) {
                 Path { path in
                     path.addRect(CGRect(origin: .zero, size: proxy.size))
                     path.addRect(rect)
@@ -1578,21 +1579,19 @@ private struct FrameShadingOverlay: View {
         .allowsHitTesting(false)
     }
 
-    private func smallestFrameRect(in size: CGSize) -> CGRect? {
-        aspectRatios.compactMap { aspectRatio in
-            let containerAspect = size.width / max(size.height, 1)
-            let width: CGFloat
-            let height: CGFloat
-            if containerAspect > aspectRatio {
-                height = size.height
-                width = height * aspectRatio
-            } else {
-                width = size.width
-                height = width / aspectRatio
-            }
-            return CGRect(x: (size.width - width) / 2, y: (size.height - height) / 2, width: width, height: height)
+    private func frameRect(in size: CGSize, aspectRatio: CGFloat) -> CGRect? {
+        guard aspectRatio > 0 else { return nil }
+        let containerAspect = size.width / max(size.height, 1)
+        let width: CGFloat
+        let height: CGFloat
+        if containerAspect > aspectRatio {
+            height = size.height
+            width = height * aspectRatio
+        } else {
+            width = size.width
+            height = width / aspectRatio
         }
-        .min(by: { $0.width * $0.height < $1.width * $1.height })
+        return CGRect(x: (size.width - width) / 2, y: (size.height - height) / 2, width: width, height: height)
     }
 }
 
