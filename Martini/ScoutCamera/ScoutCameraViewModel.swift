@@ -9,6 +9,7 @@ final class ScoutCameraViewModel: ObservableObject {
         static let showGrid = "scoutCameraShowGrid"
         static let showFrameShading = "scoutCameraShowFrameShading"
         static let selectedFrameLine = "scoutCameraSelectedFrameLine"
+        static let selectedFrameLines = "scoutCameraSelectedFrameLines"
     }
 
     @Published var availableCameras: [DBCamera] = []
@@ -21,8 +22,16 @@ final class ScoutCameraViewModel: ObservableObject {
     @Published var selectedLens: DBLens?
     @Published var selectedLensPack: LensPackGroup?
     @Published var focalLengthMm: Double = 35
-    @Published var selectedFrameLine: FrameLineOption {
-        didSet { UserDefaults.standard.set(selectedFrameLine.rawValue, forKey: PreferenceKey.selectedFrameLine) }
+    @Published var selectedFrameLines: [FrameLineOption] {
+        didSet {
+            let normalized = normalizedFrameLines(selectedFrameLines)
+            if normalized != selectedFrameLines {
+                selectedFrameLines = normalized
+                return
+            }
+            let rawValues = normalized.map(\.rawValue)
+            UserDefaults.standard.set(rawValues, forKey: PreferenceKey.selectedFrameLines)
+        }
     }
     @Published var showCrosshair: Bool {
         didSet { UserDefaults.standard.set(showCrosshair, forKey: PreferenceKey.showCrosshair) }
@@ -60,11 +69,14 @@ final class ScoutCameraViewModel: ObservableObject {
         self.showCrosshair = UserDefaults.standard.bool(forKey: PreferenceKey.showCrosshair)
         self.showGrid = UserDefaults.standard.bool(forKey: PreferenceKey.showGrid)
         self.showFrameShading = UserDefaults.standard.bool(forKey: PreferenceKey.showFrameShading)
-        if let rawValue = UserDefaults.standard.string(forKey: PreferenceKey.selectedFrameLine),
-           let savedOption = FrameLineOption(rawValue: rawValue) {
-            self.selectedFrameLine = savedOption
+        if let savedRawValues = UserDefaults.standard.stringArray(forKey: PreferenceKey.selectedFrameLines) {
+            let savedOptions = savedRawValues.compactMap(FrameLineOption.init(rawValue:))
+            self.selectedFrameLines = normalizedFrameLines(savedOptions)
+        } else if let rawValue = UserDefaults.standard.string(forKey: PreferenceKey.selectedFrameLine),
+                  let savedOption = FrameLineOption(rawValue: rawValue) {
+            self.selectedFrameLines = normalizedFrameLines([savedOption])
         } else {
-            self.selectedFrameLine = .none
+            self.selectedFrameLines = [.none]
         }
         loadData()
     }
@@ -259,7 +271,7 @@ final class ScoutCameraViewModel: ObservableObject {
             sensorAspectRatio: sensorAspectRatio,
             metadata: metadata,
             logoImage: logo,
-            frameLineAspectRatio: selectedFrameLine.aspectRatio
+            frameLineAspectRatio: primaryFrameLineOption.aspectRatio
         )
     }
 
@@ -319,8 +331,10 @@ final class ScoutCameraViewModel: ObservableObject {
             "focal_length_mm": focalLengthMm,
             "active_focal_length_mm": activeFocalLengthMm,
             "squeeze": squeeze,
-            "selected_frame_line": selectedFrameLine.rawValue,
-            "frame_line_aspect_ratio": selectedFrameLine.aspectRatio,
+            "selected_frame_line": primaryFrameLineOption.rawValue,
+            "frame_line_aspect_ratio": primaryFrameLineOption.aspectRatio,
+            "selected_frame_lines": activeFrameLineOptions.map(\.rawValue),
+            "frame_line_aspect_ratios": activeFrameLineOptions.compactMap(\.aspectRatio),
             "target_aspect_ratio": targetAspectRatio,
             "matched_camera_role": matchResult?.cameraRole,
             "matched_zoom_factor": matchResult?.zoomFactor
@@ -384,6 +398,46 @@ final class ScoutCameraViewModel: ObservableObject {
         values.compactMapValues { $0 }
     }
 
+    var activeFrameLineOptions: [FrameLineOption] {
+        normalizedFrameLines(selectedFrameLines).filter { $0 != .none }
+    }
+
+    var primaryFrameLineOption: FrameLineOption {
+        activeFrameLineOptions.first ?? .none
+    }
+
+    var frameLineSummary: String {
+        let active = activeFrameLineOptions
+        guard !active.isEmpty else { return FrameLineOption.none.rawValue }
+        return active.map(\.rawValue).joined(separator: ", ")
+    }
+
+    func toggleFrameLine(_ option: FrameLineOption) {
+        if option == .none {
+            selectedFrameLines = [.none]
+            return
+        }
+        var updated = activeFrameLineOptions
+        if let index = updated.firstIndex(of: option) {
+            updated.remove(at: index)
+        } else {
+            guard updated.count < 3 else { return }
+            updated.append(option)
+        }
+        selectedFrameLines = updated.isEmpty ? [.none] : updated
+    }
+
+    func isFrameLineSelected(_ option: FrameLineOption) -> Bool {
+        if option == .none {
+            return activeFrameLineOptions.isEmpty
+        }
+        return activeFrameLineOptions.contains(option)
+    }
+
+    func isFrameLineOptionDisabled(_ option: FrameLineOption) -> Bool {
+        option != .none && !isFrameLineSelected(option) && activeFrameLineOptions.count >= 3
+    }
+
     private func resizedImageForUpload(from image: UIImage, maxPixelDimension: CGFloat) -> UIImage {
         let pixelWidth = image.size.width * image.scale
         let pixelHeight = image.size.height * image.scale
@@ -418,6 +472,16 @@ final class ScoutCameraViewModel: ObservableObject {
             return "\(Int(focal))mm"
         }
         return "\(Int(focalLengthMm))mm"
+    }
+
+    private func normalizedFrameLines(_ options: [FrameLineOption]) -> [FrameLineOption] {
+        let unique = Array(Set(options))
+        let withoutNone = unique.filter { $0 != .none }
+        if withoutNone.isEmpty {
+            return [.none]
+        }
+        let ordered = FrameLineOption.allCases.filter { withoutNone.contains($0) }
+        return Array(ordered.prefix(3))
     }
 
     private func effectiveSqueeze(mode: DBCameraMode, lens: DBLens) -> Double {
