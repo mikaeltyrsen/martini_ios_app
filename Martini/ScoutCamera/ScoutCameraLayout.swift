@@ -127,7 +127,7 @@ struct ScoutCameraLayout: View {
         .onChange(of: viewModel.matchResult?.cameraRole) { newRole in
             handleCameraRoleChange(newRole)
         }
-        .onChange(of: viewModel.capturedImage) { newValue in
+        .onChange(of: viewModel.processedImage) { newValue in
             capturedPhoto = newValue.map { CapturedPhoto(image: $0) }
         }
         .onChange(of: previewOrientation) { newValue in
@@ -175,10 +175,12 @@ struct ScoutCameraLayout: View {
                 onRetake: {
                     capturedPhoto = nil
                     viewModel.capturedImage = nil
+                    viewModel.processedImage = nil
                 },
                 onCancel: {
                     capturedPhoto = nil
                     viewModel.capturedImage = nil
+                    viewModel.processedImage = nil
                     dismiss()
                 }
             )
@@ -923,7 +925,7 @@ struct ScoutCameraLayout: View {
 
     private var captureOverlay: some View {
         ZStack {
-            if let image = viewModel.capturedImage {
+            if let image = viewModel.processedImage ?? viewModel.capturedImage {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFit()
