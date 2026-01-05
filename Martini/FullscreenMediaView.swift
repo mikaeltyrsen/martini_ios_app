@@ -52,6 +52,7 @@ struct FullscreenMediaViewer: View {
     @State private var metadataSheetItem: BoardMetadataItem?
     @State private var mediaAspectRatio: CGFloat?
     @AppStorage("scoutCameraFullscreenShowFrameLines") private var showFrameLines: Bool = true
+    @AppStorage("scoutCameraFullscreenShowFrameShading") private var showFrameShading: Bool = true
     @AppStorage("scoutCameraFullscreenShowCrosshair") private var showCrosshair: Bool = true
     @AppStorage("scoutCameraFullscreenShowGrid") private var showGrid: Bool = true
 
@@ -88,9 +89,11 @@ struct FullscreenMediaViewer: View {
                     if let scoutMetadata {
                         let hasFrameLines = !scoutMetadata.frameLines.isEmpty
                         let frameLineAspect = scoutMetadata.frameLines.first?.option.aspectRatio
-                        if hasFrameLines, showFrameLines {
+                        if hasFrameLines, showFrameShading {
                             FrameShadingOverlay(configurations: scoutMetadata.frameLines)
                                 .frame(width: mediaSize.width, height: mediaSize.height)
+                        }
+                        if hasFrameLines, showFrameLines {
                             FrameLineOverlayView(configurations: scoutMetadata.frameLines)
                                 .frame(width: mediaSize.width, height: mediaSize.height)
                         }
@@ -235,6 +238,7 @@ struct FullscreenMediaViewer: View {
 
     private var overlayToggles: some View {
         HStack(spacing: 8) {
+            overlayToggle(title: "Frame Shading", isOn: $showFrameShading)
             overlayToggle(title: "Frame Lines", isOn: $showFrameLines)
             overlayToggle(title: "Cross Hair", isOn: $showCrosshair)
             overlayToggle(title: "Grid", isOn: $showGrid)
@@ -246,6 +250,7 @@ struct FullscreenMediaViewer: View {
             .toggleStyle(.button)
             .font(.system(size: 12, weight: .semibold))
             .buttonBorderShape(.capsule)
+            .frame(maxWidth: .infinity)
     }
 
     private func metadataRow(title: String, value: String) -> some View {
