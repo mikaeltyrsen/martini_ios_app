@@ -10,6 +10,7 @@ final class ScoutCameraViewModel: ObservableObject {
         static let showFrameShading = "scoutCameraShowFrameShading"
         static let selectedFrameLine = "scoutCameraSelectedFrameLine"
         static let selectedFrameLines = "scoutCameraSelectedFrameLines"
+        static let frameLineConfigurations = "scoutCameraFrameLineConfigurations"
     }
 
     @Published var availableCameras: [DBCamera] = []
@@ -22,15 +23,9 @@ final class ScoutCameraViewModel: ObservableObject {
     @Published var selectedLens: DBLens?
     @Published var selectedLensPack: LensPackGroup?
     @Published var focalLengthMm: Double = 35
-    @Published var selectedFrameLines: [FrameLineOption] {
+    @Published var frameLineConfigurations: [FrameLineConfiguration] {
         didSet {
-            let normalized = Self.normalizedFrameLines(selectedFrameLines)
-            if normalized != selectedFrameLines {
-                selectedFrameLines = normalized
-                return
-            }
-            let rawValues = normalized.map(\.rawValue)
-            UserDefaults.standard.set(rawValues, forKey: PreferenceKey.selectedFrameLines)
+            saveFrameLineConfigurations()
         }
     }
     @Published var showCrosshair: Bool {
@@ -69,15 +64,7 @@ final class ScoutCameraViewModel: ObservableObject {
         self.showCrosshair = UserDefaults.standard.bool(forKey: PreferenceKey.showCrosshair)
         self.showGrid = UserDefaults.standard.bool(forKey: PreferenceKey.showGrid)
         self.showFrameShading = UserDefaults.standard.bool(forKey: PreferenceKey.showFrameShading)
-        if let savedRawValues = UserDefaults.standard.stringArray(forKey: PreferenceKey.selectedFrameLines) {
-            let savedOptions = savedRawValues.compactMap(FrameLineOption.init(rawValue:))
-            self.selectedFrameLines = Self.normalizedFrameLines(savedOptions)
-        } else if let rawValue = UserDefaults.standard.string(forKey: PreferenceKey.selectedFrameLine),
-                  let savedOption = FrameLineOption(rawValue: rawValue) {
-            self.selectedFrameLines = Self.normalizedFrameLines([savedOption])
-        } else {
-            self.selectedFrameLines = [.none]
-        }
+        self.frameLineConfigurations = Self.loadFrameLineConfigurations()
         loadData()
     }
 
@@ -399,43 +386,45 @@ final class ScoutCameraViewModel: ObservableObject {
     }
 
     var activeFrameLineOptions: [FrameLineOption] {
-        Self.normalizedFrameLines(selectedFrameLines).filter { $0 != .none }
+        frameLineConfigurations.map(\.option)
     }
 
     var primaryFrameLineOption: FrameLineOption {
-        activeFrameLineOptions.first ?? .none
+        frameLineConfigurations.first?.option ?? .none
     }
 
     var frameLineSummary: String {
-        let active = activeFrameLineOptions
-        guard !active.isEmpty else { return FrameLineOption.none.rawValue }
-        return active.map(\.rawValue).joined(separator: ", ")
+        guard !frameLineConfigurations.isEmpty else { return FrameLineOption.none.rawValue }
+        return frameLineConfigurations.map(\.option.rawValue).joined(separator: ", ")
     }
 
-    func toggleFrameLine(_ option: FrameLineOption) {
-        if option == .none {
-            selectedFrameLines = [.none]
-            return
-        }
-        var updated = activeFrameLineOptions
-        if let index = updated.firstIndex(of: option) {
-            updated.remove(at: index)
-        } else {
-            guard updated.count < 3 else { return }
-            updated.append(option)
-        }
-        selectedFrameLines = updated.isEmpty ? [.none] : updated
+    func addFrameLineOption(_ option: FrameLineOption) {
+        guard option != .none else { return }
+        guard !frameLineConfigurations.contains(where: { $0.option == option }) else { return }
+        frameLineConfigurations.append(FrameLineConfiguration(option: option))
     }
 
     func isFrameLineSelected(_ option: FrameLineOption) -> Bool {
-        if option == .none {
-            return activeFrameLineOptions.isEmpty
-        }
-        return activeFrameLineOptions.contains(option)
+        frameLineConfigurations.contains(where: { $0.option == option })
     }
 
-    func isFrameLineOptionDisabled(_ option: FrameLineOption) -> Bool {
-        option != .none && !isFrameLineSelected(option) && activeFrameLineOptions.count >= 3
+    func removeFrameLineConfiguration(_ configuration: FrameLineConfiguration) {
+        frameLineConfigurations.removeAll { $0.id == configuration.id }
+    }
+
+    func moveFrameLineConfigurations(from source: IndexSet, to destination: Int) {
+        frameLineConfigurations.move(fromOffsets: source, toOffset: destination)
+    }
+
+    func binding(for configuration: FrameLineConfiguration) -> Binding<FrameLineConfiguration> {
+        Binding {
+            self.frameLineConfigurations.first(where: { $0.id == configuration.id }) ?? configuration
+        } set: { updated in
+            guard let index = self.frameLineConfigurations.firstIndex(where: { $0.id == configuration.id }) else {
+                return
+            }
+            self.frameLineConfigurations[index] = updated
+        }
     }
 
     private func resizedImageForUpload(from image: UIImage, maxPixelDimension: CGFloat) -> UIImage {
@@ -474,14 +463,29 @@ final class ScoutCameraViewModel: ObservableObject {
         return "\(Int(focalLengthMm))mm"
     }
 
-    private static func normalizedFrameLines(_ options: [FrameLineOption]) -> [FrameLineOption] {
-        let unique = Array(Set(options))
-        let withoutNone = unique.filter { $0 != .none }
-        if withoutNone.isEmpty {
-            return [.none]
+    private func saveFrameLineConfigurations() {
+        let encoder = JSONEncoder()
+        if let data = try? encoder.encode(frameLineConfigurations) {
+            UserDefaults.standard.set(data, forKey: PreferenceKey.frameLineConfigurations)
         }
-        let ordered = FrameLineOption.allCases.filter { withoutNone.contains($0) }
-        return Array(ordered.prefix(3))
+    }
+
+    private static func loadFrameLineConfigurations() -> [FrameLineConfiguration] {
+        let decoder = JSONDecoder()
+        if let data = UserDefaults.standard.data(forKey: PreferenceKey.frameLineConfigurations),
+           let decoded = try? decoder.decode([FrameLineConfiguration].self, from: data) {
+            return decoded
+        }
+        if let savedRawValues = UserDefaults.standard.stringArray(forKey: PreferenceKey.selectedFrameLines) {
+            let savedOptions = savedRawValues.compactMap(FrameLineOption.init(rawValue:))
+            return savedOptions.filter { $0 != .none }.map { FrameLineConfiguration(option: $0) }
+        }
+        if let rawValue = UserDefaults.standard.string(forKey: PreferenceKey.selectedFrameLine),
+           let savedOption = FrameLineOption(rawValue: rawValue),
+           savedOption != .none {
+            return [FrameLineConfiguration(option: savedOption)]
+        }
+        return []
     }
 
     private func effectiveSqueeze(mode: DBCameraMode, lens: DBLens) -> Double {
@@ -679,7 +683,7 @@ struct ScoutCameraFOVCandidate: Equatable {
     let errorDegrees: Double
 }
 
-enum FrameLineOption: String, CaseIterable, Identifiable {
+enum FrameLineOption: String, CaseIterable, Identifiable, Codable {
     case none = "Off"
     case ratio1_33 = "1.33"
     case ratio1_66 = "1.66"
@@ -707,5 +711,92 @@ enum FrameLineOption: String, CaseIterable, Identifiable {
         case .ratio2_39:
             return 2.39
         }
+    }
+}
+
+enum FrameLineColor: String, CaseIterable, Identifiable, Codable {
+    case white
+    case red
+    case green
+    case blue
+    case orange
+    case pink
+    case purple
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        rawValue.capitalized
+    }
+
+    var swiftUIColor: Color {
+        switch self {
+        case .white:
+            return .white
+        case .red:
+            return .red
+        case .green:
+            return .green
+        case .blue:
+            return .blue
+        case .orange:
+            return .orange
+        case .pink:
+            return .pink
+        case .purple:
+            return .purple
+        }
+    }
+}
+
+enum FrameLineDesign: String, CaseIterable, Identifiable, Codable {
+    case solid
+    case dashed
+    case brackets
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .solid:
+            return "Solid"
+        case .dashed:
+            return "Dashed"
+        case .brackets:
+            return "Brackets"
+        }
+    }
+
+    var symbolName: String {
+        switch self {
+        case .solid:
+            return "rectangle"
+        case .dashed:
+            return "rectangle.dashed"
+        case .brackets:
+            return "viewfinder.rectangular"
+        }
+    }
+}
+
+struct FrameLineConfiguration: Identifiable, Codable, Equatable {
+    let id: UUID
+    var option: FrameLineOption
+    var color: FrameLineColor
+    var opacity: Double
+    var design: FrameLineDesign
+
+    init(
+        id: UUID = UUID(),
+        option: FrameLineOption,
+        color: FrameLineColor = .white,
+        opacity: Double = 0.8,
+        design: FrameLineDesign = .solid
+    ) {
+        self.id = id
+        self.option = option
+        self.color = color
+        self.opacity = opacity
+        self.design = design
     }
 }

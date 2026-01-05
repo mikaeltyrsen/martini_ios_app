@@ -348,7 +348,7 @@ struct ScoutCameraLayout: View {
     }
 
     private var isFramingActive: Bool {
-        !viewModel.activeFrameLineOptions.isEmpty
+        !viewModel.frameLineConfigurations.isEmpty
             || viewModel.showCrosshair
             || viewModel.showGrid
             || viewModel.showFrameShading
@@ -452,7 +452,7 @@ struct ScoutCameraLayout: View {
                 List {
                     Section {
                         NavigationLink {
-                            FrameLineSelectionList(viewModel: viewModel)
+                            FrameLineSettingsList(viewModel: viewModel)
                         } label: {
                             SettingsSectionLabel(title: "Frame Lines", value: viewModel.frameLineSummary)
                         }
@@ -477,16 +477,93 @@ struct ScoutCameraLayout: View {
         }
     }
 
-    private struct FrameLineSelectionList: View {
+    private struct FrameLineSettingsList: View {
         @Environment(\.dismiss) private var dismiss
         @ObservedObject var viewModel: ScoutCameraViewModel
 
         var body: some View {
             List {
                 Section {
-                    ForEach(FrameLineOption.allCases) { option in
+                    NavigationLink {
+                        FrameLineAddList(viewModel: viewModel)
+                    } label: {
+                        Label("Add Frame Line", systemImage: "plus")
+                    }
+                }
+
+                Section("Selected Frame Lines") {
+                    if viewModel.frameLineConfigurations.isEmpty {
+                        Text("No frame lines selected.")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(viewModel.frameLineConfigurations) { configuration in
+                            NavigationLink {
+                                FrameLineDetailView(configuration: viewModel.binding(for: configuration))
+                            } label: {
+                                FrameLineRow(configuration: configuration)
+                            }
+                        }
+                        .onDelete { indexSet in
+                            for index in indexSet {
+                                let configuration = viewModel.frameLineConfigurations[index]
+                                viewModel.removeFrameLineConfiguration(configuration)
+                            }
+                        }
+                        .onMove(perform: viewModel.moveFrameLineConfigurations)
+                    }
+                }
+            }
+            .listStyle(.insetGrouped)
+            .navigationTitle("Frame Lines")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    EditButton()
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    private struct FrameLineRow: View {
+        let configuration: FrameLineConfiguration
+
+        var body: some View {
+            HStack {
+                Image(systemName: "line.3.horizontal")
+                    .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(configuration.option.rawValue)
+                    Text(configurationSummary)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: configuration.design.symbolName)
+                    .foregroundStyle(configuration.color.swiftUIColor.opacity(configuration.opacity))
+            }
+        }
+
+        private var configurationSummary: String {
+            "\(configuration.color.displayName) • \(Int(configuration.opacity * 100))% • \(configuration.design.displayName)"
+        }
+    }
+
+    private struct FrameLineAddList: View {
+        @Environment(\.dismiss) private var dismiss
+        @ObservedObject var viewModel: ScoutCameraViewModel
+
+        var body: some View {
+            List {
+                Section("Choose a Frame Line") {
+                    ForEach(FrameLineOption.allCases.filter { $0 != .none }) { option in
                         Button {
-                            viewModel.toggleFrameLine(option)
+                            viewModel.addFrameLineOption(option)
+                            dismiss()
                         } label: {
                             HStack {
                                 Text(option.rawValue)
@@ -499,22 +576,55 @@ struct ScoutCameraLayout: View {
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .disabled(viewModel.isFrameLineOptionDisabled(option))
+                        .disabled(viewModel.isFrameLineSelected(option))
                     }
-                } footer: {
-                    Text("Select up to 3 frame lines.")
                 }
             }
             .listStyle(.insetGrouped)
-            .navigationTitle("Frame Lines")
+            .navigationTitle("Add Frame Line")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
-                        dismiss()
+        }
+    }
+
+    private struct FrameLineDetailView: View {
+        @Binding var configuration: FrameLineConfiguration
+
+        var body: some View {
+            Form {
+                Section("Color") {
+                    Picker("Color", selection: $configuration.color) {
+                        ForEach(FrameLineColor.allCases) { color in
+                            HStack {
+                                Circle()
+                                    .fill(color.swiftUIColor)
+                                    .frame(width: 12, height: 12)
+                                Text(color.displayName)
+                            }
+                            .tag(color)
+                        }
+                    }
+                }
+
+                Section("Opacity") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Slider(value: $configuration.opacity, in: 0...1, step: 0.01)
+                        Text("\(Int(configuration.opacity * 100))%")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Section("Line Design") {
+                    Picker("Line Design", selection: $configuration.design) {
+                        ForEach(FrameLineDesign.allCases) { design in
+                            Label(design.displayName, systemImage: design.symbolName)
+                                .tag(design)
+                        }
                     }
                 }
             }
+            .navigationTitle(configuration.option.rawValue)
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 
@@ -840,14 +950,14 @@ struct ScoutCameraLayout: View {
                         .allowsHitTesting(false)
                 }
 
-                if !viewModel.activeFrameLineOptions.isEmpty {
-                    FrameLineOverlay(aspectRatios: viewModel.activeFrameLineOptions.compactMap(\.aspectRatio))
+                if viewModel.showFrameShading,
+                   !viewModel.frameLineConfigurations.isEmpty {
+                    FrameShadingOverlay(aspectRatios: viewModel.frameLineConfigurations.compactMap(\.option.aspectRatio))
                         .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
                 }
 
-                if viewModel.showFrameShading,
-                   !viewModel.activeFrameLineOptions.isEmpty {
-                    FrameShadingOverlay(aspectRatios: viewModel.activeFrameLineOptions.compactMap(\.aspectRatio))
+                if !viewModel.frameLineConfigurations.isEmpty {
+                    FrameLineOverlay(configurations: viewModel.frameLineConfigurations)
                         .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
                 }
 
@@ -1398,17 +1508,22 @@ private struct CameraPreviewView: UIViewRepresentable {
 }
 
 private struct FrameLineOverlay: View {
-    let aspectRatios: [CGFloat]
+    let configurations: [FrameLineConfiguration]
 
     var body: some View {
         GeometryReader { proxy in
-            Path { path in
-                aspectRatios.forEach { aspectRatio in
-                    let rect = frameRect(in: proxy.size, aspectRatio: aspectRatio)
-                    path.addRect(rect)
+            ZStack {
+                ForEach(configurations) { configuration in
+                    if let aspectRatio = configuration.option.aspectRatio {
+                        let rect = frameRect(in: proxy.size, aspectRatio: aspectRatio)
+                        frameLinePath(in: rect, design: configuration.design)
+                            .stroke(
+                                configuration.color.swiftUIColor.opacity(configuration.opacity),
+                                style: strokeStyle(for: configuration.design)
+                            )
+                    }
                 }
             }
-            .stroke(.white.opacity(0.8), lineWidth: 2)
         }
         .allowsHitTesting(false)
     }
@@ -1425,6 +1540,50 @@ private struct FrameLineOverlay: View {
             height = width / aspectRatio
         }
         return CGRect(x: (size.width - width) / 2, y: (size.height - height) / 2, width: width, height: height)
+    }
+
+    private func frameLinePath(in rect: CGRect, design: FrameLineDesign) -> Path {
+        switch design {
+        case .solid, .dashed:
+            return Path { path in
+                path.addRect(rect)
+            }
+        case .brackets:
+            return bracketPath(in: rect)
+        }
+    }
+
+    private func bracketPath(in rect: CGRect) -> Path {
+        let baseLength = min(rect.width, rect.height) * 0.08
+        let cornerLength = max(12, min(28, baseLength))
+        return Path { path in
+            path.move(to: CGPoint(x: rect.minX, y: rect.minY + cornerLength))
+            path.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.minX + cornerLength, y: rect.minY))
+
+            path.move(to: CGPoint(x: rect.maxX - cornerLength, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + cornerLength))
+
+            path.move(to: CGPoint(x: rect.maxX, y: rect.maxY - cornerLength))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+            path.addLine(to: CGPoint(x: rect.maxX - cornerLength, y: rect.maxY))
+
+            path.move(to: CGPoint(x: rect.minX + cornerLength, y: rect.maxY))
+            path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+            path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY - cornerLength))
+        }
+    }
+
+    private func strokeStyle(for design: FrameLineDesign) -> StrokeStyle {
+        switch design {
+        case .solid:
+            return StrokeStyle(lineWidth: 2, lineJoin: .round)
+        case .dashed:
+            return StrokeStyle(lineWidth: 2, lineJoin: .round, dash: [8, 6])
+        case .brackets:
+            return StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round)
+        }
     }
 }
 
