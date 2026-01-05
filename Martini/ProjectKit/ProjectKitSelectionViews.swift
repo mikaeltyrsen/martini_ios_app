@@ -40,10 +40,12 @@ struct ProjectKitCameraSelectionView: View {
                                 .foregroundStyle(Color.accentColor)
                         }
                     }
+                    .foregroundStyle(.primary)
                 }
+                .buttonStyle(.plain)
             }
         }
-        .navigationTitle("Add Camera")
+        .navigationTitle("Select Camera")
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always))
         .onAppear {
@@ -53,16 +55,28 @@ struct ProjectKitCameraSelectionView: View {
             store.load(for: authService.projectId)
         }
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                VStack(spacing: 2) {
+                    Text("Select Camera")
+                        .font(.headline)
+                    Text(selectedCameraCountText)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 if !selectedIds.isEmpty {
-                    Button("Add") {
+                    Button {
                         guard authService.projectId != nil else {
                             showingProjectAlert = true
                             return
                         }
                         store.addCameras(ids: Array(selectedIds), projectId: authService.projectId)
                         dismiss()
+                    } label: {
+                        Image(systemName: "checkmark")
                     }
+                    .tint(.primary)
                 }
             }
         }
@@ -79,6 +93,12 @@ struct ProjectKitCameraSelectionView: View {
         } else {
             selectedIds.insert(id)
         }
+    }
+
+    private var selectedCameraCountText: String {
+        let count = selectedIds.count
+        let label = count == 1 ? "camera" : "cameras"
+        return "\(count) \(label) selected"
     }
 
     private func cameraSensorLabel(_ camera: DBCamera) -> String {
@@ -143,6 +163,7 @@ struct ProjectKitLensSelectionView: View {
                                 }
                                 Spacer()
                             }
+                            .foregroundStyle(.primary)
                         }
                     }
                 }
@@ -166,11 +187,13 @@ struct ProjectKitLensSelectionView: View {
                                 .foregroundStyle(Color.accentColor)
                         }
                     }
+                    .foregroundStyle(.primary)
                 }
+                .buttonStyle(.plain)
             }
             }
         }
-        .navigationTitle("Add Lens")
+        .navigationTitle("Select Lenses")
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always))
         .onAppear {
@@ -184,11 +207,23 @@ struct ProjectKitLensSelectionView: View {
             dismiss()
         }
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                VStack(spacing: 2) {
+                    Text("Select Lenses")
+                        .font(.headline)
+                    Text(selectedLensCountText)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 if !selectedIds.isEmpty {
-                    Button("Add") {
+                    Button {
                         addSelectedLenses()
+                    } label: {
+                        Image(systemName: "checkmark")
                     }
+                    .tint(.primary)
                 }
             }
         }
@@ -232,6 +267,12 @@ struct ProjectKitLensSelectionView: View {
         return "T\(lens.maxTStop)"
     }
 
+    private var selectedLensCountText: String {
+        let count = selectedIds.count
+        let label = count == 1 ? "lens" : "lenses"
+        return "\(count) \(label) selected"
+    }
+
 }
 
 private struct LensPackDetailView: View {
@@ -243,13 +284,6 @@ private struct LensPackDetailView: View {
 
     var body: some View {
         List {
-            if !pack.lenses.isEmpty {
-                Section {
-                    Button("Select All") {
-                        selectedIds.formUnion(pack.lenses.map(\.id))
-                    }
-                }
-            }
             Section {
                 ForEach(pack.lenses) { lens in
                     Button {
@@ -268,20 +302,33 @@ private struct LensPackDetailView: View {
                                     .foregroundStyle(Color.accentColor)
                             }
                         }
+                        .foregroundStyle(.primary)
                     }
+                    .buttonStyle(.plain)
                 }
             }
         }
         .navigationTitle(pack.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                if !pack.lenses.isEmpty {
+                    Button {
+                        selectedIds.formUnion(pack.lenses.map(\.id))
+                    } label: {
+                        Image(systemName: "checklist")
+                    }
+                    .tint(.primary)
+                }
                 if !selectedIds.isEmpty {
-                    Button("Add") {
+                    Button {
                         onAdd()
                         shouldDismissToSettings = true
                         dismiss()
+                    } label: {
+                        Image(systemName: "checkmark")
                     }
+                    .tint(.primary)
                 }
             }
         }

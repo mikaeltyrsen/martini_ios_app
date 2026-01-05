@@ -13,22 +13,17 @@ struct ProjectKitSettingsView: View {
             }
 
             Section("Cameras") {
-                if store.selectedCameras().isEmpty {
-                    Text("No cameras added yet.")
-                        .foregroundStyle(.secondary)
-                } else {
-                    let selected = store.selectedCameras()
-                    ForEach(selected) { camera in
-                        VStack(alignment: .leading) {
-                            Text("\(camera.brand) \(camera.model)")
-                            Text(cameraSensorLabel(camera))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
+                let selected = store.selectedCameras()
+                ForEach(selected) { camera in
+                    VStack(alignment: .leading) {
+                        Text("\(camera.brand) \(camera.model)")
+                        Text(cameraSensorLabel(camera))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
-                    .onDelete { indexSet in
-                        removeCameras(at: indexSet, from: selected)
-                    }
+                }
+                .onDelete { indexSet in
+                    removeCameras(at: indexSet, from: selected)
                 }
 
                 NavigationLink {
@@ -40,32 +35,29 @@ struct ProjectKitSettingsView: View {
             }
 
             Section("Lenses") {
-                if store.selectedLenses().isEmpty {
-                    Text("No lenses added yet.")
-                        .foregroundStyle(.secondary)
-                } else {
-                    let selected = store.selectedLenses()
-                    ForEach(selected) { lens in
-                        VStack(alignment: .leading) {
-                            Text("\(lens.brand) \(lens.series)")
-                            Text(lensLabel(for: lens))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        .swipeActions {
-                            if let pack = store.lensPack(for: lens) {
-                                Button("Delete Pack", role: .destructive) {
-                                    store.removeLensPack(id: pack.id, projectId: authService.projectId)
-                                }
-                            }
-                            Button("Delete Lens", role: .destructive) {
-                                store.removeLens(id: lens.id, projectId: authService.projectId)
-                            }
-                        }
+                let selected = store.selectedLenses()
+                ForEach(selected) { lens in
+                    VStack(alignment: .leading) {
+                        Text("\(lens.brand) \(lens.series)")
+                        Text(lensLabel(for: lens))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
-                    .onDelete { indexSet in
-                        removeLenses(at: indexSet, from: selected)
+                    .swipeActions {
+                        if let pack = store.lensPack(for: lens) {
+                            Button("Delete Pack", role: .destructive) {
+                                store.removeLensPack(id: pack.id, projectId: authService.projectId)
+                            }
+                            .tint(.red)
+                        }
+                        Button("Delete Lens", role: .destructive) {
+                            store.removeLens(id: lens.id, projectId: authService.projectId)
+                        }
+                        .tint(.red)
                     }
+                }
+                .onDelete { indexSet in
+                    removeLenses(at: indexSet, from: selected)
                 }
 
                 NavigationLink {
