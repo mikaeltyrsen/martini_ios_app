@@ -69,6 +69,8 @@ struct FrameView: View {
     @State private var descriptionAttributedText: AttributedString?
     @State private var descriptionTextAlignment: TextAlignment = .leading
     @State private var descriptionHorizontalAlignment: Alignment = .leading
+    @State private var showingDescriptionEditor: Bool = false
+    @State private var descriptionEditorText: NSAttributedString = NSAttributedString(string: "")
     @State private var scriptNavigationTarget: ScriptNavigationTarget?
     @Environment(\.openURL) private var openURL
     @Environment(\.colorScheme) private var colorScheme
@@ -194,6 +196,12 @@ struct FrameView: View {
                     onVideoPicked: { url in
                         Task { await uploadBoardVideo(url, boardLabel: "Upload") }
                     }
+                )
+            }
+            .sheet(isPresented: $showingDescriptionEditor) {
+                FrameDescriptionEditorSheet(
+                    title: "Edit \(frameTitle) Description",
+                    initialText: descriptionEditorText
                 )
             }
     }
@@ -864,6 +872,24 @@ struct FrameView: View {
         }
     }
 
+    private var descriptionCopyText: String? {
+        guard let description = secondaryText, !description.isEmpty else { return nil }
+        return plainTextFromHTML(description)
+    }
+
+    private func openDescriptionEditor() {
+        if let description = secondaryText, !description.isEmpty,
+           let attributed = attributedStringFromHTML(description) {
+            descriptionEditorText = NSAttributedString(attributed)
+        } else if let description = secondaryText, !description.isEmpty {
+            descriptionEditorText = NSAttributedString(string: plainTextFromHTML(description))
+        } else {
+            descriptionEditorText = NSAttributedString(string: "")
+        }
+
+        showingDescriptionEditor = true
+    }
+
     @ViewBuilder
     private var descriptionSection: some View {
         if let secondaryText {
@@ -890,6 +916,15 @@ struct FrameView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.top, 10)
+            .contextMenu {
+                Button("Copy Description") {
+                    UIPasteboard.general.string = descriptionCopyText ?? ""
+                }
+                Button("Edit Description") {
+                    openDescriptionEditor()
+                }
+            }
+            .disabled(secondaryText.isEmpty)
         } else {
             VStack(alignment: .leading, spacing: 8) {
 //                Text("Description")
@@ -902,6 +937,11 @@ struct FrameView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.top, 10)
+            .contextMenu {
+                Button("Edit Description") {
+                    openDescriptionEditor()
+                }
+            }
         }
     }
 
