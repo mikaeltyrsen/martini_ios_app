@@ -3,11 +3,20 @@ import UIKit
 
 struct FrameDescriptionEditorSheet: View {
     let title: String
+    let onSave: (String) async throws -> Void
+    let onError: (Error) -> Void
     @StateObject private var editorState: RichTextEditorState
     @Environment(\.dismiss) private var dismiss
 
-    init(title: String, initialText: NSAttributedString) {
+    init(
+        title: String,
+        initialText: NSAttributedString,
+        onSave: @escaping (String) async throws -> Void,
+        onError: @escaping (Error) -> Void
+    ) {
         self.title = title
+        self.onSave = onSave
+        self.onError = onError
         _editorState = StateObject(wrappedValue: RichTextEditorState(text: initialText))
     }
 
@@ -24,7 +33,15 @@ struct FrameDescriptionEditorSheet: View {
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         Button("Save") {
-                            dismiss()
+                            Task {
+                                do {
+                                    let description = editorState.htmlRepresentation() ?? editorState.attributedText.string
+                                    try await onSave(description)
+                                    dismiss()
+                                } catch {
+                                    onError(error)
+                                }
+                            }
                         }
                     }
                 }

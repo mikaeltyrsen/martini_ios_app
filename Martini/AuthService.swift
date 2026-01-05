@@ -86,6 +86,7 @@ class AuthService: ObservableObject {
         case creatives = "creatives/get_creatives.php"
         case frames = "frames/get.php"
         case updateFrameStatus = "frames/update_status.php"
+        case updateFrameDescription = "frames/update_description.php"
         case updateBoard = "frames/update_board.php"
         case removeImage = "frames/remove_image.php"
         case schedule = "schedules/fetch.php"
@@ -780,6 +781,64 @@ class AuthService: ObservableObject {
         if let index = frames.firstIndex(where: { $0.id == updatedFrame.id }) {
             frames[index] = updatedFrame
         }
+        cacheFrames(frames, for: projectId)
+
+        publishFrameUpdate(frameId: updatedFrame.id, context: .localStatusChange)
+        return updatedFrame
+    }
+
+    func updateFrameDescription(frameId: String, creativeId: String, description: String) async throws -> Frame {
+        guard let projectId else {
+            throw AuthError.noAuth
+        }
+
+        let body: [String: Any] = [
+            "description": description,
+            "frameId": frameId,
+            "creativeId": creativeId,
+            "projectId": projectId
+        ]
+
+        var request = try authorizedRequest(for: .updateFrameDescription, body: body)
+
+        let requestJSON = String(data: request.httpBody ?? Data(), encoding: .utf8) ?? "Unable to encode"
+        print("📤 Updating frame description...")
+        print("🔗 URL: \(request.url?.absoluteString ?? "unknown")")
+        print("📝 Request body: \(requestJSON)")
+
+        let (data, response) = try await performRequest(request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw AuthError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let errorBody = String(data: data, encoding: .utf8) ?? "No response body"
+            print("❌ Failed to update frame description - Status: \(httpResponse.statusCode)")
+            print("📝 Response: \(errorBody)")
+            if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
+                logout()
+                throw AuthError.unauthorized
+            }
+            throw AuthError.requestFailed(statusCode: httpResponse.statusCode)
+        }
+
+        let responseJSON = String(data: data, encoding: .utf8) ?? "Unable to decode"
+        print("📥 Update description response received (\(httpResponse.statusCode)):")
+        print(responseJSON)
+
+        let response = try JSONDecoder().decode(BasicResponse.self, from: data)
+        guard response.success else {
+            print("❌ Update description response failed: \(response.error ?? "Unknown error")")
+            throw AuthError.authenticationFailedWithMessage(response.error ?? "Failed to update description")
+        }
+
+        guard let existingIndex = frames.firstIndex(where: { $0.id == frameId }) else {
+            throw AuthError.authenticationFailedWithMessage("Updated frame not found")
+        }
+
+        let updatedFrame = frames[existingIndex].updatingDescription(description)
+        frames[existingIndex] = updatedFrame
         cacheFrames(frames, for: projectId)
 
         publishFrameUpdate(frameId: updatedFrame.id, context: .localStatusChange)

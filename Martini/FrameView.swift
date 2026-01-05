@@ -71,6 +71,7 @@ struct FrameView: View {
     @State private var descriptionHorizontalAlignment: Alignment = .leading
     @State private var showingDescriptionEditor: Bool = false
     @State private var descriptionEditorText: NSAttributedString = NSAttributedString(string: "")
+    @State private var descriptionUpdateError: String?
     @State private var scriptNavigationTarget: ScriptNavigationTarget?
     @Environment(\.openURL) private var openURL
     @Environment(\.colorScheme) private var colorScheme
@@ -201,7 +202,18 @@ struct FrameView: View {
             .sheet(isPresented: $showingDescriptionEditor) {
                 FrameDescriptionEditorSheet(
                     title: "Edit \(frameTitle) Description",
-                    initialText: descriptionEditorText
+                    initialText: descriptionEditorText,
+                    onSave: { description in
+                        let updatedFrame = try await authService.updateFrameDescription(
+                            frameId: frame.id,
+                            creativeId: frame.creativeId,
+                            description: description
+                        )
+                        frame = updatedFrame
+                    },
+                    onError: { error in
+                        descriptionUpdateError = error.localizedDescription
+                    }
                 )
             }
     }
@@ -421,6 +433,17 @@ struct FrameView: View {
                 Button("OK", role: .cancel) { statusUpdateError = nil }
             } message: {
                 Text(statusUpdateError ?? "An unknown error occurred.")
+            }
+            .alert(
+                "Unable to Update Description",
+                isPresented: Binding(
+                    get: { descriptionUpdateError != nil },
+                    set: { if !$0 { descriptionUpdateError = nil } }
+                )
+            ) {
+                Button("OK", role: .cancel) { descriptionUpdateError = nil }
+            } message: {
+                Text(descriptionUpdateError ?? "An unknown error occurred.")
             }
     }
 
