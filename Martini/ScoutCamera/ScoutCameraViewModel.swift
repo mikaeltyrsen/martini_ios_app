@@ -37,6 +37,7 @@ final class ScoutCameraViewModel: ObservableObject {
     @Published var matchResult: FOVMatchResult?
     @Published var debugInfo: ScoutCameraDebugInfo?
     @Published var capturedImage: UIImage?
+    @Published var processedImage: UIImage?
     @Published var isCapturing: Bool = false
     @Published var errorMessage: String?
 
@@ -214,17 +215,25 @@ final class ScoutCameraViewModel: ObservableObject {
     func capturePhoto() {
         guard !isCapturing else { return }
         isCapturing = true
+        processedImage = nil
         captureManager.capturePhoto { [weak self] image in
             guard let self else { return }
             Task { @MainActor in
                 guard let image else {
                     self.errorMessage = "Failed to capture photo."
                     self.capturedImage = nil
+                    self.processedImage = nil
                     self.isCapturing = false
                     return
                 }
                 self.capturedImage = image
-                self.isCapturing = false
+            }
+            Task {
+                let finalImage = await self.processImage(image)
+                await MainActor.run {
+                    self.processedImage = finalImage
+                    self.isCapturing = false
+                }
             }
         }
     }
@@ -254,7 +263,8 @@ final class ScoutCameraViewModel: ObservableObject {
 
     func uploadCapturedImage(token: String?) async -> Bool {
         guard let capturedImage else { return false }
-        let resizedImage = resizedImageForUpload(from: capturedImage, maxPixelDimension: 2000)
+        let finalImage = processedImage ?? await processImage(capturedImage) ?? capturedImage
+        let resizedImage = resizedImageForUpload(from: finalImage, maxPixelDimension: 2000)
         guard let data = resizedImage.jpegData(compressionQuality: 0.85) else { return false }
         guard let creativeId else {
             errorMessage = "Missing creative ID for upload."
@@ -279,6 +289,9 @@ final class ScoutCameraViewModel: ObservableObject {
     }
 
     func prepareShareImage() async -> UIImage? {
+        if let processedImage {
+            return processedImage
+        }
         guard let capturedImage else { return nil }
         return await processImage(capturedImage)
     }
