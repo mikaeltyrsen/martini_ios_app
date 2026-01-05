@@ -386,24 +386,20 @@ struct RichTextEditorView: UIViewRepresentable {
         toolbar.sizeToFit()
         toolbar.backgroundColor = .systemBackground
 
-        let container = UIView()
+        let spacerHeight: CGFloat = 8
+        let containerHeight = toolbar.bounds.height + spacerHeight
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 0, height: containerHeight))
         container.backgroundColor = toolbar.backgroundColor
-        let spacer = UIView()
-        spacer.translatesAutoresizingMaskIntoConstraints = false
-        toolbar.translatesAutoresizingMaskIntoConstraints = false
-        container.addSubview(toolbar)
-        container.addSubview(spacer)
+        container.autoresizingMask = [.flexibleWidth]
 
-        NSLayoutConstraint.activate([
-            toolbar.topAnchor.constraint(equalTo: container.topAnchor),
-            toolbar.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            toolbar.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            spacer.topAnchor.constraint(equalTo: toolbar.bottomAnchor),
-            spacer.leadingAnchor.constraint(equalTo: container.leadingAnchor),
-            spacer.trailingAnchor.constraint(equalTo: container.trailingAnchor),
-            spacer.heightAnchor.constraint(equalToConstant: 8),
-            spacer.bottomAnchor.constraint(equalTo: container.bottomAnchor)
-        ])
+        toolbar.frame = CGRect(x: 0, y: 0, width: container.bounds.width, height: toolbar.bounds.height)
+        toolbar.autoresizingMask = [.flexibleWidth]
+        container.addSubview(toolbar)
+
+        let spacer = UIView(frame: CGRect(x: 0, y: toolbar.bounds.height, width: container.bounds.width, height: spacerHeight))
+        spacer.backgroundColor = toolbar.backgroundColor
+        spacer.autoresizingMask = [.flexibleWidth]
+        container.addSubview(spacer)
 
         return container
     }
