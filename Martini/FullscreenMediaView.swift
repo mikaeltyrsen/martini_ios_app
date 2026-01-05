@@ -1,5 +1,6 @@
 import AVFoundation
 import AVKit
+import ImageIO
 import SwiftUI
 
 enum MediaItem: Equatable {
@@ -49,6 +50,7 @@ struct FullscreenMediaViewer: View {
     @State private var isVisible: Bool = false
     @State private var isToolbarVisible: Bool
     @State private var metadataSheetItem: BoardMetadataItem?
+    @State private var mediaAspectRatio: CGFloat?
 
     private let animationDuration: Double = 0.25
 
@@ -67,6 +69,10 @@ struct FullscreenMediaViewer: View {
 
     var body: some View {
         GeometryReader { proxy in
+            let mediaSize = aspectFitSize(
+                in: proxy.size,
+                aspectRatio: mediaAspectRatio
+            )
             ZStack {
                 Color(.systemBackground)
                     .opacity(isVisible ? 1 : 0)
@@ -74,15 +80,17 @@ struct FullscreenMediaViewer: View {
 
                 ZStack {
                     mediaView
-                        .frame(maxWidth: proxy.size.width, maxHeight: proxy.size.height)
+                        .frame(width: mediaSize.width, height: mediaSize.height)
 
                     if let scoutMetadata {
                         if !scoutMetadata.frameLines.isEmpty {
                             FrameLineOverlayView(configurations: scoutMetadata.frameLines)
+                                .frame(width: mediaSize.width, height: mediaSize.height)
                         }
                         fullscreenMetadataOverlay(scoutMetadata)
                     }
                 }
+                .frame(width: proxy.size.width, height: proxy.size.height, alignment: .center)
                 .opacity(isVisible ? 1 : 0)
                 .scaleEffect(isVisible ? 1 : 0.98)
 
@@ -106,6 +114,9 @@ struct FullscreenMediaViewer: View {
                     isToolbarVisible = true
                 }
             }
+        }
+        .task(id: media.url) {
+            await updateMediaAspectRatio()
         }
         .ignoresSafeArea()
         .interactiveDismissDisabled(true)
@@ -213,6 +224,64 @@ struct FullscreenMediaViewer: View {
                 .foregroundStyle(.primary)
         }
         .font(.system(size: 14, weight: .semibold))
+    }
+
+    private func aspectFitSize(in container: CGSize, aspectRatio: CGFloat?) -> CGSize {
+        guard let aspectRatio, aspectRatio > 0, container.width > 0, container.height > 0 else {
+            return container
+        }
+
+        let containerAspect = container.width / container.height
+        if containerAspect > aspectRatio {
+            let height = container.height
+            return CGSize(width: height * aspectRatio, height: height)
+        } else {
+            let width = container.width
+            return CGSize(width: width, height: width / aspectRatio)
+        }
+    }
+
+    private func updateMediaAspectRatio() async {
+        let ratio: CGFloat?
+        switch media {
+        case .imageURL(let url):
+            ratio = imageAspectRatio(from: url)
+        case .videoURL(let url):
+            ratio = await videoAspectRatio(from: url)
+        }
+
+        guard let ratio, ratio > 0 else { return }
+        await MainActor.run {
+            mediaAspectRatio = ratio
+        }
+    }
+
+    private func imageAspectRatio(from url: URL) -> CGFloat? {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let width = properties[kCGImagePropertyPixelWidth] as? CGFloat,
+              let height = properties[kCGImagePropertyPixelHeight] as? CGFloat,
+              height > 0 else {
+            return nil
+        }
+        return width / height
+    }
+
+    private func videoAspectRatio(from url: URL) async -> CGFloat? {
+        let asset = AVAsset(url: url)
+        do {
+            let tracks = try await asset.loadTracks(withMediaType: .video)
+            guard let track = tracks.first else { return nil }
+            let size = try await track.load(.naturalSize)
+            let transform = try await track.load(.preferredTransform)
+            let transformed = size.applying(transform)
+            let width = abs(transformed.width)
+            let height = abs(transformed.height)
+            guard height > 0 else { return nil }
+            return width / height
+        } catch {
+            return nil
+        }
     }
 }
 
