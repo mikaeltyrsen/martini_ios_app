@@ -218,14 +218,16 @@ final class ScoutCameraViewModel: ObservableObject {
         processedImage = nil
         captureManager.capturePhoto { [weak self] image in
             guard let self else { return }
-            Task { @MainActor in
-                guard let image else {
+            guard let image else {
+                Task { @MainActor in
                     self.errorMessage = "Failed to capture photo."
                     self.capturedImage = nil
                     self.processedImage = nil
                     self.isCapturing = false
-                    return
                 }
+                return
+            }
+            Task { @MainActor in
                 self.capturedImage = image
             }
             Task {
@@ -263,7 +265,14 @@ final class ScoutCameraViewModel: ObservableObject {
 
     func uploadCapturedImage(token: String?) async -> Bool {
         guard let capturedImage else { return false }
-        let finalImage = processedImage ?? await processImage(capturedImage) ?? capturedImage
+        let finalImage: UIImage
+        if let processedImage {
+            finalImage = processedImage
+        } else if let processed = await processImage(capturedImage) {
+            finalImage = processed
+        } else {
+            finalImage = capturedImage
+        }
         let resizedImage = resizedImageForUpload(from: finalImage, maxPixelDimension: 2000)
         guard let data = resizedImage.jpegData(compressionQuality: 0.85) else { return false }
         guard let creativeId else {
