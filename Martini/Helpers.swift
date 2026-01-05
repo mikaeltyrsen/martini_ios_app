@@ -291,6 +291,7 @@ public func scriptTextFromHTML(_ html: String) -> String {
     text = text.replacingOccurrences(of: "</p>", with: "\n\n", options: .caseInsensitive)
     text = text.replacingOccurrences(of: "</div>", with: "\n\n", options: .caseInsensitive)
     text = text.replacingOccurrences(of: "</li>", with: "\n", options: .caseInsensitive)
+    text = text.replacingOccurrences(of: "</blockquote>", with: "\n\n", options: .caseInsensitive)
 
     if let regex = try? NSRegularExpression(pattern: "<[^>]+>", options: []) {
         let range = NSRange(location: 0, length: (text as NSString).length)
