@@ -164,7 +164,7 @@ private func mutableAttributedStringFromHTML(
     body { font-family: -apple-system; font-size: \(fontSize); }
     p { margin: 0 0 1em 0; }
     p:last-child { margin-bottom: 0; }
-    blockquote { margin: 0 0 1em 0; padding: 0; border: 0; font-weight: 700; }
+    blockquote { margin: 0 0 1em 0; padding: 0; border: 0; font-weight: 700; font-family: Menlo, Courier, monospace; }
     blockquote:last-child { margin-bottom: 0; }
     .ql-align-center { text-align: center; }
     .ql-align-left { text-align: left; }
