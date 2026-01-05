@@ -910,7 +910,8 @@ struct FrameView: View {
 //                    .font(.headline)
 //                    .foregroundStyle(.primary)
                 let scriptBlocks = ScriptParser.blocks(from: secondaryText, frameId: frame.id)
-                if scriptBlocks.contains(where: { $0.isDialog }) {
+                let hasScriptMarkup = secondaryText.range(of: "qr-syntax", options: .caseInsensitive) != nil
+                if hasScriptMarkup, scriptBlocks.contains(where: { $0.isDialog }) {
                     ScriptDescriptionPreview(blocks: scriptBlocks, fontSize: scriptPreviewFontSize) { dialogId in
                         scriptNavigationTarget = ScriptNavigationTarget(dialogId: dialogId)
                     }
