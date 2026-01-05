@@ -98,8 +98,11 @@ final class RichTextEditorState: ObservableObject {
 
     private func sanitizedHTML(_ html: String) -> String {
         let bodyContent = extractBodyContent(from: html) ?? html
-        let classStripped = stripClassAttributes(from: bodyContent)
-        return classStripped.trimmingCharacters(in: .whitespacesAndNewlines)
+        let alignedHTML = inlineAlignmentStyles(in: bodyContent)
+        let mergedHTML = mergeAdjacentSpans(in: alignedHTML)
+        let classStripped = stripClassAttributes(from: mergedHTML)
+        let cleanedHTML = stripEmptySpanTags(from: classStripped)
+        return cleanedHTML.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private func extractBodyContent(from html: String) -> String? {
@@ -123,6 +126,61 @@ final class RichTextEditorState: ObservableObject {
         }
         let range = NSRange(html.startIndex..<html.endIndex, in: html)
         return regex.stringByReplacingMatches(in: html, options: [], range: range, withTemplate: "")
+    }
+
+    private func inlineAlignmentStyles(in html: String) -> String {
+        let pattern = "class=\"[^\"]*\\bql-align-(center|right|left)\\b[^\"]*\""
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
+            return html
+        }
+        let range = NSRange(html.startIndex..<html.endIndex, in: html)
+        var output = html
+
+        regex.enumerateMatches(in: html, options: [], range: range) { match, _, _ in
+            guard let match, match.numberOfRanges > 1,
+                  let alignmentRange = Range(match.range(at: 1), in: html),
+                  let fullRange = Range(match.range(at: 0), in: html) else {
+                return
+            }
+            let alignment = String(html[alignmentRange])
+            let replacement = "style=\"text-align: \(alignment);\""
+            output = output.replacingOccurrences(of: html[fullRange], with: replacement)
+        }
+
+        return output
+    }
+
+    private func mergeAdjacentSpans(in html: String) -> String {
+        let pattern = "<span style=\"([^\"]*)\">([^<]*)</span>\\s*<span style=\"\\1\">([^<]*)</span>"
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
+            return html
+        }
+
+        var output = html
+        while true {
+            let range = NSRange(output.startIndex..<output.endIndex, in: output)
+            let replaced = regex.stringByReplacingMatches(
+                in: output,
+                options: [],
+                range: range,
+                withTemplate: "<span style=\"$1\">$2$3</span>"
+            )
+            if replaced == output {
+                break
+            }
+            output = replaced
+        }
+
+        return output
+    }
+
+    private func stripEmptySpanTags(from html: String) -> String {
+        let pattern = "<span>([^<]*)</span>"
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
+            return html
+        }
+        let range = NSRange(html.startIndex..<html.endIndex, in: html)
+        return regex.stringByReplacingMatches(in: html, options: [], range: range, withTemplate: "$1")
     }
 
     private func toggleFontTrait(_ trait: UIFontDescriptor.SymbolicTraits) {
