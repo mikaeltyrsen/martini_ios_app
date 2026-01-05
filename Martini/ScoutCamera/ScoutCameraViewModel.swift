@@ -282,7 +282,7 @@ final class ScoutCameraViewModel: ObservableObject {
         do {
             try await uploadService.uploadPhotoboard(
                 imageData: data,
-                boardLabel: "Photoboard",
+                boardLabel: "Scout Camera",
                 shootId: projectId,
                 creativeId: creativeId,
                 frameId: frameId,
