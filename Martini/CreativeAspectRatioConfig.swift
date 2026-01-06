@@ -57,6 +57,6 @@ enum CreativeAspectRatioConfig {
 
         let clampedRatio = min(max(ratio, minRatio), maxRatio)
         let t = (clampedRatio - minRatio) / (maxRatio - minRatio)
-        return maxDescriptionRatio - (t * (maxDescriptionRatio - minDescriptionRatio))
+        return minDescriptionRatio + (t * (maxDescriptionRatio - minDescriptionRatio))
     }
 }
