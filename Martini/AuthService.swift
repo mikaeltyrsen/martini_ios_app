@@ -45,6 +45,12 @@ struct FrameStatusUpdateResult {
     let wasQueued: Bool
 }
 
+enum QueuedFrameSyncStatus: Equatable {
+    case idle
+    case syncing
+    case success
+}
+
 @MainActor
 protocol ConnectionMonitoring: AnyObject {
     func registerNetworkSuccess()
@@ -76,6 +82,7 @@ class AuthService: ObservableObject {
     @Published var isLoadingProjectDetails: Bool = false
     @Published var pendingDeepLink: String?
     @Published private(set) var pendingFrameStatusUpdates: [PendingFrameStatusUpdate] = []
+    @Published private(set) var queuedFrameSyncStatus: QueuedFrameSyncStatus = .idle
     
     private let tokenHashKey = "martini_token_hash"
     private let projectIdKey = "martini_project_id"
@@ -849,7 +856,11 @@ class AuthService: ObservableObject {
     }
 
     func flushPendingFrameStatusUpdates() {
-        guard let projectId, !pendingFrameStatusUpdates.isEmpty else { return }
+        guard let projectId, !pendingFrameStatusUpdates.isEmpty else {
+            queuedFrameSyncStatus = .idle
+            return
+        }
+        queuedFrameSyncStatus = .syncing
         Task {
             var remaining = pendingFrameStatusUpdates
             pendingFrameStatusUpdates.removeAll()
@@ -870,7 +881,16 @@ class AuthService: ObservableObject {
                     print("❌ Failed to flush status update for frame \(update.frameId): \(error.localizedDescription)")
                 }
             }
+            if pendingFrameStatusUpdates.isEmpty {
+                queuedFrameSyncStatus = .success
+            } else {
+                queuedFrameSyncStatus = .idle
+            }
         }
+    }
+
+    func resetQueuedFrameSyncStatus() {
+        queuedFrameSyncStatus = .idle
     }
 
     func updateFrameDescription(frameId: String, creativeId: String, description: String) async throws -> Frame {
