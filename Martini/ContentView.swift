@@ -33,8 +33,20 @@ struct ContentView: View {
             authService.clearCachedSchedules(keeping: newId)
         }
         .onChange(of: connectionMonitor.status) { newStatus in
-            if authService.isAuthenticated, newStatus == .backOnline {
+            guard authService.isAuthenticated else { return }
+            if newStatus == .backOnline {
+                if !authService.pendingFrameStatusUpdates.isEmpty {
+                    connectionMonitor.holdBackOnlineDisplay()
+                }
                 authService.flushPendingFrameStatusUpdates()
+            } else {
+                authService.resetQueuedFrameSyncStatus()
+            }
+        }
+        .onChange(of: authService.queuedFrameSyncStatus) { newStatus in
+            guard authService.isAuthenticated else { return }
+            if newStatus == .success, connectionMonitor.status == .backOnline {
+                connectionMonitor.dismissBackOnline(after: 3)
             }
         }
         .onOpenURL { url in
@@ -1148,19 +1160,7 @@ struct MainView: View {
 
     private var navigationTitleStack: some View {
         VStack(spacing: 6) {
-            Text(displayedNavigationTitle)
-                .font(.headline)
-                .fontWeight(.semibold)
-
-            if let banner = connectionBanner {
-                Text(banner.text)
-                    .font(.caption.weight(.semibold))
-                    .foregroundColor(banner.color)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(banner.color.opacity(0.2), in: Capsule())
-                    .transition(.opacity)
-            }
+            navigationTitleHeader
 
             let progress = navigationProgress
             if isProjectLoading {
@@ -1184,17 +1184,104 @@ struct MainView: View {
         .accessibilityAddTraits(shouldAllowCreativeSelectionMenu ? .isButton : [])
     }
 
-    private var connectionBanner: (text: String, color: Color)? {
+    private enum ConnectionBannerKind {
+        case unstable
+        case offline
+        case backOnline
+    }
+
+    private var navigationTitleHeader: some View {
+        ZStack {
+            if let banner = connectionBanner {
+                connectionBannerView(banner)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            } else {
+                Text(displayedNavigationTitle)
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: connectionMonitor.status)
+        .animation(.easeInOut(duration: 0.25), value: authService.queuedFrameSyncStatus)
+    }
+
+    private var connectionBanner: (text: String, color: Color, kind: ConnectionBannerKind)? {
         switch connectionMonitor.status {
         case .online:
             return nil
         case .unstable:
-            return ("Unstable Connection", .orange)
+            return ("Unstable Connection", .orange, .unstable)
         case .offline:
-            return ("No Connection", .red)
+            return ("No Connection", .red, .offline)
         case .backOnline:
-            return ("Back online", .green)
+            return ("Back online", .green, .backOnline)
         }
+    }
+
+    @ViewBuilder
+    private func connectionBannerView(_ banner: (text: String, color: Color, kind: ConnectionBannerKind)) -> some View {
+        VStack(spacing: 4) {
+            Text(banner.text)
+                .font(.caption.weight(.semibold))
+                .foregroundColor(banner.color)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(banner.color.opacity(0.2), in: Capsule())
+            connectionBannerStatusView(for: banner.kind)
+        }
+    }
+
+    @ViewBuilder
+    private func connectionBannerStatusView(for kind: ConnectionBannerKind) -> some View {
+        switch kind {
+        case .unstable:
+            Text("Connection is unstable")
+                .font(.footnote)
+                .foregroundColor(.secondary)
+        case .offline:
+            VStack(spacing: 2) {
+                HStack(spacing: 6) {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                        .scaleEffect(0.7)
+                    Text("Trying to reconnect")
+                }
+                if queuedFrameStatusCount > 0 {
+                    Text("\(queuedFrameStatusCount) marked \(queuedFrameStatusCount == 1 ? "frame" : "frames") queued for sync")
+                }
+            }
+            .font(.footnote)
+            .foregroundColor(.secondary)
+        case .backOnline:
+            if shouldShowQueuedSyncStatus {
+                HStack(spacing: 6) {
+                    if authService.queuedFrameSyncStatus == .success {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.green)
+                    } else {
+                        ProgressView()
+                            .progressViewStyle(.circular)
+                            .scaleEffect(0.7)
+                    }
+                    Text(authService.queuedFrameSyncStatus == .success ? "Syncing complete" : "Syncing queued frames")
+                }
+                .font(.footnote)
+                .foregroundColor(.secondary)
+            } else {
+                Text("Connection restored")
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+
+    private var queuedFrameStatusCount: Int {
+        authService.pendingFrameStatusUpdates.count
+    }
+
+    private var shouldShowQueuedSyncStatus: Bool {
+        queuedFrameStatusCount > 0 || authService.queuedFrameSyncStatus != .idle
     }
 
     private var shouldAllowCreativeSelectionMenu: Bool {
