@@ -150,18 +150,6 @@ struct FrameView: View {
             } message: {
                 Text("Select at least one camera and lens in settings to use Scout Camera.")
             }
-            .confirmationDialog("Add Board", isPresented: $showingAddBoardOptions, titleVisibility: .visible) {
-                Button("Take Photo") {
-                    showingSystemCamera = true
-                }
-                Button("Scout Camera") {
-                    openScoutCamera()
-                }
-                Button("Upload") {
-                    showingUploadPicker = true
-                }
-                Button("Cancel", role: .cancel) {}
-            }
             .fullScreenCover(item: $capturedPhoto) { currentPhoto in
                 ScoutCameraReviewView(
                     image: currentPhoto.image,
@@ -429,6 +417,25 @@ struct FrameView: View {
                                     showingBoardRenameAlert = false
                                 }
                             }
+                        }
+                    )
+                }
+                if showingAddBoardOptions {
+                    AddBoardAlert(
+                        onTakePhoto: {
+                            showingAddBoardOptions = false
+                            showingSystemCamera = true
+                        },
+                        onScoutCamera: {
+                            showingAddBoardOptions = false
+                            openScoutCamera()
+                        },
+                        onUpload: {
+                            showingAddBoardOptions = false
+                            showingUploadPicker = true
+                        },
+                        onCancel: {
+                            showingAddBoardOptions = false
                         }
                     )
                 }
@@ -2925,6 +2932,80 @@ private struct BoardRenameAlert: View {
             .shadow(radius: 12)
             .padding(24)
         }
+    }
+}
+
+private struct AddBoardAlert: View {
+    let onTakePhoto: () -> Void
+    let onScoutCamera: () -> Void
+    let onUpload: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.45)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    onCancel()
+                }
+
+            VStack(spacing: 16) {
+                Text("Add Board")
+                    .font(.title3.weight(.semibold))
+
+                VStack(spacing: 12) {
+                    actionButton(title: "Take Photo", systemImage: "camera") {
+                        onTakePhoto()
+                    }
+
+                    actionButton(title: "Scout Camera", systemImage: "camera.viewfinder") {
+                        onScoutCamera()
+                    }
+
+                    actionButton(title: "Upload", systemImage: "square.and.arrow.up") {
+                        onUpload()
+                    }
+                }
+
+                Button("Cancel") {
+                    onCancel()
+                }
+                .font(.headline)
+                .foregroundStyle(.secondary)
+            }
+            .padding(20)
+            .frame(maxWidth: 320)
+            .background(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(Color(.systemBackground))
+            )
+            .padding(.horizontal, 24)
+        }
+    }
+
+    @ViewBuilder
+    private func actionButton(
+        title: String,
+        systemImage: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 16, weight: .semibold))
+                Text(title)
+                    .font(.headline)
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color.secondary.opacity(0.12))
+            )
+        }
+        .buttonStyle(.plain)
     }
 }
 
