@@ -337,7 +337,8 @@ struct FrameLayout: View {
                     fullscreenCoordinator?.configuration = FullscreenMediaConfiguration(
                         media: media,
                         config: .default,
-                        metadataItem: nil
+                        metadataItem: nil,
+                        thumbnailURL: resolvedThumbnailURL
                     )
                 }
         } else {
@@ -438,6 +439,26 @@ struct FrameLayout: View {
             frame.preview,
             frame.previewThumb,
             frame.captureClip,
+            frame.captureClipThumbnail
+        ]
+        for candidate in urlCandidates {
+            if let candidate, let url = URL(string: candidate) {
+                return url
+            }
+        }
+
+        return nil
+    }
+
+    private var resolvedThumbnailURL: URL? {
+        if let thumbnailURL = resolvedAsset?.thumbnailURL {
+            return thumbnailURL
+        }
+
+        let urlCandidates = [
+            frame.boardThumb,
+            frame.photoboardThumb,
+            frame.previewThumb,
             frame.captureClipThumbnail
         ]
         for candidate in urlCandidates {

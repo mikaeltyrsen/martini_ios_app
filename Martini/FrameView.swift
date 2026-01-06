@@ -2038,7 +2038,8 @@ private extension FrameView {
         fullscreenCoordinator?.configuration = FullscreenMediaConfiguration(
             media: media,
             config: .default,
-            metadataItem: metadataItem
+            metadataItem: metadataItem,
+            thumbnailURL: asset.thumbnailURL
         )
     }
 
@@ -2048,7 +2049,8 @@ private extension FrameView {
         fullscreenCoordinator?.configuration = FullscreenMediaConfiguration(
             media: media,
             config: .default,
-            metadataItem: nil
+            metadataItem: nil,
+            thumbnailURL: clip.thumbnailURL
         )
     }
 

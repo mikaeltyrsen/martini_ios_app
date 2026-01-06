@@ -46,11 +46,13 @@ struct FullscreenMediaViewer: View {
     let media: MediaItem
     let config: MediaViewerConfig
     let metadataItem: BoardMetadataItem?
+    let thumbnailURL: URL?
 
     @State private var isVisible: Bool = false
     @State private var isToolbarVisible: Bool
     @State private var isMetadataOverlayVisible: Bool
     @State private var mediaAspectRatio: CGFloat?
+    @State private var isLoadingImage: Bool = false
     @AppStorage("scoutCameraFullscreenShowFrameLines") private var showFrameLines: Bool = true
     @AppStorage("scoutCameraFullscreenShowFrameShading") private var showFrameShading: Bool = true
     @AppStorage("scoutCameraFullscreenShowCrosshair") private var showCrosshair: Bool = true
@@ -62,12 +64,14 @@ struct FullscreenMediaViewer: View {
         isPresented: Binding<Bool>,
         media: MediaItem,
         config: MediaViewerConfig = .default,
-        metadataItem: BoardMetadataItem? = nil
+        metadataItem: BoardMetadataItem? = nil,
+        thumbnailURL: URL? = nil
     ) {
         _isPresented = isPresented
         self.media = media
         self.config = config
         self.metadataItem = metadataItem
+        self.thumbnailURL = thumbnailURL
         _isToolbarVisible = State(initialValue: config.showsTopToolbar)
         _isMetadataOverlayVisible = State(initialValue: metadataItem != nil)
     }
@@ -178,21 +182,51 @@ struct FullscreenMediaViewer: View {
     private var mediaView: some View {
         switch media {
         case .imageURL(let url):
-            AsyncImage(url: url) { phase in
-                switch phase {
-                case .empty:
+            ZStack {
+                if let thumbnailURL {
+                    AsyncImage(url: thumbnailURL) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFit()
+                        case .failure:
+                            Image(systemName: "photo")
+                                .font(.system(size: 40, weight: .medium))
+                                .foregroundStyle(.secondary)
+                        default:
+                            Color.clear
+                        }
+                    }
+                }
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .empty:
+                        Color.clear
+                            .onAppear {
+                                isLoadingImage = true
+                            }
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFit()
+                            .onAppear {
+                                isLoadingImage = false
+                            }
+                    case .failure:
+                        Image(systemName: "photo")
+                            .font(.system(size: 40, weight: .medium))
+                            .foregroundStyle(.secondary)
+                            .onAppear {
+                                isLoadingImage = false
+                            }
+                    @unknown default:
+                        EmptyView()
+                    }
+                }
+                if isLoadingImage {
                     ProgressView()
                         .progressViewStyle(.circular)
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFit()
-                case .failure:
-                    Image(systemName: "photo")
-                        .font(.system(size: 40, weight: .medium))
-                        .foregroundStyle(.secondary)
-                @unknown default:
-                    EmptyView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
