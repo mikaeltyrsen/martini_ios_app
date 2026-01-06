@@ -32,6 +32,11 @@ struct ContentView: View {
         .onChange(of: authService.projectDetails?.activeSchedule?.id) { newId in
             authService.clearCachedSchedules(keeping: newId)
         }
+        .onChange(of: connectionMonitor.status) { newStatus in
+            if authService.isAuthenticated, newStatus == .backOnline {
+                authService.flushPendingFrameStatusUpdates()
+            }
+        }
         .onOpenURL { url in
             handleIncomingURL(url)
         }
@@ -1455,9 +1460,14 @@ private extension MainView {
                 }
             }
             do {
-                let updatedFrame = try await authService.updateFrameStatus(id: frame.id, to: status)
+                let updateResult = try await authService.updateFrameStatus(id: frame.id, to: status)
                 if selectedFrame?.id == frame.id {
-                    selectedFrame = updatedFrame
+                    selectedFrame = updateResult.frame
+                }
+                if updateResult.wasQueued {
+                    await MainActor.run {
+                        dataError = "You have no connection, your markings are currently done locally and when connected again we will push them to the server."
+                    }
                 }
             } catch {
                 await MainActor.run {

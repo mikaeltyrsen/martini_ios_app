@@ -1544,17 +1544,21 @@ struct FrameView: View {
         statusBeingUpdated = status
         Task {
             do {
-                let updatedFrame = try await authService.updateFrameStatus(id: frame.id, to: status)
+                let updateResult = try await authService.updateFrameStatus(id: frame.id, to: status)
                 triggerStatusHaptic(for: status)
 
                 await MainActor.run {
                     withAnimation(.easeInOut(duration: 0.2)) {
-                        selectedStatus = updatedFrame.statusEnum
+                        selectedStatus = updateResult.frame.statusEnum
                     }
 
-                    frame = updatedFrame
-                    onStatusSelected(updatedFrame, updatedFrame.statusEnum)
+                    frame = updateResult.frame
+                    onStatusSelected(updateResult.frame, updateResult.frame.statusEnum)
                     closeStatusSheet()
+
+                    if updateResult.wasQueued {
+                        statusUpdateError = "You have no connection, your markings are currently done locally and when connected again we will push them to the server."
+                    }
                 }
             } catch {
                 await MainActor.run {

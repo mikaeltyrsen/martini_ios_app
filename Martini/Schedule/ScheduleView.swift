@@ -790,7 +790,12 @@ struct ScheduleView: View {
                 }
             }
             do {
-                _ = try await authService.updateFrameStatus(id: frame.id, to: status)
+                let updateResult = try await authService.updateFrameStatus(id: frame.id, to: status)
+                if updateResult.wasQueued {
+                    await MainActor.run {
+                        statusUpdateError = "You have no connection, your markings are currently done locally and when connected again we will push them to the server."
+                    }
+                }
             } catch {
                 await MainActor.run {
                     statusUpdateError = error.localizedDescription
