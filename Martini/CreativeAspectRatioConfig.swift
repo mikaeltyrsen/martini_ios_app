@@ -9,8 +9,8 @@ enum CreativeAspectRatioConfig {
         let ratio: CGFloat
     }
 
-    static let minDescriptionRatio: CGFloat = 0.30
-    static let maxDescriptionRatio: CGFloat = 0.65
+    static let minDescriptionRatio: CGFloat = 0.40
+    static let maxDescriptionRatio: CGFloat = 0.75
 
     static let entries: [Entry] = [
         Entry(label: "Standard (HD / Streaming)", ratioString: "16:9", ratio: 16.0 / 9.0),
