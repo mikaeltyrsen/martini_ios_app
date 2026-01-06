@@ -75,12 +75,7 @@ struct MartiniAlertModal: View {
 
             HStack(spacing: 12) {
                 ForEach(actions) { action in
-                    Button(action.title, role: action.role) {
-                        action.action()
-                    }
-                    .buttonStyle(action.style == .primary ? .borderedProminent : .bordered)
-                    .tint(action.tint ?? (action.style == .primary ? .martiniDefaultColor : .secondary))
-                    .frame(maxWidth: .infinity)
+                    actionButton(for: action)
                 }
             }
         }
@@ -89,5 +84,20 @@ struct MartiniAlertModal: View {
         .background(Color(uiColor: .systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .shadow(color: Color.black.opacity(0.2), radius: 20, x: 0, y: 10)
+    }
+
+    @ViewBuilder
+    private func actionButton(for action: MartiniAlertAction) -> some View {
+        let tint = action.tint ?? (action.style == .primary ? .martiniDefaultColor : .secondary)
+
+        if action.style == .primary {
+            Button(action.title, role: action.role, action: action.action)
+                .buttonStyle(.borderedProminent)
+        } else {
+            Button(action.title, role: action.role, action: action.action)
+                .buttonStyle(.bordered)
+        }
+        .tint(tint)
+        .frame(maxWidth: .infinity)
     }
 }
