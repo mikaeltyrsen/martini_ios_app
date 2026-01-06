@@ -11,6 +11,7 @@ enum CreativeAspectRatioConfig {
 
     static let minDescriptionRatio: CGFloat = 0.30
     static let maxDescriptionRatio: CGFloat = 0.65
+    static let minPortraitDescriptionRatio: CGFloat = 0.22
 
     static let entries: [Entry] = [
         Entry(label: "Standard (HD / Streaming)", ratioString: "16:9", ratio: 16.0 / 9.0),
@@ -57,6 +58,12 @@ enum CreativeAspectRatioConfig {
 
         let clampedRatio = min(max(ratio, minRatio), maxRatio)
         let t = (clampedRatio - minRatio) / (maxRatio - minRatio)
-        return minDescriptionRatio + (t * (maxDescriptionRatio - minDescriptionRatio))
+        let baseRatio = minDescriptionRatio + (t * (maxDescriptionRatio - minDescriptionRatio))
+
+        guard clampedRatio < 1 else { return baseRatio }
+
+        let portraitProgress = (1 - clampedRatio) / (1 - minRatio)
+        let portraitAdjustment = portraitProgress * (minDescriptionRatio - minPortraitDescriptionRatio)
+        return max(minPortraitDescriptionRatio, baseRatio - portraitAdjustment)
     }
 }
