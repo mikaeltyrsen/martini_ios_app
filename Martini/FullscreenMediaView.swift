@@ -237,12 +237,13 @@ struct FullscreenMediaViewer: View {
     }
 
     private var overlayToggles: some View {
-        HStack(spacing: 8) {
-            overlayToggle(title: "Frame Shading", isOn: $showFrameShading)
-            overlayToggle(title: "Frame Lines", isOn: $showFrameLines)
+        HStack(spacing: 4) {
+            overlayToggle(title: "Frames", isOn: $showFrameLines)
             overlayToggle(title: "Cross Hair", isOn: $showCrosshair)
             overlayToggle(title: "Grid", isOn: $showGrid)
+            overlayToggle(title: "Shading", isOn: $showFrameShading)
         }
+        .padding(.vertical, 10)
     }
 
     private func overlayToggle(title: String, isOn: Binding<Bool>) -> some View {
@@ -251,6 +252,7 @@ struct FullscreenMediaViewer: View {
             .font(.system(size: 12, weight: .semibold))
             .buttonBorderShape(.capsule)
             .frame(maxWidth: .infinity)
+            .tint(.martiniDefault)
     }
 
     private func metadataRow(title: String, value: String) -> some View {
