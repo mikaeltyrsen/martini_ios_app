@@ -29,7 +29,7 @@ enum CreativeAspectRatioConfig {
     ]
 
     private static let ratioBounds: (min: CGFloat, max: CGFloat) = {
-        let ratios = entries.map(\.$ratio)
+        let ratios = entries.map(\.ratio)
         let minRatio = ratios.min() ?? (9.0 / 16.0)
         let maxRatio = ratios.max() ?? (2.39)
         return (minRatio, maxRatio)
