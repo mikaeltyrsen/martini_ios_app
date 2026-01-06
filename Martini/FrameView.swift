@@ -74,7 +74,6 @@ struct FrameView: View {
     @Environment(\.openURL) private var openURL
     @Environment(\.colorScheme) private var colorScheme
 
-    private let minDescriptionRatio: CGFloat = 0.35
     private let dimmerAnim = Animation.easeInOut(duration: 0.28)
     private let sheetAnim = Animation.spring(response: 0.42, dampingFraction: 0.92, blendDuration: 0.20)
     private let takePictureCardID = "take-picture"
@@ -115,7 +114,8 @@ struct FrameView: View {
         _assetStack = State(initialValue: initialStack)
         let firstID: FrameAssetItem.ID? = initialStack.first?.id
         _visibleAssetID = State(initialValue: firstID)
-        _descriptionHeightRatio = State(initialValue: minDescriptionRatio)
+        let initialMinDescriptionRatio = CreativeAspectRatioConfig.descriptionRatio(for: frame.creativeAspectRatio)
+        _descriptionHeightRatio = State(initialValue: initialMinDescriptionRatio)
     }
 
     private var frameTitle: String {
@@ -1771,6 +1771,10 @@ struct FrameView: View {
 }
 
 private extension FrameView {
+    private var minDescriptionRatio: CGFloat {
+        CreativeAspectRatioConfig.descriptionRatio(for: frame.creativeAspectRatio)
+    }
+
     private var isDescriptionExpanded: Bool {
         descriptionHeightRatio > 0.75
     }

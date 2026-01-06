@@ -697,15 +697,19 @@ struct ScoutCameraFOVCandidate: Equatable {
 
 enum FrameLineOption: String, CaseIterable, Identifiable, Codable {
     case none = "Off"
-    case ratio0_56 = "0.56"
-    case ratio0_67 = "0.67"
-    case ratio1_0 = "1.00"
-    case ratio1_33 = "1.33"
-    case ratio1_66 = "1.66"
-    case ratio1_78 = "1.78"
-    case ratio1_85 = "1.85"
-    case ratio2_0 = "2.00"
-    case ratio2_39 = "2.39"
+    case ratio16_9 = "16:9"
+    case ratio1_85 = "1.85:1"
+    case ratio2_0 = "2.00:1"
+    case ratio2_39 = "2.39:1"
+    case ratio4_3 = "4:3"
+    case ratio9_16 = "9:16"
+    case ratio4_5 = "4:5"
+    case ratio1_1 = "1:1"
+    case ratio3_4 = "3:4"
+    case ratio3_2 = "3:2"
+    case ratio5_4 = "5:4"
+    case ratio1_90 = "1.90:1"
+    case ratio17_9 = "17:9"
 
     var id: String { rawValue }
 
@@ -716,9 +720,36 @@ enum FrameLineOption: String, CaseIterable, Identifiable, Codable {
     init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         let rawValue = try container.decode(String.self)
-        if rawValue == "9:16" {
-            self = .ratio0_56
+        switch rawValue {
+        case "9:16", "0.56":
+            self = .ratio9_16
             return
+        case "1.00":
+            self = .ratio1_1
+            return
+        case "1.33":
+            self = .ratio4_3
+            return
+        case "1.66":
+            self = .ratio16_9
+            return
+        case "1.78":
+            self = .ratio16_9
+            return
+        case "1.85":
+            self = .ratio1_85
+            return
+        case "2.00":
+            self = .ratio2_0
+            return
+        case "2.39":
+            self = .ratio2_39
+            return
+        case "0.67":
+            self = .ratio3_4
+            return
+        default:
+            break
         }
         guard let option = FrameLineOption(rawValue: rawValue) else {
             throw DecodingError.dataCorruptedError(in: container, debugDescription: "Invalid FrameLineOption: \(rawValue)")
@@ -735,24 +766,65 @@ enum FrameLineOption: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .none:
             return nil
-        case .ratio0_56:
-            return 9.0 / 16.0
-        case .ratio0_67:
-            return 2.0 / 3.0
-        case .ratio1_0:
-            return 1.0
-        case .ratio1_33:
-            return 1.33
-        case .ratio1_66:
-            return 1.66
-        case .ratio1_78:
-            return 1.78
+        case .ratio16_9:
+            return 16.0 / 9.0
         case .ratio1_85:
             return 1.85
         case .ratio2_0:
             return 2.0
         case .ratio2_39:
             return 2.39
+        case .ratio4_3:
+            return 4.0 / 3.0
+        case .ratio9_16:
+            return 9.0 / 16.0
+        case .ratio4_5:
+            return 4.0 / 5.0
+        case .ratio1_1:
+            return 1.0
+        case .ratio3_4:
+            return 3.0 / 4.0
+        case .ratio3_2:
+            return 3.0 / 2.0
+        case .ratio5_4:
+            return 5.0 / 4.0
+        case .ratio1_90:
+            return 1.90
+        case .ratio17_9:
+            return 17.0 / 9.0
+        }
+    }
+
+    var descriptionText: String? {
+        switch self {
+        case .none:
+            return nil
+        case .ratio16_9:
+            return "Standard (HD / Streaming)"
+        case .ratio1_85:
+            return "Flat (Theatrical)"
+        case .ratio2_0:
+            return "Univisium"
+        case .ratio2_39:
+            return "Scope (Anamorphic)"
+        case .ratio4_3:
+            return "Classic / Archive"
+        case .ratio9_16:
+            return "Vertical Video (Reels / TikTok)"
+        case .ratio4_5:
+            return "Instagram Feed"
+        case .ratio1_1:
+            return "Square"
+        case .ratio3_4:
+            return "Vertical Photo"
+        case .ratio3_2:
+            return "Photography"
+        case .ratio5_4:
+            return "Print / Editorial"
+        case .ratio1_90:
+            return "IMAX Digital"
+        case .ratio17_9:
+            return "DCI Native"
         }
     }
 }

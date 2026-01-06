@@ -49,7 +49,7 @@ struct FullscreenMediaViewer: View {
 
     @State private var isVisible: Bool = false
     @State private var isToolbarVisible: Bool
-    @State private var metadataSheetItem: BoardMetadataItem?
+    @State private var isMetadataOverlayVisible: Bool
     @State private var mediaAspectRatio: CGFloat?
     @AppStorage("scoutCameraFullscreenShowFrameLines") private var showFrameLines: Bool = true
     @AppStorage("scoutCameraFullscreenShowFrameShading") private var showFrameShading: Bool = true
@@ -69,6 +69,7 @@ struct FullscreenMediaViewer: View {
         self.config = config
         self.metadataItem = metadataItem
         _isToolbarVisible = State(initialValue: config.showsTopToolbar)
+        _isMetadataOverlayVisible = State(initialValue: metadataItem != nil)
     }
 
     var body: some View {
@@ -105,7 +106,9 @@ struct FullscreenMediaViewer: View {
                             CrosshairOverlay()
                                 .frame(width: mediaSize.width, height: mediaSize.height)
                         }
-                        fullscreenMetadataOverlay(scoutMetadata)
+                        if isMetadataOverlayVisible {
+                            fullscreenMetadataOverlay(scoutMetadata)
+                        }
                     }
                 }
                 .frame(width: proxy.size.width, height: proxy.size.height, alignment: .center)
@@ -114,13 +117,14 @@ struct FullscreenMediaViewer: View {
 
             }
             .contentShape(Rectangle())
-            .simultaneousGesture(
+            .gesture(
                 TapGesture().onEnded {
                     guard config.tapTogglesChrome else { return }
                     withAnimation(.easeInOut(duration: 0.2)) {
                         isToolbarVisible.toggle()
                     }
-                }
+                },
+                including: .gesture
             )
             .onAppear {
                 withAnimation(.easeInOut(duration: animationDuration)) {
@@ -158,16 +162,15 @@ struct FullscreenMediaViewer: View {
             if config.showsTopToolbar, let metadataItem {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        metadataSheetItem = metadataItem
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            isMetadataOverlayVisible.toggle()
+                        }
                     } label: {
                         Label("Metadata", systemImage: "chevron.left.forwardslash.chevron.right")
                     }
                     .accessibilityLabel("Metadata")
                 }
             }
-        }
-        .sheet(item: $metadataSheetItem) { item in
-            BoardMetadataSheet(item: item)
         }
     }
 
