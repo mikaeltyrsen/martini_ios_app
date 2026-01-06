@@ -42,6 +42,7 @@ struct FrameView: View {
     @State private var isDraggingDescription: Bool = false
     @State private var isUpdatingStatus: Bool = false
     @State private var statusUpdateError: String?
+    @State private var showingNoConnectionModal: Bool = false
     @State private var showingStatusSheet: Bool = false
     @State private var sheetVisible: Bool = false
     @State private var statusBeingUpdated: FrameStatus?
@@ -454,6 +455,20 @@ struct FrameView: View {
                 Button("OK", role: .cancel) { descriptionUpdateError = nil }
             } message: {
                 Text(descriptionUpdateError ?? "An unknown error occurred.")
+            }
+            .overlay {
+                MartiniAlertModal(
+                    isPresented: $showingNoConnectionModal,
+                    iconName: "wifi.exclamationmark",
+                    iconColor: .red,
+                    title: "No Connection",
+                    message: "Martini can’t reach the server at the moment. You can keep working—markings are saved locally.\nOnce connection is restored, we’ll automatically push your updates and sync across all devices.",
+                    actions: [
+                        MartiniAlertAction(title: "CONTINUE OFFLINE", style: .primary) {
+                            showingNoConnectionModal = false
+                        }
+                    ]
+                )
             }
     }
 
@@ -1557,7 +1572,7 @@ struct FrameView: View {
                     closeStatusSheet()
 
                     if updateResult.wasQueued {
-                        statusUpdateError = "You have no connection, your markings are currently done locally and when connected again we will push them to the server."
+                        showingNoConnectionModal = true
                     }
                 }
             } catch {
