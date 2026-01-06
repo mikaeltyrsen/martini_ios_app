@@ -1264,6 +1264,10 @@ struct FrameView: View {
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(Color(.descriptionBackground))
             )
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(Color.gray.opacity(0.4), lineWidth: 1)
+            )
             .contextMenu {
                 Button {
                     UIPasteboard.general.string = descriptionCopyText ?? ""
