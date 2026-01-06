@@ -33,10 +33,23 @@ struct ScheduleUpdateEvent: Equatable {
     }
 }
 
+struct PendingFrameStatusUpdate: Equatable, Identifiable {
+    let id = UUID()
+    let frameId: String
+    let status: FrameStatus
+    let queuedAt: Date
+}
+
+struct FrameStatusUpdateResult {
+    let frame: Frame
+    let wasQueued: Bool
+}
+
 @MainActor
 protocol ConnectionMonitoring: AnyObject {
     func registerNetworkSuccess()
     func registerImmediateFailure(for error: Error)
+    var isOffline: Bool { get }
 }
 
 @MainActor
@@ -62,6 +75,7 @@ class AuthService: ObservableObject {
     @Published var isScheduleActive: Bool = false
     @Published var isLoadingProjectDetails: Bool = false
     @Published var pendingDeepLink: String?
+    @Published private(set) var pendingFrameStatusUpdates: [PendingFrameStatusUpdate] = []
     
     private let tokenHashKey = "martini_token_hash"
     private let projectIdKey = "martini_project_id"
@@ -721,14 +735,34 @@ class AuthService: ObservableObject {
         }
     }
 
-    func updateFrameStatus(id: String, to status: FrameStatus) async throws -> Frame {
+    func updateFrameStatus(id: String, to status: FrameStatus) async throws -> FrameStatusUpdateResult {
         guard let projectId else {
             throw AuthError.noAuth
         }
 
+        if connectionMonitor?.isOffline == true {
+            let updatedFrame = try applyLocalFrameStatusUpdate(id: id, status: status, projectId: projectId)
+            queueFrameStatusUpdate(frameId: id, status: status)
+            return FrameStatusUpdateResult(frame: updatedFrame, wasQueued: true)
+        }
+
+        do {
+            let updatedFrame = try await sendFrameStatusUpdate(projectId: projectId, frameId: id, status: status)
+            return FrameStatusUpdateResult(frame: updatedFrame, wasQueued: false)
+        } catch {
+            if error.isConnectivityError {
+                let updatedFrame = try applyLocalFrameStatusUpdate(id: id, status: status, projectId: projectId)
+                queueFrameStatusUpdate(frameId: id, status: status)
+                return FrameStatusUpdateResult(frame: updatedFrame, wasQueued: true)
+            }
+            throw error
+        }
+    }
+
+    private func sendFrameStatusUpdate(projectId: String, frameId: String, status: FrameStatus) async throws -> Frame {
         let body: [String: Any] = [
             "project": projectId,
-            "id": id,
+            "id": frameId,
             "status": status.requestValue
         ]
 
@@ -772,19 +806,71 @@ class AuthService: ObservableObject {
         if let responseFrame = statusResponse.frame {
             updatedFrame = responseFrame
         } else {
-            guard let existingIndex = frames.firstIndex(where: { $0.id == id }) else {
+            guard let existingIndex = frames.firstIndex(where: { $0.id == frameId }) else {
                 throw AuthError.authenticationFailedWithMessage("Updated frame not found")
             }
             updatedFrame = frames[existingIndex].updatingStatus(status)
         }
 
+        applyFrameUpdate(updatedFrame, projectId: projectId)
+        return updatedFrame
+    }
+
+    private func applyLocalFrameStatusUpdate(id: String, status: FrameStatus, projectId: String) throws -> Frame {
+        guard let existingIndex = frames.firstIndex(where: { $0.id == id }) else {
+            throw AuthError.authenticationFailedWithMessage("Updated frame not found")
+        }
+
+        let updatedFrame = frames[existingIndex].updatingStatus(status)
+        applyFrameUpdate(updatedFrame, projectId: projectId)
+        return updatedFrame
+    }
+
+    private func applyFrameUpdate(_ updatedFrame: Frame, projectId: String) {
         if let index = frames.firstIndex(where: { $0.id == updatedFrame.id }) {
             frames[index] = updatedFrame
         }
         cacheFrames(frames, for: projectId)
-
         publishFrameUpdate(frameId: updatedFrame.id, context: .localStatusChange)
-        return updatedFrame
+    }
+
+    private func queueFrameStatusUpdate(frameId: String, status: FrameStatus) {
+        if let index = pendingFrameStatusUpdates.firstIndex(where: { $0.frameId == frameId }) {
+            pendingFrameStatusUpdates[index] = PendingFrameStatusUpdate(
+                frameId: frameId,
+                status: status,
+                queuedAt: Date()
+            )
+        } else {
+            pendingFrameStatusUpdates.append(
+                PendingFrameStatusUpdate(frameId: frameId, status: status, queuedAt: Date())
+            )
+        }
+    }
+
+    func flushPendingFrameStatusUpdates() {
+        guard let projectId, !pendingFrameStatusUpdates.isEmpty else { return }
+        Task {
+            var remaining = pendingFrameStatusUpdates
+            pendingFrameStatusUpdates.removeAll()
+
+            for index in remaining.indices {
+                let update = remaining[index]
+                do {
+                    _ = try await sendFrameStatusUpdate(
+                        projectId: projectId,
+                        frameId: update.frameId,
+                        status: update.status
+                    )
+                } catch {
+                    if error.isConnectivityError {
+                        pendingFrameStatusUpdates = Array(remaining[index...])
+                        break
+                    }
+                    print("❌ Failed to flush status update for frame \(update.frameId): \(error.localizedDescription)")
+                }
+            }
+        }
     }
 
     func updateFrameDescription(frameId: String, creativeId: String, description: String) async throws -> Frame {
@@ -1274,6 +1360,25 @@ enum AuthError: LocalizedError {
             return message
         case .requestFailed(let code):
             return "Request failed with status code: \(code)"
+        }
+    }
+}
+
+private extension Error {
+    var isConnectivityError: Bool {
+        let nsError = self as NSError
+        guard nsError.domain == NSURLErrorDomain else { return false }
+
+        switch nsError.code {
+        case NSURLErrorNotConnectedToInternet,
+             NSURLErrorTimedOut,
+             NSURLErrorCannotFindHost,
+             NSURLErrorCannotConnectToHost,
+             NSURLErrorNetworkConnectionLost,
+             NSURLErrorDNSLookupFailed:
+            return true
+        default:
+            return false
         }
     }
 }
