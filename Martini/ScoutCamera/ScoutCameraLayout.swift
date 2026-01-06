@@ -540,7 +540,15 @@ struct ScoutCameraLayout: View {
                             dismiss()
                         } label: {
                             HStack {
-                                Text(option.rawValue)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(option.rawValue)
+                                        .font(.body)
+                                    if let description = option.descriptionText {
+                                        Text(description)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
                                 Spacer()
                                 if viewModel.isFrameLineSelected(option) {
                                     Image(systemName: "checkmark")
