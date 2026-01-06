@@ -113,6 +113,21 @@ final class ConnectionMonitor: ObservableObject {
         }
     }
 
+    func holdBackOnlineDisplay() {
+        guard status == .backOnline else { return }
+        backOnlineTask?.cancel()
+        backOnlineTask = nil
+    }
+
+    func dismissBackOnline(after delay: TimeInterval = 3) {
+        guard status == .backOnline else { return }
+        backOnlineTask?.cancel()
+        backOnlineTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(delay))
+            await self?.setStatus(.online)
+        }
+    }
+
     private func setStatus(_ newStatus: Status) {
         backOnlineTask?.cancel()
         backOnlineTask = nil
