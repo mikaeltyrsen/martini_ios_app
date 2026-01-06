@@ -25,6 +25,10 @@ final class ConnectionMonitor: ObservableObject {
     private var backOnlineTask: Task<Void, Never>?
     private var consecutiveFailures: Int = 0
 
+    var isOffline: Bool {
+        status == .offline
+    }
+
     init(pingURL: URL) {
         self.pingURL = pingURL
     }
