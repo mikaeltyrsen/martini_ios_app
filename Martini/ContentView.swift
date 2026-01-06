@@ -113,6 +113,7 @@ struct MainView: View {
     @State private var selectedFrameId: String?
     @State private var selectedFrame: Frame?
     @State private var dataError: String?
+    @State private var showingNoConnectionModal = false
     @State private var hasLoadedFrames = false
     @State private var hasLoadedProjectDetails = false
     @State private var hasLoadedCreatives = false
@@ -464,6 +465,20 @@ struct MainView: View {
                     }
                 } message: {
                     Text(dataError ?? "Unknown error")
+                }
+                .overlay {
+                    MartiniAlertModal(
+                        isPresented: $showingNoConnectionModal,
+                        iconName: "wifi.exclamationmark",
+                        iconColor: .red,
+                        title: "No Connection",
+                        message: "Martini can’t reach the server at the moment. You can keep working—markings are saved locally.\nOnce connection is restored, we’ll automatically push your updates and sync across all devices.",
+                        actions: [
+                            MartiniAlertAction(title: "CONTINUE OFFLINE", style: .primary) {
+                                showingNoConnectionModal = false
+                            }
+                        ]
+                    )
                 }
                 .fullScreenCover(
                     isPresented: Binding(
@@ -1561,7 +1576,7 @@ private extension MainView {
                 }
                 if updateResult.wasQueued {
                     await MainActor.run {
-                        dataError = "You have no connection, your markings are currently done locally and when connected again we will push them to the server."
+                        showingNoConnectionModal = true
                     }
                 }
             } catch {
