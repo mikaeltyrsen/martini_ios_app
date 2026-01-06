@@ -44,8 +44,11 @@ struct ContentView: View {
             }
         }
         .onChange(of: authService.queuedFrameSyncStatus) { newStatus in
-            guard authService.isAuthenticated else { return }
-            if newStatus == .success, connectionMonitor.status == .backOnline {
+            guard authService.isAuthenticated, connectionMonitor.status == .backOnline else { return }
+            if newStatus == .syncing {
+                connectionMonitor.holdBackOnlineDisplay()
+            }
+            if newStatus == .success {
                 connectionMonitor.dismissBackOnline(after: 3)
             }
         }
@@ -1206,28 +1209,31 @@ struct MainView: View {
         .animation(.easeInOut(duration: 0.25), value: authService.queuedFrameSyncStatus)
     }
 
-    private var connectionBanner: (text: String, color: Color, kind: ConnectionBannerKind)? {
+    private var connectionBanner: (text: String, color: Color, kind: ConnectionBannerKind, iconName: String)? {
         switch connectionMonitor.status {
         case .online:
             return nil
         case .unstable:
-            return ("Unstable Connection", .orange, .unstable)
+            return ("Unstable Connection", .orange, .unstable, "wifi.exclamationmark")
         case .offline:
-            return ("No Connection", .red, .offline)
+            return ("No Connection", .red, .offline, "bolt.horizontal.fill")
         case .backOnline:
-            return ("Back online", .green, .backOnline)
+            return ("Back online", .green, .backOnline, "network")
         }
     }
 
     @ViewBuilder
-    private func connectionBannerView(_ banner: (text: String, color: Color, kind: ConnectionBannerKind)) -> some View {
+    private func connectionBannerView(_ banner: (text: String, color: Color, kind: ConnectionBannerKind, iconName: String)) -> some View {
         VStack(spacing: 4) {
-            Text(banner.text)
-                .font(.caption.weight(.semibold))
-                .foregroundColor(banner.color)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 4)
-                .background(banner.color.opacity(0.2), in: Capsule())
+            HStack(spacing: 6) {
+                Image(systemName: banner.iconName)
+                Text(banner.text)
+            }
+            .font(.caption.weight(.semibold))
+            .foregroundColor(banner.color)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(banner.color.opacity(0.2), in: Capsule())
             connectionBannerStatusView(for: banner.kind)
         }
     }
@@ -1236,19 +1242,17 @@ struct MainView: View {
     private func connectionBannerStatusView(for kind: ConnectionBannerKind) -> some View {
         switch kind {
         case .unstable:
-            Text("Connection is unstable")
-                .font(.footnote)
-                .foregroundColor(.secondary)
+            EmptyView()
         case .offline:
-            VStack(spacing: 2) {
-                HStack(spacing: 6) {
-                    ProgressView()
-                        .progressViewStyle(.circular)
-                        .scaleEffect(0.7)
-                    Text("Trying to reconnect")
-                }
-                if queuedFrameStatusCount > 0 {
-                    Text("\(queuedFrameStatusCount) marked \(queuedFrameStatusCount == 1 ? "frame" : "frames") queued for sync")
+            HStack(spacing: 6) {
+                ProgressView()
+                    .progressViewStyle(.circular)
+                    .scaleEffect(0.7)
+                TimelineView(.animation) { timeline in
+                    let shouldShowQueued = queuedFrameStatusCount > 0
+                        && Int(timeline.date.timeIntervalSinceReferenceDate) % 4 >= 2
+                    Text(shouldShowQueued ? queuedFrameStatusText : "Retrying")
+                        .animation(.easeInOut(duration: 0.35), value: shouldShowQueued)
                 }
             }
             .font(.footnote)
@@ -1278,6 +1282,10 @@ struct MainView: View {
 
     private var queuedFrameStatusCount: Int {
         authService.pendingFrameStatusUpdates.count
+    }
+
+    private var queuedFrameStatusText: String {
+        "\(queuedFrameStatusCount) marked \(queuedFrameStatusCount == 1 ? "frame" : "frames") queued for sync"
     }
 
     private var shouldShowQueuedSyncStatus: Bool {
