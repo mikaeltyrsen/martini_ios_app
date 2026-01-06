@@ -12,6 +12,7 @@ struct ScoutCameraReviewView: View {
     @State private var isUploading = false
     @State private var isPreparingShare = false
     @State private var shareItem: ShareItem?
+    private let actionColor = Config.martiniDefaultColor
 
     var body: some View {
         ZStack {
@@ -30,18 +31,32 @@ struct ScoutCameraReviewView: View {
                     }
                     .padding()
 
-                HStack(spacing: 16) {
-                    Button("Cancel") {
-                        onCancel()
-                    }
-                    .buttonStyle(.bordered)
+                HStack(spacing: 24) {
+                    ReviewActionButton(
+                        title: "Cancel",
+                        systemImage: "xmark",
+                        actionColor: actionColor,
+                        isHighlighted: false,
+                        isLoading: false,
+                        action: onCancel
+                    )
 
-                    Button("Retake") {
-                        onRetake()
-                    }
-                    .buttonStyle(.bordered)
+                    ReviewActionButton(
+                        title: "Retake",
+                        systemImage: "arrow.clockwise",
+                        actionColor: actionColor,
+                        isHighlighted: false,
+                        isLoading: false,
+                        action: onRetake
+                    )
 
-                    Button {
+                    ReviewActionButton(
+                        title: "Share",
+                        systemImage: "square.and.arrow.up",
+                        actionColor: actionColor,
+                        isHighlighted: false,
+                        isLoading: isPreparingShare
+                    ) {
                         Task {
                             isPreparingShare = true
                             if let shareImage = await onPrepareShare() {
@@ -49,29 +64,23 @@ struct ScoutCameraReviewView: View {
                             }
                             isPreparingShare = false
                         }
-                    } label: {
-                        if isPreparingShare {
-                            ProgressView()
-                        } else {
-                            Text("Save/Share")
-                        }
                     }
-                    .buttonStyle(.bordered)
+                    .disabled(isPreparingShare)
 
-                    Button {
+                    ReviewActionButton(
+                        title: "Import",
+                        systemImage: "square.and.arrow.down",
+                        actionColor: actionColor,
+                        isHighlighted: true,
+                        isLoading: isUploading
+                    ) {
                         Task {
                             isUploading = true
                             await onImport()
                             isUploading = false
                         }
-                    } label: {
-                        if isUploading {
-                            ProgressView()
-                        } else {
-                            Text("Import")
-                        }
                     }
-                    .buttonStyle(.borderedProminent)
+                    .disabled(isUploading)
                 }
                 .padding(.bottom, 24)
             }
@@ -86,6 +95,50 @@ struct ScoutCameraReviewView: View {
 private struct ShareItem: Identifiable {
     let id = UUID()
     let image: UIImage
+}
+
+private struct ReviewActionButton: View {
+    let title: String
+    let systemImage: String
+    let actionColor: Color
+    let isHighlighted: Bool
+    let isLoading: Bool
+    let action: () -> Void
+
+    private let circleSize: CGFloat = 60
+    private let iconSize: CGFloat = 24
+    private let normalBackgroundOpacity: Double = 0.18
+    private let highlightedBackgroundOpacity: Double = 0.32
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 6) {
+                ZStack {
+                    Circle()
+                        .fill(actionColor.opacity(isHighlighted ? highlightedBackgroundOpacity : normalBackgroundOpacity))
+                        .frame(width: circleSize, height: circleSize)
+                        .overlay(
+                            Circle()
+                                .stroke(actionColor.opacity(isHighlighted ? 0.6 : 0.4), lineWidth: 1)
+                        )
+
+                    if isLoading {
+                        ProgressView()
+                            .tint(actionColor)
+                    } else {
+                        Image(systemName: systemImage)
+                            .font(.system(size: iconSize, weight: .semibold))
+                            .foregroundStyle(actionColor)
+                    }
+                }
+
+                Text(title)
+                    .font(.caption2)
+                    .foregroundStyle(actionColor)
+            }
+        }
+        .buttonStyle(.plain)
+    }
 }
 
 private struct ActivityView: UIViewControllerRepresentable {
