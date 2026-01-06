@@ -12,11 +12,12 @@ struct ScoutCameraReviewView: View {
     @State private var isUploading = false
     @State private var isPreparingShare = false
     @State private var shareItem: ShareItem?
-    private let actionColor = Config.martiniDefaultColor
+    private let actionColor = Color.martiniDefaultColor
 
     var body: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
+            Color(.systemBackground)
+                    .ignoresSafeArea()
 
             VStack(spacing: 16) {
                 Image(uiImage: image)
@@ -35,7 +36,7 @@ struct ScoutCameraReviewView: View {
                     ReviewActionButton(
                         title: "Cancel",
                         systemImage: "xmark",
-                        actionColor: actionColor,
+                        actionColor: Color.martiniRed,
                         isHighlighted: false,
                         isLoading: false,
                         action: onCancel
@@ -108,19 +109,64 @@ private struct ReviewActionButton: View {
     private let circleSize: CGFloat = 60
     private let iconSize: CGFloat = 24
     private let normalBackgroundOpacity: Double = 0.18
-    private let highlightedBackgroundOpacity: Double = 0.32
+    private let highlightedBackgroundOpacity: Double = 1
 
     var body: some View {
         Button(action: action) {
             VStack(spacing: 6) {
                 ZStack {
                     Circle()
-                        .fill(actionColor.opacity(isHighlighted ? highlightedBackgroundOpacity : normalBackgroundOpacity))
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    actionColor.opacity(isHighlighted ? 0.70 : 0.30),
+                                    actionColor.opacity(isHighlighted ? 0.50 : 0.10)
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
                         .frame(width: circleSize, height: circleSize)
+                        .background(
+                            Circle()
+                                .fill(.ultraThinMaterial)
+                        )
                         .overlay(
                             Circle()
-                                .stroke(actionColor.opacity(isHighlighted ? 0.6 : 0.4), lineWidth: 1)
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [
+                                            actionColor.opacity(isHighlighted ? 0.70 : 0.30),
+                                            actionColor.opacity(isHighlighted ? 0.40 : 0.20)
+                                        ],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    ),
+                                    lineWidth: 1
+                                )
                         )
+                        .overlay(
+                            Circle()
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.white.opacity(0.35),
+                                            .clear
+                                        ],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    ),
+                                    lineWidth: 0.5
+                                )
+                        )
+
+//                    Circle()
+//                        .fill(actionColor.opacity(isHighlighted ? highlightedBackgroundOpacity : normalBackgroundOpacity))
+//                        .frame(width: circleSize, height: circleSize)
+//                        .overlay(
+//                            Circle()
+//                                .stroke(actionColor.opacity(isHighlighted ? 0.6 : 0.4), lineWidth: 1)
+//                        )
 
                     if isLoading {
                         ProgressView()
@@ -128,7 +174,7 @@ private struct ReviewActionButton: View {
                     } else {
                         Image(systemName: systemImage)
                             .font(.system(size: iconSize, weight: .semibold))
-                            .foregroundStyle(actionColor)
+                            .foregroundStyle(isHighlighted ? Color.white : actionColor)
                     }
                 }
 
