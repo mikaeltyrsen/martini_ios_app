@@ -1824,6 +1824,11 @@ struct FrameAssetItem: Identifiable, Hashable {
         return nil
     }
 
+    var thumbnailURL: URL? {
+        if let fallback, let url = URL(string: fallback) { return url }
+        return nil
+    }
+
     var isVideo: Bool {
         if let fileType, fileType.lowercased().contains("video") { return true }
         guard let url else { return false }

@@ -118,7 +118,8 @@ struct Uiplayground: View {
                     FullscreenMediaViewer(
                         isPresented: $isViewerPresented,
                         media: selectedMedia.media,
-                        config: selectedMedia.config
+                        config: selectedMedia.config,
+                        thumbnailURL: selectedMedia.thumbnailURL
                     )
                     .onDisappear {
                         if !isViewerPresented {

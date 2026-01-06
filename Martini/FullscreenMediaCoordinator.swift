@@ -5,6 +5,7 @@ struct FullscreenMediaConfiguration: Identifiable {
     let media: MediaItem
     let config: MediaViewerConfig
     let metadataItem: BoardMetadataItem?
+    let thumbnailURL: URL?
 }
 
 final class FullscreenMediaCoordinator: ObservableObject {
