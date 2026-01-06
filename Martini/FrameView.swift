@@ -1146,12 +1146,13 @@ struct FrameView: View {
 
                         case .tag(let tag, let groupName):
                             Text(tag.name)
-                                .foregroundColor(pillTextColor)
+                                //.foregroundColor(pillTextColor)
+                                .foregroundColor(tagGroupColor(for: groupName))
                                 .fixedSize(horizontal: true, vertical: false)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 6)
                                 .background(
-                                    Capsule().fill(tagGroupColor(for: groupName))
+                                    Capsule().fill(tagGroupColor(for: groupName)).opacity(0.3)
                                 )
                         }
                     }
