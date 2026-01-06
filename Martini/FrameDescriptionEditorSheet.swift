@@ -6,6 +6,7 @@ struct FrameDescriptionEditorSheet: View {
     let onSave: (String) async throws -> Void
     let onError: (Error) -> Void
     @StateObject private var editorState: RichTextEditorState
+    @State private var isSaving = false
     @Environment(\.dismiss) private var dismiss
 
     init(
@@ -32,9 +33,11 @@ struct FrameDescriptionEditorSheet: View {
                         }
                     }
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button("Save") {
+                        Button {
                             Task {
                                 do {
+                                    isSaving = true
+                                    defer { isSaving = false }
                                     let description = editorState.htmlRepresentation() ?? editorState.attributedText.string
                                     try await onSave(description)
                                     dismiss()
@@ -42,7 +45,15 @@ struct FrameDescriptionEditorSheet: View {
                                     onError(error)
                                 }
                             }
+                        } label: {
+                            if isSaving {
+                                ProgressView()
+                            } else {
+                                Image(systemName: "checkmark")
+                            }
                         }
+                        .accessibilityLabel(isSaving ? "Saving" : "Save")
+                        .disabled(isSaving)
                     }
                 }
         }
