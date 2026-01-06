@@ -90,12 +90,14 @@ struct MartiniAlertModal: View {
     private func actionButton(for action: MartiniAlertAction) -> some View {
         let tint = action.tint ?? (action.style == .primary ? .martiniDefaultColor : .secondary)
 
-        if action.style == .primary {
-            Button(action.title, role: action.role, action: action.action)
-                .buttonStyle(.borderedProminent)
-        } else {
-            Button(action.title, role: action.role, action: action.action)
-                .buttonStyle(.bordered)
+        Group {
+            if action.style == .primary {
+                Button(action.title, role: action.role, action: action.action)
+                    .buttonStyle(.borderedProminent)
+            } else {
+                Button(action.title, role: action.role, action: action.action)
+                    .buttonStyle(.bordered)
+            }
         }
         .tint(tint)
         .frame(maxWidth: .infinity)
