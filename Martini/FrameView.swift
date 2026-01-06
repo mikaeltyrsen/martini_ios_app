@@ -71,6 +71,7 @@ struct FrameView: View {
     @State private var descriptionEditorText: NSAttributedString = NSAttributedString(string: "")
     @State private var descriptionUpdateError: String?
     @State private var scriptNavigationTarget: ScriptNavigationTarget?
+    @State private var didLogLayout: Bool = false
     @Environment(\.openURL) private var openURL
     @Environment(\.colorScheme) private var colorScheme
 
@@ -694,6 +695,16 @@ struct FrameView: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 }
+            }
+            .onAppear {
+                guard !didLogLayout else { return }
+                didLogLayout = true
+                logFrameLayout(
+                    containerSize: proxy.size,
+                    isLandscape: isLandscape,
+                    overlayHeight: overlayHeight,
+                    portraitBoardsHeight: portraitBoardsHeight
+                )
             }
         }
     }
@@ -1806,6 +1817,30 @@ private extension FrameView {
             return CGFloat(value)
         }
         return 16.0 / 9.0
+    }
+
+    private func logFrameLayout(
+        containerSize: CGSize,
+        isLandscape: Bool,
+        overlayHeight: CGFloat,
+        portraitBoardsHeight: CGFloat
+    ) {
+        let aspectRatioText = frame.creativeAspectRatio ?? "nil"
+        let parsedAspectRatio = String(format: "%.3f", frameAspectRatio)
+
+        if isLandscape {
+            let boardsSize = CGSize(width: containerSize.width * 0.6, height: containerSize.height)
+            let descriptionSize = CGSize(width: containerSize.width * 0.4, height: containerSize.height)
+            print("[FrameView] aspectRatio=\(aspectRatioText) parsed=\(parsedAspectRatio) layout=landscape boardsSize=\(formatSize(boardsSize)) descriptionSize=\(formatSize(descriptionSize))")
+        } else {
+            let boardsSize = CGSize(width: containerSize.width, height: portraitBoardsHeight)
+            let descriptionSize = CGSize(width: containerSize.width, height: overlayHeight)
+            print("[FrameView] aspectRatio=\(aspectRatioText) parsed=\(parsedAspectRatio) layout=portrait boardsSize=\(formatSize(boardsSize)) descriptionSize=\(formatSize(descriptionSize))")
+        }
+    }
+
+    private func formatSize(_ size: CGSize) -> String {
+        String(format: "%.1f x %.1f", size.width, size.height)
     }
 
     private func boardEntry(for asset: FrameAssetItem) -> FrameBoard? {
