@@ -704,7 +704,7 @@ struct FrameView: View {
                             .opacity(boardOpacity)
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
 
-                        Color.black
+                        Color(.systemBackground)
                             .opacity(dimmerOpacity)
                             .ignoresSafeArea()
                             .allowsHitTesting(false)
@@ -735,7 +735,7 @@ struct FrameView: View {
         ZStack(alignment: .bottom) {
             if showingStatusSheet {
                 // Dimmer (gentle, native)
-                Color.black
+                Color(.systemBackground)
                     .opacity(sheetVisible ? 0.7 : 0)
                     .ignoresSafeArea()
                     .animation(dimmerAnim, value: sheetVisible)
