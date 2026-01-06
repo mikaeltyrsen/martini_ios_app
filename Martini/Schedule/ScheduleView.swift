@@ -16,6 +16,7 @@ struct ScheduleView: View {
     @State private var framesById: [String: Frame] = [:]
     @State private var selectedFrame: Frame?
     @State private var statusUpdateError: String?
+    @State private var showingNoConnectionModal = false
     @State private var updatingFrameIds: Set<String> = []
     @State private var scheduleContentWidth: CGFloat = 0
     private var scheduleGroups: [ScheduleGroup] { item.groups ?? schedule.groups ?? [] }
@@ -216,6 +217,20 @@ struct ScheduleView: View {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(statusUpdateError ?? "Unknown error")
+            }
+            .overlay {
+                MartiniAlertModal(
+                    isPresented: $showingNoConnectionModal,
+                    iconName: "wifi.exclamationmark",
+                    iconColor: .red,
+                    title: "No Connection",
+                    message: "Martini can’t reach the server at the moment. You can keep working—markings are saved locally.\nOnce connection is restored, we’ll automatically push your updates and sync across all devices.",
+                    actions: [
+                        MartiniAlertAction(title: "CONTINUE OFFLINE", style: .primary) {
+                            showingNoConnectionModal = false
+                        }
+                    ]
+                )
             }
         }
     }
@@ -793,7 +808,7 @@ struct ScheduleView: View {
                 let updateResult = try await authService.updateFrameStatus(id: frame.id, to: status)
                 if updateResult.wasQueued {
                     await MainActor.run {
-                        statusUpdateError = "You have no connection, your markings are currently done locally and when connected again we will push them to the server."
+                        showingNoConnectionModal = true
                     }
                 }
             } catch {
