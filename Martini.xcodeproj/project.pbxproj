@@ -44,6 +44,7 @@
 		07E1A0033B7A111100000001 /* ConnectionMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07E1A0023B7A111100000001 /* ConnectionMonitor.swift */; };
 		07F4E0022FF0AAAA00000001 /* RealtimeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07F4E0012FF0AAAA00000001 /* RealtimeService.swift */; };
 		07F4E0052FF0AAAA00000002 /* WebsocketCalls.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07F4E0032FF0AAAA00000002 /* WebsocketCalls.swift */; };
+		07FFA2442F0D931A006BEAF4 /* MartiniAlertModal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07FFA2432F0D931A006BEAF4 /* MartiniAlertModal.swift */; };
 		13952330E1EF424FADD563ED /* ScoutCamera/ScoutCameraLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F825837CC9D4A3C884F0F59 /* ScoutCamera/ScoutCameraLayout.swift */; };
 		1F7A3C5E4D1B4C3A8B9C0D1E /* ScoutCamera/ScoutCameraSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F7A3C5D4D1B4C3A8B9C0D1E /* ScoutCamera/ScoutCameraSettingsView.swift */; };
 		212769B0E99B412F8D9C27E8 /* ScoutCamera/ScoutCameraViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30240C00983A4B208F56B246 /* ScoutCamera/ScoutCameraViewModel.swift */; };
@@ -115,6 +116,7 @@
 		07E1A0023B7A111100000001 /* ConnectionMonitor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConnectionMonitor.swift; sourceTree = "<group>"; };
 		07F4E0012FF0AAAA00000001 /* RealtimeService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RealtimeService.swift; sourceTree = "<group>"; };
 		07F4E0032FF0AAAA00000002 /* WebsocketCalls.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebsocketCalls.swift; sourceTree = "<group>"; };
+		07FFA2432F0D931A006BEAF4 /* MartiniAlertModal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MartiniAlertModal.swift; sourceTree = "<group>"; };
 		107AD8B89F4A441698E034E1 /* ScoutCamera/Processing/PhotoProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/Processing/PhotoProcessor.swift; sourceTree = "<group>"; };
 		10F9CB29EE71481EB424475E /* ScoutCamera/FOV/FOVMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/FOV/FOVMath.swift; sourceTree = "<group>"; };
 		1F7A3C5D4D1B4C3A8B9C0D1E /* ScoutCamera/ScoutCameraSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/ScoutCameraSettingsView.swift; sourceTree = "<group>"; };
@@ -192,6 +194,7 @@
 		07A6A6842EC9A272002C8EB9 /* Martini */ = {
 			isa = PBXGroup;
 			children = (
+				07FFA2432F0D931A006BEAF4 /* MartiniAlertModal.swift */,
 				0730F41B2F0CE88E000B598F /* CreativeAspectRatioConfig.swift */,
 				0730F4182F0C843C000B598F /* ScoutCameraOverlays.swift */,
 				0730F4152F0C7EB7000B598F /* ScoutCameraMetadata.swift */,
@@ -356,6 +359,7 @@
 				07C904B82EDC888C004EDBFA /* Helpers.swift in Sources */,
 				075456032EC9A6E200C45739 /* LoginView.swift in Sources */,
 				57E214BA1EC84898ABC8A8A6 /* SchedulesView.swift in Sources */,
+				07FFA2442F0D931A006BEAF4 /* MartiniAlertModal.swift in Sources */,
 				F501C2E32028424CABAFBC56 /* ScheduleView.swift in Sources */,
 				07C904B02EDA8665004EDBFA /* Models.swift in Sources */,
 				07A6A6862EC9A272002C8EB9 /* MartiniApp.swift in Sources */,
