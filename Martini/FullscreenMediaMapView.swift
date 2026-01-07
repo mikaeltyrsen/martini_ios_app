@@ -72,7 +72,7 @@ struct ScoutMapSheetView: View {
         .mapStyle(mapStyleOption.mapStyle)
         .frame(maxWidth: .infinity, minHeight: 320)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .onMapCameraChange { context in
+        .onMapCameraChange(frequency: .continuous) { context in
             mapHeadingDegrees = context.camera.heading
         }
         .overlay(alignment: .bottomTrailing) {
