@@ -1,6 +1,6 @@
+import AVFoundation
 import Foundation
 import SwiftUI
-import AVFoundation
 
 @MainActor
 final class ScoutCameraViewModel: ObservableObject {
@@ -47,6 +47,8 @@ final class ScoutCameraViewModel: ObservableObject {
 
     let captureManager = CaptureSessionManager()
     let calibrationStore = FOVCalibrationStore.shared
+    let motionManager = MotionHeadingManager()
+    let locationManager = ScoutLocationManager()
 
     private let projectId: String
     private let frameId: String
@@ -70,6 +72,16 @@ final class ScoutCameraViewModel: ObservableObject {
 
     func updateCreativeId(_ creativeId: String?) {
         self.creativeId = creativeId
+    }
+
+    func startSensors() {
+        motionManager.start()
+        locationManager.start()
+    }
+
+    func stopSensors() {
+        motionManager.stop()
+        locationManager.stop()
     }
 
     func loadData() {
@@ -324,6 +336,25 @@ final class ScoutCameraViewModel: ObservableObject {
                 "targets": hint.targets
             ])
         }
+        let geoData: [String: Any]? = locationManager.location.map { location in
+            compactMetadata([
+                "latitude": location.coordinate.latitude,
+                "longitude": location.coordinate.longitude,
+                "altitude_m": location.altitude,
+                "horizontal_accuracy_m": location.horizontalAccuracy,
+                "vertical_accuracy_m": location.verticalAccuracy,
+                "speed_mps": location.speed >= 0 ? location.speed : nil,
+                "course_degrees": location.course >= 0 ? location.course : nil,
+                "timestamp": ISO8601DateFormatter().string(from: location.timestamp)
+            ])
+        }
+        let orientationData: [String: Any] = compactMetadata([
+            "heading_degrees": motionManager.headingDegrees,
+            "tilt_degrees": motionManager.tiltDegrees,
+            "roll_degrees": motionManager.rollDegrees,
+            "pitch_degrees": motionManager.pitchDegrees,
+            "yaw_degrees": motionManager.yawDegrees
+        ])
         let captureData: [String: Any] = compactMetadata([
             "timestamp": ISO8601DateFormatter().string(from: Date()),
             "focal_length_mm": focalLengthMm,
@@ -336,7 +367,9 @@ final class ScoutCameraViewModel: ObservableObject {
             "framelines": frameLineData,
             "target_aspect_ratio": targetAspectRatio,
             "matched_camera_role": matchResult?.cameraRole,
-            "matched_zoom_factor": matchResult?.zoomFactor
+            "matched_zoom_factor": matchResult?.zoomFactor,
+            "geo": geoData,
+            "orientation": orientationData
         ])
         let modeData: [String: Any] = compactMetadata([
             "id": mode.id,

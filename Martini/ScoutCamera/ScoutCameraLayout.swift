@@ -9,7 +9,7 @@ struct ScoutCameraLayout: View {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var viewModel: ScoutCameraViewModel
     @ObservedObject private var calibrationStore: FOVCalibrationStore
-    @StateObject private var motionManager = MotionHeadingManager()
+    @StateObject private var motionManager: MotionHeadingManager
     @StateObject private var volumeObserver = VolumeButtonObserver()
     private let frameId: String
     private let targetAspectRatio: CGFloat
@@ -39,6 +39,7 @@ struct ScoutCameraLayout: View {
             targetAspectRatio: targetAspectRatio
         )
         _viewModel = StateObject(wrappedValue: viewModel)
+        _motionManager = StateObject(wrappedValue: viewModel.motionManager)
         _calibrationStore = ObservedObject(wrappedValue: viewModel.calibrationStore)
     }
 
@@ -102,12 +103,12 @@ struct ScoutCameraLayout: View {
                 let creativeId = authService.frames.first(where: { $0.id == frameId })?.creativeId
                 viewModel.updateCreativeId(creativeId)
             }
-            motionManager.start()
+            viewModel.startSensors()
             volumeObserver.onVolumeChange = { viewModel.capturePhoto() }
             volumeObserver.start()
         }
         .onDisappear {
-            motionManager.stop()
+            viewModel.stopSensors()
             volumeObserver.stop()
         }
         .onChange(of: viewModel.selectedCamera) { _ in

@@ -1,9 +1,33 @@
+import CoreLocation
+
 struct ScoutCameraMetadata {
     let cameraName: String
     let cameraMode: String
     let lensName: String
     let focalLength: String
     let frameLines: [FrameLineConfiguration]
+    let geo: ScoutCameraGeo?
+    let orientation: ScoutCameraOrientation?
+    let focalLengthMm: Double?
+    let sensorWidthMm: Double?
+}
+
+struct ScoutCameraGeo {
+    let latitude: Double
+    let longitude: Double
+    let altitudeMeters: Double?
+
+    var coordinate: CLLocationCoordinate2D {
+        CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+}
+
+struct ScoutCameraOrientation {
+    let headingDegrees: Double
+    let tiltDegrees: Double
+    let rollDegrees: Double?
+    let pitchDegrees: Double?
+    let yawDegrees: Double?
 }
 
 enum ScoutCameraMetadataParser {
@@ -30,19 +54,25 @@ enum ScoutCameraMetadataParser {
             .filter { !$0.isEmpty }
             .joined(separator: " ")
 
-        let focalLength = formattedFocalLength(
-            capture?["active_focal_length_mm"]?.doubleValue
-                ?? capture?["focal_length_mm"]?.doubleValue
-        )
+        let focalLengthValue = capture?["active_focal_length_mm"]?.doubleValue
+            ?? capture?["focal_length_mm"]?.doubleValue
+        let focalLength = formattedFocalLength(focalLengthValue)
 
         let frameLines = parseFrameLines(from: capture)
+        let geo = parseGeo(from: capture)
+        let orientation = parseOrientation(from: capture)
+        let sensorWidthMm = camera?["mode"]?.objectValue?["sensor_width_mm"]?.doubleValue
 
         return ScoutCameraMetadata(
             cameraName: cameraName.isEmpty ? "Unknown" : cameraName,
             cameraMode: cameraMode,
             lensName: lensName.isEmpty ? "Unknown" : lensName,
             focalLength: focalLength,
-            frameLines: frameLines
+            frameLines: frameLines,
+            geo: geo,
+            orientation: orientation,
+            focalLengthMm: focalLengthValue,
+            sensorWidthMm: sensorWidthMm
         )
     }
 
@@ -77,6 +107,31 @@ enum ScoutCameraMetadataParser {
                 thickness: thickness
             )
         }
+    }
+
+    private static func parseGeo(from capture: [String: JSONValue]?) -> ScoutCameraGeo? {
+        guard let geo = capture?["geo"]?.objectValue,
+              let latitude = geo["latitude"]?.doubleValue,
+              let longitude = geo["longitude"]?.doubleValue else {
+            return nil
+        }
+        let altitude = geo["altitude_m"]?.doubleValue
+        return ScoutCameraGeo(latitude: latitude, longitude: longitude, altitudeMeters: altitude)
+    }
+
+    private static func parseOrientation(from capture: [String: JSONValue]?) -> ScoutCameraOrientation? {
+        guard let orientation = capture?["orientation"]?.objectValue,
+              let heading = orientation["heading_degrees"]?.doubleValue,
+              let tilt = orientation["tilt_degrees"]?.doubleValue else {
+            return nil
+        }
+        return ScoutCameraOrientation(
+            headingDegrees: heading,
+            tiltDegrees: tilt,
+            rollDegrees: orientation["roll_degrees"]?.doubleValue,
+            pitchDegrees: orientation["pitch_degrees"]?.doubleValue,
+            yawDegrees: orientation["yaw_degrees"]?.doubleValue
+        )
     }
 }
 

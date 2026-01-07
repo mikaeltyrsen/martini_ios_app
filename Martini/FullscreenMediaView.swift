@@ -56,6 +56,7 @@ struct FullscreenMediaViewer: View {
     @State private var isMetadataOverlayVisible: Bool
     @State private var mediaAspectRatio: CGFloat?
     @State private var isLoadingImage: Bool = false
+    @State private var isMapSheetPresented: Bool = false
     @AppStorage("scoutCameraFullscreenShowFrameLines") private var showFrameLines: Bool = true
     @AppStorage("scoutCameraFullscreenShowFrameShading") private var showFrameShading: Bool = true
     @AppStorage("scoutCameraFullscreenShowCrosshair") private var showCrosshair: Bool = true
@@ -177,6 +178,18 @@ struct FullscreenMediaViewer: View {
                 }
             }
         }
+        .sheet(isPresented: $isMapSheetPresented) {
+            if let scoutMetadata,
+               let geo = scoutMetadata.geo {
+                ScoutMapSheetView(
+                    title: "Scout Map",
+                    coordinate: geo.coordinate,
+                    headingDegrees: scoutMetadata.orientation?.headingDegrees,
+                    focalLengthMm: scoutMetadata.focalLengthMm,
+                    sensorWidthMm: scoutMetadata.sensorWidthMm
+                )
+            }
+        }
     }
 
     @ViewBuilder
@@ -263,6 +276,9 @@ struct FullscreenMediaViewer: View {
                 metadataRow(title: "Camera Mode", value: metadata.cameraMode)
                 metadataRow(title: "Lens", value: metadata.lensName)
                 metadataRow(title: "Focal Length", value: metadata.focalLength)
+                if metadata.geo != nil {
+                    mapToggleButton
+                }
                 if !metadata.frameLines.isEmpty {
                     overlayToggles
                 }
@@ -280,6 +296,18 @@ struct FullscreenMediaViewer: View {
         .transition(.move(edge: .bottom).combined(with: .opacity))
         .padding(.horizontal, 10)
         .padding(.vertical, 30)
+    }
+
+    private var mapToggleButton: some View {
+        Button {
+            isMapSheetPresented = true
+        } label: {
+            Text("Map")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(.martiniDefault)
+        .font(.system(size: 12, weight: .semibold))
     }
 
     private var overlayToggles: some View {
