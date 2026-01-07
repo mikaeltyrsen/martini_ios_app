@@ -212,7 +212,7 @@ private struct ScoutMapOverlayView: View {
     private func point(from center: CGPoint, radius: CGFloat, angle: Double) -> CGPoint {
         let cosine = CGFloat(Darwin.cos(angle))
         let sine = CGFloat(Darwin.sin(angle))
-        CGPoint(
+        return CGPoint(
             x: center.x + radius * cosine,
             y: center.y + radius * sine
         )
