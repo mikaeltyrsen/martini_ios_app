@@ -59,7 +59,7 @@ struct ScoutMapSheetView: View {
             }
             .mapStyle(.imagery(elevation: .realistic))
             .overlay {
-                if let point = proxy.convert(coordinate, from: .local) {
+                if let point = proxy.convert(coordinate, to: .local) {
                     ScoutMapOverlayView(
                         headingDegrees: headingDegrees ?? 0,
                         fovDegrees: fovDegrees,
