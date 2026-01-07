@@ -491,13 +491,13 @@ struct ScoutCameraLayout: View {
                 .navigationTitle("Camera Settings")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        EditButton()
-                    }
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button("Done") {
+                        Button {
                             dismiss()
+                        } label: {
+                            Image(systemName: "xmark")
                         }
+                        .accessibilityLabel("Close")
                     }
                 }
             }
