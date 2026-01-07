@@ -83,7 +83,7 @@ struct FullscreenMediaViewer: View {
                 aspectRatio: mediaAspectRatio
             )
             ZStack {
-                Color(.systemBackground)
+                Color(.previewBackground)
                     .opacity(isVisible ? 1 : 0)
                     .ignoresSafeArea()
 
@@ -267,10 +267,17 @@ struct FullscreenMediaViewer: View {
                 }
             }
             .padding(12)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .padding([.horizontal, .bottom], 16)
+            //.background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            //.padding([.horizontal, .bottom], 16)
+            .glassEffect(
+                .regular.interactive(),
+                in: RoundedRectangle(cornerRadius: 20, style: .continuous)
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
         .transition(.opacity)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 30)
     }
 
     private var overlayToggles: some View {
