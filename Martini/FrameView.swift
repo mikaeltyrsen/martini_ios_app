@@ -2920,7 +2920,7 @@ private struct AddBoardAlert: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(0.45)
+            Color(.systemBackground).opacity(0.9)
                 .ignoresSafeArea()
                 .onTapGesture {
                     onCancel()
@@ -2930,7 +2930,7 @@ private struct AddBoardAlert: View {
                 Text("Add Board")
                     .font(.title3.weight(.semibold))
 
-                VStack(spacing: 12) {
+                HStack(spacing: 20) {
                     actionButton(title: "Take Photo", systemImage: "camera") {
                         onTakePhoto()
                     }
@@ -2944,19 +2944,9 @@ private struct AddBoardAlert: View {
                     }
                 }
 
-                Button("Cancel") {
-                    onCancel()
-                }
-                .font(.headline)
-                .foregroundStyle(.secondary)
             }
             .padding(20)
-            .frame(maxWidth: 320)
-            .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(Color(.systemBackground))
-            )
-            .padding(.horizontal, 24)
+            .frame(width: .infinity)
         }
     }
 
@@ -2967,20 +2957,18 @@ private struct AddBoardAlert: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            HStack(spacing: 12) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 16, weight: .semibold))
+            VStack(spacing: 12) {
+                ZStack {
+                    Image(systemName: systemImage)
+                        .font(.system(size: 30, weight: .semibold))
+                }
+                .frame(width: 80, height: 80)
+                .foregroundColor(.primary)
+                .glassEffect(.regular.interactive())
+                
                 Text(title)
-                    .font(.headline)
-                Spacer()
+                    .font(.caption)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .frame(maxWidth: .infinity)
-            .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.secondary.opacity(0.12))
-            )
         }
         .buttonStyle(.plain)
     }
