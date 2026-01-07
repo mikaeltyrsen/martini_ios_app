@@ -276,9 +276,6 @@ struct FullscreenMediaViewer: View {
                 in: RoundedRectangle(cornerRadius: 20, style: .continuous)
             )
             .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .highPriorityGesture(
-                TapGesture().onEnded { }
-            )
         }
         .transition(.move(edge: .bottom).combined(with: .opacity))
         .padding(.horizontal, 10)
