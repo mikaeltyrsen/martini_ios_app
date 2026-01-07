@@ -1557,17 +1557,12 @@ private extension MainView {
 
     private func updateFrameStatus(_ frame: Frame, to status: FrameStatus) {
         Task {
-            let shouldShowGridOverlay = viewMode == .grid
-            if shouldShowGridOverlay {
-                await MainActor.run {
-                    gridUpdatingFrameIds.insert(frame.id)
-                }
+            await MainActor.run {
+                gridUpdatingFrameIds.insert(frame.id)
             }
             defer {
-                if shouldShowGridOverlay {
-                    Task { @MainActor in
-                        gridUpdatingFrameIds.remove(frame.id)
-                    }
+                Task { @MainActor in
+                    gridUpdatingFrameIds.remove(frame.id)
                 }
             }
             do {
