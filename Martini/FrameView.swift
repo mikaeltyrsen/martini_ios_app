@@ -2920,8 +2920,8 @@ private struct AddBoardAlert: View {
     @State private var isExpanded: Bool = false
 
     private let backgroundFade = Animation.easeInOut(duration: 0.2)
-    private let buttonPop = Animation.spring(response: 0.45, dampingFraction: 0.8, blendDuration: 0.2)
-    private let buttonSpacing: CGFloat = 110
+    private let buttonPop = Animation.spring(response: 0.25, dampingFraction: 0.5, blendDuration: 0.3)
+    private let buttonSpacing: CGFloat = 0
 
     var body: some View {
         ZStack {
@@ -2932,39 +2932,37 @@ private struct AddBoardAlert: View {
                     onCancel()
                 }
                 .animation(backgroundFade, value: isExpanded)
-
-            VStack(spacing: 16) {
-                Text("Add Board")
-                    .font(.title3.weight(.semibold))
-
-                ZStack {
+            
+            GlassEffectContainer(spacing: 20.0) {
+                //                Text("Add Board")
+                //                    .font(.title3.weight(.semibold))
+                
+                HStack(spacing: 20) {
                     actionButton(title: "Take Photo", systemImage: "camera") {
                         onTakePhoto()
                     }
-                    .offset(x: isExpanded ? -buttonSpacing : 0)
+                    .offset(x: isExpanded ? buttonSpacing : 80)
                     .opacity(isExpanded ? 1 : 0)
                     .scaleEffect(isExpanded ? 1 : 0.88)
-                    .animation(buttonPop.delay(0.04), value: isExpanded)
-
+                    .animation(buttonPop.delay(0), value: isExpanded)
+                    
                     actionButton(title: "Scout Camera", systemImage: "camera.viewfinder") {
                         onScoutCamera()
                     }
                     .opacity(isExpanded ? 1 : 0)
                     .scaleEffect(isExpanded ? 1 : 0.88)
-                    .animation(buttonPop.delay(0.02), value: isExpanded)
-
+                    .animation(buttonPop.delay(0), value: isExpanded)
+                    
                     actionButton(title: "Upload", systemImage: "square.and.arrow.up") {
                         onUpload()
                     }
-                    .offset(x: isExpanded ? buttonSpacing : 0)
+                    .offset(x: isExpanded ? buttonSpacing : -80)
                     .opacity(isExpanded ? 1 : 0)
                     .scaleEffect(isExpanded ? 1 : 0.88)
                     .animation(buttonPop, value: isExpanded)
                 }
-
+                
             }
-            .padding(20)
-            .frame(width: .infinity)
         }
         .onAppear {
             withAnimation(buttonPop) {
@@ -2987,6 +2985,7 @@ private struct AddBoardAlert: View {
                 ZStack {
                     Image(systemName: systemImage)
                         .font(.system(size: 30, weight: .semibold))
+                        //.symbolEffect(.drawOn.byLayer, options: .nonRepeating)
                 }
                 .frame(width: 80, height: 80)
                 .foregroundColor(.primary)

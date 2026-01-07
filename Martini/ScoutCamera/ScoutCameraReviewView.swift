@@ -16,7 +16,7 @@ struct ScoutCameraReviewView: View {
 
     var body: some View {
         ZStack {
-            Color(.systemBackground)
+            Color(.previewBackground)
                     .ignoresSafeArea()
 
             VStack(spacing: 16) {
@@ -31,71 +31,76 @@ struct ScoutCameraReviewView: View {
                         }
                     }
                     .padding()
-
-                HStack(spacing: 24) {
-                    ReviewActionButton(
-                        title: "Cancel",
-                        systemImage: "xmark",
-                        //actionColor: Color.martiniRed,
-                        hasTint: true,
-                        tintColor: Color.red,
-                        tintOpacity: 0.2,
-                        tintIcon: true,
-                        isLoading: false,
-                        action: onCancel
-                    )
-
-                    ReviewActionButton(
-                        title: "Retake",
-                        systemImage: "arrow.clockwise",
-                        //actionColor: actionColor,
-                        hasTint: false,
-                        tintColor: Color.red,
-                        tintOpacity: 1,
-                        tintIcon: false,
-                        isLoading: false,
-                        action: onRetake
-                    )
-
-                    ReviewActionButton(
-                        title: "Share",
-                        systemImage: "square.and.arrow.up",
-                        //actionColor: actionColor,
-                        hasTint: false,
-                        tintColor: Color.red,
-                        tintOpacity: 1,
-                        tintIcon: false,
-                        isLoading: isPreparingShare
-                    ) {
-                        Task {
-                            isPreparingShare = true
-                            if let shareImage = await onPrepareShare() {
-                                shareItem = ShareItem(image: shareImage)
+                GlassEffectContainer(spacing: 20) {
+                    HStack(spacing: 24) {
+                        ReviewActionButton(
+                            title: "Cancel",
+                            systemImage: "xmark",
+                            //actionColor: Color.martiniRed,
+                            hasTint: true,
+                            tintColor: Color.red,
+                            tintOpacity: 0.2,
+                            tintIcon: true,
+                            tintIconColor: .red,
+                            isLoading: false,
+                            action: onCancel
+                        )
+                        
+                        ReviewActionButton(
+                            title: "Retake",
+                            systemImage: "arrow.clockwise",
+                            //actionColor: actionColor,
+                            hasTint: false,
+                            tintColor: Color.red,
+                            tintOpacity: 1,
+                            tintIcon: false,
+                            tintIconColor: .primary,
+                            isLoading: false,
+                            action: onRetake
+                        )
+                        
+                        ReviewActionButton(
+                            title: "Share",
+                            systemImage: "square.and.arrow.up",
+                            //actionColor: actionColor,
+                            hasTint: false,
+                            tintColor: Color.red,
+                            tintOpacity: 1,
+                            tintIcon: false,
+                            tintIconColor: .primary,
+                            isLoading: isPreparingShare
+                        ) {
+                            Task {
+                                isPreparingShare = true
+                                if let shareImage = await onPrepareShare() {
+                                    shareItem = ShareItem(image: shareImage)
+                                }
+                                isPreparingShare = false
                             }
-                            isPreparingShare = false
                         }
-                    }
-                    .disabled(isPreparingShare)
-
-                    ReviewActionButton(
-                        title: "Import",
-                        systemImage: "photo.badge.plus",
-                        //actionColor: actionColor,
-                        hasTint: true,
-                        tintColor: Color.martiniDefault,
-                        tintOpacity: 0.2,
-                        tintIcon: false,
-                        isLoading: isUploading
-                    ) {
-                        Task {
-                            isUploading = true
-                            await onImport()
-                            isUploading = false
+                        .disabled(isPreparingShare)
+                        
+                        ReviewActionButton(
+                            title: "Import",
+                            systemImage: "photo.badge.plus",
+                            //actionColor: actionColor,
+                            hasTint: true,
+                            tintColor: Color.martiniDefault,
+                            tintOpacity: 1,
+                            tintIcon: true,
+                            tintIconColor: .martiniDefaultText,
+                            isLoading: isUploading
+                        ) {
+                            Task {
+                                isUploading = true
+                                await onImport()
+                                isUploading = false
+                            }
                         }
+                        .disabled(isUploading)
                     }
-                    .disabled(isUploading)
+                    .padding(.bottom, 24)
                 }
-                .padding(.bottom, 24)
             }
         }
         .sheet(item: $shareItem) { item in
@@ -118,13 +123,9 @@ private struct ReviewActionButton: View {
     let tintColor: Color
     let tintOpacity: CGFloat
     let tintIcon: Bool
+    let tintIconColor: Color
     let isLoading: Bool
     let action: () -> Void
-
-//    private let circleSize: CGFloat = 60
-//    private let iconSize: CGFloat = 24
-//    private let normalBackgroundOpacity: Double = 0.18
-//    private let highlightedBackgroundOpacity: Double = 1
 
     var body: some View {
         Button(action: action) {
@@ -134,86 +135,19 @@ private struct ReviewActionButton: View {
                     if isLoading {
                         ProgressView()
                             .font(.system(size: 25))
+                            .tint(tintIcon ? tintIconColor : .primary)
                     } else {
                         Image(systemName: systemImage)
                             .font(.system(size: 25))
                     }
                 }
                 .frame(width: 60, height: 60)
-                .foregroundStyle(tintIcon ? tintColor.opacity(hasTint ? tintOpacity : 1) : .primary)
+                .foregroundStyle( tintIcon ? tintIconColor : .primary )
                 .glassEffect(.regular.tint(hasTint ? tintColor.opacity(hasTint ? tintOpacity : 1) : nil).interactive())
                     
                 Text(title)
                     .font(.caption2)
                     .opacity(0.60)
-                    //.foregroundStyle(actionColor)
-                
-//                ZStack {
-                    
-//                    Circle()
-//                        .fill(
-//                            LinearGradient(
-//                                colors: [
-//                                    actionColor.opacity(isHighlighted ? 0.70 : 0.30),
-//                                    actionColor.opacity(isHighlighted ? 0.50 : 0.10)
-//                                ],
-//                                startPoint: .top,
-//                                endPoint: .bottom
-//                            )
-//                        )
-//                        .frame(width: circleSize, height: circleSize)
-//                        .background(
-//                            Circle()
-//                                .fill(.ultraThinMaterial)
-//                        )
-//                        .overlay(
-//                            Circle()
-//                                .stroke(
-//                                    LinearGradient(
-//                                        colors: [
-//                                            actionColor.opacity(isHighlighted ? 0.70 : 0.30),
-//                                            actionColor.opacity(isHighlighted ? 0.40 : 0.20)
-//                                        ],
-//                                        startPoint: .top,
-//                                        endPoint: .bottom
-//                                    ),
-//                                    lineWidth: 1
-//                                )
-//                        )
-//                        .overlay(
-//                            Circle()
-//                                .stroke(
-//                                    LinearGradient(
-//                                        colors: [
-//                                            Color.white.opacity(0.35),
-//                                            .clear
-//                                        ],
-//                                        startPoint: .top,
-//                                        endPoint: .bottom
-//                                    ),
-//                                    lineWidth: 0.5
-//                                )
-//                        )
-
-//                    Circle()
-//                        .fill(actionColor.opacity(isHighlighted ? highlightedBackgroundOpacity : normalBackgroundOpacity))
-//                        .frame(width: circleSize, height: circleSize)
-//                        .overlay(
-//                            Circle()
-//                                .stroke(actionColor.opacity(isHighlighted ? 0.6 : 0.4), lineWidth: 1)
-//                        )
-
-//                    if isLoading {
-//                        ProgressView()
-//                            .tint(actionColor)
-//                    } else {
-//                        Image(systemName: systemImage)
-//                            .font(.system(size: iconSize, weight: .semibold))
-//                            .foregroundStyle(isHighlighted ? Color.white : actionColor)
-//                    }
- //               }
-
-                
             }
         }
         .buttonStyle(.plain)
