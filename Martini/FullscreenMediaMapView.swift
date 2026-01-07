@@ -54,22 +54,19 @@ struct ScoutMapSheetView: View {
     }
 
     private var mapView: some View {
-        MapReader { proxy in
-            Map(position: $cameraPosition) {
-            }
-            .mapStyle(.imagery(elevation: .realistic))
-            .overlay {
-                if let point = proxy.convert(coordinate, to: .local) {
-                    ScoutMapOverlayView(
-                        headingDegrees: headingDegrees ?? 0,
-                        fovDegrees: fovDegrees,
-                        sunPath: sunData?.path ?? [],
-                        capsuleEntries: capsuleEntries
-                    )
-                    .position(point)
-                }
+        Map(position: $cameraPosition) {
+            Annotation("", coordinate: coordinate) {
+                ScoutMapOverlayView(
+                    headingDegrees: headingDegrees ?? 0,
+                    fovDegrees: fovDegrees,
+                    sunPath: sunData?.path ?? [],
+                    capsuleEntries: capsuleEntries
+                )
+                .allowsHitTesting(false)
             }
         }
+        .mapStyle(.imagery(elevation: .realistic))
+        .annotationTitles(.hidden)
         .frame(maxWidth: .infinity, minHeight: 320)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
