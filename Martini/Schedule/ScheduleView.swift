@@ -62,6 +62,7 @@ struct ScheduleView: View {
 
     private let wideColumnSpacing: CGFloat = 12
     private let scheduleContentPadding: CGFloat = 16
+    private let scheduleRowHorizontalPadding: CGFloat = 6
 
     private var wideLayoutAvailableWidth: CGFloat? {
         guard scheduleContentWidth > 0 else { return nil }
@@ -301,7 +302,7 @@ struct ScheduleView: View {
                             blockRow(for: block, context: timelineContext)
                         }
                     }
-                    .padding(.horizontal, 6)
+                    .padding(.horizontal, scheduleRowHorizontalPadding)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, 4)
@@ -607,7 +608,7 @@ struct ScheduleView: View {
     }
 
     private func updateScheduleContentWidth(for containerWidth: CGFloat) {
-        let width = max(containerWidth - (scheduleContentPadding * 2), 0)
+        let width = max(containerWidth - (scheduleContentPadding * 2) - (scheduleRowHorizontalPadding * 2), 0)
         if scheduleContentWidth != width {
             scheduleContentWidth = width
         }
