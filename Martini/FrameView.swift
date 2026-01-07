@@ -637,7 +637,7 @@ struct FrameView: View {
             if let count, count > 0 {
                 Text(count > 99 ? "99+" : "\(count)")
                     .font(.caption2.weight(.bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.martiniDefaultText)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .background(Capsule().fill(.martiniDefault))
@@ -1143,7 +1143,6 @@ struct FrameView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Tags")
                     .font(.headline)
-                    .foregroundStyle(.white)
 
                 TagFlowLayout(spacing: 8) {
                     ForEach(tagItems) { item in
@@ -1163,25 +1162,6 @@ struct FrameView: View {
                                 )
                         }
                     }
-
-//                    ForEach(tagItems) { item in
-//                        switch item.kind {
-//                        case .groupLabel(let name):
-//                            Text(name)
-//                                .font(.subheadline.weight(.semibold))
-//                                .foregroundColor(.white.opacity(0.75))
-//                                .fixedSize(horizontal: true, vertical: false)
-//                        case .tag(let tag, let groupName):
-//                            Text(tag.name)
-//                                .foregroundColor(pillTextColor)
-//                                .fixedSize(horizontal: true, vertical: false)
-//                                .padding(.horizontal, 10)
-//                                .padding(.vertical, 6)
-//                                .background(
-//                                    Capsule().fill(tagGroupColor(for: groupName))
-//                                )
-//                        }
-//                    }
                 }
                 .padding(.vertical, 2)
             }
@@ -1214,16 +1194,6 @@ struct FrameView: View {
                         }
 
                     if !allowsExpansion || isDescriptionExpanded {
-//                        Button {
-//                            scriptNavigationTarget = ScriptNavigationTarget(dialogId: frame.id)
-//                        } label: {
-//                            Label("Go to Script", systemImage: "text.book.closed")
-//                                .frame(maxWidth: .infinity, alignment: .leading)
-//                        }
-//                        .buttonStyle(.bordered)
-//                        .tint(.martiniDefaultColor)
-//                        .padding(.horizontal, 20)
-
                         tagsSection
                             .padding(.horizontal, 20)
                             .padding(.bottom, 24)
@@ -1262,11 +1232,11 @@ struct FrameView: View {
             }
             .background(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color(.descriptionBackground))
+                    .fill(Color(.descriptionBackground).opacity(0.5))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(Color.gray.opacity(0.4), lineWidth: 1)
+                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
             )
             .contextMenu {
                 Button {
@@ -1283,8 +1253,8 @@ struct FrameView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: overlayHeight)
-        .padding(.horizontal, 5)
-//        .padding(20)
+        .padding(.horizontal, 10)
+        .padding(.bottom, 10)
     }
 
     private var descriptionHandle: some View {
@@ -1477,15 +1447,16 @@ struct FrameView: View {
             Text(asset.label ?? asset.kind.displayName)
         }
         .font(.system(size: 14, weight: .semibold))
-        .foregroundStyle(isSelected ? Color.white : Color.primary)
+        //.foregroundStyle(isSelected ? Color.white : Color.primary)
         .lineLimit(1)
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .frame(minWidth: 80)
         .background(
             Capsule()
-                .fill(isSelected ? Color.martiniDefaultColor : Color.secondary.opacity(0.15))
+                .fill(isSelected ? Color.martiniDefaultColor : Color.secondary.opacity(0.2))
         )
+        .foregroundStyle(isSelected ? Color.martiniDefaultText : Color.primary)
     }
 
     private func reorderLabel(for board: FrameAssetItem, isPinned: Bool) -> some View {

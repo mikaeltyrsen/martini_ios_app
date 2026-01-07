@@ -113,37 +113,6 @@ struct FrameLayout: View {
     var enablesFullScreen: Bool = true
     var doneCrossLineWidthOverride: Double? = nil
 
-//    init(
-//        frame: Frame,
-//        primaryAsset: FrameAssetItem? = nil,
-//        title: String? = nil,
-//        subtitle: String? = nil,
-//        showStatusBadge: Bool = true,
-//        showFrameNumberOverlay: Bool = true,
-//        showFrameTimeOverlay: Bool = true,
-//        showPinnedBoardOverlay: Bool = false,
-//        showMetadataOverlay: Bool = false,
-//        metadataTapAction: (() -> Void)? = nil,
-//        showTextBlock: Bool = true,
-//        cornerRadius: CGFloat = 8,
-//        enablesFullScreen: Bool = true,
-//        doneCrossLineWidthOverride: Double? = nil
-//    ) {
-//        self.frame = frame
-//        self.primaryAsset = primaryAsset
-//        self.title = title
-//        self.subtitle = subtitle
-//        self.showStatusBadge = showStatusBadge
-//        self.showFrameNumberOverlay = showFrameNumberOverlay
-//        self.showFrameTimeOverlay = showFrameTimeOverlay
-//        self.showPinnedBoardOverlay = showPinnedBoardOverlay
-//        self.showMetadataOverlay = showMetadataOverlay
-//        self.metadataTapAction = metadataTapAction
-//        self.showTextBlock = showTextBlock
-//        self.cornerRadius = cornerRadius
-//        self.enablesFullScreen = enablesFullScreen
-//        self.doneCrossLineWidthOverride = doneCrossLineWidthOverride
-//    }
 
     @Environment(\.horizontalSizeClass) private var hSizeClass
     @Environment(\.colorScheme) private var colorScheme

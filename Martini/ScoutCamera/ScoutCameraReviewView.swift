@@ -36,8 +36,11 @@ struct ScoutCameraReviewView: View {
                     ReviewActionButton(
                         title: "Cancel",
                         systemImage: "xmark",
-                        actionColor: Color.martiniRed,
-                        isHighlighted: false,
+                        //actionColor: Color.martiniRed,
+                        hasTint: true,
+                        tintColor: Color.red,
+                        tintOpacity: 0.2,
+                        tintIcon: true,
                         isLoading: false,
                         action: onCancel
                     )
@@ -45,8 +48,11 @@ struct ScoutCameraReviewView: View {
                     ReviewActionButton(
                         title: "Retake",
                         systemImage: "arrow.clockwise",
-                        actionColor: actionColor,
-                        isHighlighted: false,
+                        //actionColor: actionColor,
+                        hasTint: false,
+                        tintColor: Color.red,
+                        tintOpacity: 1,
+                        tintIcon: false,
                         isLoading: false,
                         action: onRetake
                     )
@@ -54,8 +60,11 @@ struct ScoutCameraReviewView: View {
                     ReviewActionButton(
                         title: "Share",
                         systemImage: "square.and.arrow.up",
-                        actionColor: actionColor,
-                        isHighlighted: false,
+                        //actionColor: actionColor,
+                        hasTint: false,
+                        tintColor: Color.red,
+                        tintOpacity: 1,
+                        tintIcon: false,
                         isLoading: isPreparingShare
                     ) {
                         Task {
@@ -70,9 +79,12 @@ struct ScoutCameraReviewView: View {
 
                     ReviewActionButton(
                         title: "Import",
-                        systemImage: "square.and.arrow.down",
-                        actionColor: actionColor,
-                        isHighlighted: true,
+                        systemImage: "photo.badge.plus",
+                        //actionColor: actionColor,
+                        hasTint: true,
+                        tintColor: Color.martiniDefault,
+                        tintOpacity: 0.2,
+                        tintIcon: false,
                         isLoading: isUploading
                     ) {
                         Task {
@@ -101,64 +113,87 @@ private struct ShareItem: Identifiable {
 private struct ReviewActionButton: View {
     let title: String
     let systemImage: String
-    let actionColor: Color
-    let isHighlighted: Bool
+    //let actionColor: Color
+    let hasTint: Bool
+    let tintColor: Color
+    let tintOpacity: CGFloat
+    let tintIcon: Bool
     let isLoading: Bool
     let action: () -> Void
 
-    private let circleSize: CGFloat = 60
-    private let iconSize: CGFloat = 24
-    private let normalBackgroundOpacity: Double = 0.18
-    private let highlightedBackgroundOpacity: Double = 1
+//    private let circleSize: CGFloat = 60
+//    private let iconSize: CGFloat = 24
+//    private let normalBackgroundOpacity: Double = 0.18
+//    private let highlightedBackgroundOpacity: Double = 1
 
     var body: some View {
         Button(action: action) {
             VStack(spacing: 6) {
+                
                 ZStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    actionColor.opacity(isHighlighted ? 0.70 : 0.30),
-                                    actionColor.opacity(isHighlighted ? 0.50 : 0.10)
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .frame(width: circleSize, height: circleSize)
-                        .background(
-                            Circle()
-                                .fill(.ultraThinMaterial)
-                        )
-                        .overlay(
-                            Circle()
-                                .stroke(
-                                    LinearGradient(
-                                        colors: [
-                                            actionColor.opacity(isHighlighted ? 0.70 : 0.30),
-                                            actionColor.opacity(isHighlighted ? 0.40 : 0.20)
-                                        ],
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    ),
-                                    lineWidth: 1
-                                )
-                        )
-                        .overlay(
-                            Circle()
-                                .stroke(
-                                    LinearGradient(
-                                        colors: [
-                                            Color.white.opacity(0.35),
-                                            .clear
-                                        ],
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    ),
-                                    lineWidth: 0.5
-                                )
-                        )
+                    if isLoading {
+                        ProgressView()
+                            .font(.system(size: 25))
+                    } else {
+                        Image(systemName: systemImage)
+                            .font(.system(size: 25))
+                    }
+                }
+                .frame(width: 60, height: 60)
+                .foregroundStyle(tintIcon ? tintColor.opacity(hasTint ? tintOpacity : 1) : .primary)
+                .glassEffect(.regular.tint(hasTint ? tintColor.opacity(hasTint ? tintOpacity : 1) : nil).interactive())
+                    
+                Text(title)
+                    .font(.caption2)
+                    .opacity(0.60)
+                    //.foregroundStyle(actionColor)
+                
+//                ZStack {
+                    
+//                    Circle()
+//                        .fill(
+//                            LinearGradient(
+//                                colors: [
+//                                    actionColor.opacity(isHighlighted ? 0.70 : 0.30),
+//                                    actionColor.opacity(isHighlighted ? 0.50 : 0.10)
+//                                ],
+//                                startPoint: .top,
+//                                endPoint: .bottom
+//                            )
+//                        )
+//                        .frame(width: circleSize, height: circleSize)
+//                        .background(
+//                            Circle()
+//                                .fill(.ultraThinMaterial)
+//                        )
+//                        .overlay(
+//                            Circle()
+//                                .stroke(
+//                                    LinearGradient(
+//                                        colors: [
+//                                            actionColor.opacity(isHighlighted ? 0.70 : 0.30),
+//                                            actionColor.opacity(isHighlighted ? 0.40 : 0.20)
+//                                        ],
+//                                        startPoint: .top,
+//                                        endPoint: .bottom
+//                                    ),
+//                                    lineWidth: 1
+//                                )
+//                        )
+//                        .overlay(
+//                            Circle()
+//                                .stroke(
+//                                    LinearGradient(
+//                                        colors: [
+//                                            Color.white.opacity(0.35),
+//                                            .clear
+//                                        ],
+//                                        startPoint: .top,
+//                                        endPoint: .bottom
+//                                    ),
+//                                    lineWidth: 0.5
+//                                )
+//                        )
 
 //                    Circle()
 //                        .fill(actionColor.opacity(isHighlighted ? highlightedBackgroundOpacity : normalBackgroundOpacity))
@@ -168,19 +203,17 @@ private struct ReviewActionButton: View {
 //                                .stroke(actionColor.opacity(isHighlighted ? 0.6 : 0.4), lineWidth: 1)
 //                        )
 
-                    if isLoading {
-                        ProgressView()
-                            .tint(actionColor)
-                    } else {
-                        Image(systemName: systemImage)
-                            .font(.system(size: iconSize, weight: .semibold))
-                            .foregroundStyle(isHighlighted ? Color.white : actionColor)
-                    }
-                }
+//                    if isLoading {
+//                        ProgressView()
+//                            .tint(actionColor)
+//                    } else {
+//                        Image(systemName: systemImage)
+//                            .font(.system(size: iconSize, weight: .semibold))
+//                            .foregroundStyle(isHighlighted ? Color.white : actionColor)
+//                    }
+ //               }
 
-                Text(title)
-                    .font(.caption2)
-                    .foregroundStyle(actionColor)
+                
             }
         }
         .buttonStyle(.plain)
