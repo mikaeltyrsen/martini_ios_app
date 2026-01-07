@@ -1178,26 +1178,7 @@ struct MainView: View {
     }
 
     private var navigationTitleStack: some View {
-        VStack(spacing: 6) {
-            navigationTitleHeader
-
-            let progress = navigationProgress
-            if isProjectLoading {
-                HStack(spacing: 6) {
-                    ProgressView()
-                        .progressViewStyle(.circular)
-                    Text("Loading project...")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-            } else if progress.total > 0 {
-                ProgressView(value: Double(progress.completed), total: Double(progress.total))
-                    .progressViewStyle(.linear)
-                    .tint(.martiniDefaultColor)
-                    .frame(width: 180)
-                    .animation(.timingCurve(0.2, 0.0, 0.0, 1.0, duration: 0.35), value: progress.percentage)
-            }
-        }
+        navigationTitleHeader
         .contentShape(Rectangle())
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(shouldAllowCreativeSelectionMenu ? .isButton : [])
@@ -1215,10 +1196,29 @@ struct MainView: View {
                 connectionBannerView(banner)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             } else {
-                Text(displayedNavigationTitle)
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                    .transition(.move(edge: .top).combined(with: .opacity))
+                VStack(spacing: 6) {
+                    Text(displayedNavigationTitle)
+                        .font(.headline)
+                        .fontWeight(.semibold)
+
+                    let progress = navigationProgress
+                    if isProjectLoading {
+                        HStack(spacing: 6) {
+                            ProgressView()
+                                .progressViewStyle(.circular)
+                            Text("Loading project...")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                    } else if progress.total > 0 {
+                        ProgressView(value: Double(progress.completed), total: Double(progress.total))
+                            .progressViewStyle(.linear)
+                            .tint(.martiniDefaultColor)
+                            .frame(width: 180)
+                            .animation(.timingCurve(0.2, 0.0, 0.0, 1.0, duration: 0.35), value: progress.percentage)
+                    }
+                }
+                .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
         .animation(.easeInOut(duration: 0.25), value: connectionMonitor.status)
