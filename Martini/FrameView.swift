@@ -1158,7 +1158,7 @@ struct FrameView: View {
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 6)
                                 .background(
-                                    Capsule().fill(tagGroupColor(for: groupName)).opacity(0.3)
+                                    Capsule().fill(tagGroupColor(for: groupName)).opacity(0.2)
                                 )
                         }
                     }
@@ -2926,43 +2926,62 @@ private struct AddBoardAlert: View {
     var body: some View {
         ZStack {
             Color(.systemBackground)
-                .opacity(isExpanded ? 0.9 : 0)
+                .opacity(isExpanded ? 0.4 : 0)
                 .ignoresSafeArea()
                 .onTapGesture {
                     onCancel()
                 }
                 .animation(backgroundFade, value: isExpanded)
             
-            GlassEffectContainer(spacing: 20.0) {
-                //                Text("Add Board")
-                //                    .font(.title3.weight(.semibold))
+            VStack(spacing: 20) {
                 
-                HStack(spacing: 20) {
-                    actionButton(title: "Take Photo", systemImage: "camera") {
-                        onTakePhoto()
-                    }
-                    .offset(x: isExpanded ? buttonSpacing : 80)
-                    .opacity(isExpanded ? 1 : 0)
-                    .scaleEffect(isExpanded ? 1 : 0.88)
-                    .animation(buttonPop.delay(0), value: isExpanded)
+                Text("Add Board")
+                    .font(.title3.weight(.semibold))
+                
+                GlassEffectContainer(spacing: 20.0) {
                     
-                    actionButton(title: "Scout Camera", systemImage: "camera.viewfinder") {
-                        onScoutCamera()
-                    }
-                    .opacity(isExpanded ? 1 : 0)
-                    .scaleEffect(isExpanded ? 1 : 0.88)
-                    .animation(buttonPop.delay(0), value: isExpanded)
                     
-                    actionButton(title: "Upload", systemImage: "square.and.arrow.up") {
-                        onUpload()
+                    HStack(spacing: 20) {
+                        actionButton(title: "Take Photo", systemImage: "camera") {
+                            onTakePhoto()
+                        }
+                        .offset(x: isExpanded ? buttonSpacing : 80)
+                        .opacity(isExpanded ? 1 : 0)
+                        .scaleEffect(isExpanded ? 1 : 0.88)
+                        .animation(buttonPop.delay(0.15), value: isExpanded)
+                        
+                        actionButton(title: "Scout Camera", systemImage: "camera.viewfinder") {
+                            onScoutCamera()
+                        }
+                        .opacity(isExpanded ? 1 : 0)
+                        .scaleEffect(isExpanded ? 1 : 0.88)
+                        .animation(buttonPop.delay(0.15), value: isExpanded)
+                        
+                        actionButton(title: "Upload", systemImage: "square.and.arrow.up") {
+                            onUpload()
+                        }
+                        .offset(x: isExpanded ? buttonSpacing : -80)
+                        .opacity(isExpanded ? 1 : 0)
+                        .scaleEffect(isExpanded ? 1 : 0.88)
+                        .animation(buttonPop.delay(0.15), value: isExpanded)
                     }
-                    .offset(x: isExpanded ? buttonSpacing : -80)
-                    .opacity(isExpanded ? 1 : 0)
-                    .scaleEffect(isExpanded ? 1 : 0.88)
-                    .animation(buttonPop, value: isExpanded)
+                    
                 }
-                
             }
+            .padding(20)
+            .background(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(.ultraThinMaterial)
+            )
+            .clipShape(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+            )
+            // 👇 POP IN ANIMATION ON THE WHOLE BOX
+            .opacity(isExpanded ? 1 : 0)
+            .scaleEffect(isExpanded ? 1 : 0.6)
+            //.offset(y: isExpanded ? 0 : 18)
+            .blur(radius: isExpanded ? 0 : 6)
+            .animation(.spring(response: 0.34, dampingFraction: 0.82), value: isExpanded)
         }
         .onAppear {
             withAnimation(buttonPop) {
@@ -2984,7 +3003,7 @@ private struct AddBoardAlert: View {
             VStack(spacing: 12) {
                 ZStack {
                     Image(systemName: systemImage)
-                        .font(.system(size: 30, weight: .semibold))
+                        .font(.system(size: 30, weight: .light))
                         //.symbolEffect(.drawOn.byLayer, options: .nonRepeating)
                 }
                 .frame(width: 80, height: 80)

@@ -229,7 +229,7 @@ struct ScoutCameraLayout: View {
                     isFrameLineSettingsPresented = true
                 } label: {
                     Image(systemName: "viewfinder.rectangular")
-                        .font(.system(size: 22, weight: .semibold))
+                        .font(.system(size: 22, weight: .regular))
                         .foregroundStyle(isFramingActive ? .white : .gray)
                 }
 
@@ -237,7 +237,7 @@ struct ScoutCameraLayout: View {
                     isCalibrationPresented = true
                 } label: {
                     Image(systemName: "slider.horizontal.3")
-                        .font(.system(size: 22, weight: .semibold))
+                        .font(.system(size: 22, weight: .regular))
                         .foregroundStyle(isCalibrationActive ? .white.opacity(0.7) : .gray)
                 }
                 .buttonStyle(.plain)
@@ -250,7 +250,7 @@ struct ScoutCameraLayout: View {
                     }
                 } label: {
                     Image(systemName: showReferenceOverlay ? "photo.fill" : "photo")
-                        .font(.system(size: 22, weight: .semibold))
+                        .font(.system(size: 22, weight: .regular))
                         .foregroundStyle(showReferenceOverlay ? .white.opacity(0.7) : .gray)
                 }
                 .buttonStyle(.plain)
@@ -262,7 +262,7 @@ struct ScoutCameraLayout: View {
                     debugMode.toggle()
                 } label: {
                     Image(systemName: debugMode ? "ladybug.fill" : "ladybug")
-                        .font(.system(size: 22, weight: .semibold))
+                        .font(.system(size: 22, weight: .regular))
                         .foregroundStyle(debugMode ? .white.opacity(0.7) : .gray)
                 }
                 .buttonStyle(.plain)
@@ -284,17 +284,18 @@ struct ScoutCameraLayout: View {
     private var topInfoBar: some View {
         ZStack {
             HStack {
-                HStack(spacing: 6) {
+                HStack(spacing: 15) {
+                    
                     Button {
                         dismiss()
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 24, height: 24)
-                            .background(Circle().fill(Color.white.opacity(0.2)))
+                            .font(.system(size: 20, weight: .light))
+                            .frame(width: 35, height: 35)
+                            .glassEffect(.regular.tint(nil).interactive())
                     }
                     .buttonStyle(.plain)
+                    
                     Button {
                         isCameraSelectionPresented = true
                     } label: {
@@ -873,32 +874,41 @@ struct ScoutCameraLayout: View {
                 Button {
                     viewModel.selectPreviousLens()
                 } label: {
-                    Image(systemName: "minus.circle.fill")
-                        .font(.system(size: 30, weight: .semibold))
+                    Image(systemName: "minus.circle")
+                        .font(.system(size: 30, weight: .light))
+                        .frame(width: 45, height: 45)
+                        .glassEffect(.regular.tint(nil).interactive())
                 }
-                .foregroundStyle(.white)
+                .buttonStyle(.plain)
+                
                 Spacer()
 
                 HStack(spacing: 12) {
                     Button {
                         viewModel.capturePhoto()
                     } label: {
-                        Image(systemName: "camera.circle.fill")
-                            .font(.system(size: 30, weight: .regular))
+                        Image(systemName: "camera")
+                            .font(.system(size: 20, weight: .light))
+                            .frame(width: 60, height: 60)
+                            .glassEffect(.regular.tint(.blue).interactive())
                     }
+                    .buttonStyle(.plain)
+                    
                     Button {
                         viewModel.selectNextLens()
                     } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 30, weight: .semibold))
+                        Image(systemName: "plus.circle")
+                            .font(.system(size: 30, weight: .light))
+                            .frame(width: 45, height: 45)
+                            .glassEffect(.regular.tint(nil).interactive())
                     }
-                    .foregroundStyle(.white)
+                    .buttonStyle(.plain)
                 }
             }
             VStack(spacing: 4) {
                 VStack() {
                     Text(lensInfoText)
-                        .font(.system(size: 30, weight: .semibold))
+                        .font(.system(size: 30, weight: .regular))
                         .lineSpacing(1)
                     Text("mm")
                         .font(.system(size: 12, weight: .regular))
