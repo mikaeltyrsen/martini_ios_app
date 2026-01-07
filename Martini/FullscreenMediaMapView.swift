@@ -68,7 +68,6 @@ struct ScoutMapSheetView: View {
             }
         }
         .mapStyle(mapStyleOption.mapStyle)
-        .annotationTitles(.hidden)
         .frame(maxWidth: .infinity, minHeight: 320)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(alignment: .bottomTrailing) {
