@@ -1057,7 +1057,7 @@ struct ScoutCameraLayout: View {
 
     private var portraitOverlay: some View {
         ZStack {
-            Color.black.opacity(0.5)
+            Color(.cameraBackground).opacity(1)
             VStack(spacing: 12) {
                 Image(systemName: "rectangle.portrait.rotate")
                     .font(.system(size: 36, weight: .semibold))
