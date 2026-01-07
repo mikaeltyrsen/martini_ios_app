@@ -7,5 +7,7 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Martini uses your location to tag scout photos and calculate sun position data.</string>
 </dict>
 </plist>

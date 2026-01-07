@@ -5,6 +5,9 @@ import CoreMotion
 final class MotionHeadingManager: ObservableObject {
     @Published private(set) var headingDegrees: Double = 0
     @Published private(set) var tiltDegrees: Double = 0
+    @Published private(set) var rollDegrees: Double = 0
+    @Published private(set) var pitchDegrees: Double = 0
+    @Published private(set) var yawDegrees: Double = 0
 
     private let motionManager = CMMotionManager()
 
@@ -29,9 +32,13 @@ final class MotionHeadingManager: ObservableObject {
             guard let self, let motion else { return }
             let yaw = motion.attitude.yaw
             let pitch = motion.attitude.pitch
+            let roll = motion.attitude.roll
             let heading = (yaw * 180 / .pi).truncatingRemainder(dividingBy: 360)
             self.headingDegrees = heading < 0 ? heading + 360 : heading
             self.tiltDegrees = pitch * 180 / .pi
+            self.rollDegrees = roll * 180 / .pi
+            self.pitchDegrees = pitch * 180 / .pi
+            self.yawDegrees = yaw * 180 / .pi
         }
     }
 
