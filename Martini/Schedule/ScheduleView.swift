@@ -63,6 +63,7 @@ struct ScheduleView: View {
     private let wideColumnSpacing: CGFloat = 12
     private let scheduleContentPadding: CGFloat = 16
     private let scheduleRowHorizontalPadding: CGFloat = 6
+    private let scheduleBlockPadding: CGFloat = 12
 
     private var wideLayoutAvailableWidth: CGFloat? {
         guard scheduleContentWidth > 0 else { return nil }
@@ -380,7 +381,7 @@ struct ScheduleView: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(12)
+            .padding(scheduleBlockPadding)
             .background(blockColor(block.color))
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         case .shot, .unknown:
@@ -417,7 +418,7 @@ struct ScheduleView: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(12)
+            .padding(scheduleBlockPadding)
             .background(blockColor(block.color))
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
@@ -608,7 +609,10 @@ struct ScheduleView: View {
     }
 
     private func updateScheduleContentWidth(for containerWidth: CGFloat) {
-        let width = max(containerWidth - (scheduleContentPadding * 2) - (scheduleRowHorizontalPadding * 2), 0)
+        let width = max(
+            containerWidth - (scheduleContentPadding * 2) - (scheduleRowHorizontalPadding * 2) - (scheduleBlockPadding * 2),
+            0
+        )
         if scheduleContentWidth != width {
             scheduleContentWidth = width
         }
