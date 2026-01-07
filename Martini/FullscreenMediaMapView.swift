@@ -12,6 +12,7 @@ struct ScoutMapSheetView: View {
     @State private var selectedDate = Date()
     @State private var cameraPosition: MapCameraPosition
     @State private var mapStyleOption: MapStyleOption = .satellite
+    @State private var mapHeadingDegrees: Double = 0
 
     private let sunCalculator = SunPathCalculator()
 
@@ -60,6 +61,7 @@ struct ScoutMapSheetView: View {
             Annotation("", coordinate: coordinate) {
                 ScoutMapOverlayView(
                     headingDegrees: headingDegrees ?? 0,
+                    mapHeadingDegrees: mapHeadingDegrees,
                     fovDegrees: fovDegrees,
                     sunPath: sunData?.path ?? [],
                     capsuleEntries: capsuleEntries
@@ -70,6 +72,9 @@ struct ScoutMapSheetView: View {
         .mapStyle(mapStyleOption.mapStyle)
         .frame(maxWidth: .infinity, minHeight: 320)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .onMapCameraChange { context in
+            mapHeadingDegrees = context.camera.heading
+        }
         .overlay(alignment: .bottomTrailing) {
             locateCameraButton
                 .padding(12)
@@ -206,6 +211,7 @@ private enum MapStyleOption: String, CaseIterable, Identifiable {
 
 private struct ScoutMapOverlayView: View {
     let headingDegrees: Double
+    let mapHeadingDegrees: Double
     let fovDegrees: Double
     let sunPath: [SunPathEntry]
     let capsuleEntries: [SunPathEntry]
@@ -293,7 +299,8 @@ private struct ScoutMapOverlayView: View {
     }
 
     private func angleRadians(degrees: Double) -> Double {
-        let normalized = degrees - 90
+        let adjusted = degrees - mapHeadingDegrees
+        let normalized = adjusted - 90
         return normalized * .pi / 180
     }
 
