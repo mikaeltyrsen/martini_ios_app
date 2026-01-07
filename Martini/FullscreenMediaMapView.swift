@@ -153,7 +153,16 @@ struct ScoutMapSheetView: View {
         }
 
         entries.append(sunCalculator.sunPosition(for: coordinate, date: sunData.sunset))
-        return entries
+        return limitedCapsuleEntries(from: entries, maxCount: 7)
+    }
+
+    private func limitedCapsuleEntries(from entries: [SunPathEntry], maxCount: Int) -> [SunPathEntry] {
+        guard entries.count > maxCount, maxCount > 1 else { return entries }
+        let step = Double(entries.count - 1) / Double(maxCount - 1)
+        return (0..<maxCount).map { index in
+            let position = Int(round(Double(index) * step))
+            return entries[min(position, entries.count - 1)]
+        }
     }
 
     private var fovDegrees: Double {
@@ -289,8 +298,8 @@ private struct ScoutMapOverlayView: View {
     private var sunPathOverlay: some View {
         GeometryReader { proxy in
             let center = CGPoint(x: proxy.size.width / 2, y: proxy.size.height / 2)
-            let maxRadius = min(proxy.size.width, proxy.size.height) * 0.48
-            let minRadius = min(proxy.size.width, proxy.size.height) * 0.18
+            let maxRadius = min(proxy.size.width, proxy.size.height) * 0.54
+            let minRadius = min(proxy.size.width, proxy.size.height) * 0.2
             let sunPoints = sunPath.map { entry in
                 let radius = radiusForAltitude(entry.altitudeDegrees, min: minRadius, max: maxRadius)
                 let angle = angleRadians(degrees: entry.azimuthDegrees)
@@ -317,7 +326,8 @@ private struct ScoutMapOverlayView: View {
 
                 SunDirectionArrowView(
                     angle: Angle(radians: arrowAngle + .pi / 2),
-                    length: 16
+                    length: 16,
+                    stemLength: 6
                 )
                 .position(point)
 
@@ -391,7 +401,7 @@ private struct SunTimeCapsuleView: View {
     var body: some View {
         VStack(spacing: 4) {
             Text(timeText)
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.primary)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
@@ -407,11 +417,12 @@ private struct SunTimeCapsuleView: View {
 private struct SunDirectionArrowView: View {
     let angle: Angle
     let length: CGFloat
+    let stemLength: CGFloat
 
     var body: some View {
         ZStack {
             Path { path in
-                path.move(to: .zero)
+                path.move(to: CGPoint(x: 0, y: stemLength))
                 path.addLine(to: CGPoint(x: 0, y: -length))
             }
             .stroke(.yellow.opacity(0.9), lineWidth: 1.5)
