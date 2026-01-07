@@ -26,11 +26,13 @@ struct ScoutMapSheetView: View {
         self.headingDegrees = headingDegrees
         self.focalLengthMm = focalLengthMm
         self.sensorWidthMm = sensorWidthMm
-        let region = MKCoordinateRegion(
-            center: coordinate,
-            span: MKCoordinateSpan(latitudeDelta: 0.004, longitudeDelta: 0.004)
+        let camera = MapCamera(
+            centerCoordinate: coordinate,
+            distance: 180,
+            heading: 0,
+            pitch: 0
         )
-        _cameraPosition = State(initialValue: .region(region))
+        _cameraPosition = State(initialValue: .camera(camera))
     }
 
     var body: some View {
@@ -52,18 +54,22 @@ struct ScoutMapSheetView: View {
     }
 
     private var mapView: some View {
-        Map(position: $cameraPosition) {
-            Annotation("Scout", coordinate: coordinate) {
-                ScoutMapOverlayView(
-                    headingDegrees: headingDegrees ?? 0,
-                    fovDegrees: fovDegrees,
-                    sunPath: sunData?.path ?? [],
-                    sunrise: sunData?.sunrise,
-                    sunset: sunData?.sunset
-                )
+        MapReader { proxy in
+            Map(position: $cameraPosition) {
+            }
+            .mapStyle(.imagery(elevation: .realistic))
+            .overlay {
+                if let point = proxy.convert(coordinate, from: .local) {
+                    ScoutMapOverlayView(
+                        headingDegrees: headingDegrees ?? 0,
+                        fovDegrees: fovDegrees,
+                        sunPath: sunData?.path ?? [],
+                        capsuleEntries: capsuleEntries
+                    )
+                    .position(point)
+                }
             }
         }
-        .mapStyle(.imagery(elevation: .realistic))
         .frame(maxWidth: .infinity, minHeight: 320)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
@@ -96,6 +102,28 @@ struct ScoutMapSheetView: View {
         return sunCalculator.sunData(for: location, date: selectedDate, timeZone: .current)
     }
 
+    private var capsuleEntries: [SunPathEntry] {
+        guard let sunData else { return [] }
+        var entries: [SunPathEntry] = []
+        entries.append(sunCalculator.sunPosition(for: coordinate, date: sunData.sunrise))
+
+        let calendar = Calendar.current
+        let startHour = calendar.nextDate(
+            after: sunData.sunrise,
+            matching: DateComponents(minute: 0, second: 0),
+            matchingPolicy: .nextTime
+        )
+        if var current = startHour {
+            while current < sunData.sunset {
+                entries.append(sunCalculator.sunPosition(for: coordinate, date: current))
+                current = calendar.date(byAdding: .hour, value: 1, to: current) ?? sunData.sunset
+            }
+        }
+
+        entries.append(sunCalculator.sunPosition(for: coordinate, date: sunData.sunset))
+        return entries
+    }
+
     private var fovDegrees: Double {
         guard let focalLengthMm, let sensorWidthMm, focalLengthMm > 0, sensorWidthMm > 0 else {
             return 50
@@ -116,10 +144,15 @@ private struct ScoutMapOverlayView: View {
     let headingDegrees: Double
     let fovDegrees: Double
     let sunPath: [SunPathEntry]
-    let sunrise: Date?
-    let sunset: Date?
+    let capsuleEntries: [SunPathEntry]
 
     private let overlaySize: CGFloat = 260
+    private let capsuleFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        formatter.dateStyle = .none
+        return formatter
+    }()
 
     var body: some View {
         ZStack {
@@ -177,25 +210,22 @@ private struct ScoutMapOverlayView: View {
             }
             .stroke(.yellow.opacity(0.85), style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
 
-            if let sunrisePoint = sunEventPoint(center: center, minRadius: minRadius, maxRadius: maxRadius, isSunrise: true),
-               let sunsetPoint = sunEventPoint(center: center, minRadius: minRadius, maxRadius: maxRadius, isSunrise: false) {
-                Circle()
-                    .fill(.orange)
-                    .frame(width: 8, height: 8)
-                    .position(sunrisePoint)
-                Circle()
-                    .fill(.red)
-                    .frame(width: 8, height: 8)
-                    .position(sunsetPoint)
+            ForEach(Array(capsuleEntries.enumerated()), id: \.offset) { _, entry in
+                let radius = radiusForAltitude(entry.altitudeDegrees, min: minRadius, max: maxRadius)
+                let angle = angleRadians(degrees: entry.azimuthDegrees)
+                let point = point(from: center, radius: radius, angle: angle)
+                let arrowAngle = arrowAngleRadians(from: point, to: center)
+                SunTimeCapsuleView(
+                    timeText: capsuleFormatter.string(from: entry.time),
+                    arrowAngle: Angle(radians: arrowAngle + .pi / 2)
+                )
+                .position(point)
             }
         }
     }
 
-    private func sunEventPoint(center: CGPoint, minRadius: CGFloat, maxRadius: CGFloat, isSunrise: Bool) -> CGPoint? {
-        guard let event = isSunrise ? sunPath.first : sunPath.last else { return nil }
-        let radius = radiusForAltitude(event.altitudeDegrees, min: minRadius, max: maxRadius)
-        let angle = angleRadians(degrees: event.azimuthDegrees)
-        return point(from: center, radius: radius, angle: angle)
+    private func arrowAngleRadians(from point: CGPoint, to target: CGPoint) -> Double {
+        Double(atan2(target.y - point.y, target.x - point.x))
     }
 
     private func angleRadians(degrees: Double) -> Double {
@@ -216,5 +246,30 @@ private struct ScoutMapOverlayView: View {
             x: center.x + radius * cosine,
             y: center.y + radius * sine
         )
+    }
+}
+
+private struct SunTimeCapsuleView: View {
+    let timeText: String
+    let arrowAngle: Angle
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Text(timeText)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.primary)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(.thinMaterial, in: Capsule())
+                .overlay(
+                    Capsule()
+                        .stroke(.yellow.opacity(0.7), lineWidth: 1)
+                )
+
+            Image(systemName: "arrowtriangle.up.fill")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.yellow.opacity(0.9))
+                .rotationEffect(arrowAngle)
+        }
     }
 }
