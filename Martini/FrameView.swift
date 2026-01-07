@@ -1140,9 +1140,10 @@ struct FrameView: View {
                 }
                 return items
             }
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Tags")
-                    .font(.headline)
+            VStack(alignment: .leading, spacing: 20) {
+                Divider()
+//                Text("Tags")
+//                    .font(.headline)
 
                 TagFlowLayout(spacing: 8) {
                     ForEach(tagItems) { item in
