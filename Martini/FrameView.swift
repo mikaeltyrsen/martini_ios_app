@@ -2917,36 +2917,62 @@ private struct AddBoardAlert: View {
     let onScoutCamera: () -> Void
     let onUpload: () -> Void
     let onCancel: () -> Void
+    @State private var isExpanded: Bool = false
+
+    private let backgroundFade = Animation.easeInOut(duration: 0.2)
+    private let buttonPop = Animation.spring(response: 0.45, dampingFraction: 0.8, blendDuration: 0.2)
+    private let buttonSpacing: CGFloat = 110
 
     var body: some View {
         ZStack {
-            Color(.systemBackground).opacity(0.9)
+            Color(.systemBackground)
+                .opacity(isExpanded ? 0.9 : 0)
                 .ignoresSafeArea()
                 .onTapGesture {
                     onCancel()
                 }
+                .animation(backgroundFade, value: isExpanded)
 
             VStack(spacing: 16) {
                 Text("Add Board")
                     .font(.title3.weight(.semibold))
 
-                HStack(spacing: 20) {
+                ZStack {
                     actionButton(title: "Take Photo", systemImage: "camera") {
                         onTakePhoto()
                     }
+                    .offset(x: isExpanded ? -buttonSpacing : 0)
+                    .opacity(isExpanded ? 1 : 0)
+                    .scaleEffect(isExpanded ? 1 : 0.88)
+                    .animation(buttonPop.delay(0.04), value: isExpanded)
 
                     actionButton(title: "Scout Camera", systemImage: "camera.viewfinder") {
                         onScoutCamera()
                     }
+                    .opacity(isExpanded ? 1 : 0)
+                    .scaleEffect(isExpanded ? 1 : 0.88)
+                    .animation(buttonPop.delay(0.02), value: isExpanded)
 
                     actionButton(title: "Upload", systemImage: "square.and.arrow.up") {
                         onUpload()
                     }
+                    .offset(x: isExpanded ? buttonSpacing : 0)
+                    .opacity(isExpanded ? 1 : 0)
+                    .scaleEffect(isExpanded ? 1 : 0.88)
+                    .animation(buttonPop, value: isExpanded)
                 }
 
             }
             .padding(20)
             .frame(width: .infinity)
+        }
+        .onAppear {
+            withAnimation(buttonPop) {
+                isExpanded = true
+            }
+        }
+        .onDisappear {
+            isExpanded = false
         }
     }
 
