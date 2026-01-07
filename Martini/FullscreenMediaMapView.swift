@@ -238,6 +238,23 @@ private struct ScoutMapOverlayView: View {
             let radius = min(proxy.size.width, proxy.size.height) * 0.42
             let leftAngle = angleRadians(degrees: headingDegrees - fovDegrees / 2)
             let rightAngle = angleRadians(degrees: headingDegrees + fovDegrees / 2)
+            let fovLineColor = Color.yellow.opacity(0.9)
+            let shadowColor = Color.black.opacity(0.35)
+
+            Path { path in
+                path.move(to: center)
+                path.addLine(to: point(from: center, radius: radius, angle: leftAngle))
+                path.addArc(
+                    center: center,
+                    radius: radius,
+                    startAngle: Angle(radians: leftAngle),
+                    endAngle: Angle(radians: rightAngle),
+                    clockwise: false
+                )
+                path.closeSubpath()
+            }
+            .fill(Color.white.opacity(0.5))
+            .shadow(color: shadowColor, radius: 3, x: 0, y: 2)
 
             Path { path in
                 path.move(to: center)
@@ -245,19 +262,27 @@ private struct ScoutMapOverlayView: View {
                 path.move(to: center)
                 path.addLine(to: point(from: center, radius: radius, angle: rightAngle))
             }
-            .stroke(.cyan.opacity(0.9), lineWidth: 2)
+            .stroke(fovLineColor, lineWidth: 2)
+            .shadow(color: shadowColor, radius: 2, x: 0, y: 1)
 
             Path { path in
-                path.move(to: point(from: center, radius: radius * 0.2, angle: leftAngle))
+                path.move(to: point(from: center, radius: radius, angle: leftAngle))
                 path.addArc(
                     center: center,
-                    radius: radius * 0.2,
+                    radius: radius,
                     startAngle: Angle(radians: leftAngle),
                     endAngle: Angle(radians: rightAngle),
                     clockwise: false
                 )
             }
-            .stroke(.cyan.opacity(0.6), lineWidth: 2)
+            .stroke(fovLineColor.opacity(0.8), lineWidth: 2)
+            .shadow(color: shadowColor, radius: 2, x: 0, y: 1)
+
+            Circle()
+                .fill(Color.black)
+                .frame(width: 6, height: 6)
+                .position(center)
+                .shadow(color: shadowColor, radius: 2, x: 0, y: 1)
         }
     }
 
@@ -266,30 +291,41 @@ private struct ScoutMapOverlayView: View {
             let center = CGPoint(x: proxy.size.width / 2, y: proxy.size.height / 2)
             let maxRadius = min(proxy.size.width, proxy.size.height) * 0.48
             let minRadius = min(proxy.size.width, proxy.size.height) * 0.18
-            Path { path in
-                for (index, entry) in sunPath.enumerated() {
-                    let radius = radiusForAltitude(entry.altitudeDegrees, min: minRadius, max: maxRadius)
-                    let angle = angleRadians(degrees: entry.azimuthDegrees)
-                    let point = point(from: center, radius: radius, angle: angle)
-                    if index == 0 {
-                        path.move(to: point)
-                    } else {
-                        path.addLine(to: point)
-                    }
-                }
+            let sunPoints = sunPath.map { entry in
+                let radius = radiusForAltitude(entry.altitudeDegrees, min: minRadius, max: maxRadius)
+                let angle = angleRadians(degrees: entry.azimuthDegrees)
+                return point(from: center, radius: radius, angle: angle)
             }
-            .stroke(.yellow.opacity(0.85), style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+            smoothedPath(points: sunPoints)
+                .stroke(.yellow.opacity(0.85), style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+                .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
 
             ForEach(Array(capsuleEntries.enumerated()), id: \.offset) { _, entry in
                 let radius = radiusForAltitude(entry.altitudeDegrees, min: minRadius, max: maxRadius)
                 let angle = angleRadians(degrees: entry.azimuthDegrees)
                 let point = point(from: center, radius: radius, angle: angle)
                 let arrowAngle = arrowAngleRadians(from: point, to: center)
-                SunTimeCapsuleView(
-                    timeText: capsuleFormatter.string(from: entry.time),
-                    arrowAngle: Angle(radians: arrowAngle + .pi / 2)
+                let direction = unitVector(from: point, to: center)
+                let labelOffset = CGSize(width: -direction.x * 18, height: -direction.y * 18)
+                let dotSize: CGFloat = 6
+
+                Circle()
+                    .fill(Color.white)
+                    .frame(width: dotSize, height: dotSize)
+                    .position(point)
+                    .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
+
+                SunDirectionArrowView(
+                    angle: Angle(radians: arrowAngle + .pi / 2),
+                    length: 16
                 )
                 .position(point)
+
+                SunTimeCapsuleView(
+                    timeText: capsuleFormatter.string(from: entry.time)
+                )
+                .position(point)
+                .offset(labelOffset)
             }
         }
     }
@@ -302,6 +338,28 @@ private struct ScoutMapOverlayView: View {
         let adjusted = degrees - mapHeadingDegrees
         let normalized = adjusted - 90
         return normalized * .pi / 180
+    }
+
+    private func smoothedPath(points: [CGPoint]) -> Path {
+        var path = Path()
+        guard points.count > 1 else {
+            if let point = points.first {
+                path.move(to: point)
+            }
+            return path
+        }
+
+        path.move(to: points[0])
+        for index in 1..<points.count {
+            let previous = points[index - 1]
+            let current = points[index]
+            let midpoint = CGPoint(x: (previous.x + current.x) / 2, y: (previous.y + current.y) / 2)
+            path.addQuadCurve(to: midpoint, control: previous)
+        }
+        if let last = points.last, let secondLast = points.dropLast().last {
+            path.addQuadCurve(to: last, control: secondLast)
+        }
+        return path
     }
 
     private func radiusForAltitude(_ altitude: Double, min: CGFloat, max: CGFloat) -> CGFloat {
@@ -318,11 +376,17 @@ private struct ScoutMapOverlayView: View {
             y: center.y + radius * sine
         )
     }
+
+    private func unitVector(from point: CGPoint, to target: CGPoint) -> CGPoint {
+        let dx = target.x - point.x
+        let dy = target.y - point.y
+        let length = max(0.001, sqrt(dx * dx + dy * dy))
+        return CGPoint(x: dx / length, y: dy / length)
+    }
 }
 
 private struct SunTimeCapsuleView: View {
     let timeText: String
-    let arrowAngle: Angle
 
     var body: some View {
         VStack(spacing: 4) {
@@ -336,11 +400,28 @@ private struct SunTimeCapsuleView: View {
                     Capsule()
                         .stroke(.yellow.opacity(0.7), lineWidth: 1)
                 )
+        }
+    }
+}
+
+private struct SunDirectionArrowView: View {
+    let angle: Angle
+    let length: CGFloat
+
+    var body: some View {
+        ZStack {
+            Path { path in
+                path.move(to: .zero)
+                path.addLine(to: CGPoint(x: 0, y: -length))
+            }
+            .stroke(.yellow.opacity(0.9), lineWidth: 1.5)
 
             Image(systemName: "arrowtriangle.up.fill")
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(size: 8, weight: .semibold))
                 .foregroundStyle(.yellow.opacity(0.9))
-                .rotationEffect(arrowAngle)
+                .offset(y: -length)
         }
+        .rotationEffect(angle)
+        .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
     }
 }
