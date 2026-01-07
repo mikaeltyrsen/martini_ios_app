@@ -1,3 +1,4 @@
+import Foundation
 import MapKit
 import SwiftUI
 
@@ -203,15 +204,17 @@ private struct ScoutMapOverlayView: View {
     }
 
     private func radiusForAltitude(_ altitude: Double, min: CGFloat, max: CGFloat) -> CGFloat {
-        let clamped = max(0, min(90, altitude))
+        let clamped = Swift.max(0, Swift.min(90, altitude))
         let ratio = clamped / 90
         return max - CGFloat(ratio) * (max - min)
     }
 
     private func point(from center: CGPoint, radius: CGFloat, angle: Double) -> CGPoint {
+        let cosine = CGFloat(Darwin.cos(angle))
+        let sine = CGFloat(Darwin.sin(angle))
         CGPoint(
-            x: center.x + radius * cos(angle),
-            y: center.y + radius * sin(angle)
+            x: center.x + radius * cosine,
+            y: center.y + radius * sine
         )
     }
 }
