@@ -104,11 +104,11 @@ struct SunPathCalculator {
     }
 
     private func toJulian(_ date: Date) -> Double {
-        date.timeIntervalSince1970 / daySeconds + julian1970
+        date.timeIntervalSince1970 / daySeconds - 0.5 + julian1970
     }
 
     private func fromJulian(_ julian: Double) -> Date {
-        Date(timeIntervalSince1970: (julian - julian1970) * daySeconds)
+        Date(timeIntervalSince1970: (julian + 0.5 - julian1970) * daySeconds)
     }
 
     private func toDays(_ date: Date) -> Double {
