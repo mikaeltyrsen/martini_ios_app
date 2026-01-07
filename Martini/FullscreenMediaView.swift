@@ -48,6 +48,9 @@ struct FullscreenMediaViewer: View {
     let metadataItem: BoardMetadataItem?
     let thumbnailURL: URL?
 
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+
     @State private var isVisible: Bool = false
     @State private var isToolbarVisible: Bool
     @State private var isMetadataOverlayVisible: Bool
@@ -59,6 +62,10 @@ struct FullscreenMediaViewer: View {
     @AppStorage("scoutCameraFullscreenShowGrid") private var showGrid: Bool = true
 
     private let animationDuration: Double = 0.25
+
+    private var isCompactPortrait: Bool {
+        horizontalSizeClass == .compact && verticalSizeClass == .regular
+    }
 
     init(
         isPresented: Binding<Bool>,
@@ -261,6 +268,7 @@ struct FullscreenMediaViewer: View {
                 }
             }
             .padding(12)
+            .frame(maxWidth: isCompactPortrait ? .infinity : 420, alignment: .leading)
             //.background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             //.padding([.horizontal, .bottom], 16)
             .glassEffect(
