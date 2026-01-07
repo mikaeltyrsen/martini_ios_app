@@ -83,6 +83,7 @@ class AuthService: ObservableObject {
     @Published var pendingDeepLink: String?
     @Published private(set) var pendingFrameStatusUpdates: [PendingFrameStatusUpdate] = []
     @Published private(set) var queuedFrameSyncStatus: QueuedFrameSyncStatus = .idle
+    private var queuedFrameSyncResetTask: Task<Void, Never>?
     
     private let tokenHashKey = "martini_token_hash"
     private let projectIdKey = "martini_project_id"
@@ -857,9 +858,11 @@ class AuthService: ObservableObject {
 
     func flushPendingFrameStatusUpdates() {
         guard let projectId, !pendingFrameStatusUpdates.isEmpty else {
+            queuedFrameSyncResetTask?.cancel()
             queuedFrameSyncStatus = .idle
             return
         }
+        queuedFrameSyncResetTask?.cancel()
         queuedFrameSyncStatus = .syncing
         Task {
             var remaining = pendingFrameStatusUpdates
@@ -883,13 +886,24 @@ class AuthService: ObservableObject {
             }
             if pendingFrameStatusUpdates.isEmpty {
                 queuedFrameSyncStatus = .success
+                queuedFrameSyncResetTask?.cancel()
+                queuedFrameSyncResetTask = Task { [weak self] in
+                    try? await Task.sleep(for: .seconds(3))
+                    await MainActor.run {
+                        guard let self, self.queuedFrameSyncStatus == .success else { return }
+                        self.queuedFrameSyncStatus = .idle
+                    }
+                }
             } else {
+                queuedFrameSyncResetTask?.cancel()
                 queuedFrameSyncStatus = .idle
             }
         }
     }
 
     func resetQueuedFrameSyncStatus() {
+        queuedFrameSyncResetTask?.cancel()
+        queuedFrameSyncResetTask = nil
         queuedFrameSyncStatus = .idle
     }
 
