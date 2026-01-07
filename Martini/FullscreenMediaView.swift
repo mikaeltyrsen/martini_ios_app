@@ -73,7 +73,7 @@ struct FullscreenMediaViewer: View {
         self.metadataItem = metadataItem
         self.thumbnailURL = thumbnailURL
         _isToolbarVisible = State(initialValue: config.showsTopToolbar)
-        _isMetadataOverlayVisible = State(initialValue: metadataItem != nil)
+        _isMetadataOverlayVisible = State(initialValue: metadataItem != nil && config.showsTopToolbar)
     }
 
     var body: some View {
@@ -126,6 +126,9 @@ struct FullscreenMediaViewer: View {
                     guard config.tapTogglesChrome else { return }
                     withAnimation(.easeInOut(duration: 0.2)) {
                         isToolbarVisible.toggle()
+                        if metadataItem != nil {
+                            isMetadataOverlayVisible = isToolbarVisible
+                        }
                     }
                 },
                 including: .gesture
@@ -138,6 +141,9 @@ struct FullscreenMediaViewer: View {
             .onChange(of: isPresented) { newValue in
                 if newValue, config.showsTopToolbar {
                     isToolbarVisible = true
+                    if metadataItem != nil {
+                        isMetadataOverlayVisible = true
+                    }
                 }
             }
         }
@@ -161,18 +167,6 @@ struct FullscreenMediaViewer: View {
                             .padding(8)
                     }
                     .accessibilityLabel("Close fullscreen")
-                }
-            }
-            if config.showsTopToolbar, let metadataItem {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            isMetadataOverlayVisible.toggle()
-                        }
-                    } label: {
-                        Label("Metadata", systemImage: "chevron.left.forwardslash.chevron.right")
-                    }
-                    .accessibilityLabel("Metadata")
                 }
             }
         }
@@ -274,8 +268,11 @@ struct FullscreenMediaViewer: View {
                 in: RoundedRectangle(cornerRadius: 20, style: .continuous)
             )
             .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .highPriorityGesture(
+                TapGesture().onEnded { }
+            )
         }
-        .transition(.opacity)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
         .padding(.horizontal, 10)
         .padding(.vertical, 30)
     }
@@ -295,7 +292,6 @@ struct FullscreenMediaViewer: View {
             .toggleStyle(.button)
             .font(.system(size: 12, weight: .semibold))
             .buttonBorderShape(.capsule)
-            .frame(maxWidth: .infinity)
             .tint(.martiniDefault)
     }
 
