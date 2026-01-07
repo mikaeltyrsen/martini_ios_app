@@ -11,6 +11,7 @@ struct ScoutMapSheetView: View {
 
     @State private var selectedDate = Date()
     @State private var cameraPosition: MapCameraPosition
+    @State private var mapStyleOption: MapStyleOption = .satellite
 
     private let sunCalculator = SunPathCalculator()
 
@@ -39,6 +40,7 @@ struct ScoutMapSheetView: View {
         NavigationStack {
             VStack(spacing: 16) {
                 datePicker
+                mapStylePicker
                 mapView
                 sunSummary
             }
@@ -65,10 +67,39 @@ struct ScoutMapSheetView: View {
                 .allowsHitTesting(false)
             }
         }
-        .mapStyle(.imagery(elevation: .realistic))
+        .mapStyle(mapStyleOption.mapStyle)
         .annotationTitles(.hidden)
         .frame(maxWidth: .infinity, minHeight: 320)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(alignment: .bottomTrailing) {
+            locateCameraButton
+                .padding(12)
+        }
+    }
+
+    private var mapStylePicker: some View {
+        Picker("Map Style", selection: $mapStyleOption) {
+            ForEach(MapStyleOption.allCases) { option in
+                Text(option.title)
+                    .tag(option)
+            }
+        }
+        .pickerStyle(.segmented)
+    }
+
+    private var locateCameraButton: some View {
+        Button(action: recenterCamera) {
+            Image(systemName: "scope")
+                .font(.system(size: 16, weight: .semibold))
+                .frame(width: 40, height: 40)
+        }
+        .buttonStyle(.plain)
+        .background(.thinMaterial, in: Circle())
+        .overlay(
+            Circle()
+                .stroke(.white.opacity(0.2), lineWidth: 1)
+        )
+        .accessibilityLabel("Center on camera")
     }
 
     private var sunSummary: some View {
@@ -134,6 +165,43 @@ struct ScoutMapSheetView: View {
         formatter.timeStyle = .short
         formatter.dateStyle = .none
         return formatter
+    }
+
+    private func recenterCamera() {
+        let camera = MapCamera(
+            centerCoordinate: coordinate,
+            distance: 180,
+            heading: 0,
+            pitch: 0
+        )
+        withAnimation {
+            cameraPosition = .camera(camera)
+        }
+    }
+}
+
+private enum MapStyleOption: String, CaseIterable, Identifiable {
+    case satellite
+    case standard
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .satellite:
+            return "Satellite"
+        case .standard:
+            return "Map"
+        }
+    }
+
+    var mapStyle: MapStyle {
+        switch self {
+        case .satellite:
+            return .imagery(elevation: .realistic)
+        case .standard:
+            return .standard
+        }
     }
 }
 
