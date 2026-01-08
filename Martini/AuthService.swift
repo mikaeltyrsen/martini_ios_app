@@ -1322,7 +1322,7 @@ class AuthService: ObservableObject {
                     result.insert(date)
                 }
                 .sorted()
-            let dateDescription: String
+            var dateDescription: String
             let scheduleDate = schedule.date?.trimmingCharacters(in: .whitespacesAndNewlines)
             if let scheduleDate, !scheduleDate.isEmpty {
                 dateDescription = scheduleDate
