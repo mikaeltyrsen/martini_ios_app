@@ -118,8 +118,21 @@ final class ScheduleWeatherService {
                 await cache.store(updated, for: cacheKey)
                 cached = updated
                 print("🌦️ Weather cache updated for \(scheduleDay)")
+            } catch is CancellationError {
+                return await buildDisplay(
+                    from: cached,
+                    scheduleDay: scheduleDay,
+                    wantsCurrent: wantsCurrent,
+                    wantsHourly: wantsHourly,
+                    calendar: calendar
+                )
             } catch {
-                print("🌦️ Weather fetch failed: \(error.localizedDescription)")
+                let nsError = error as NSError
+                if nsError.domain == "WeatherDaemon.WDSJWTAuthenticatorServiceProxy.Errors" {
+                    print("🌦️ Weather fetch failed: WeatherKit authentication failed. Check entitlements and system settings.")
+                } else {
+                    print("🌦️ Weather fetch failed: \(error.localizedDescription)")
+                }
                 return await buildDisplay(
                     from: cached,
                     scheduleDay: scheduleDay,
