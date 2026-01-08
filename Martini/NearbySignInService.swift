@@ -67,6 +67,10 @@ final class NearbySignInService: NSObject, ObservableObject {
     private var invitedPeers = Set<String>()
     private var requestedPeers = Set<String>()
 
+    private func log(_ message: String) {
+        print("📡 Nearby sign-in: \(message)")
+    }
+
     func startHosting(projectId: String, projectCode: String) {
         hostProjectId = projectId
         hostProjectCode = projectCode
@@ -77,6 +81,7 @@ final class NearbySignInService: NSObject, ObservableObject {
         advertiser.delegate = self
         advertiser.startAdvertisingPeer()
         self.advertiser = advertiser
+        log("Hosting started as \(peerID.displayName) (\(serviceType))")
     }
 
     func stopHosting() {
@@ -85,6 +90,7 @@ final class NearbySignInService: NSObject, ObservableObject {
         if role == .host {
             role = .none
         }
+        log("Hosting stopped")
     }
 
     func startBrowsing() {
@@ -98,6 +104,7 @@ final class NearbySignInService: NSObject, ObservableObject {
         browser.delegate = self
         browser.startBrowsingForPeers()
         self.browser = browser
+        log("Browsing started as \(peerID.displayName) (\(serviceType))")
     }
 
     func stopBrowsing() {
@@ -106,6 +113,7 @@ final class NearbySignInService: NSObject, ObservableObject {
         if role == .guest {
             role = .none
         }
+        log("Browsing stopped")
     }
 
     func clearApproval() {
@@ -117,6 +125,7 @@ final class NearbySignInService: NSObject, ObservableObject {
         let message = Message(type: .approved, projectId: projectId, projectCode: projectCode)
         send(message, to: pendingRequest.peerID)
         self.pendingRequest = nil
+        log("Approved request from \(pendingRequest.displayName)")
     }
 
     func denyPendingRequest() {
@@ -124,13 +133,18 @@ final class NearbySignInService: NSObject, ObservableObject {
         let message = Message(type: .denied, projectId: nil, projectCode: nil)
         send(message, to: pendingRequest.peerID)
         self.pendingRequest = nil
+        log("Denied request from \(pendingRequest.displayName)")
     }
 
     private func send(_ message: Message, to peer: MCPeerID) {
-        guard session.connectedPeers.contains(peer) else { return }
+        guard session.connectedPeers.contains(peer) else {
+            log("Send blocked to \(peer.displayName) (not connected)")
+            return
+        }
         do {
             let data = try JSONEncoder().encode(message)
             try session.send(data, toPeers: [peer], with: .reliable)
+            log("Sent \(message.type.rawValue) to \(peer.displayName)")
         } catch {
             print("❌ Nearby sign-in send failed: \(error)")
         }
@@ -149,6 +163,7 @@ extension NearbySignInService: MCNearbyServiceAdvertiserDelegate {
                 invitationHandler(false, nil)
                 return
             }
+            log("Received invitation from \(peerID.displayName)")
             invitationHandler(true, session)
         }
     }
@@ -164,6 +179,7 @@ extension NearbySignInService: MCNearbyServiceBrowserDelegate {
             guard role == .guest else { return }
             guard !invitedPeers.contains(peerID.displayName) else { return }
             invitedPeers.insert(peerID.displayName)
+            log("Found peer \(peerID.displayName); sending invite")
             browser.invitePeer(peerID, to: session, withContext: nil, timeout: 10)
         }
     }
@@ -171,6 +187,7 @@ extension NearbySignInService: MCNearbyServiceBrowserDelegate {
     nonisolated func browser(_ browser: MCNearbyServiceBrowser, lostPeer peerID: MCPeerID) {
         Task { @MainActor in
             invitedPeers.remove(peerID.displayName)
+            log("Lost peer \(peerID.displayName)")
         }
     }
 
@@ -189,10 +206,23 @@ extension NearbySignInService: MCSessionDelegate {
     nonisolated func session(_ session: MCSession, peer peerID: MCPeerID, didChange state: MCSessionState) {
         Task { @MainActor in
             guard role == .guest else { return }
+            let stateDescription: String
+            switch state {
+            case .notConnected:
+                stateDescription = "not connected"
+            case .connecting:
+                stateDescription = "connecting"
+            case .connected:
+                stateDescription = "connected"
+            @unknown default:
+                stateDescription = "unknown"
+            }
+            log("Session state with \(peerID.displayName): \(stateDescription)")
             guard state == .connected else { return }
             guard !requestedPeers.contains(peerID.displayName) else { return }
             requestedPeers.insert(peerID.displayName)
             guestStatus = "Request sent…"
+            log("Connected to \(peerID.displayName); sending pair request")
             let message = Message(type: .pairRequest, projectId: nil, projectCode: nil)
             send(message, to: peerID)
         }
@@ -206,15 +236,18 @@ extension NearbySignInService: MCSessionDelegate {
                 case .pairRequest:
                     guard role == .host else { return }
                     pendingRequest = NearbySignInRequest(peerID: peerID)
+                    log("Received pair request from \(peerID.displayName)")
                 case .approved:
                     guard role == .guest,
                           let projectId = message.projectId,
                           let projectCode = message.projectCode else { return }
                     approval = NearbySignInApproval(projectId: projectId, projectCode: projectCode)
                     guestStatus = "Signing in…"
+                    log("Received approval from \(peerID.displayName)")
                 case .denied:
                     guard role == .guest else { return }
                     guestStatus = "Request declined."
+                    log("Received denial from \(peerID.displayName)")
                 }
             } catch {
                 print("❌ Nearby sign-in decode failed: \(error)")
