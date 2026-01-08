@@ -1322,20 +1322,19 @@ class AuthService: ObservableObject {
                     result.insert(date)
                 }
                 .sorted()
-            let dateDescription: String
             let scheduleDate = schedule.date?.trimmingCharacters(in: .whitespacesAndNewlines)
             if let scheduleDate, !scheduleDate.isEmpty {
-                dateDescription = scheduleDate
+                let dateDescription = scheduleDate
+                return "\(name) (\(schedule.id)) • \(entryCount) entries • \(dateDescription)"
             } else if let entryDates, !entryDates.isEmpty {
                 let preview = entryDates.prefix(3)
-                dateDescription = preview.joined(separator: ", ")
-                if entryDates.count > 3 {
-                    dateDescription += " +\(entryDates.count - 3) more"
-                }
+                let extra = entryDates.count > 3 ? " +\(entryDates.count - 3) more" : ""
+                let dateDescription = preview.joined(separator: ", ") + extra
+                return "\(name) (\(schedule.id)) • \(entryCount) entries • \(dateDescription)"
             } else {
-                dateDescription = "unknown date"
+                let dateDescription = "unknown date"
+                return "\(name) (\(schedule.id)) • \(entryCount) entries • \(dateDescription)"
             }
-            return "\(name) (\(schedule.id)) • \(entryCount) entries • \(dateDescription)"
         }
         if scheduleSummary.isEmpty {
             print("📊 Schedule overview: no schedules returned")
