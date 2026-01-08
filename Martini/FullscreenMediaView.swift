@@ -305,9 +305,11 @@ struct FullscreenMediaViewer: View {
             Text("Map")
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(.bordered)
         .tint(.martiniDefault)
         .font(.system(size: 12, weight: .semibold))
+        .padding(.top, 6)
+        .padding(.bottom, 4)
     }
 
     private var overlayToggles: some View {
