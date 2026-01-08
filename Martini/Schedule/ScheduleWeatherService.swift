@@ -60,10 +60,12 @@ final class ScheduleWeatherService {
         let now = Date()
         let scheduleDay = calendar.startOfDay(for: scheduleDate)
         let today = calendar.startOfDay(for: now)
+        let tenDaysOut = calendar.date(byAdding: .day, value: 10, to: today)
         guard scheduleDay >= today,
-              let tenDaysOut = calendar.date(byAdding: .day, value: 10, to: today),
+              let tenDaysOut,
               scheduleDay <= tenDaysOut else {
-            print("🌦️ Schedule weather skipped: date \(scheduleDay) outside \(today)...\(tenDaysOut)")
+            let tenDaysOutDescription = tenDaysOut.map { "\($0)" } ?? "unknown"
+            print("🌦️ Schedule weather skipped: date \(scheduleDay) outside \(today)...\(tenDaysOutDescription)")
             return nil
         }
 
