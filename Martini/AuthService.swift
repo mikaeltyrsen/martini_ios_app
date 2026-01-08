@@ -1315,8 +1315,27 @@ class AuthService: ObservableObject {
         let scheduleSummary = availableSchedules.map { schedule in
             let entryCount = schedule.schedules?.count ?? 0
             let name = schedule.title ?? schedule.name
-            let date = schedule.date ?? "unknown date"
-            return "\(name) (\(schedule.id)) • \(entryCount) entries • \(date)"
+            let entryDates = schedule.schedules?
+                .compactMap { $0.date?.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+                .reduce(into: Set<String>()) { result, date in
+                    result.insert(date)
+                }
+                .sorted()
+            let dateDescription: String
+            let scheduleDate = schedule.date?.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let scheduleDate, !scheduleDate.isEmpty {
+                dateDescription = scheduleDate
+            } else if let entryDates, !entryDates.isEmpty {
+                let preview = entryDates.prefix(3)
+                dateDescription = preview.joined(separator: ", ")
+                if entryDates.count > 3 {
+                    dateDescription += " +\(entryDates.count - 3) more"
+                }
+            } else {
+                dateDescription = "unknown date"
+            }
+            return "\(name) (\(schedule.id)) • \(entryCount) entries • \(dateDescription)"
         }
         if scheduleSummary.isEmpty {
             print("📊 Schedule overview: no schedules returned")

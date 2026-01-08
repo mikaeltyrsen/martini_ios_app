@@ -589,6 +589,8 @@ private struct ScheduleDay: Codable {
         case id
         case title
         case date
+        case scheduleDate = "schedule_date"
+        case shootDate = "shoot_date"
         case startTime = "start_time"
         case startTimeCamel = "startTime"
         case duration
@@ -606,6 +608,8 @@ private struct ScheduleDay: Codable {
         id = try container.decodeIfPresent(String.self, forKey: .id)
         title = try container.decodeIfPresent(String.self, forKey: .title)
         date = try container.decodeIfPresent(String.self, forKey: .date)
+            ?? container.decodeIfPresent(String.self, forKey: .scheduleDate)
+            ?? container.decodeIfPresent(String.self, forKey: .shootDate)
         startTime = try container.decodeIfPresent(String.self, forKey: .startTime)
             ?? container.decodeIfPresent(String.self, forKey: .startTimeCamel)
         _duration = try container.decodeIfPresent(SafeOptionalInt.self, forKey: .duration) ?? SafeOptionalInt()
@@ -698,6 +702,8 @@ struct ProjectScheduleItem: Codable, Hashable {
         case id
         case title
         case date
+        case scheduleDate = "schedule_date"
+        case shootDate = "shoot_date"
         case lastUpdated = "last_updated"
         case startTime = "start_time"
         case startTimeCamel = "startTime"
@@ -715,6 +721,8 @@ struct ProjectScheduleItem: Codable, Hashable {
         id = try container.decodeIfPresent(String.self, forKey: .id)
         title = try container.decode(String.self, forKey: .title)
         date = try container.decodeIfPresent(String.self, forKey: .date)
+            ?? container.decodeIfPresent(String.self, forKey: .scheduleDate)
+            ?? container.decodeIfPresent(String.self, forKey: .shootDate)
         lastUpdated = try container.decodeIfPresent(String.self, forKey: .lastUpdated)
         startTime = try container.decodeIfPresent(String.self, forKey: .startTime)
             ?? container.decodeIfPresent(String.self, forKey: .startTimeCamel)

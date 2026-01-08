@@ -841,8 +841,11 @@ struct MainView: View {
     }
 
     private func scheduleDate(for entry: ProjectScheduleItem, in schedule: ProjectSchedule) -> Date? {
-        guard let dateString = schedule.date ?? entry.date else { return nil }
-        return Self.scheduleDateFormatter.date(from: dateString)
+        let dateString = entry.date ?? schedule.date
+        guard let trimmed = dateString?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !trimmed.isEmpty
+        else { return nil }
+        return Self.scheduleDateFormatter.date(from: trimmed)
     }
 
     private func handleScheduleUpdateEvent(_ event: ScheduleUpdateEvent) {
