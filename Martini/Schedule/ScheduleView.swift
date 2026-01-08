@@ -333,6 +333,40 @@ struct ScheduleView: View {
                 .font(.title2.bold())
                 .frame(maxWidth: .infinity, alignment: .leading)
 
+            if formattedDate != nil || formattedStartTime != nil || scheduleDuration != nil || scheduleWeather?.header != nil {
+                HStack(alignment: .center, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        if let date = formattedDate {
+                            Text(date)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        if let startTime = formattedStartTime {
+                            Label("Start: \(startTime)", systemImage: "clock")
+                                .foregroundStyle(.secondary)
+                        }
+
+                        if let duration = scheduleDuration {
+                            Label("Duration: \(formattedDuration(fromMinutes: duration))", systemImage: "timer")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    Spacer(minLength: 8)
+
+                    if let weatherHeader = scheduleWeather?.header {
+                        scheduleWeatherHeader(weatherHeader)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.secondary.opacity(0.25), lineWidth: 1)
+                )
+            }
+
             if let location = scheduleLocation, !location.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
                     Label(location, systemImage: "mappin.and.ellipse")
@@ -347,40 +381,6 @@ struct ScheduleView: View {
                                 .background(Color(.secondarySystemBackground))
                                 .clipShape(Capsule())
                         }
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(12)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.secondary.opacity(0.25), lineWidth: 1)
-                )
-            }
-
-            if formattedDate != nil || formattedStartTime != nil || scheduleDuration != nil || scheduleWeather?.header != nil {
-                HStack(alignment: .center, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        if let date = formattedDate {
-                            Text(date)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        if let startTime = formattedStartTime {
-                            Label(startTime, systemImage: "clock")
-                                .foregroundStyle(.secondary)
-                        }
-
-                        if let duration = scheduleDuration {
-                            Label("Duration: \(formattedDuration(fromMinutes: duration))", systemImage: "timer")
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    Spacer(minLength: 8)
-
-                    if let weatherHeader = scheduleWeather?.header {
-                        scheduleWeatherHeader(weatherHeader)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
