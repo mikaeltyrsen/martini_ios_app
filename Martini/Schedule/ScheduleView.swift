@@ -269,7 +269,7 @@ struct ScheduleView: View {
             } message: {
                 Text(statusUpdateError ?? "Unknown error")
             }
-            .alert("Weather Details", isPresented: Binding(
+            .sheet(isPresented: Binding(
                 get: { weatherDetailEntry != nil },
                 set: { isPresented in
                     if !isPresented {
@@ -277,14 +277,11 @@ struct ScheduleView: View {
                     }
                 }
             )) {
-                Button("OK", role: .cancel) {}
-            } message: {
                 if let entry = weatherDetailEntry {
-                    let timeText = ScheduleView.hourlyWeatherTimeFormatter.string(from: entry.date)
-                    let dateText = ScheduleView.hourlyWeatherDateFormatter.string(from: entry.date)
-                    Text("\(dateText) at \(timeText)\n\(ScheduleWeatherFormatter.temperatureText(for: entry.temperatureCelsius)) • \(entry.symbolName)")
+                    scheduleWeatherDetailSheet(for: entry)
                 } else {
                     Text("Weather details unavailable.")
+                        .presentationDetents([.height(160)])
                 }
             }
             .overlay {
@@ -774,6 +771,44 @@ struct ScheduleView: View {
             )
             Label("Forecast", systemImage: entry.symbolName)
         }
+    }
+
+    private func scheduleWeatherDetailSheet(for entry: ScheduleWeatherDisplay.HourEntry) -> some View {
+        let timeText = ScheduleView.hourlyWeatherTimeFormatter.string(from: entry.date)
+        let detailLines = weatherDetailSupplementaryLines(for: entry)
+        return VStack(alignment: .leading, spacing: 12) {
+            Text(timeText)
+                .font(.headline)
+            HStack(spacing: 8) {
+                Image(systemName: entry.symbolName)
+                    .font(.title3.weight(.semibold))
+                Text(ScheduleWeatherFormatter.temperatureText(for: entry.temperatureCelsius))
+                    .font(.title3.weight(.semibold))
+            }
+            if !detailLines.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(detailLines, id: \.self) { line in
+                        Text(line)
+                    }
+                }
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .padding(20)
+        .presentationDetents([.height(detailLines.isEmpty ? 180 : 220)])
+    }
+
+    private func weatherDetailSupplementaryLines(for entry: ScheduleWeatherDisplay.HourEntry) -> [String] {
+        var lines: [String] = []
+        if let chance = entry.precipitationChance {
+            lines.append("Chance of rain \(ScheduleWeatherFormatter.precipitationChanceText(for: chance))")
+        }
+        if let windSpeed = entry.windSpeedMetersPerSecond {
+            lines.append("Wind \(ScheduleWeatherFormatter.windSpeedText(for: windSpeed))")
+        }
+        return lines
     }
 
     private func shouldFadeForElapsedTime(blockDate: Date, context: TimelineContext) -> Bool {
