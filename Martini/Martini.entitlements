@@ -8,5 +8,7 @@
 		<string>applinks:www.trymartini.com</string>
 		<string>applinks:dev.staging.trymartini.com</string>
 	</array>
+	<key>com.apple.developer.weatherkit</key>
+	<true/>
 </dict>
 </plist>
