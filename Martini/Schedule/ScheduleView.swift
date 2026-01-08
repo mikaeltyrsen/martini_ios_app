@@ -21,6 +21,7 @@ struct ScheduleView: View {
     @State private var updatingFrameIds: Set<String> = []
     @State private var scheduleContentWidth: CGFloat = 0
     @State private var scheduleWeather: ScheduleWeatherDisplay?
+    @State private var weatherDetailEntry: ScheduleWeatherDisplay.HourEntry?
     private var scheduleGroups: [ScheduleGroup] { item.groups ?? schedule.groups ?? [] }
 
     private var scheduleTitle: String { item.title.isEmpty ? (schedule.title ?? schedule.name) : item.title }
@@ -267,6 +268,24 @@ struct ScheduleView: View {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(statusUpdateError ?? "Unknown error")
+            }
+            .alert("Weather Details", isPresented: Binding(
+                get: { weatherDetailEntry != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        weatherDetailEntry = nil
+                    }
+                }
+            )) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                if let entry = weatherDetailEntry {
+                    let timeText = ScheduleView.hourlyWeatherTimeFormatter.string(from: entry.date)
+                    let dateText = ScheduleView.hourlyWeatherDateFormatter.string(from: entry.date)
+                    Text("\(dateText) at \(timeText)\n\(ScheduleWeatherFormatter.temperatureText(for: entry.temperatureCelsius)) • \(entry.symbolName)")
+                } else {
+                    Text("Weather details unavailable.")
+                }
             }
             .overlay {
                 MartiniAlertModal(
@@ -725,19 +744,25 @@ struct ScheduleView: View {
     }
 
     private func scheduleRowWeatherBadge(_ entry: ScheduleWeatherDisplay.HourEntry) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: entry.symbolName)
-                .font(.footnote.weight(.semibold))
-            Text(ScheduleWeatherFormatter.temperatureText(for: entry.temperatureCelsius))
-                .font(.footnote.weight(.semibold))
+        Button {
+            weatherDetailEntry = entry
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: entry.symbolName)
+                    .font(.footnote.weight(.semibold))
+                Text(ScheduleWeatherFormatter.temperatureText(for: entry.temperatureCelsius))
+                    .font(.footnote.weight(.semibold))
+            }
+            .foregroundStyle(.secondary)
+            .padding(.vertical, 6)
+            .padding(.horizontal, 8)
+            .background(Color(.secondarySystemBackground))
+            .clipShape(Capsule())
+            .contentShape(Capsule())
+            .fixedSize()
         }
-        .foregroundStyle(.secondary)
-        .padding(.vertical, 6)
-        .padding(.horizontal, 8)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(Capsule())
-        .contentShape(Capsule())
-        .fixedSize()
+        .buttonStyle(.plain)
+        .accessibilityLabel("Weather at \(ScheduleView.hourlyWeatherTimeFormatter.string(from: entry.date))")
         .contextMenu {
             let timeText = ScheduleView.hourlyWeatherTimeFormatter.string(from: entry.date)
             let dateText = ScheduleView.hourlyWeatherDateFormatter.string(from: entry.date)
