@@ -172,6 +172,13 @@ struct LoginView: View {
         .onDisappear {
             nearbySignInService.stopBrowsing()
         }
+        .onChange(of: authService.isAuthenticated) { isAuthenticated in
+            if isAuthenticated {
+                nearbySignInService.stopBrowsing()
+            } else {
+                nearbySignInService.startBrowsing()
+            }
+        }
         .onChange(of: authService.pendingDeepLink) { _ in
             processPendingDeepLinkIfNeeded()
         }
