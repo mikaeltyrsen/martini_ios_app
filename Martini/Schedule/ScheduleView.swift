@@ -314,41 +314,65 @@ struct ScheduleView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             if let location = scheduleLocation, !location.isEmpty {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 6) {
                     Label(location, systemImage: "mappin.and.ellipse")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                     if let mapURL = scheduleMapURL {
                         Link(destination: mapURL) {
                             Label("Open in Maps", systemImage: "map")
-                                .font(.subheadline)
+                                .font(.subheadline.weight(.semibold))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(Color(.secondarySystemBackground))
+                                .clipShape(Capsule())
                         }
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.secondary.opacity(0.25), lineWidth: 1)
+                )
             }
 
-            if let date = formattedDate {
-                Text(date)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
+            if formattedDate != nil || formattedStartTime != nil || scheduleDuration != nil || scheduleWeather?.header != nil {
+                HStack(alignment: .center, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        if let date = formattedDate {
+                            Text(date)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
 
-            if let weatherHeader = scheduleWeather?.header {
-                scheduleWeatherHeader(weatherHeader)
-            }
+                        if let startTime = formattedStartTime {
+                            Label(startTime, systemImage: "clock")
+                                .foregroundStyle(.secondary)
+                        }
 
-            if let startTime = formattedStartTime {
-                Label(startTime, systemImage: "clock")
-                    .foregroundStyle(.secondary)
+                        if let duration = scheduleDuration {
+                            Label("Duration: \(formattedDuration(fromMinutes: duration))", systemImage: "timer")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    Spacer(minLength: 8)
+
+                    if let weatherHeader = scheduleWeather?.header {
+                        scheduleWeatherHeader(weatherHeader)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.secondary.opacity(0.25), lineWidth: 1)
+                )
             }
 
             if let lastUpdated = item.lastUpdated {
                 Label("Updated: \(lastUpdated)", systemImage: "arrow.clockwise")
-                    .foregroundStyle(.secondary)
-            }
-
-            if let duration = scheduleDuration {
-                Label("Duration: \(formattedDuration(fromMinutes: duration))", systemImage: "timer")
                     .foregroundStyle(.secondary)
             }
         }
@@ -711,6 +735,17 @@ struct ScheduleView: View {
         .background(Color(.secondarySystemBackground))
         .clipShape(Capsule())
         .fixedSize()
+        .contextMenu {
+            let timeText = ScheduleView.hourlyWeatherTimeFormatter.string(from: entry.date)
+            let dateText = ScheduleView.hourlyWeatherDateFormatter.string(from: entry.date)
+            Label(timeText, systemImage: "clock")
+            Label(dateText, systemImage: "calendar")
+            Label(
+                ScheduleWeatherFormatter.temperatureText(for: entry.temperatureCelsius),
+                systemImage: "thermometer"
+            )
+            Label("Forecast", systemImage: entry.symbolName)
+        }
     }
 
     private func updateScheduleContentWidth(for containerWidth: CGFloat) {
@@ -774,6 +809,22 @@ struct ScheduleView: View {
         formatter.locale = .current
         formatter.timeZone = .current
         formatter.dateFormat = "h:mm a"
+        return formatter
+    }()
+
+    private static let hourlyWeatherTimeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = .current
+        formatter.timeZone = .current
+        formatter.dateFormat = "h a"
+        return formatter
+    }()
+
+    private static let hourlyWeatherDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = .current
+        formatter.timeZone = .current
+        formatter.dateFormat = "EEE, MMM d"
         return formatter
     }()
 
