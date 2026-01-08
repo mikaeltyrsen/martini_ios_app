@@ -63,10 +63,12 @@ final class ScheduleWeatherService {
         guard scheduleDay >= today,
               let tenDaysOut = calendar.date(byAdding: .day, value: 10, to: today),
               scheduleDay <= tenDaysOut else {
+            print("🌦️ Schedule weather skipped: date \(scheduleDay) outside \(today)...\(tenDaysOut)")
             return nil
         }
 
         guard let resolvedCoordinate = await resolveCoordinate(from: coordinate, locationName: locationName) else {
+            print("🌦️ Schedule weather skipped: no coordinate for location \(locationName ?? "unknown")")
             return nil
         }
 
@@ -83,6 +85,7 @@ final class ScheduleWeatherService {
 
         if needsFetch {
             do {
+                print("🌦️ Fetching weather for \(scheduleDay) at \(resolvedCoordinate.latitude), \(resolvedCoordinate.longitude)")
                 let weather = try await weatherService.weather(
                     for: CLLocation(latitude: resolvedCoordinate.latitude, longitude: resolvedCoordinate.longitude)
                 )
@@ -112,7 +115,9 @@ final class ScheduleWeatherService {
                 updated.fetchedAtDaily = fetchedAt
                 await cache.store(updated, for: cacheKey)
                 cached = updated
+                print("🌦️ Weather cache updated for \(scheduleDay)")
             } catch {
+                print("🌦️ Weather fetch failed: \(error.localizedDescription)")
                 return await buildDisplay(
                     from: cached,
                     scheduleDay: scheduleDay,
