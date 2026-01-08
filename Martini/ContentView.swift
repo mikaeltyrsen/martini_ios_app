@@ -138,29 +138,45 @@ struct NearbySignInRequestSheet: View {
         let projectTitle = authService.projectTitle ?? "this project"
 
         VStack(spacing: 24) {
-            Text("Share Your Project")
-                .font(.title2)
-                .fontWeight(.semibold)
-                .multilineTextAlignment(.center)
+            Spacer(minLength: 0)
 
-            Image(systemName: "iphone.gen2.crop.circle")
-                .font(.system(size: 72))
-                .foregroundColor(.secondary)
+            VStack(spacing: 24) {
+                Text("Share Your Project")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .multilineTextAlignment(.center)
 
-            Text("\(request.displayName) would like to join your project. Would you want to sign them in to \(projectTitle)?")
-                .font(.body)
-                .multilineTextAlignment(.center)
-                .foregroundColor(.secondary)
+                Image(systemName: "iphone.gen2.crop.circle")
+                    .font(.system(size: 72))
+                    .foregroundColor(.secondary)
 
-            Spacer()
+                Text("\(request.displayName) would like to join your project. Would you want to sign them in to \(projectTitle)?")
+                    .font(.body)
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+
+            Spacer(minLength: 0)
 
             Button {
                 nearbySignInService.approvePendingRequest()
             } label: {
-                Text("Sign Them In")
-                    .frame(maxWidth: .infinity)
+                HStack(spacing: 8) {
+                    Image(systemName: "person.fill.checkmark")
+                    Text("Sign Them In")
+                }
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(.martiniDefaultTextColor)
+                .padding(.vertical, 16)
+                .padding(.horizontal, 20)
+                .frame(maxWidth: .infinity)
+                .background(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(Color.martiniDefaultColor)
+                )
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.plain)
         }
         .padding(24)
         .presentationDetents([.medium])
@@ -171,9 +187,10 @@ struct NearbySignInRequestSheet: View {
                 Image(systemName: "xmark")
                     .font(.headline)
                     .foregroundColor(.secondary)
-                    .padding(8)
+                    .padding(10)
             }
             .buttonStyle(.plain)
+            .glassEffect(.regular.interactive(), in: Circle())
         }
     }
 }
