@@ -13,6 +13,7 @@ struct ContentView: View {
     @EnvironmentObject var realtimeService: RealtimeService
     @EnvironmentObject var connectionMonitor: ConnectionMonitor
     @EnvironmentObject var fullscreenCoordinator: FullscreenMediaCoordinator
+    @EnvironmentObject var nearbySignInService: NearbySignInService
     
     var body: some View {
         Group {
@@ -22,12 +23,20 @@ struct ContentView: View {
                 LoginView()
             }
         }
-        .onAppear(perform: synchronizeAppState)
+        .onAppear {
+            synchronizeAppState()
+            updateNearbyHosting()
+        }
         .onChange(of: authService.isAuthenticated) { _ in
             synchronizeAppState()
+            updateNearbyHosting()
         }
         .onChange(of: authService.projectId) { _ in
             synchronizeRealtimeConnection()
+            updateNearbyHosting()
+        }
+        .onChange(of: authService.accessCode) { _ in
+            updateNearbyHosting()
         }
         .onChange(of: authService.projectDetails?.activeSchedule?.id) { newId in
             authService.clearCachedSchedules(keeping: newId)
@@ -66,6 +75,11 @@ struct ContentView: View {
                 )
             }
         }
+        .sheet(item: $nearbySignInService.pendingRequest) { request in
+            NearbySignInRequestSheet(request: request)
+                .environmentObject(nearbySignInService)
+                .interactiveDismissDisabled()
+        }
     }
 
     private func synchronizeRealtimeConnection() {
@@ -78,6 +92,16 @@ struct ContentView: View {
     private func synchronizeAppState() {
         synchronizeRealtimeConnection()
         connectionMonitor.updateConnection(isAuthenticated: authService.isAuthenticated)
+    }
+
+    private func updateNearbyHosting() {
+        guard authService.isAuthenticated,
+              let projectId = authService.projectId,
+              let projectCode = authService.accessCode else {
+            nearbySignInService.stopHosting()
+            return
+        }
+        nearbySignInService.startHosting(projectId: projectId, projectCode: projectCode)
     }
 
     private func handleIncomingURL(_ url: URL) {
@@ -100,6 +124,46 @@ struct ContentView: View {
                 }
             }
         )
+    }
+}
+
+// MARK: - Nearby Sign-In Sheet
+
+struct NearbySignInRequestSheet: View {
+    let request: NearbySignInRequest
+    @EnvironmentObject private var nearbySignInService: NearbySignInService
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("Person trying to connect")
+                .font(.title2)
+                .fontWeight(.semibold)
+
+            Text("A nearby device wants to sign into this project.")
+                .font(.body)
+                .multilineTextAlignment(.center)
+                .foregroundColor(.secondary)
+
+            HStack(spacing: 12) {
+                Button(role: .cancel) {
+                    nearbySignInService.denyPendingRequest()
+                } label: {
+                    Text("Cancel")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+
+                Button {
+                    nearbySignInService.approvePendingRequest()
+                } label: {
+                    Text("Sign them in")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        }
+        .padding(24)
+        .presentationDetents([.medium])
     }
 }
 
