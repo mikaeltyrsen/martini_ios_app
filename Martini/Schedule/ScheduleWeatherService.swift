@@ -18,8 +18,11 @@ struct ScheduleWeatherDisplay: Equatable {
         let date: Date
         let temperatureCelsius: Double
         let symbolName: String
+        let conditionDescription: String?
+        let feelsLikeCelsius: Double?
         let precipitationChance: Double?
         let windSpeedMetersPerSecond: Double?
+        let humidity: Double?
     }
 
     enum Header: Equatable {
@@ -68,6 +71,10 @@ enum ScheduleWeatherFormatter {
 
     static func precipitationChanceText(for chance: Double) -> String {
         precipitationChanceFormatter.string(from: NSNumber(value: chance)) ?? "\(Int(chance * 100))%"
+    }
+
+    static func humidityText(for humidity: Double) -> String {
+        precipitationChanceFormatter.string(from: NSNumber(value: humidity)) ?? "\(Int(humidity * 100))%"
     }
 }
 
@@ -129,8 +136,11 @@ final class ScheduleWeatherService {
                         date: $0.date,
                         temperatureCelsius: $0.temperature.converted(to: .celsius).value,
                         symbolName: $0.symbolName,
+                        conditionDescription: $0.condition.description,
+                        feelsLikeCelsius: $0.apparentTemperature.converted(to: .celsius).value,
                         precipitationChance: $0.precipitationChance,
-                        windSpeedMetersPerSecond: $0.wind.speed.converted(to: .metersPerSecond).value
+                        windSpeedMetersPerSecond: $0.wind.speed.converted(to: .metersPerSecond).value,
+                        humidity: $0.humidity
                     )
                 }
                 updated.daily = weather.dailyForecast.forecast.prefix(10).map {
@@ -233,8 +243,11 @@ final class ScheduleWeatherService {
                         date: entry.date,
                         temperatureCelsius: entry.temperatureCelsius,
                         symbolName: entry.symbolName,
+                        conditionDescription: entry.conditionDescription,
+                        feelsLikeCelsius: entry.feelsLikeCelsius,
                         precipitationChance: entry.precipitationChance,
-                        windSpeedMetersPerSecond: entry.windSpeedMetersPerSecond
+                        windSpeedMetersPerSecond: entry.windSpeedMetersPerSecond,
+                        humidity: entry.humidity
                     )
                 }
         } else {
@@ -358,8 +371,11 @@ struct CachedWeatherPayload: Codable {
         let date: Date
         let temperatureCelsius: Double
         let symbolName: String
+        let conditionDescription: String?
+        let feelsLikeCelsius: Double?
         let precipitationChance: Double?
         let windSpeedMetersPerSecond: Double?
+        let humidity: Double?
     }
 
     struct Day: Codable {

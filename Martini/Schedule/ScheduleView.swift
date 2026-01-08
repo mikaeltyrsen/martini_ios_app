@@ -775,40 +775,65 @@ struct ScheduleView: View {
 
     private func scheduleWeatherDetailSheet(for entry: ScheduleWeatherDisplay.HourEntry) -> some View {
         let timeText = ScheduleView.hourlyWeatherTimeFormatter.string(from: entry.date)
-        let detailLines = weatherDetailSupplementaryLines(for: entry)
         return VStack(alignment: .leading, spacing: 12) {
-            Text(timeText)
-                .font(.headline)
-            HStack(spacing: 8) {
-                Image(systemName: entry.symbolName)
-                    .font(.title3.weight(.semibold))
-                Text(ScheduleWeatherFormatter.temperatureText(for: entry.temperatureCelsius))
-                    .font(.title3.weight(.semibold))
-            }
-            if !detailLines.isEmpty {
-                VStack(alignment: .leading, spacing: 4) {
-                    ForEach(detailLines, id: \.self) { line in
-                        Text(line)
+            HStack(alignment: .top, spacing: 16) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(timeText)
+                        .font(.headline)
+                    HStack(spacing: 8) {
+                        Image(systemName: entry.symbolName)
+                            .font(.system(size: 32, weight: .semibold))
+                        Text(ScheduleWeatherFormatter.temperatureText(for: entry.temperatureCelsius))
+                            .font(.system(size: 32, weight: .semibold))
                     }
                 }
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                Spacer(minLength: 16)
+                VStack(alignment: .leading, spacing: 4) {
+                    if let conditionDescription = entry.conditionDescription, !conditionDescription.isEmpty {
+                        Text(conditionDescription)
+                            .font(.headline)
+                    } else {
+                        Text("Forecast")
+                            .font(.headline)
+                    }
+                    if let feelsLike = entry.feelsLikeCelsius {
+                        Text("Feels like \(ScheduleWeatherFormatter.temperatureText(for: feelsLike))")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            Divider()
+            VStack(alignment: .leading, spacing: 8) {
+                weatherDetailRow(
+                    icon: "cloud.rain",
+                    title: "Precipitation",
+                    value: entry.precipitationChance.map { ScheduleWeatherFormatter.precipitationChanceText(for: $0) }
+                )
+                weatherDetailRow(
+                    icon: "wind",
+                    title: "Wind",
+                    value: entry.windSpeedMetersPerSecond.map { ScheduleWeatherFormatter.windSpeedText(for: $0) }
+                )
+                weatherDetailRow(
+                    icon: "drop.fill",
+                    title: "Humidity",
+                    value: entry.humidity.map { ScheduleWeatherFormatter.humidityText(for: $0) }
+                )
             }
             Spacer()
         }
         .padding(20)
-        .presentationDetents([.height(detailLines.isEmpty ? 180 : 220)])
+        .presentationDetents([.height(260)])
     }
 
-    private func weatherDetailSupplementaryLines(for entry: ScheduleWeatherDisplay.HourEntry) -> [String] {
-        var lines: [String] = []
-        if let chance = entry.precipitationChance {
-            lines.append("Chance of rain \(ScheduleWeatherFormatter.precipitationChanceText(for: chance))")
+    private func weatherDetailRow(icon: String, title: String, value: String?) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .foregroundStyle(.secondary)
+            Text("\(title) • \(value ?? "—")")
         }
-        if let windSpeed = entry.windSpeedMetersPerSecond {
-            lines.append("Wind \(ScheduleWeatherFormatter.windSpeedText(for: windSpeed))")
-        }
-        return lines
+        .font(.subheadline)
     }
 
     private func shouldFadeForElapsedTime(blockDate: Date, context: TimelineContext) -> Bool {
