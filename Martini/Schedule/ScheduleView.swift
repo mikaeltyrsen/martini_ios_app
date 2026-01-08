@@ -43,10 +43,14 @@ struct ScheduleView: View {
     private static let scheduleDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = .current
+        formatter.timeZone = .autoupdatingCurrent
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter
     }()
+
+    private var scheduleCalendar: Calendar {
+        Calendar.autoupdatingCurrent
+    }
 
     private var formattedDate: String? {
         scheduleDate.map { formattedScheduleDate(from: $0, includeYear: true) }
@@ -699,7 +703,7 @@ struct ScheduleView: View {
     private func hourlyWeatherEntry(for block: ScheduleBlock) -> ScheduleWeatherDisplay.HourEntry? {
         guard let blockDate = startDate(for: block),
               let entries = scheduleWeather?.hourly else { return nil }
-        return entries.first { Calendar.current.isDate($0.date, equalTo: blockDate, toGranularity: .hour) }
+        return entries.first { scheduleCalendar.isDate($0.date, equalTo: blockDate, toGranularity: .hour) }
     }
 
     private func scheduleWeatherHeader(_ header: ScheduleWeatherDisplay.Header) -> some View {
@@ -832,7 +836,7 @@ struct ScheduleView: View {
     private static let currentTimeFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = .current
-        formatter.timeZone = .current
+        formatter.timeZone = .autoupdatingCurrent
         formatter.dateFormat = "h:mm a"
         return formatter
     }()
@@ -840,7 +844,7 @@ struct ScheduleView: View {
     private static let hourlyWeatherTimeFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = .current
-        formatter.timeZone = .current
+        formatter.timeZone = .autoupdatingCurrent
         formatter.dateFormat = "h a"
         return formatter
     }()
@@ -848,7 +852,7 @@ struct ScheduleView: View {
     private static let hourlyWeatherDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = .current
-        formatter.timeZone = .current
+        formatter.timeZone = .autoupdatingCurrent
         formatter.dateFormat = "EEE, MMM d"
         return formatter
     }()
@@ -858,13 +862,13 @@ struct ScheduleView: View {
            let date = ScheduleView.scheduleDateFormatter.date(from: scheduleDate) {
             return date
         }
-        return Calendar.current.startOfDay(for: Date())
+        return scheduleCalendar.startOfDay(for: Date())
     }
 
     private var currentScheduleTime: Date {
-        let nowComponents = Calendar.current.dateComponents([.hour, .minute, .second], from: now)
+        let nowComponents = scheduleCalendar.dateComponents([.hour, .minute, .second], from: now)
         let baseDate = activeScheduleBaseDate
-        return Calendar.current.date(
+        return scheduleCalendar.date(
             bySettingHour: nowComponents.hour ?? 0,
             minute: nowComponents.minute ?? 0,
             second: nowComponents.second ?? 0,
@@ -881,7 +885,7 @@ struct ScheduleView: View {
             return nil
         }
         let second = components.count > 2 ? Int(components[2]) ?? 0 : 0
-        return Calendar.current.date(bySettingHour: hour, minute: minute, second: second, of: scheduleBaseDate)
+        return scheduleCalendar.date(bySettingHour: hour, minute: minute, second: second, of: scheduleBaseDate)
     }
 
     private func startDate(for block: ScheduleBlock) -> Date? {
@@ -1198,22 +1202,22 @@ struct ScheduleView: View {
               isScheduleDateRelevant else {
             return scheduleBaseDate
         }
-        let offset = Calendar.current.dateComponents([.day], from: scheduleBaseDate, to: now).day ?? 0
+        let offset = scheduleCalendar.dateComponents([.day], from: scheduleBaseDate, to: now).day ?? 0
         guard offset > 0 else {
             return scheduleBaseDate
         }
-        return Calendar.current.date(byAdding: .day, value: offset, to: scheduleBaseDate) ?? scheduleBaseDate
+        return scheduleCalendar.date(byAdding: .day, value: offset, to: scheduleBaseDate) ?? scheduleBaseDate
     }
 
     private var scheduleEndDate: Date? {
         var endDates: [Date] = []
         if let duration = scheduleDuration,
-           let endDate = Calendar.current.date(byAdding: .minute, value: duration, to: scheduleBaseDate) {
+           let endDate = scheduleCalendar.date(byAdding: .minute, value: duration, to: scheduleBaseDate) {
             endDates.append(endDate)
         }
         let blockEndDates = blocksWithStartTimes.map { entry -> Date in
             if let duration = entry.block.duration,
-               let endDate = Calendar.current.date(byAdding: .minute, value: duration, to: entry.date) {
+               let endDate = scheduleCalendar.date(byAdding: .minute, value: duration, to: entry.date) {
                 return endDate
             }
             return entry.date
@@ -1223,17 +1227,17 @@ struct ScheduleView: View {
     }
 
     private var isScheduleDateToday: Bool {
-        Calendar.current.isDate(now, inSameDayAs: scheduleBaseDate)
+        scheduleCalendar.isDate(now, inSameDayAs: scheduleBaseDate)
     }
 
     private var isScheduleDateRelevant: Bool {
         guard scheduleDate != nil else { return true }
-        if Calendar.current.isDate(now, inSameDayAs: scheduleBaseDate) {
+        if scheduleCalendar.isDate(now, inSameDayAs: scheduleBaseDate) {
             return true
         }
         if let endDate = scheduleEndDate,
            endDate > scheduleBaseDate,
-           Calendar.current.isDate(now, inSameDayAs: endDate) {
+           scheduleCalendar.isDate(now, inSameDayAs: endDate) {
             return true
         }
         return false

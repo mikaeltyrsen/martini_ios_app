@@ -10,7 +10,7 @@ import UIKit
 public func formattedScheduleDate(from dateString: String, includeYear: Bool = true) -> String {
     let inputFormatter = DateFormatter()
     inputFormatter.locale = Locale(identifier: "en_US_POSIX")
-    inputFormatter.timeZone = .current
+    inputFormatter.timeZone = .autoupdatingCurrent
     inputFormatter.dateFormat = "yyyy-MM-dd"
 
     guard let date = inputFormatter.date(from: dateString) else {
@@ -19,7 +19,7 @@ public func formattedScheduleDate(from dateString: String, includeYear: Bool = t
 
     let outputFormatter = DateFormatter()
     outputFormatter.locale = .current
-    outputFormatter.timeZone = .current
+    outputFormatter.timeZone = .autoupdatingCurrent
     outputFormatter.dateFormat = includeYear ? "MMM d, yyyy" : "MMM d"
 
     return outputFormatter.string(from: date)
@@ -31,7 +31,7 @@ public func formattedScheduleDate(from dateString: String, includeYear: Bool = t
 public func formattedTimeFrom24Hour(_ timeString: String) -> String {
     let inputFormatter = DateFormatter()
     inputFormatter.locale = Locale(identifier: "en_US_POSIX")
-    inputFormatter.timeZone = .current
+    inputFormatter.timeZone = .autoupdatingCurrent
     inputFormatter.dateFormat = "HH:mm"
 
     guard let date = inputFormatter.date(from: timeString) else {
@@ -40,7 +40,7 @@ public func formattedTimeFrom24Hour(_ timeString: String) -> String {
 
     let outputFormatter = DateFormatter()
     outputFormatter.locale = .current
-    outputFormatter.timeZone = .current
+    outputFormatter.timeZone = .autoupdatingCurrent
     outputFormatter.dateFormat = "h:mm a"
 
     return outputFormatter.string(from: date)
