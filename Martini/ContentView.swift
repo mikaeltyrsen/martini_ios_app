@@ -389,7 +389,7 @@ struct MainView: View {
 
     private var effectiveShowFullDescriptions: Bool { effectiveShowDescriptions && showFullDescriptions }
 
-    private var effectiveShowGridTags: Bool { viewMode == .grid && showGridTags }
+    private var effectiveShowGridTags: Bool { viewMode != .grid && showGridTags }
 
     private var shouldShowFrameTimeOverlay: Bool {
         !(viewMode == .grid && authService.isScheduleActive)
@@ -2105,6 +2105,7 @@ struct GridFrameCell: View {
     let viewportHeight: CGFloat
     var isUpdating: Bool = false
     var onStatusSelected: (FrameStatus) -> Void
+    @EnvironmentObject private var authService: AuthService
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -2141,13 +2142,22 @@ struct GridFrameCell: View {
                     .foregroundColor(.martiniDefaultDescriptionColor)
                     .lineLimit(showFullDescription ? nil : 3)
             }
-            if showTags, !tagNames.isEmpty {
+            if showTags, !tagItems.isEmpty {
                 let baseFontSize = 12 * fontScale
                 let tagFontSize = max(8, baseFontSize - 1)
-                Text(tagNames.joined(separator: " • "))
-                    .font(.system(size: tagFontSize))
-                    .foregroundColor(.secondary)
-                    .lineLimit(2)
+                GridTagFlowLayout(spacing: 4) {
+                    ForEach(tagItems) { item in
+                        Text(item.tag.name)
+                            .font(.system(size: tagFontSize))
+                            .foregroundColor(tagGroupColor(for: item.groupName))
+                            .fixedSize(horizontal: true, vertical: false)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(
+                                Capsule().fill(tagGroupColor(for: item.groupName)).opacity(0.2)
+                            )
+                    }
+                }
             }
             Spacer(minLength: 0)
         }
@@ -2185,11 +2195,177 @@ struct GridFrameCell: View {
         return options
     }
 
-    private var tagNames: [String] {
+    private var tagItems: [GridTagItem] {
         guard let tags = frame.tags, !tags.isEmpty else { return [] }
-        return tags.map { $0.name }
-            .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-            .sorted { $0.lowercased() < $1.lowercased() }
+        let grouped = Dictionary(grouping: tags) { tag -> String in
+            let group = tag.groupName?.trimmingCharacters(in: .whitespacesAndNewlines)
+            return (group?.isEmpty == false ? group : nil) ?? "Tags"
+        }
+
+        return grouped.flatMap { key, tags in
+            let sortedTags = Array(Set(tags)).sorted { $0.name.lowercased() < $1.name.lowercased() }
+            return sortedTags.map { tag in
+                GridTagItem(id: tag.id ?? "\(key)-\(tag.name.lowercased())", tag: tag, groupName: key)
+            }
+        }
+        .filter { !$0.tag.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        .sorted { lhs, rhs in
+            if lhs.groupName == rhs.groupName {
+                return lhs.tag.name.lowercased() < rhs.tag.name.lowercased()
+            }
+            if lhs.groupName == "Tags" { return true }
+            if rhs.groupName == "Tags" { return false }
+            return lhs.groupName.lowercased() < rhs.groupName.lowercased()
+        }
+    }
+
+    private func tagGroupColor(for groupName: String) -> Color {
+        let normalized = groupName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let resolvedColorValue = tagGroupColorValue(for: normalized)
+
+        if let resolved = colorFromTagGroupValue(resolvedColorValue) {
+            return resolved
+        }
+
+        switch resolvedColorValue {
+        case "blue":
+            return .martiniBlueColor
+        case "cyan":
+            return .martiniCyanColor
+        case "green":
+            return .martiniGreenColor
+        case "lime":
+            return .martiniLimeColor
+        case "orange":
+            return .martiniOrangeColor
+        case "pink":
+            return .martiniPinkColor
+        case "purple":
+            return .martiniPurpleColor
+        case "red":
+            return .martiniRedColor
+        case "yellow":
+            return .martiniYellowColor
+        default:
+            return .martiniGrayColor
+        }
+    }
+
+    private func tagGroupColorValue(for normalizedGroupName: String) -> String {
+        let matchedGroup = authService.tagGroups.first {
+            $0.name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == normalizedGroupName
+        }
+
+        let rawColor = matchedGroup?.color?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return rawColor?.isEmpty == false ? rawColor! : normalizedGroupName
+    }
+
+    private func colorFromTagGroupValue(_ value: String) -> Color? {
+        let cleaned = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !cleaned.isEmpty else { return nil }
+
+        let hexString = cleaned.hasPrefix("#") ? String(cleaned.dropFirst()) : cleaned
+        guard hexString.count == 6 || hexString.count == 8 else { return nil }
+        guard hexString.range(of: "^[0-9a-f]+$", options: .regularExpression) != nil else { return nil }
+
+        var hexNumber: UInt64 = 0
+        guard Scanner(string: hexString).scanHexInt64(&hexNumber) else { return nil }
+
+        let red: Double
+        let green: Double
+        let blue: Double
+        let alpha: Double
+
+        if hexString.count == 8 {
+            red = Double((hexNumber & 0xFF000000) >> 24) / 255
+            green = Double((hexNumber & 0x00FF0000) >> 16) / 255
+            blue = Double((hexNumber & 0x0000FF00) >> 8) / 255
+            alpha = Double(hexNumber & 0x000000FF) / 255
+        } else {
+            red = Double((hexNumber & 0xFF0000) >> 16) / 255
+            green = Double((hexNumber & 0x00FF00) >> 8) / 255
+            blue = Double(hexNumber & 0x0000FF) / 255
+            alpha = 1.0
+        }
+
+        return Color(red: red, green: green, blue: blue, opacity: alpha)
+    }
+}
+
+private struct GridTagItem: Identifiable {
+    let id: String
+    let tag: FrameTag
+    let groupName: String
+}
+
+private struct GridTagFlowLayout: Layout {
+    let spacing: CGFloat
+
+    init(spacing: CGFloat) {
+        self.spacing = spacing
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let maxWidth = proposal.width ?? .greatestFiniteMagnitude
+        let layout = layoutRows(maxWidth: maxWidth, subviews: subviews)
+        let totalHeight = layout.rows.reduce(0) { $0 + $1.height } + spacing * max(0, CGFloat(layout.rows.count - 1))
+        return CGSize(width: maxWidth, height: totalHeight)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let layout = layoutRows(maxWidth: bounds.width, subviews: subviews)
+        var y = bounds.minY
+
+        for row in layout.rows {
+            var x = bounds.minX
+            for index in row.indices {
+                let subview = subviews[index]
+                let size = layout.sizes[index]
+                subview.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
+                x += size.width + spacing
+            }
+            y += row.height + spacing
+        }
+    }
+
+    private func layoutRows(maxWidth: CGFloat, subviews: Subviews) -> (rows: [Row], sizes: [CGSize]) {
+        var rows: [Row] = []
+        var currentRow = Row()
+        var sizes: [CGSize] = Array(repeating: .zero, count: subviews.count)
+
+        for index in subviews.indices {
+            let size = subviews[index].sizeThatFits(.unspecified)
+            sizes[index] = size
+
+            if currentRow.indices.isEmpty {
+                currentRow.indices.append(index)
+                currentRow.width = size.width
+                currentRow.height = max(currentRow.height, size.height)
+                continue
+            }
+
+            let candidateWidth = currentRow.width + spacing + size.width
+            if candidateWidth <= maxWidth {
+                currentRow.indices.append(index)
+                currentRow.width = candidateWidth
+                currentRow.height = max(currentRow.height, size.height)
+            } else {
+                rows.append(currentRow)
+                currentRow = Row(indices: [index], width: size.width, height: size.height)
+            }
+        }
+
+        if !currentRow.indices.isEmpty {
+            rows.append(currentRow)
+        }
+
+        return (rows, sizes)
+    }
+
+    private struct Row {
+        var indices: [Int] = []
+        var width: CGFloat = 0
+        var height: CGFloat = 0
     }
 }
 
