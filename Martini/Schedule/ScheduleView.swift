@@ -613,13 +613,11 @@ struct ScheduleView: View {
               let blockDate = context.blockStartDates[block.id] else {
             return false
         }
-        if context.currentScheduleTime >= blockDate {
-            return true
+        guard shouldFadeForElapsedTime(blockDate: blockDate, context: context),
+              arePriorStoryboardsComplete(before: block) else {
+            return false
         }
-        if let hereTime = context.hereTime, hereTime >= blockDate {
-            return true
-        }
-        return false
+        return true
     }
 
     private func blockColor(_ name: String?) -> Color {
@@ -734,6 +732,7 @@ struct ScheduleView: View {
         .padding(.horizontal, 8)
         .background(Color(.secondarySystemBackground))
         .clipShape(Capsule())
+        .contentShape(Capsule())
         .fixedSize()
         .contextMenu {
             let timeText = ScheduleView.hourlyWeatherTimeFormatter.string(from: entry.date)
@@ -746,6 +745,32 @@ struct ScheduleView: View {
             )
             Label("Forecast", systemImage: entry.symbolName)
         }
+    }
+
+    private func shouldFadeForElapsedTime(blockDate: Date, context: TimelineContext) -> Bool {
+        guard isScheduleDateToday else { return false }
+        if context.currentScheduleTime >= blockDate {
+            return true
+        }
+        if let hereTime = context.hereTime, hereTime >= blockDate {
+            return true
+        }
+        return false
+    }
+
+    private func arePriorStoryboardsComplete(before block: ScheduleBlock) -> Bool {
+        guard let blockIndex = flattenedBlocks.firstIndex(where: { $0.id == block.id }) else {
+            return true
+        }
+        let priorStoryboardIds = Set(flattenedBlocks[..<blockIndex].flatMap { $0.storyboards ?? [] })
+        guard !priorStoryboardIds.isEmpty else { return true }
+        for storyboardId in priorStoryboardIds {
+            guard let frame = framesById[storyboardId],
+                  isFrameComplete(frame) else {
+                return false
+            }
+        }
+        return true
     }
 
     private func updateScheduleContentWidth(for containerWidth: CGFloat) {
@@ -1195,6 +1220,10 @@ struct ScheduleView: View {
         }
         endDates.append(contentsOf: blockEndDates)
         return endDates.max()
+    }
+
+    private var isScheduleDateToday: Bool {
+        Calendar.current.isDate(now, inSameDayAs: scheduleBaseDate)
     }
 
     private var isScheduleDateRelevant: Bool {
