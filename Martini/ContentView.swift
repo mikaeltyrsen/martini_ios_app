@@ -8,6 +8,11 @@
 import SwiftUI
 import UIKit
 
+private enum FilterStorageKeys {
+    static let selectedTagIds = "filterSelectedTagIds"
+    static let selectedCreativeIds = "filterSelectedCreativeIds"
+}
+
 struct ContentView: View {
     @EnvironmentObject var authService: AuthService
     @EnvironmentObject var realtimeService: RealtimeService
@@ -27,9 +32,12 @@ struct ContentView: View {
             synchronizeAppState()
             updateNearbyHosting()
         }
-        .onChange(of: authService.isAuthenticated) { _ in
+        .onChange(of: authService.isAuthenticated) { isAuthenticated in
             synchronizeAppState()
             updateNearbyHosting()
+            if !isAuthenticated {
+                clearStoredFilters()
+            }
         }
         .onChange(of: authService.projectId) { _ in
             synchronizeRealtimeConnection()
@@ -106,6 +114,12 @@ struct ContentView: View {
 
     private func handleIncomingURL(_ url: URL) {
         authService.handleDeepLink(url)
+    }
+
+    private func clearStoredFilters() {
+        let defaults = UserDefaults.standard
+        defaults.removeObject(forKey: FilterStorageKeys.selectedTagIds)
+        defaults.removeObject(forKey: FilterStorageKeys.selectedCreativeIds)
     }
 
     private var fullscreenConfigurationBinding: Binding<FullscreenMediaConfiguration?> {
@@ -235,6 +249,9 @@ struct MainView: View {
     @State private var isShowingFilters = false
     @State private var selectedCreativeIds: Set<String> = []
     @State private var selectedTagIds: Set<String> = []
+    @State private var hasLoadedFilters = false
+    @AppStorage(FilterStorageKeys.selectedTagIds) private var storedSelectedTagIds: Data = Data()
+    @AppStorage(FilterStorageKeys.selectedCreativeIds) private var storedSelectedCreativeIds: Data = Data()
     @State private var gridMagnification: CGFloat = 1.0
     @State private var isGridPinching: Bool = false
     @State private var gridUpdatingFrameIds: Set<String> = []
@@ -629,11 +646,18 @@ struct MainView: View {
                     .interactiveDismissDisabled(false)
                 }
                 .onAppear(perform: synchronizeCreativeSelection)
+                .onAppear(perform: loadStoredFiltersIfNeeded)
                 .onChange(of: creativesToDisplay.count) { _ in
                     synchronizeCreativeSelection()
                 }
                 .onChange(of: selectedCreativeIds) { _ in
                     synchronizeCreativeSelection()
+                }
+                .onChange(of: selectedCreativeIds) { _ in
+                    persistFilters()
+                }
+                .onChange(of: selectedTagIds) { _ in
+                    persistFilters()
                 }
                 .onChange(of: frameSortMode) { _ in
                     scrollToPriorityFrame()
@@ -641,6 +665,12 @@ struct MainView: View {
                 .onChange(of: authService.frameUpdateEvent) { event in
                     guard let event else { return }
                     handleFrameUpdateEvent(event)
+                }
+                .onChange(of: authService.frames) { _ in
+                    pruneFilterSelectionsIfNeeded()
+                }
+                .onChange(of: authService.creatives) { _ in
+                    pruneFilterSelectionsIfNeeded()
                 }
                 .onChange(of: authService.scheduleUpdateEvent) { event in
                     guard let event else { return }
@@ -1744,6 +1774,52 @@ private extension MainView {
     private func clearFilters() {
         selectedTagIds.removeAll()
         selectedCreativeIds.removeAll()
+    }
+
+    private func loadStoredFiltersIfNeeded() {
+        guard !hasLoadedFilters else { return }
+        selectedTagIds = decodeFilterSet(from: storedSelectedTagIds)
+        selectedCreativeIds = decodeFilterSet(from: storedSelectedCreativeIds)
+        hasLoadedFilters = true
+        pruneFilterSelectionsIfNeeded()
+    }
+
+    private func persistFilters() {
+        storedSelectedTagIds = encodeFilterSet(selectedTagIds)
+        storedSelectedCreativeIds = encodeFilterSet(selectedCreativeIds)
+    }
+
+    private func pruneFilterSelectionsIfNeeded() {
+        if hasLoadedFrames || !authService.frames.isEmpty {
+            let availableTagIds = Set(availableTagGroups.flatMap { group in
+                group.tags.map { tagIdentifier($0) }
+            })
+            if availableTagIds.isEmpty {
+                selectedTagIds.removeAll()
+            } else {
+                selectedTagIds = selectedTagIds.intersection(availableTagIds)
+            }
+        }
+
+        if hasLoadedCreatives || !authService.creatives.isEmpty {
+            let availableCreativeIds = Set(allCreatives.map(\.id))
+            if availableCreativeIds.isEmpty {
+                selectedCreativeIds.removeAll()
+            } else {
+                selectedCreativeIds = selectedCreativeIds.intersection(availableCreativeIds)
+            }
+        }
+    }
+
+    private func decodeFilterSet(from data: Data) -> Set<String> {
+        guard !data.isEmpty, let stored = try? JSONDecoder().decode([String].self, from: data) else {
+            return []
+        }
+        return Set(stored)
+    }
+
+    private func encodeFilterSet(_ set: Set<String>) -> Data {
+        (try? JSONEncoder().encode(Array(set))) ?? Data()
     }
 
     private var filterButton: some View {
