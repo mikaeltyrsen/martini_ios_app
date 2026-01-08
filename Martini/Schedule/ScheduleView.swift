@@ -25,6 +25,9 @@ struct ScheduleView: View {
     private var scheduleDate: String? { schedule.date ?? item.date }
     private var scheduleStartTime: String? { schedule.startTime ?? item.startTime }
     private var scheduleDuration: Int? { schedule.durationMinutes ?? item.durationMinutes ?? item.duration }
+    private var scheduleLocation: String? { item.location ?? schedule.location }
+    private var scheduleLatitude: Double? { item.lat ?? schedule.lat }
+    private var scheduleLongitude: Double? { item.lng ?? schedule.lng }
     private var flattenedBlocks: [ScheduleBlock] { scheduleGroups.flatMap(\.blocks) }
     private var schedulePickerTitle: String { schedule.title ?? schedule.name }
 
@@ -127,6 +130,26 @@ struct ScheduleView: View {
             return "calendar"
         }
         return "\(day).calendar"
+    }
+
+    private var scheduleMapURL: URL? {
+        guard scheduleLocation != nil || (scheduleLatitude != nil && scheduleLongitude != nil) else {
+            return nil
+        }
+
+        var components = URLComponents()
+        components.scheme = "maps"
+        components.queryItems = []
+
+        if let latitude = scheduleLatitude, let longitude = scheduleLongitude {
+            components.queryItems?.append(URLQueryItem(name: "ll", value: "\(latitude),\(longitude)"))
+        }
+
+        if let location = scheduleLocation, !location.isEmpty {
+            components.queryItems?.append(URLQueryItem(name: "q", value: location))
+        }
+
+        return components.url
     }
 
     private func isSelectedScheduleEntry(_ entry: ProjectScheduleItem) -> Bool {
@@ -268,6 +291,20 @@ struct ScheduleView: View {
             Text(scheduleTitle)
                 .font(.title2.bold())
                 .frame(maxWidth: .infinity, alignment: .leading)
+
+            if let location = scheduleLocation, !location.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    Label(location, systemImage: "mappin.and.ellipse")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    if let mapURL = scheduleMapURL {
+                        Link(destination: mapURL) {
+                            Label("Open in Maps", systemImage: "map")
+                                .font(.subheadline)
+                        }
+                    }
+                }
+            }
 
             if let date = formattedDate {
                 Text(date)
