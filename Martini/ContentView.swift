@@ -132,38 +132,49 @@ struct ContentView: View {
 struct NearbySignInRequestSheet: View {
     let request: NearbySignInRequest
     @EnvironmentObject private var nearbySignInService: NearbySignInService
+    @EnvironmentObject private var authService: AuthService
 
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Person trying to connect")
+        let projectTitle = authService.projectTitle ?? "this project"
+
+        VStack(spacing: 24) {
+            Text("Share Your Project")
                 .font(.title2)
                 .fontWeight(.semibold)
+                .multilineTextAlignment(.center)
 
-            Text("A nearby device wants to sign into this project.")
+            Image(systemName: "iphone.gen2.crop.circle")
+                .font(.system(size: 72))
+                .foregroundColor(.secondary)
+
+            Text("\(request.displayName) would like to join your project. Would you want to sign them in to \(projectTitle)?")
                 .font(.body)
                 .multilineTextAlignment(.center)
                 .foregroundColor(.secondary)
 
-            HStack(spacing: 12) {
-                Button(role: .cancel) {
-                    nearbySignInService.denyPendingRequest()
-                } label: {
-                    Text("Cancel")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
+            Spacer()
 
-                Button {
-                    nearbySignInService.approvePendingRequest()
-                } label: {
-                    Text("Sign them in")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
+            Button {
+                nearbySignInService.approvePendingRequest()
+            } label: {
+                Text("Sign Them In")
+                    .frame(maxWidth: .infinity)
             }
+            .buttonStyle(.borderedProminent)
         }
         .padding(24)
         .presentationDetents([.medium])
+        .overlay(alignment: .topTrailing) {
+            Button {
+                nearbySignInService.denyPendingRequest()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.headline)
+                    .foregroundColor(.secondary)
+                    .padding(8)
+            }
+            .buttonStyle(.plain)
+        }
     }
 }
 
