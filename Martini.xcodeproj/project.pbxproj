@@ -48,6 +48,10 @@
 		07FFA2662F0F0183006BEAF4 /* SunPathCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07FFA2612F0F0183006BEAF4 /* SunPathCalculator.swift */; };
 		07FFA2672F0F0183006BEAF4 /* FullscreenMediaMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07FFA25D2F0F0183006BEAF4 /* FullscreenMediaMapView.swift */; };
 		07FFA2692F0F01D8006BEAF4 /* ScoutCameraMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07FFA2682F0F01D8006BEAF4 /* ScoutCameraMetadata.swift */; };
+		07FFA26F2F0FEE60006BEAF4 /* SchedulesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07FFA26B2F0FEE60006BEAF4 /* SchedulesView.swift */; };
+		07FFA2702F0FEE60006BEAF4 /* ScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07FFA26C2F0FEE60006BEAF4 /* ScheduleView.swift */; };
+		07FFA2712F0FEE60006BEAF4 /* ScheduleWeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07FFA26D2F0FEE60006BEAF4 /* ScheduleWeatherService.swift */; };
+		07FFA2722F0FEE60006BEAF4 /* ScheduleCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07FFA26A2F0FEE60006BEAF4 /* ScheduleCache.swift */; };
 		13952330E1EF424FADD563ED /* ScoutCamera/ScoutCameraLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F825837CC9D4A3C884F0F59 /* ScoutCamera/ScoutCameraLayout.swift */; };
 		1F7A3C5E4D1B4C3A8B9C0D1E /* ScoutCamera/ScoutCameraSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F7A3C5D4D1B4C3A8B9C0D1E /* ScoutCamera/ScoutCameraSettingsView.swift */; };
 		212769B0E99B412F8D9C27E8 /* ScoutCamera/ScoutCameraViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30240C00983A4B208F56B246 /* ScoutCamera/ScoutCameraViewModel.swift */; };
@@ -123,6 +127,10 @@
 		07FFA2602F0F0183006BEAF4 /* ScoutLocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScoutLocationManager.swift; path = ScoutCamera/CameraKit/ScoutLocationManager.swift; sourceTree = "<group>"; };
 		07FFA2612F0F0183006BEAF4 /* SunPathCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SunPathCalculator.swift; path = ScoutCamera/Sun/SunPathCalculator.swift; sourceTree = "<group>"; };
 		07FFA2682F0F01D8006BEAF4 /* ScoutCameraMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScoutCameraMetadata.swift; path = ScoutCamera/ScoutCameraMetadata.swift; sourceTree = "<group>"; };
+		07FFA26A2F0FEE60006BEAF4 /* ScheduleCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleCache.swift; sourceTree = "<group>"; };
+		07FFA26B2F0FEE60006BEAF4 /* SchedulesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchedulesView.swift; sourceTree = "<group>"; };
+		07FFA26C2F0FEE60006BEAF4 /* ScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleView.swift; sourceTree = "<group>"; };
+		07FFA26D2F0FEE60006BEAF4 /* ScheduleWeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleWeatherService.swift; sourceTree = "<group>"; };
 		107AD8B89F4A441698E034E1 /* ScoutCamera/Processing/PhotoProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/Processing/PhotoProcessor.swift; sourceTree = "<group>"; };
 		10F9CB29EE71481EB424475E /* ScoutCamera/FOV/FOVMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/FOV/FOVMath.swift; sourceTree = "<group>"; };
 		1F7A3C5D4D1B4C3A8B9C0D1E /* ScoutCamera/ScoutCameraSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/ScoutCameraSettingsView.swift; sourceTree = "<group>"; };
@@ -200,6 +208,7 @@
 		07A6A6842EC9A272002C8EB9 /* Martini */ = {
 			isa = PBXGroup;
 			children = (
+				07FFA26E2F0FEE60006BEAF4 /* Schedule */,
 				07FFA2682F0F01D8006BEAF4 /* ScoutCameraMetadata.swift */,
 				07FFA25D2F0F0183006BEAF4 /* FullscreenMediaMapView.swift */,
 				07FFA25F2F0F0183006BEAF4 /* ScoutCameraOverlays.swift */,
@@ -269,6 +278,17 @@
 				C15BCD3610C14777916BDDA9 /* Networking/FrameUploadService.swift */,
 			);
 			path = Martini;
+			sourceTree = "<group>";
+		};
+		07FFA26E2F0FEE60006BEAF4 /* Schedule */ = {
+			isa = PBXGroup;
+			children = (
+				07FFA26A2F0FEE60006BEAF4 /* ScheduleCache.swift */,
+				07FFA26B2F0FEE60006BEAF4 /* SchedulesView.swift */,
+				07FFA26C2F0FEE60006BEAF4 /* ScheduleView.swift */,
+				07FFA26D2F0FEE60006BEAF4 /* ScheduleWeatherService.swift */,
+			);
+			path = Schedule;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -375,6 +395,10 @@
 				F501C2E32028424CABAFBC56 /* ScheduleView.swift in Sources */,
 				07C904B02EDA8665004EDBFA /* Models.swift in Sources */,
 				07A6A6862EC9A272002C8EB9 /* MartiniApp.swift in Sources */,
+				07FFA26F2F0FEE60006BEAF4 /* SchedulesView.swift in Sources */,
+				07FFA2702F0FEE60006BEAF4 /* ScheduleView.swift in Sources */,
+				07FFA2712F0FEE60006BEAF4 /* ScheduleWeatherService.swift in Sources */,
+				07FFA2722F0FEE60006BEAF4 /* ScheduleCache.swift in Sources */,
 				075456042EC9A6E200C45739 /* QRScannerView.swift in Sources */,
 				13952330E1EF424FADD563ED /* ScoutCamera/ScoutCameraLayout.swift in Sources */,
 				0730F40C2F0C6401000B598F /* FrameLineOverlayView.swift in Sources */,
