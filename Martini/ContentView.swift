@@ -167,7 +167,7 @@ struct NearbySignInRequestSheet: View {
                     Text("Sign Them In")
                 }
                 .font(.system(size: 18, weight: .bold))
-                .foregroundStyle(.martiniDefaultTextColor)
+                .foregroundStyle(Color.martiniDefaultTextColor)
                 .padding(.vertical, 16)
                 .padding(.horizontal, 20)
                 .frame(maxWidth: .infinity)
