@@ -1288,9 +1288,7 @@ class AuthService: ObservableObject {
             throw AuthError.requestFailed(statusCode: httpResponse.statusCode)
         }
 
-        let responseJSON = String(data: data, encoding: .utf8) ?? "Unable to decode"
-        print("📥 Schedule response received (\(httpResponse.statusCode)):")
-        print(responseJSON)
+        print("📥 Schedule response received (\(httpResponse.statusCode))")
 
         let decoder = JSONDecoder()
         let scheduleResponse = try decoder.decode(ScheduleFetchResponse.self, from: data)
@@ -1313,6 +1311,24 @@ class AuthService: ObservableObject {
         }
 
         fetchedSchedules = availableSchedules
+
+        let scheduleSummary = availableSchedules.map { schedule in
+            let entryCount = schedule.schedules?.count ?? 0
+            let name = schedule.title ?? schedule.name
+            let date = schedule.date ?? "unknown date"
+            return "\(name) (\(schedule.id)) • \(entryCount) entries • \(date)"
+        }
+        if scheduleSummary.isEmpty {
+            print("📊 Schedule overview: no schedules returned")
+        } else {
+            print("📊 Schedule overview (\(scheduleSummary.count) total):")
+            scheduleSummary.prefix(3).forEach { summary in
+                print("  - \(summary)")
+            }
+            if scheduleSummary.count > 3 {
+                print("  ... and \(scheduleSummary.count - 3) more")
+            }
+        }
 
         let resolvedSchedule = availableSchedules.first { $0.id == scheduleId }
             ?? availableSchedules.first
