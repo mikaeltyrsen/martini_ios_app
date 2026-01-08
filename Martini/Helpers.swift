@@ -17,6 +17,15 @@ public func formattedScheduleDate(from dateString: String, includeYear: Bool = t
         return dateString
     }
 
+    let calendar = Calendar.autoupdatingCurrent
+    if calendar.isDateInToday(date) {
+        return "Today"
+    }
+
+    if calendar.isDateInTomorrow(date) {
+        return "Tomorrow"
+    }
+
     let outputFormatter = DateFormatter()
     outputFormatter.locale = .current
     outputFormatter.timeZone = .autoupdatingCurrent
