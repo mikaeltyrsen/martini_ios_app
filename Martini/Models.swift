@@ -580,6 +580,9 @@ private struct ScheduleDay: Codable {
     let startTime: String?
     @SafeOptionalInt var duration: Int?
     @SafeOptionalInt var durationMinutes: Int?
+    let location: String?
+    let lat: Double?
+    let lng: Double?
     let groups: [ScheduleGroup]?
 
     enum CodingKeys: String, CodingKey {
@@ -591,6 +594,9 @@ private struct ScheduleDay: Codable {
         case duration
         case durationMinutes
         case durationMinutesSnake = "duration_minutes"
+        case location
+        case lat
+        case lng
         case groups
     }
 
@@ -605,6 +611,9 @@ private struct ScheduleDay: Codable {
         _duration = try container.decodeIfPresent(SafeOptionalInt.self, forKey: .duration) ?? SafeOptionalInt()
         _durationMinutes = try container.decodeIfPresent(SafeOptionalInt.self, forKey: .durationMinutes)
             ?? container.decodeIfPresent(SafeOptionalInt.self, forKey: .durationMinutesSnake) ?? SafeOptionalInt()
+        location = try container.decodeIfPresent(String.self, forKey: .location)
+        lat = try container.decodeIfPresent(Double.self, forKey: .lat)
+        lng = try container.decodeIfPresent(Double.self, forKey: .lng)
         groups = try container.decodeIfPresent([ScheduleGroup].self, forKey: .groups)
     }
 
@@ -616,6 +625,9 @@ private struct ScheduleDay: Codable {
         try container.encodeIfPresent(startTime, forKey: .startTime)
         try container.encodeIfPresent(duration, forKey: .duration)
         try container.encodeIfPresent(durationMinutes, forKey: .durationMinutes)
+        try container.encodeIfPresent(location, forKey: .location)
+        try container.encodeIfPresent(lat, forKey: .lat)
+        try container.encodeIfPresent(lng, forKey: .lng)
         try container.encodeIfPresent(groups, forKey: .groups)
     }
 
@@ -628,6 +640,9 @@ private struct ScheduleDay: Codable {
             startTime: startTime,
             duration: duration,
             durationMinutes: durationMinutes,
+            location: location,
+            lat: lat,
+            lng: lng,
             groups: groups
         )
     }
@@ -672,6 +687,9 @@ struct ProjectScheduleItem: Codable, Hashable {
     let startTime: String?
     @SafeOptionalInt var duration: Int?
     @SafeOptionalInt var durationMinutes: Int?
+    let location: String?
+    let lat: Double?
+    let lng: Double?
     let groups: [ScheduleGroup]?
 
     var listIdentifier: String { id ?? title }
@@ -686,6 +704,9 @@ struct ProjectScheduleItem: Codable, Hashable {
         case duration
         case durationMinutes
         case durationMinutesSnake = "duration_minutes"
+        case location
+        case lat
+        case lng
         case groups
     }
 
@@ -700,6 +721,9 @@ struct ProjectScheduleItem: Codable, Hashable {
         duration = try container.decodeIfPresent(Int.self, forKey: .duration)
         durationMinutes = try container.decodeIfPresent(Int.self, forKey: .durationMinutes)
             ?? container.decodeIfPresent(Int.self, forKey: .durationMinutesSnake)
+        location = try container.decodeIfPresent(String.self, forKey: .location)
+        lat = try container.decodeIfPresent(Double.self, forKey: .lat)
+        lng = try container.decodeIfPresent(Double.self, forKey: .lng)
         groups = try container.decodeIfPresent([ScheduleGroup].self, forKey: .groups)
     }
 
@@ -713,6 +737,9 @@ struct ProjectScheduleItem: Codable, Hashable {
         try container.encodeIfPresent(startTime, forKey: .startTime)
         try container.encodeIfPresent(duration, forKey: .duration)
         try container.encodeIfPresent(durationMinutes, forKey: .durationMinutes)
+        try container.encodeIfPresent(location, forKey: .location)
+        try container.encodeIfPresent(lat, forKey: .lat)
+        try container.encodeIfPresent(lng, forKey: .lng)
         try container.encodeIfPresent(groups, forKey: .groups)
     }
 
@@ -724,6 +751,9 @@ struct ProjectScheduleItem: Codable, Hashable {
         startTime: String? = nil,
         duration: Int? = nil,
         durationMinutes: Int? = nil,
+        location: String? = nil,
+        lat: Double? = nil,
+        lng: Double? = nil,
         groups: [ScheduleGroup]? = nil
     ) {
         self.id = id
@@ -733,6 +763,9 @@ struct ProjectScheduleItem: Codable, Hashable {
         self.startTime = startTime
         self.duration = duration
         self.durationMinutes = durationMinutes
+        self.location = location
+        self.lat = lat
+        self.lng = lng
         self.groups = groups
     }
 }
