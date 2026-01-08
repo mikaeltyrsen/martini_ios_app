@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreLocation
 
 struct ScheduleView: View {
     let schedule: ProjectSchedule
@@ -19,6 +20,7 @@ struct ScheduleView: View {
     @State private var showingNoConnectionModal = false
     @State private var updatingFrameIds: Set<String> = []
     @State private var scheduleContentWidth: CGFloat = 0
+    @State private var scheduleWeather: ScheduleWeatherDisplay?
     private var scheduleGroups: [ScheduleGroup] { item.groups ?? schedule.groups ?? [] }
 
     private var scheduleTitle: String { item.title.isEmpty ? (schedule.title ?? schedule.name) : item.title }
@@ -28,8 +30,15 @@ struct ScheduleView: View {
     private var scheduleLocation: String? { item.location ?? schedule.location }
     private var scheduleLatitude: Double? { item.lat ?? schedule.lat }
     private var scheduleLongitude: Double? { item.lng ?? schedule.lng }
+    private var scheduleCoordinate: CLLocationCoordinate2D? {
+        guard let latitude = scheduleLatitude, let longitude = scheduleLongitude else { return nil }
+        return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
     private var flattenedBlocks: [ScheduleBlock] { scheduleGroups.flatMap(\.blocks) }
     private var schedulePickerTitle: String { schedule.title ?? schedule.name }
+    private var scheduleWeatherRequestKey: String {
+        "\(scheduleDate ?? "")-\(scheduleLatitude ?? 0)-\(scheduleLongitude ?? 0)-\(scheduleLocation ?? "")"
+    }
 
     private static let scheduleDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -215,6 +224,18 @@ struct ScheduleView: View {
             .onReceive(authService.$frames) { frames in
                 framesById = Dictionary(uniqueKeysWithValues: frames.map { ($0.id, $0) })
             }
+            .task(id: scheduleWeatherRequestKey) {
+                guard let scheduleDate,
+                      let parsedDate = ScheduleView.scheduleDateFormatter.date(from: scheduleDate) else {
+                    scheduleWeather = nil
+                    return
+                }
+                scheduleWeather = await ScheduleWeatherService.shared.weatherDisplay(
+                    for: parsedDate,
+                    locationName: scheduleLocation,
+                    coordinate: scheduleCoordinate
+                )
+            }
             .fullScreenCover(item: $selectedFrame) { frame in
                 NavigationStack {
                     let scheduleFrames = framesInSchedule()
@@ -312,6 +333,10 @@ struct ScheduleView: View {
                     .foregroundStyle(.secondary)
             }
 
+            if let weatherHeader = scheduleWeather?.header {
+                scheduleWeatherHeader(weatherHeader)
+            }
+
             if let startTime = formattedStartTime {
                 Label(startTime, systemImage: "clock")
                     .foregroundStyle(.secondary)
@@ -373,6 +398,10 @@ struct ScheduleView: View {
             blockView(for: block)
                 .compositingGroup()
                 .opacity(shouldFadeBlock(block, context: context) ? 0.5 : 1)
+                .layoutPriority(1)
+            if let entry = hourlyWeatherEntry(for: block) {
+                scheduleRowWeatherBadge(entry)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -643,6 +672,45 @@ struct ScheduleView: View {
             .foregroundStyle(Color.martiniDefaultDescriptionColor)
             .multilineTextAlignment(.leading)
             .opacity(0.75)
+    }
+
+    private func hourlyWeatherEntry(for block: ScheduleBlock) -> ScheduleWeatherDisplay.HourEntry? {
+        guard let blockDate = startDate(for: block),
+              let entries = scheduleWeather?.hourly else { return nil }
+        return entries.first { Calendar.current.isDate($0.date, equalTo: blockDate, toGranularity: .hour) }
+    }
+
+    private func scheduleWeatherHeader(_ header: ScheduleWeatherDisplay.Header) -> some View {
+        HStack(spacing: 8) {
+            switch header {
+            case .current(let current):
+                Image(systemName: current.symbolName)
+                    .font(.subheadline.weight(.semibold))
+                Text("Now \(ScheduleWeatherFormatter.temperatureText(for: current.temperatureCelsius))")
+                    .font(.subheadline.weight(.semibold))
+            case .daily(let daily):
+                Image(systemName: daily.symbolName)
+                    .font(.subheadline.weight(.semibold))
+                Text("High \(ScheduleWeatherFormatter.temperatureText(for: daily.highCelsius)) • Low \(ScheduleWeatherFormatter.temperatureText(for: daily.lowCelsius))")
+                    .font(.subheadline.weight(.semibold))
+            }
+        }
+        .foregroundStyle(.secondary)
+    }
+
+    private func scheduleRowWeatherBadge(_ entry: ScheduleWeatherDisplay.HourEntry) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: entry.symbolName)
+                .font(.footnote.weight(.semibold))
+            Text(ScheduleWeatherFormatter.temperatureText(for: entry.temperatureCelsius))
+                .font(.footnote.weight(.semibold))
+        }
+        .foregroundStyle(.secondary)
+        .padding(.vertical, 6)
+        .padding(.horizontal, 8)
+        .background(Color(.secondarySystemBackground))
+        .clipShape(Capsule())
+        .fixedSize()
     }
 
     private func updateScheduleContentWidth(for containerWidth: CGFloat) {
