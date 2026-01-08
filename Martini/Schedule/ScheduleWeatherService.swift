@@ -18,6 +18,8 @@ struct ScheduleWeatherDisplay: Equatable {
         let date: Date
         let temperatureCelsius: Double
         let symbolName: String
+        let precipitationChance: Double?
+        let windSpeedMetersPerSecond: Double?
     }
 
     enum Header: Equatable {
@@ -38,9 +40,34 @@ enum ScheduleWeatherFormatter {
         return formatter
     }()
 
+    private static let windSpeedFormatter: MeasurementFormatter = {
+        let formatter = MeasurementFormatter()
+        formatter.locale = .current
+        formatter.unitStyle = .short
+        formatter.numberFormatter.maximumFractionDigits = 0
+        return formatter
+    }()
+
+    private static let precipitationChanceFormatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.locale = .current
+        formatter.numberStyle = .percent
+        formatter.maximumFractionDigits = 0
+        return formatter
+    }()
+
     static func temperatureText(for celsiusValue: Double) -> String {
         let measurement = Measurement(value: celsiusValue, unit: UnitTemperature.celsius)
         return temperatureFormatter.string(from: measurement)
+    }
+
+    static func windSpeedText(for metersPerSecond: Double) -> String {
+        let measurement = Measurement(value: metersPerSecond, unit: UnitSpeed.metersPerSecond)
+        return windSpeedFormatter.string(from: measurement)
+    }
+
+    static func precipitationChanceText(for chance: Double) -> String {
+        precipitationChanceFormatter.string(from: NSNumber(value: chance)) ?? "\(Int(chance * 100))%"
     }
 }
 
@@ -101,7 +128,9 @@ final class ScheduleWeatherService {
                     CachedWeatherPayload.Hour(
                         date: $0.date,
                         temperatureCelsius: $0.temperature.converted(to: .celsius).value,
-                        symbolName: $0.symbolName
+                        symbolName: $0.symbolName,
+                        precipitationChance: $0.precipitationChance,
+                        windSpeedMetersPerSecond: $0.wind.speed.converted(to: .metersPerSecond).value
                     )
                 }
                 updated.daily = weather.dailyForecast.forecast.prefix(10).map {
@@ -203,7 +232,9 @@ final class ScheduleWeatherService {
                     ScheduleWeatherDisplay.HourEntry(
                         date: entry.date,
                         temperatureCelsius: entry.temperatureCelsius,
-                        symbolName: entry.symbolName
+                        symbolName: entry.symbolName,
+                        precipitationChance: entry.precipitationChance,
+                        windSpeedMetersPerSecond: entry.windSpeedMetersPerSecond
                     )
                 }
         } else {
@@ -327,6 +358,8 @@ struct CachedWeatherPayload: Codable {
         let date: Date
         let temperatureCelsius: Double
         let symbolName: String
+        let precipitationChance: Double?
+        let windSpeedMetersPerSecond: Double?
     }
 
     struct Day: Codable {
