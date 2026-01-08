@@ -130,8 +130,26 @@ final class ScheduleWeatherService {
                 let nsError = error as NSError
                 if nsError.domain == "WeatherDaemon.WDSJWTAuthenticatorServiceProxy.Errors" {
                     print("🌦️ Weather fetch failed: WeatherKit authentication failed. Check entitlements and system settings.")
+                    print(
+                        """
+                        🌦️ WeatherKit error details:
+                        - domain: \(nsError.domain)
+                        - code: \(nsError.code)
+                        - description: \(nsError.localizedDescription)
+                        - userInfo: \(nsError.userInfo)
+                        """
+                    )
                 } else {
-                    print("🌦️ Weather fetch failed: \(error.localizedDescription)")
+                    print(
+                        """
+                        🌦️ Weather fetch failed: \(error.localizedDescription)
+                        🌦️ WeatherKit error details:
+                        - domain: \(nsError.domain)
+                        - code: \(nsError.code)
+                        - description: \(nsError.localizedDescription)
+                        - userInfo: \(nsError.userInfo)
+                        """
+                    )
                 }
                 return await buildDisplay(
                     from: cached,
