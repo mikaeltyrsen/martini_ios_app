@@ -220,6 +220,7 @@ struct MainView: View {
 
     @AppStorage("showDescriptions") private var showDescriptions: Bool = true
     @AppStorage("showFullDescriptions") private var showFullDescriptions: Bool = false
+    @AppStorage("showGridTags") private var showGridTags: Bool = false
     @AppStorage("gridFontStep") private var gridFontStep: Int = 3 // 1..5
     @AppStorage("doneCrossLineWidth") private var doneCrossLineWidth: Double = 5.0
     @AppStorage("showDoneCrosses") private var showDoneCrosses: Bool = true
@@ -387,6 +388,8 @@ struct MainView: View {
     private var effectiveShowDescriptions: Bool { viewMode == .grid ? false : showDescriptions }
 
     private var effectiveShowFullDescriptions: Bool { effectiveShowDescriptions && showFullDescriptions }
+
+    private var effectiveShowGridTags: Bool { viewMode == .grid && showGridTags }
 
     private var shouldShowFrameTimeOverlay: Bool {
         !(viewMode == .grid && authService.isScheduleActive)
@@ -613,6 +616,7 @@ struct MainView: View {
                     SettingsView(
                         showDescriptions: $showDescriptions,
                         showFullDescriptions: $showFullDescriptions,
+                        showGridTags: $showGridTags,
                         gridSizeStep: $gridSizeStep,
                         gridFontStep: $gridFontStep,
                         gridPriority: gridAssetPriorityBinding,
@@ -1090,6 +1094,7 @@ struct MainView: View {
                                         forceThinCrosses: viewMode == .grid,
                                         showDescriptions: effectiveShowDescriptions,
                                         showFullDescriptions: effectiveShowFullDescriptions,
+                                        showTags: effectiveShowGridTags,
                                         showFrameTimeOverlay: shouldShowFrameTimeOverlay,
                                         fontScale: fontScale,
                                         coordinateSpaceName: "gridScroll",
@@ -1956,6 +1961,7 @@ struct CreativeGridSection: View {
     let forceThinCrosses: Bool
     let showDescriptions: Bool
     let showFullDescriptions: Bool
+    let showTags: Bool
     let showFrameTimeOverlay: Bool
     let fontScale: CGFloat
     let coordinateSpaceName: String
@@ -1973,6 +1979,7 @@ struct CreativeGridSection: View {
         forceThinCrosses: Bool,
         showDescriptions: Bool,
         showFullDescriptions: Bool,
+        showTags: Bool,
         showFrameTimeOverlay: Bool,
         fontScale: CGFloat,
         coordinateSpaceName: String,
@@ -1989,6 +1996,7 @@ struct CreativeGridSection: View {
         self.forceThinCrosses = forceThinCrosses
         self.showDescriptions = showDescriptions
         self.showFullDescriptions = showFullDescriptions
+        self.showTags = showTags
         self.showFrameTimeOverlay = showFrameTimeOverlay
         self.fontScale = fontScale
         self.coordinateSpaceName = coordinateSpaceName
@@ -2061,6 +2069,7 @@ struct CreativeGridSection: View {
                                     forceThinCrosses: forceThinCrosses,
                                     showDescription: showDescriptions,
                                     showFullDescription: showFullDescriptions,
+                                    showTags: showTags,
                                     showFrameTimeOverlay: showFrameTimeOverlay,
                                     fontScale: fontScale,
                                     coordinateSpaceName: coordinateSpaceName,
@@ -2089,6 +2098,7 @@ struct GridFrameCell: View {
     var forceThinCrosses: Bool = false
     var showDescription: Bool = false
     var showFullDescription: Bool = false
+    var showTags: Bool = false
     var showFrameTimeOverlay: Bool = true
     var fontScale: CGFloat
     let coordinateSpaceName: String
@@ -2131,6 +2141,14 @@ struct GridFrameCell: View {
                     .foregroundColor(.martiniDefaultDescriptionColor)
                     .lineLimit(showFullDescription ? nil : 3)
             }
+            if showTags, !tagNames.isEmpty {
+                let baseFontSize = 12 * fontScale
+                let tagFontSize = max(8, baseFontSize - 1)
+                Text(tagNames.joined(separator: " • "))
+                    .font(.system(size: tagFontSize))
+                    .foregroundColor(.secondary)
+                    .lineLimit(2)
+            }
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -2165,6 +2183,13 @@ struct GridFrameCell: View {
             options.append(.none)
         }
         return options
+    }
+
+    private var tagNames: [String] {
+        guard let tags = frame.tags, !tags.isEmpty else { return [] }
+        return tags.map { $0.name }
+            .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            .sorted { $0.lowercased() < $1.lowercased() }
     }
 }
 
@@ -2356,6 +2381,7 @@ struct SettingsView: View {
     @AppStorage("themePreference") private var themePreferenceRawValue = ThemePreference.system.rawValue
     @Binding var showDescriptions: Bool
     @Binding var showFullDescriptions: Bool
+    @Binding var showGridTags: Bool
     @Binding var gridSizeStep: Int // 1..4 (portrait: 4->1, landscape: 5->2)
     @Binding var gridFontStep: Int // 1..5
     @Binding var gridPriority: FrameAssetKind
@@ -2370,6 +2396,8 @@ struct SettingsView: View {
 
                     Toggle("Show Full Descriptions", isOn: $showFullDescriptions)
                         .disabled(!showDescriptions)
+
+                    Toggle("Show Tags", isOn: $showGridTags)
 
                     // Grid size slider: portrait 4/3/2/1, landscape 5/4/3/2 (handled by gridColumnCount)
                     VStack(alignment: .leading) {
