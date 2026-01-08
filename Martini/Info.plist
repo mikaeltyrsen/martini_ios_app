@@ -9,5 +9,11 @@
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Martini uses your location to tag scout photos and calculate sun position data.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Martini uses the local network to find nearby devices for sign-in.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_martini-login._tcp</string>
+	</array>
 </dict>
 </plist>

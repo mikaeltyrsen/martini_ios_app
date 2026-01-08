@@ -9,6 +9,7 @@ import SwiftUI
 
 struct LoginView: View {
     @EnvironmentObject var authService: AuthService
+    @EnvironmentObject var nearbySignInService: NearbySignInService
     @State private var showScanner = false
     @State private var isAuthenticating = false
     @State private var errorMessage: String?
@@ -130,6 +131,15 @@ struct LoginView: View {
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal)
                         }
+
+                        if !isAuthenticating {
+                            Text(nearbySignInService.guestStatus)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal)
+                                .transition(.opacity)
+                        }
                     }
                     
                     // Footer
@@ -157,9 +167,17 @@ struct LoginView: View {
         }
         .onAppear {
             processPendingDeepLinkIfNeeded()
+            nearbySignInService.startBrowsing()
+        }
+        .onDisappear {
+            nearbySignInService.stopBrowsing()
         }
         .onChange(of: authService.pendingDeepLink) { _ in
             processPendingDeepLinkIfNeeded()
+        }
+        .onChange(of: nearbySignInService.approval) { approval in
+            guard let approval else { return }
+            handleNearbyApproval(approval)
         }
     }
     
@@ -221,6 +239,13 @@ struct LoginView: View {
         showAccessCodeEntry = false
         showProjectIdEntry = false
         checkAndProceedWithAuthentication()
+    }
+
+    private func handleNearbyApproval(_ approval: NearbySignInApproval) {
+        nearbySignInService.stopBrowsing()
+        nearbySignInService.clearApproval()
+        let syntheticQRCode = "\(approval.projectId)-\(approval.projectCode)"
+        startAuthenticationFlow(with: syntheticQRCode)
     }
 
     private func proceedWithAuthentication(accessCode: String?) {

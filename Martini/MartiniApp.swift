@@ -28,6 +28,7 @@ struct MartiniApp: App {
     @StateObject private var realtimeService: RealtimeService
     @StateObject private var connectionMonitor: ConnectionMonitor
     @StateObject private var fullscreenCoordinator = FullscreenMediaCoordinator()
+    @StateObject private var nearbySignInService = NearbySignInService()
 
     init() {
         let connectionMonitor = ConnectionMonitor(
@@ -56,6 +57,7 @@ struct MartiniApp: App {
             .environmentObject(realtimeService)
             .environmentObject(connectionMonitor)
             .environmentObject(fullscreenCoordinator)
+            .environmentObject(nearbySignInService)
             .fullscreenMediaCoordinator(fullscreenCoordinator)
             //.tint(.martiniDefaultColor)
             .accentColor(.martiniDefaultColor)

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		08D1C0A32FFF111100000001 /* NearbySignInService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08D1C0A22FFF111100000001 /* NearbySignInService.swift */; };
 		0730F3E52EF6E788000B598F /* FullscreenMediaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F3E42EF6E788000B598F /* FullscreenMediaView.swift */; };
 		0730F3E72EFC14E3000B598F /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F3E62EFC14E3000B598F /* Config.swift */; };
 		0730F3EB2EFD9B85000B598F /* martini_master_offline_db_v2.json in Resources */ = {isa = PBXBuildFile; fileRef = 0730F3EA2EFD9B85000B598F /* martini_master_offline_db_v2.json */; };
@@ -82,6 +83,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		08D1C0A22FFF111100000001 /* NearbySignInService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbySignInService.swift; sourceTree = "<group>"; };
 		0187390DAD5C4818AD9A0A1B /* ScoutCamera/ScoutCameraReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/ScoutCameraReviewView.swift; sourceTree = "<group>"; };
 		0730F3E42EF6E788000B598F /* FullscreenMediaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullscreenMediaView.swift; sourceTree = "<group>"; };
 		0730F3E62EFC14E3000B598F /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
@@ -235,6 +237,7 @@
 				07A6A6852EC9A272002C8EB9 /* MartiniApp.swift */,
 				0730F3FD2F0487F3000B598F /* ThemePreference.swift */,
 				07A6A6872EC9A272002C8EB9 /* ContentView.swift */,
+				08D1C0A22FFF111100000001 /* NearbySignInService.swift */,
 				075456072EC9AA2100C45739 /* Assets.xcassets */,
 				075455FE2EC9A6E100C45739 /* AuthService.swift */,
 				07E1A0023B7A111100000001 /* ConnectionMonitor.swift */,
@@ -380,6 +383,7 @@
 				07D1C1032FF0BBBB00000001 /* ImageCache.swift in Sources */,
 				07D1C1052FF0BBBB00000002 /* ScheduleCache.swift in Sources */,
 				07A6A6882EC9A272002C8EB9 /* ContentView.swift in Sources */,
+				08D1C0A32FFF111100000001 /* NearbySignInService.swift in Sources */,
 				0730F3E52EF6E788000B598F /* FullscreenMediaView.swift in Sources */,
 				DAB09D58B6A74211960FDCD9 /* LocalData/PackModels.swift in Sources */,
 				64BD7D501E7D4DA38DFEBBC4 /* ProjectKit/ProjectKitSelectionViews.swift in Sources */,
