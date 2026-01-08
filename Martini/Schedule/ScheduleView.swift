@@ -24,7 +24,7 @@ struct ScheduleView: View {
     private var scheduleGroups: [ScheduleGroup] { item.groups ?? schedule.groups ?? [] }
 
     private var scheduleTitle: String { item.title.isEmpty ? (schedule.title ?? schedule.name) : item.title }
-    private var scheduleDate: String? { schedule.date ?? item.date }
+    private var scheduleDate: String? { item.date ?? schedule.date }
     private var scheduleStartTime: String? { schedule.startTime ?? item.startTime }
     private var scheduleDuration: Int? { schedule.durationMinutes ?? item.durationMinutes ?? item.duration }
     private var scheduleLocation: String? { item.location ?? schedule.location }
