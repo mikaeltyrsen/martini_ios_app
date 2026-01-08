@@ -207,6 +207,7 @@ struct MainView: View {
     @State private var selectedFrame: Frame?
     @State private var dataError: String?
     @State private var showingNoConnectionModal = false
+    @State private var hasShownOfflineModal = false
     @State private var hasLoadedFrames = false
     @State private var hasLoadedProjectDetails = false
     @State private var hasLoadedCreatives = false
@@ -644,6 +645,11 @@ struct MainView: View {
                 .onChange(of: authService.scheduleUpdateEvent) { event in
                     guard let event else { return }
                     handleScheduleUpdateEvent(event)
+                }
+                .onChange(of: connectionMonitor.status) { newStatus in
+                    if newStatus == .online || newStatus == .backOnline {
+                        hasShownOfflineModal = false
+                    }
                 }
                 .navigationDestination(for: ScheduleRoute.self) { route in
                     switch route {
@@ -1672,6 +1678,8 @@ private extension MainView {
                 }
                 if updateResult.wasQueued {
                     await MainActor.run {
+                        guard !hasShownOfflineModal else { return }
+                        hasShownOfflineModal = true
                         showingNoConnectionModal = true
                     }
                 }
