@@ -530,6 +530,25 @@ struct FrameView: View {
 
     @ToolbarContentBuilder
     private var topToolbar: some ToolbarContent {
+        ToolbarItem(placement: .principal) {
+            VStack(spacing: 2) {
+                Text(frameTitle)
+                    .font(.headline)
+                if selectedStatus != .none {
+                    Text(selectedStatus.displayName.uppercased())
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(selectedStatus.markerBackgroundColor)
+                        .transition(
+                            .asymmetric(
+                                insertion: .move(edge: .bottom).combined(with: .opacity),
+                                removal: .move(edge: .top).combined(with: .opacity)
+                            )
+                        )
+                }
+            }
+            .animation(.easeInOut(duration: 0.2), value: selectedStatus)
+        }
+
         if showsCloseButton {
             ToolbarItem(placement: .topBarLeading) {
                 Button {
