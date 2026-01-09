@@ -256,9 +256,6 @@ struct MainView: View {
     @State private var isGridPinching: Bool = false
     @State private var gridUpdatingFrameIds: Set<String> = []
     @State private var gridQuickFilterText = ""
-    @FocusState private var isGridQuickFilterFocused: Bool
-    @State private var gridScrollOffset: CGFloat = 0
-    @State private var isGridSearchBarVisible = true
 
     enum ViewMode {
         case list
@@ -268,16 +265,6 @@ struct MainView: View {
     enum FrameSortMode {
         case story
         case shoot
-    }
-
-    private enum GridSearchConstants {
-        static let collapseThreshold: CGFloat = 12
-        static let iconSize: CGFloat = 34
-        static let iconPadding: CGFloat = 12
-        static let searchBarHorizontalPadding: CGFloat = 16
-        static let searchBarVerticalPadding: CGFloat = 8
-        static let searchBarCornerRadius: CGFloat = 16
-        static let leadingPadding: CGFloat = 16
     }
 
     enum ScheduleRoute: Hashable {
@@ -1334,14 +1321,6 @@ struct MainView: View {
                 ZStack(alignment: .top) {
                     ScrollView {
                         LazyVStack(spacing: 50) {
-                            GeometryReader { geo in
-                                Color.clear
-                                    .preference(
-                                        key: GridScrollOffsetPreferenceKey.self,
-                                        value: geo.frame(in: .named("gridScroll")).minY
-                                    )
-                            }
-                            .frame(height: 0)
                             ForEach(gridSections) { section in
                                 VStack(alignment: .leading, spacing: 12) {
                                     CreativeGridSection(
@@ -1379,6 +1358,11 @@ struct MainView: View {
                         .padding(.vertical)
                         .padding(.bottom, 0)
                     }
+                    .searchable(
+                        text: $gridQuickFilterText,
+                        placement: .navigationBarDrawer(displayMode: .always),
+                        prompt: "Filter boards"
+                    )
                     .simultaneousGesture(
                         MagnificationGesture()
                             .onChanged { value in
@@ -1393,16 +1377,6 @@ struct MainView: View {
                             }
                     )
                     .coordinateSpace(name: "gridScroll")
-                    .onPreferenceChange(GridScrollOffsetPreferenceKey.self) { offset in
-                        gridScrollOffset = offset
-                        withAnimation(.spring(response: 0.22, dampingFraction: 0.9)) {
-                            isGridSearchBarVisible = offset >= -GridSearchConstants.collapseThreshold
-                        }
-                    }
-                    .overlay(alignment: .top) {
-                        gridSearchPullOverlay
-                            .allowsHitTesting(false)
-                    }
                     .onAppear { gridScrollProxy = proxy }
                     .onPreferenceChange(VisibleFramePreferenceKey.self) { ids in
                         // Defer state updates to avoid mutating view state during the render pass while scrolling
@@ -1478,56 +1452,6 @@ struct MainView: View {
     private func adjustGridSize(increase: Bool) {
         let newValue = gridSizeStep + (increase ? 1 : -1)
         gridSizeStep = min(max(newValue, 1), 4)
-    }
-
-    private var gridSearchPullOverlay: some View {
-        ZStack(alignment: .topLeading) {
-            if isGridSearchBarVisible {
-                gridSearchBar
-                    .padding(.top, 6)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-            } else {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.primary)
-                    .padding(GridSearchConstants.iconPadding)
-                    .background(.ultraThinMaterial, in: Circle())
-                    .glassEffect(.regular.interactive(), in: Circle())
-                    .padding(.top, 6)
-                    .padding(.leading, GridSearchConstants.leadingPadding)
-                    .transition(.opacity)
-            }
-        }
-    }
-
-    private var gridSearchBar: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .foregroundColor(.secondary)
-
-            TextField("Filter boards", text: $gridQuickFilterText)
-                .focused($isGridQuickFilterFocused)
-                .textInputAutocapitalization(.never)
-                .disableAutocorrection(true)
-
-            if !gridQuickFilterText.isEmpty {
-                Button(action: {
-                    gridQuickFilterText = ""
-                    if !isGridQuickFilterFocused {
-                        isGridSearchBarVisible = false
-                    }
-                }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.secondary)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.horizontal, GridSearchConstants.searchBarHorizontalPadding)
-        .padding(.vertical, GridSearchConstants.searchBarVerticalPadding)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: GridSearchConstants.searchBarCornerRadius))
-        .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: GridSearchConstants.searchBarCornerRadius))
-        .padding(.leading, GridSearchConstants.leadingPadding)
     }
 
     private func synchronizeCreativeSelection() {
@@ -2786,14 +2710,6 @@ private struct VisibleFramePreferenceKey: PreferenceKey {
 
     static func reduce(value: inout Set<String>, nextValue: () -> Set<String>) {
         value.formUnion(nextValue())
-    }
-}
-
-private struct GridScrollOffsetPreferenceKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
     }
 }
 
