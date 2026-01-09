@@ -372,8 +372,8 @@ struct MainView: View {
         activeSchedule?.name ?? "Schedule"
     }
 
-    private var hasProjectFiles: Bool {
-        !projectFiles.isEmpty
+    private var shouldShowProjectFilesButton: Bool {
+        authService.projectId != nil
     }
 
     private var projectDisplayTitle: String {
@@ -891,7 +891,7 @@ struct MainView: View {
             if shouldShowScheduleButton {
                 scheduleButton
             }
-            if hasProjectFiles {
+            if shouldShowProjectFilesButton {
                 projectFilesButton
             }
         }
