@@ -535,9 +535,10 @@ struct FrameView: View {
                 Text(frameTitle)
                     .font(.headline)
                 if selectedStatus != .none {
-                    Text(selectedStatus.displayName.uppercased())
+                    Text(selectedStatus.displayName)
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(selectedStatus.markerBackgroundColor)
+                        .textCase(.uppercase)
                         .transition(
                             .asymmetric(
                                 insertion: .move(edge: .bottom).combined(with: .opacity),
