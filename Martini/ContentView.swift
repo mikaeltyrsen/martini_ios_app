@@ -628,10 +628,10 @@ struct MainView: View {
                 guard let event else { return }
                 handleFrameUpdateEvent(event)
             }
-            .onChange(of: authService.frames) { _ in
+            .onChange(of: authService.frames.map(\.id)) { _ in
                 pruneFilterSelectionsIfNeeded()
             }
-            .onChange(of: authService.creatives) { _ in
+            .onChange(of: authService.creatives.map(\.id)) { _ in
                 pruneFilterSelectionsIfNeeded()
             }
             .onChange(of: authService.scheduleUpdateEvent) { event in
