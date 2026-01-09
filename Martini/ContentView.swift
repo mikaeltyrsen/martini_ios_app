@@ -256,8 +256,6 @@ struct MainView: View {
     @State private var isGridPinching: Bool = false
     @State private var gridUpdatingFrameIds: Set<String> = []
     @State private var gridQuickFilterText = ""
-    @FocusState private var isGridQuickFilterFocused: Bool
-    @State private var isGridSearchExpanded = true
 
     enum ViewMode {
         case list
@@ -989,15 +987,6 @@ struct MainView: View {
             if shouldShowScheduleButton {
                 scheduleButton
             }
-            if !isGridSearchExpanded {
-                Button {
-                    isGridSearchExpanded = true
-                    isGridQuickFilterFocused = true
-                } label: {
-                    Image(systemName: "magnifyingglass")
-                }
-                .accessibilityLabel("Open search")
-            }
         }
 
         ToolbarItem(placement: .navigationBarLeading) {
@@ -1345,14 +1334,6 @@ struct MainView: View {
                             }
                     )
                     .coordinateSpace(name: "gridScroll")
-                    .onChange(of: isScrolledToTop) { isAtTop in
-                        if isAtTop {
-                            isGridSearchExpanded = true
-                        } else if gridQuickFilterText.isEmpty {
-                            isGridSearchExpanded = false
-                            isGridQuickFilterFocused = false
-                        }
-                    }
                     .onAppear { gridScrollProxy = proxy }
                     .onPreferenceChange(VisibleFramePreferenceKey.self) { ids in
                         // Defer state updates to avoid mutating view state during the render pass while scrolling
@@ -1402,7 +1383,7 @@ struct MainView: View {
 
     @ViewBuilder
     private func gridScrollContent(outerGeo: GeometryProxy) -> some View {
-        let content = ScrollView {
+        ScrollView {
             LazyVStack(spacing: 50) {
                 ForEach(gridSections) { section in
                     VStack(alignment: .leading, spacing: 12) {
@@ -1441,18 +1422,11 @@ struct MainView: View {
             .padding(.vertical)
             .padding(.bottom, 0)
         }
-
-        if isGridSearchExpanded {
-            content
-                .searchable(
-                    text: $gridQuickFilterText,
-                    placement: .navigationBarDrawer(displayMode: .always),
-                    prompt: "Filter boards"
-                )
-                .searchFocused($isGridQuickFilterFocused)
-        } else {
-            content
-        }
+        .searchable(
+            text: $gridQuickFilterText,
+            placement: .navigationBarDrawer(displayMode: .always),
+            prompt: "Filter boards"
+        )
     }
 
     private var currentCreativeTitle: String {
