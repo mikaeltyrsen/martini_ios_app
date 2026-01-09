@@ -621,6 +621,10 @@ struct MainView: View {
     }
 
     private var navigationContent: some View {
+        navigationContentWithNavigation
+    }
+
+    private var navigationContentBase: some View {
         mainContent
             //.navigationTitle(displayedNavigationTitle)
             .toolbar { toolbarContent }
@@ -630,6 +634,10 @@ struct MainView: View {
                 await loadCreativesIfNeeded()
                 await loadFramesIfNeeded()
             }
+    }
+
+    private var navigationContentWithAlerts: some View {
+        navigationContentBase
             .alert(
                 "Data Load Error",
                 isPresented: dataErrorAlertBinding
@@ -654,6 +662,10 @@ struct MainView: View {
                     ]
                 )
             }
+    }
+
+    private var navigationContentWithSheets: some View {
+        navigationContentWithAlerts
             .fullScreenCover(
                 isPresented: isFrameDetailPresented
             ) {
@@ -697,6 +709,10 @@ struct MainView: View {
                 .presentationDragIndicator(.visible)
                 .interactiveDismissDisabled(false)
             }
+    }
+
+    private var navigationContentWithHandlers: some View {
+        navigationContentWithSheets
             .onAppear(perform: synchronizeCreativeSelection)
             .onAppear(perform: loadStoredFiltersIfNeeded)
             .onChange(of: creativesToDisplay.count) { _ in
@@ -733,6 +749,10 @@ struct MainView: View {
                     hasShownOfflineModal = false
                 }
             }
+    }
+
+    private var navigationContentWithNavigation: some View {
+        navigationContentWithHandlers
             .navigationDestination(for: ScheduleRoute.self) { route in
                 switch route {
                 case .list(let schedule):
