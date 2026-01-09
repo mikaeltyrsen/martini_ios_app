@@ -257,6 +257,7 @@ struct MainView: View {
     @State private var gridUpdatingFrameIds: Set<String> = []
     @State private var gridQuickFilterText = ""
     @FocusState private var isGridQuickFilterFocused: Bool
+    @State private var isGridSearchPresented = false
 
     enum ViewMode {
         case list
@@ -991,19 +992,10 @@ struct MainView: View {
         }
 
         ToolbarItem(placement: .navigationBarLeading) {
-            Button {
-                isGridQuickFilterFocused = true
-            } label: {
-                Image(systemName: "magnifyingglass")
-            }
-            .accessibilityLabel("Search boards")
+            filterButton
         }
 
         ToolbarItemGroup(placement: .bottomBar) {
-            filterButton
-
-            Spacer()
-
             Button(action: {
                 withAnimation(.easeInOut(duration: 0.12)) {
                     viewMode = (viewMode == .grid) ? .list : .grid
@@ -1023,6 +1015,13 @@ struct MainView: View {
             }
             .pickerStyle(.segmented)
             .frame(width: 200)
+            Button {
+                isGridSearchPresented = true
+                isGridQuickFilterFocused = true
+            } label: {
+                Image(systemName: "magnifyingglass")
+            }
+            .accessibilityLabel("Search boards")
 
             Spacer()
 
@@ -1392,7 +1391,7 @@ struct MainView: View {
 
     @ViewBuilder
     private func gridScrollContent(outerGeo: GeometryProxy) -> some View {
-        ScrollView {
+        let content = ScrollView {
             LazyVStack(spacing: 50) {
                 ForEach(gridSections) { section in
                     VStack(alignment: .leading, spacing: 12) {
@@ -1431,12 +1430,26 @@ struct MainView: View {
             .padding(.vertical)
             .padding(.bottom, 0)
         }
-        .searchable(
-            text: $gridQuickFilterText,
-            placement: .navigationBarDrawer(displayMode: .always),
-            prompt: "Filter boards"
-        )
-        .searchFocused($isGridQuickFilterFocused)
+
+        if isGridSearchPresented {
+            content
+                .searchable(
+                    text: $gridQuickFilterText,
+                    placement: .navigationBarDrawer(displayMode: .always),
+                    prompt: "Filter boards"
+                )
+                .searchFocused($isGridQuickFilterFocused)
+                .onChange(of: isGridQuickFilterFocused) { isFocused in
+                    if isFocused {
+                        isGridSearchPresented = true
+                    }
+                    if !isFocused && gridQuickFilterText.isEmpty {
+                        isGridSearchPresented = false
+                    }
+                }
+        } else {
+            content
+        }
     }
 
     private var currentCreativeTitle: String {
