@@ -565,14 +565,7 @@ struct MainView: View {
                 }
                 .alert(
                     "Data Load Error",
-                    isPresented: Binding(
-                        get: { dataError != nil },
-                        set: { newValue in
-                            if !newValue {
-                                dataError = nil
-                            }
-                        }
-                    )
+                    isPresented: dataErrorIsPresented
                 ) {
                     Button("OK") {
                         dataError = nil
@@ -580,55 +573,9 @@ struct MainView: View {
                 } message: {
                     Text(dataError ?? "Unknown error")
                 }
-                .overlay {
-                    MartiniAlertModal(
-                        isPresented: $showingNoConnectionModal,
-                        iconName: "wifi.exclamationmark",
-                        iconColor: .red,
-                        title: "No Connection",
-                        message: "Martini can’t reach the server at the moment. You can keep working—markings are saved locally.\nOnce connection is restored, we’ll automatically push your updates and sync across all devices.",
-                        actions: [
-                            MartiniAlertAction(title: "CONTINUE OFFLINE", style: .primary) {
-                                showingNoConnectionModal = false
-                            }
-                        ]
-                    )
-                }
-                .fullScreenCover(
-                    isPresented: Binding(
-                        get: { selectedFrameId != nil },
-                        set: { isPresented in
-                            if !isPresented {
-                                selectedFrameId = nil
-                                selectedFrame = nil
-                            }
-                        }
-                    )
-                ) {
-                    NavigationStack {
-                        let pagerFrames = displayedFramesInCurrentMode
-                        if let initialFrameId = selectedFrameId ?? selectedFrame?.id ?? pagerFrames.first?.id {
-                            FramePagerView(
-                                frames: pagerFrames,
-                                initialFrameID: initialFrameId,
-                                assetOrderBinding: { assetOrderBinding(for: $0) },
-                                onClose: {
-                                    selectedFrameId = nil
-                                    selectedFrame = nil
-                                },
-                                onStatusSelected: { updatedFrame, _ in
-                                    applyLocalStatusUpdate(updatedFrame)
-                                },
-                                onSelectionChanged: { frameId in
-                                    selectedFrameId = frameId
-                                    if let match = pagerFrames.first(where: { $0.id == frameId }) {
-                                        selectedFrame = match
-                                    }
-                                }
-                            )
-                        }
-                    }
-                    .interactiveDismissDisabled(false)
+                .overlay { noConnectionOverlay }
+                .fullScreenCover(isPresented: selectedFrameIsPresented) {
+                    framePagerSheet
                 }
                 .sheet(isPresented: $isShowingSettings) {
                     SettingsView(
@@ -694,6 +641,75 @@ struct MainView: View {
                     }
                 }
         }
+    }
+
+    private var dataErrorIsPresented: Binding<Bool> {
+        Binding(
+            get: { dataError != nil },
+            set: { newValue in
+                if !newValue {
+                    dataError = nil
+                }
+            }
+        )
+    }
+
+    private var selectedFrameIsPresented: Binding<Bool> {
+        Binding(
+            get: { selectedFrameId != nil },
+            set: { isPresented in
+                if !isPresented {
+                    selectedFrameId = nil
+                    selectedFrame = nil
+                }
+            }
+        )
+    }
+
+    private var noConnectionOverlay: some View {
+        MartiniAlertModal(
+            isPresented: $showingNoConnectionModal,
+            iconName: "wifi.exclamationmark",
+            iconColor: .red,
+            title: "No Connection",
+            message: "Martini can’t reach the server at the moment. You can keep working—markings are saved locally.\nOnce connection is restored, we’ll automatically push your updates and sync across all devices.",
+            actions: noConnectionActions
+        )
+    }
+
+    private var noConnectionActions: [MartiniAlertAction] {
+        [
+            MartiniAlertAction(title: "CONTINUE OFFLINE", style: .primary) {
+                showingNoConnectionModal = false
+            }
+        ]
+    }
+
+    private var framePagerSheet: some View {
+        NavigationStack {
+            let pagerFrames = displayedFramesInCurrentMode
+            if let initialFrameId = selectedFrameId ?? selectedFrame?.id ?? pagerFrames.first?.id {
+                FramePagerView(
+                    frames: pagerFrames,
+                    initialFrameID: initialFrameId,
+                    assetOrderBinding: { assetOrderBinding(for: $0) },
+                    onClose: {
+                        selectedFrameId = nil
+                        selectedFrame = nil
+                    },
+                    onStatusSelected: { updatedFrame, _ in
+                        applyLocalStatusUpdate(updatedFrame)
+                    },
+                    onSelectionChanged: { frameId in
+                        selectedFrameId = frameId
+                        if let match = pagerFrames.first(where: { $0.id == frameId }) {
+                            selectedFrame = match
+                        }
+                    }
+                )
+            }
+        }
+        .interactiveDismissDisabled(false)
     }
 
     private var mainContent: some View {
