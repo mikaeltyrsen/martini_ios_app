@@ -255,6 +255,8 @@ struct MainView: View {
     @State private var gridMagnification: CGFloat = 1.0
     @State private var isGridPinching: Bool = false
     @State private var gridUpdatingFrameIds: Set<String> = []
+    @State private var gridQuickFilterText = ""
+    @FocusState private var isGridQuickFilterFocused: Bool
 
     enum ViewMode {
         case list
@@ -378,6 +380,14 @@ struct MainView: View {
         let totalOverride = creativesToDisplay.reduce(0) { $0 + $1.totalFrames }
         return progressCounts(for: frames, totalOverride: totalOverride)
     }
+
+    private var gridQuickFilterQuery: String {
+        gridQuickFilterText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var isGridQuickFilterActive: Bool {
+        !gridQuickFilterQuery.isEmpty
+    }
     
     private var navigationProgress: ProgressCounts {
         guard frameSortMode == .story, !isScrolledToTop else { return overallProgress }
@@ -453,7 +463,7 @@ struct MainView: View {
                 let frames = frames(for: creative)
                 let progress = creativeProgress(creative)
 
-                if isFilterActive && frames.isEmpty {
+                if (isFilterActive || isGridQuickFilterActive) && frames.isEmpty {
                     return nil
                 }
 
@@ -521,9 +531,44 @@ struct MainView: View {
             }
         }
 
+        if isGridQuickFilterActive {
+            frames = frames.filter { matchesGridQuickFilter($0) }
+        }
+
         return frames.sorted { lhs, rhs in
             sortingTuple(for: lhs, mode: sortMode) < sortingTuple(for: rhs, mode: sortMode)
         }
+    }
+
+    private func matchesGridQuickFilter(_ frame: Frame) -> Bool {
+        let query = gridQuickFilterQuery.lowercased()
+        guard !query.isEmpty else { return true }
+
+        let terms = query.split(separator: " ").map(String.init)
+        let searchableTokens = gridQuickFilterTokens(for: frame).map { $0.lowercased() }
+
+        return terms.allSatisfy { term in
+            searchableTokens.contains { $0.contains(term) }
+        }
+    }
+
+    private func gridQuickFilterTokens(for frame: Frame) -> [String] {
+        var tokens: [String] = []
+
+        if let frameOrder = frame.frameOrder { tokens.append(frameOrder) }
+        if let frameShootOrder = frame.frameShootOrder { tokens.append(frameShootOrder) }
+        if let frameStartTime = frame.formattedStartTime ?? frame.frameStartTime { tokens.append(frameStartTime) }
+
+        if let tags = frame.tags {
+            tokens.append(contentsOf: tags.map { $0.name })
+        }
+
+        if let boards = frame.boards {
+            tokens.append(contentsOf: boards.compactMap { $0.label })
+            tokens.append(contentsOf: boards.compactMap { $0.order.map(String.init) })
+        }
+
+        return tokens
     }
 
     private func mockFrames(for creative: Creative) -> [Frame] {
@@ -1150,6 +1195,12 @@ struct MainView: View {
                         .padding(.vertical)
                         .padding(.bottom, 0)
                     }
+                    .searchable(
+                        text: $gridQuickFilterText,
+                        placement: .navigationBarDrawer(displayMode: .always),
+                        prompt: "Filter boards"
+                    )
+                    .searchFocused($isGridQuickFilterFocused)
                     .simultaneousGesture(
                         MagnificationGesture()
                             .onChanged { value in
