@@ -1334,6 +1334,14 @@ struct MainView: View {
                 ZStack(alignment: .top) {
                     ScrollView {
                         LazyVStack(spacing: 50) {
+                            GeometryReader { geo in
+                                Color.clear
+                                    .preference(
+                                        key: GridScrollOffsetPreferenceKey.self,
+                                        value: geo.frame(in: .named("gridScroll")).minY
+                                    )
+                            }
+                            .frame(height: 0)
                             ForEach(gridSections) { section in
                                 VStack(alignment: .leading, spacing: 12) {
                                     CreativeGridSection(
@@ -1370,15 +1378,6 @@ struct MainView: View {
                         }
                         .padding(.vertical)
                         .padding(.bottom, 0)
-                        .background(
-                            GeometryReader { geo in
-                                Color.clear
-                                    .preference(
-                                        key: GridScrollOffsetPreferenceKey.self,
-                                        value: geo.frame(in: .global).minY
-                                    )
-                            }
-                        )
                     }
                     .onChange(of: isGridQuickFilterFocused) { isFocused in
                         hasTriggeredGridSearchPull = isFocused
@@ -1401,8 +1400,7 @@ struct MainView: View {
                     )
                     .coordinateSpace(name: "gridScroll")
                     .onPreferenceChange(GridScrollOffsetPreferenceKey.self) { offset in
-                        let containerTop = outerGeo.frame(in: .global).minY
-                        let pullOffset = max(offset - containerTop, 0)
+                        let pullOffset = max(offset, 0)
                         gridPullOffset = pullOffset
                         guard pullOffset > GridSearchConstants.pullThreshold else { return }
                         guard !hasTriggeredGridSearchPull else { return }
@@ -1412,6 +1410,7 @@ struct MainView: View {
                     }
                     .overlay(alignment: .top) {
                         gridSearchPullOverlay
+                            .allowsHitTesting(false)
                     }
                     .onAppear { gridScrollProxy = proxy }
                     .onPreferenceChange(VisibleFramePreferenceKey.self) { ids in
