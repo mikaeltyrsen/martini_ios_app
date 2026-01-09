@@ -1026,6 +1026,9 @@ struct MainView: View {
                 Image(systemName: "magnifyingglass")
             }
             .accessibilityLabel("Search boards")
+            .scaleEffect(isGridSearchPresented ? 0.85 : 1.0)
+            .opacity(isGridSearchPresented ? 0 : 1)
+            .animation(.spring(response: 0.2, dampingFraction: 0.85), value: isGridSearchPresented)
 
             Spacer()
 
