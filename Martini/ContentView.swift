@@ -259,6 +259,7 @@ struct MainView: View {
     @FocusState private var isGridQuickFilterFocused: Bool
     @State private var gridPullOffset: CGFloat = 0
     @State private var hasTriggeredGridSearchPull = false
+    @State private var isGridSearchBarVisible = false
 
     enum ViewMode {
         case list
@@ -274,6 +275,9 @@ struct MainView: View {
         static let pullThreshold: CGFloat = 72
         static let iconSize: CGFloat = 34
         static let iconPadding: CGFloat = 12
+        static let searchBarHorizontalPadding: CGFloat = 16
+        static let searchBarVerticalPadding: CGFloat = 8
+        static let searchBarCornerRadius: CGFloat = 16
     }
 
     enum ScheduleRoute: Hashable {
@@ -1376,15 +1380,10 @@ struct MainView: View {
                             }
                         )
                     }
-                    .searchable(
-                        text: $gridQuickFilterText,
-                        placement: .navigationBarDrawer(displayMode: .automatic),
-                        prompt: "Filter boards"
-                    )
-                    .searchFocused($isGridQuickFilterFocused)
                     .onChange(of: isGridQuickFilterFocused) { isFocused in
-                        if !isFocused {
-                            hasTriggeredGridSearchPull = false
+                        hasTriggeredGridSearchPull = isFocused
+                        if !isFocused, gridQuickFilterText.isEmpty {
+                            isGridSearchBarVisible = false
                         }
                     }
                     .simultaneousGesture(
@@ -1406,10 +1405,11 @@ struct MainView: View {
                         guard offset > GridSearchConstants.pullThreshold else { return }
                         guard !hasTriggeredGridSearchPull else { return }
                         hasTriggeredGridSearchPull = true
+                        isGridSearchBarVisible = true
                         isGridQuickFilterFocused = true
                     }
                     .overlay(alignment: .top) {
-                        gridSearchPullIndicator
+                        gridSearchPullOverlay
                     }
                     .onAppear { gridScrollProxy = proxy }
                     .onPreferenceChange(VisibleFramePreferenceKey.self) { ids in
@@ -1488,12 +1488,12 @@ struct MainView: View {
         gridSizeStep = min(max(newValue, 1), 4)
     }
 
-    private var gridSearchPullIndicator: some View {
+    private var gridSearchPullOverlay: some View {
         let progress = min(gridPullOffset / GridSearchConstants.pullThreshold, 1)
-        let shouldShow = gridPullOffset > 0 && !isGridQuickFilterFocused
+        let shouldShowIcon = gridPullOffset > 0 && !isGridSearchBarVisible
 
-        return Group {
-            if shouldShow {
+        return ZStack(alignment: .top) {
+            if shouldShowIcon {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.primary)
@@ -1505,7 +1505,43 @@ struct MainView: View {
                     .padding(.top, 6)
                     .transition(.opacity)
             }
+
+            if isGridSearchBarVisible {
+                gridSearchBar
+                    .padding(.top, 6)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
         }
+    }
+
+    private var gridSearchBar: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .foregroundColor(.secondary)
+
+            TextField("Filter boards", text: $gridQuickFilterText)
+                .focused($isGridQuickFilterFocused)
+                .textInputAutocapitalization(.never)
+                .disableAutocorrection(true)
+
+            if !gridQuickFilterText.isEmpty {
+                Button(action: {
+                    gridQuickFilterText = ""
+                    if !isGridQuickFilterFocused {
+                        isGridSearchBarVisible = false
+                    }
+                }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, GridSearchConstants.searchBarHorizontalPadding)
+        .padding(.vertical, GridSearchConstants.searchBarVerticalPadding)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: GridSearchConstants.searchBarCornerRadius))
+        .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: GridSearchConstants.searchBarCornerRadius))
+        .padding(.horizontal)
     }
 
     private func synchronizeCreativeSelection() {
