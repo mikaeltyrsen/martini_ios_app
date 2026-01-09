@@ -257,6 +257,8 @@ struct MainView: View {
     @State private var gridUpdatingFrameIds: Set<String> = []
     @State private var gridQuickFilterText = ""
     @FocusState private var isGridQuickFilterFocused: Bool
+    @State private var gridPullOffset: CGFloat = 0
+    @State private var hasTriggeredGridSearchPull = false
 
     enum ViewMode {
         case list
@@ -266,6 +268,12 @@ struct MainView: View {
     enum FrameSortMode {
         case story
         case shoot
+    }
+
+    private enum GridSearchConstants {
+        static let pullThreshold: CGFloat = 72
+        static let iconSize: CGFloat = 34
+        static let iconPadding: CGFloat = 12
     }
 
     enum ScheduleRoute: Hashable {
@@ -1358,6 +1366,15 @@ struct MainView: View {
                         }
                         .padding(.vertical)
                         .padding(.bottom, 0)
+                        .background(
+                            GeometryReader { geo in
+                                Color.clear
+                                    .preference(
+                                        key: GridScrollOffsetPreferenceKey.self,
+                                        value: geo.frame(in: .named("gridScroll")).minY
+                                    )
+                            }
+                        )
                     }
                     .searchable(
                         text: $gridQuickFilterText,
@@ -1365,6 +1382,11 @@ struct MainView: View {
                         prompt: "Filter boards"
                     )
                     .searchFocused($isGridQuickFilterFocused)
+                    .onChange(of: isGridQuickFilterFocused) { isFocused in
+                        if !isFocused {
+                            hasTriggeredGridSearchPull = false
+                        }
+                    }
                     .simultaneousGesture(
                         MagnificationGesture()
                             .onChanged { value in
@@ -1379,6 +1401,16 @@ struct MainView: View {
                             }
                     )
                     .coordinateSpace(name: "gridScroll")
+                    .onPreferenceChange(GridScrollOffsetPreferenceKey.self) { offset in
+                        gridPullOffset = max(offset, 0)
+                        guard offset > GridSearchConstants.pullThreshold else { return }
+                        guard !hasTriggeredGridSearchPull else { return }
+                        hasTriggeredGridSearchPull = true
+                        isGridQuickFilterFocused = true
+                    }
+                    .overlay(alignment: .top) {
+                        gridSearchPullIndicator
+                    }
                     .onAppear { gridScrollProxy = proxy }
                     .onPreferenceChange(VisibleFramePreferenceKey.self) { ids in
                         // Defer state updates to avoid mutating view state during the render pass while scrolling
@@ -1454,6 +1486,26 @@ struct MainView: View {
     private func adjustGridSize(increase: Bool) {
         let newValue = gridSizeStep + (increase ? 1 : -1)
         gridSizeStep = min(max(newValue, 1), 4)
+    }
+
+    private var gridSearchPullIndicator: some View {
+        let progress = min(gridPullOffset / GridSearchConstants.pullThreshold, 1)
+        let shouldShow = gridPullOffset > 0 && !isGridQuickFilterFocused
+
+        return Group {
+            if shouldShow {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.primary)
+                    .padding(GridSearchConstants.iconPadding)
+                    .background(.ultraThinMaterial, in: Circle())
+                    .glassEffect(.regular.interactive(), in: Circle())
+                    .scaleEffect(0.85 + (0.15 * progress))
+                    .opacity(progress)
+                    .padding(.top, 6)
+                    .transition(.opacity)
+            }
+        }
     }
 
     private func synchronizeCreativeSelection() {
@@ -2712,6 +2764,14 @@ private struct VisibleFramePreferenceKey: PreferenceKey {
 
     static func reduce(value: inout Set<String>, nextValue: () -> Set<String>) {
         value.formUnion(nextValue())
+    }
+}
+
+private struct GridScrollOffsetPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }
 
