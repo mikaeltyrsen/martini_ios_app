@@ -1375,7 +1375,7 @@ struct MainView: View {
                                 Color.clear
                                     .preference(
                                         key: GridScrollOffsetPreferenceKey.self,
-                                        value: geo.frame(in: .named("gridScroll")).minY
+                                        value: geo.frame(in: .global).minY
                                     )
                             }
                         )
@@ -1401,8 +1401,10 @@ struct MainView: View {
                     )
                     .coordinateSpace(name: "gridScroll")
                     .onPreferenceChange(GridScrollOffsetPreferenceKey.self) { offset in
-                        gridPullOffset = max(offset, 0)
-                        guard offset > GridSearchConstants.pullThreshold else { return }
+                        let containerTop = outerGeo.frame(in: .global).minY
+                        let pullOffset = max(offset - containerTop, 0)
+                        gridPullOffset = pullOffset
+                        guard pullOffset > GridSearchConstants.pullThreshold else { return }
                         guard !hasTriggeredGridSearchPull else { return }
                         hasTriggeredGridSearchPull = true
                         isGridSearchBarVisible = true
