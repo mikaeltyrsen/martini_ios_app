@@ -992,7 +992,11 @@ struct MainView: View {
         }
 
         ToolbarItem(placement: .navigationBarLeading) {
-            filterButton
+            if isGridSearchPresented {
+                EmptyView()
+            } else {
+                filterButton
+            }
         }
 
         ToolbarItemGroup(placement: .bottomBar) {
