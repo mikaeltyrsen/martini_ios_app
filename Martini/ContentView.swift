@@ -388,6 +388,29 @@ struct MainView: View {
     private var isGridQuickFilterActive: Bool {
         !gridQuickFilterQuery.isEmpty
     }
+
+    private var dataErrorAlertBinding: Binding<Bool> {
+        Binding(
+            get: { dataError != nil },
+            set: { newValue in
+                if !newValue {
+                    dataError = nil
+                }
+            }
+        )
+    }
+
+    private var isFrameDetailPresented: Binding<Bool> {
+        Binding(
+            get: { selectedFrameId != nil },
+            set: { isPresented in
+                if !isPresented {
+                    selectedFrameId = nil
+                    selectedFrame = nil
+                }
+            }
+        )
+    }
     
     private var navigationProgress: ProgressCounts {
         guard frameSortMode == .story, !isScrolledToTop else { return overallProgress }
@@ -610,14 +633,7 @@ struct MainView: View {
                 }
                 .alert(
                     "Data Load Error",
-                    isPresented: Binding(
-                        get: { dataError != nil },
-                        set: { newValue in
-                            if !newValue {
-                                dataError = nil
-                            }
-                        }
-                    )
+                    isPresented: dataErrorAlertBinding
                 ) {
                     Button("OK") {
                         dataError = nil
@@ -640,15 +656,7 @@ struct MainView: View {
                     )
                 }
                 .fullScreenCover(
-                    isPresented: Binding(
-                        get: { selectedFrameId != nil },
-                        set: { isPresented in
-                            if !isPresented {
-                                selectedFrameId = nil
-                                selectedFrame = nil
-                            }
-                        }
-                    )
+                    isPresented: isFrameDetailPresented
                 ) {
                     NavigationStack {
                         let pagerFrames = displayedFramesInCurrentMode
