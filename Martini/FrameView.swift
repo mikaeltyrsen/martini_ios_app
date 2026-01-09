@@ -1369,7 +1369,7 @@ struct FrameView: View {
                                 } label: {
                                     Image(systemName: "checkmark")
                                         .font(.system(size: 14, weight: .semibold))
-                                        .foregroundStyle(Color.white)
+                                        .foregroundStyle(Color.martiniDefaultTextColor)
                                         .padding(10)
                                         .background(
                                             Capsule()
