@@ -638,64 +638,26 @@ struct MainView: View {
 
     private var navigationContentWithAlerts: some View {
         navigationContentBase
-            .alert(
-                "Data Load Error",
-                isPresented: dataErrorAlertBinding
-            ) {
-                Button("OK") {
-                    dataError = nil
-                }
-            } message: {
-                Text(dataError ?? "Unknown error")
-            }
-            .overlay {
-                MartiniAlertModal(
-                    isPresented: $showingNoConnectionModal,
-                    iconName: "wifi.exclamationmark",
-                    iconColor: .red,
-                    title: "No Connection",
-                    message: "Martini can’t reach the server at the moment. You can keep working—markings are saved locally.\nOnce connection is restored, we’ll automatically push your updates and sync across all devices.",
-                    actions: [
-                        MartiniAlertAction(title: "CONTINUE OFFLINE", style: .primary) {
-                            showingNoConnectionModal = false
-                        }
-                    ]
+            .modifier(
+                NavigationContentAlertsModifier(
+                    isPresented: dataErrorAlertBinding,
+                    dataError: $dataError,
+                    showingNoConnectionModal: $showingNoConnectionModal
                 )
-            }
+            )
     }
 
     private var navigationContentWithSheets: some View {
         navigationContentWithAlerts
-            .fullScreenCover(
-                isPresented: isFrameDetailPresented
-            ) {
-                NavigationStack {
-                    let pagerFrames = displayedFramesInCurrentMode
-                    if let initialFrameId = selectedFrameId ?? selectedFrame?.id ?? pagerFrames.first?.id {
-                        FramePagerView(
-                            frames: pagerFrames,
-                            initialFrameID: initialFrameId,
-                            assetOrderBinding: { assetOrderBinding(for: $0) },
-                            onClose: {
-                                selectedFrameId = nil
-                                selectedFrame = nil
-                            },
-                            onStatusSelected: { updatedFrame, _ in
-                                applyLocalStatusUpdate(updatedFrame)
-                            },
-                            onSelectionChanged: { frameId in
-                                selectedFrameId = frameId
-                                if let match = pagerFrames.first(where: { $0.id == frameId }) {
-                                    selectedFrame = match
-                                }
-                            }
-                        )
-                    }
-                }
-                .interactiveDismissDisabled(false)
-            }
-            .sheet(isPresented: $isShowingSettings) {
-                SettingsView(
+            .modifier(
+                NavigationContentSheetsModifier(
+                    isFrameDetailPresented: isFrameDetailPresented,
+                    selectedFrameId: $selectedFrameId,
+                    selectedFrame: $selectedFrame,
+                    displayedFramesInCurrentMode: displayedFramesInCurrentMode,
+                    assetOrderBinding: { assetOrderBinding(for: $0) },
+                    applyLocalStatusUpdate: applyLocalStatusUpdate,
+                    isShowingSettings: $isShowingSettings,
                     showDescriptions: $showDescriptions,
                     showFullDescriptions: $showFullDescriptions,
                     showGridTags: $showGridTags,
@@ -705,71 +667,229 @@ struct MainView: View {
                     doneCrossLineWidth: $doneCrossLineWidth,
                     showDoneCrosses: $showDoneCrosses
                 )
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
-                .interactiveDismissDisabled(false)
-            }
+            )
     }
 
     private var navigationContentWithHandlers: some View {
         navigationContentWithSheets
-            .onAppear(perform: synchronizeCreativeSelection)
-            .onAppear(perform: loadStoredFiltersIfNeeded)
-            .onChange(of: creativesToDisplay.count) { _ in
-                synchronizeCreativeSelection()
-            }
-            .onChange(of: selectedCreativeIds) { _ in
-                synchronizeCreativeSelection()
-            }
-            .onChange(of: selectedCreativeIds) { _ in
-                persistFilters()
-            }
-            .onChange(of: selectedTagIds) { _ in
-                persistFilters()
-            }
-            .onChange(of: frameSortMode) { _ in
-                scrollToPriorityFrame()
-            }
-            .onChange(of: authService.frameUpdateEvent) { event in
-                guard let event else { return }
-                handleFrameUpdateEvent(event)
-            }
-            .onChange(of: authService.frames) { _ in
-                pruneFilterSelectionsIfNeeded()
-            }
-            .onChange(of: authService.creatives) { _ in
-                pruneFilterSelectionsIfNeeded()
-            }
-            .onChange(of: authService.scheduleUpdateEvent) { event in
-                guard let event else { return }
-                handleScheduleUpdateEvent(event)
-            }
-            .onChange(of: connectionMonitor.status) { newStatus in
-                if newStatus == .online || newStatus == .backOnline {
-                    hasShownOfflineModal = false
-                }
-            }
+            .modifier(
+                NavigationContentHandlersModifier(
+                    creativesToDisplayCount: creativesToDisplay.count,
+                    selectedCreativeIds: selectedCreativeIds,
+                    selectedTagIds: selectedTagIds,
+                    frameSortMode: frameSortMode,
+                    frameUpdateEvent: authService.frameUpdateEvent,
+                    frames: authService.frames,
+                    creatives: authService.creatives,
+                    scheduleUpdateEvent: authService.scheduleUpdateEvent,
+                    connectionStatus: connectionMonitor.status,
+                    synchronizeCreativeSelection: synchronizeCreativeSelection,
+                    loadStoredFiltersIfNeeded: loadStoredFiltersIfNeeded,
+                    persistFilters: persistFilters,
+                    scrollToPriorityFrame: scrollToPriorityFrame,
+                    handleFrameUpdateEvent: handleFrameUpdateEvent,
+                    pruneFilterSelectionsIfNeeded: pruneFilterSelectionsIfNeeded,
+                    handleScheduleUpdateEvent: handleScheduleUpdateEvent,
+                    updateOfflineModalState: { newStatus in
+                        if newStatus == .online || newStatus == .backOnline {
+                            hasShownOfflineModal = false
+                        }
+                    }
+                )
+            )
     }
 
     private var navigationContentWithNavigation: some View {
         navigationContentWithHandlers
-            .navigationDestination(for: ScheduleRoute.self) { route in
-                switch route {
-                case .list(let schedule):
-                    SchedulesView(schedule: schedule) { item in
-                        navigationPath.append(ScheduleRoute.detail(schedule, item))
-                    }
-                case .detail(let schedule, let item):
-                    ScheduleView(schedule: schedule, item: item) { selectedItem in
-                        applyManualScheduleSelection(selectedItem, schedule: schedule)
-                    }
-                }
-            }
+            .modifier(
+                NavigationContentNavigationModifier(
+                    navigationPath: $navigationPath,
+                    applyManualScheduleSelection: applyManualScheduleSelection
+                )
+            )
     }
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
             navigationContent
+        }
+    }
+
+    private struct NavigationContentAlertsModifier: ViewModifier {
+        let isPresented: Binding<Bool>
+        @Binding var dataError: String?
+        @Binding var showingNoConnectionModal: Bool
+
+        func body(content: Content) -> some View {
+            content
+                .alert(
+                    "Data Load Error",
+                    isPresented: isPresented
+                ) {
+                    Button("OK") {
+                        dataError = nil
+                    }
+                } message: {
+                    Text(dataError ?? "Unknown error")
+                }
+                .overlay {
+                    MartiniAlertModal(
+                        isPresented: $showingNoConnectionModal,
+                        iconName: "wifi.exclamationmark",
+                        iconColor: .red,
+                        title: "No Connection",
+                        message: "Martini can’t reach the server at the moment. You can keep working—markings are saved locally.\nOnce connection is restored, we’ll automatically push your updates and sync across all devices.",
+                        actions: [
+                            MartiniAlertAction(title: "CONTINUE OFFLINE", style: .primary) {
+                                showingNoConnectionModal = false
+                            }
+                        ]
+                    )
+                }
+        }
+    }
+
+    private struct NavigationContentSheetsModifier: ViewModifier {
+        let isFrameDetailPresented: Binding<Bool>
+        @Binding var selectedFrameId: String?
+        @Binding var selectedFrame: Frame?
+        let displayedFramesInCurrentMode: [Frame]
+        let assetOrderBinding: (Frame) -> Binding<[FrameAssetKind]>
+        let applyLocalStatusUpdate: (Frame) -> Void
+        @Binding var isShowingSettings: Bool
+        @Binding var showDescriptions: Bool
+        @Binding var showFullDescriptions: Bool
+        @Binding var showGridTags: Bool
+        @Binding var gridSizeStep: Int
+        @Binding var gridFontStep: Int
+        let gridPriority: Binding<FrameAssetKind>
+        @Binding var doneCrossLineWidth: Double
+        @Binding var showDoneCrosses: Bool
+
+        func body(content: Content) -> some View {
+            content
+                .fullScreenCover(
+                    isPresented: isFrameDetailPresented
+                ) {
+                    NavigationStack {
+                        let pagerFrames = displayedFramesInCurrentMode
+                        if let initialFrameId = selectedFrameId ?? selectedFrame?.id ?? pagerFrames.first?.id {
+                            FramePagerView(
+                                frames: pagerFrames,
+                                initialFrameID: initialFrameId,
+                                assetOrderBinding: { assetOrderBinding($0) },
+                                onClose: {
+                                    selectedFrameId = nil
+                                    selectedFrame = nil
+                                },
+                                onStatusSelected: { updatedFrame, _ in
+                                    applyLocalStatusUpdate(updatedFrame)
+                                },
+                                onSelectionChanged: { frameId in
+                                    selectedFrameId = frameId
+                                    if let match = pagerFrames.first(where: { $0.id == frameId }) {
+                                        selectedFrame = match
+                                    }
+                                }
+                            )
+                        }
+                    }
+                    .interactiveDismissDisabled(false)
+                }
+                .sheet(isPresented: $isShowingSettings) {
+                    SettingsView(
+                        showDescriptions: $showDescriptions,
+                        showFullDescriptions: $showFullDescriptions,
+                        showGridTags: $showGridTags,
+                        gridSizeStep: $gridSizeStep,
+                        gridFontStep: $gridFontStep,
+                        gridPriority: gridPriority,
+                        doneCrossLineWidth: $doneCrossLineWidth,
+                        showDoneCrosses: $showDoneCrosses
+                    )
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+                    .interactiveDismissDisabled(false)
+                }
+        }
+    }
+
+    private struct NavigationContentHandlersModifier: ViewModifier {
+        let creativesToDisplayCount: Int
+        let selectedCreativeIds: Set<String>
+        let selectedTagIds: Set<String>
+        let frameSortMode: FrameSortMode
+        let frameUpdateEvent: FrameUpdateEvent?
+        let frames: [Frame]
+        let creatives: [Creative]
+        let scheduleUpdateEvent: ScheduleUpdateEvent?
+        let connectionStatus: ConnectionStatus
+        let synchronizeCreativeSelection: () -> Void
+        let loadStoredFiltersIfNeeded: () -> Void
+        let persistFilters: () -> Void
+        let scrollToPriorityFrame: () -> Void
+        let handleFrameUpdateEvent: (FrameUpdateEvent) -> Void
+        let pruneFilterSelectionsIfNeeded: () -> Void
+        let handleScheduleUpdateEvent: (ScheduleUpdateEvent) -> Void
+        let updateOfflineModalState: (ConnectionStatus) -> Void
+
+        func body(content: Content) -> some View {
+            content
+                .onAppear(perform: synchronizeCreativeSelection)
+                .onAppear(perform: loadStoredFiltersIfNeeded)
+                .onChange(of: creativesToDisplayCount) { _ in
+                    synchronizeCreativeSelection()
+                }
+                .onChange(of: selectedCreativeIds) { _ in
+                    synchronizeCreativeSelection()
+                }
+                .onChange(of: selectedCreativeIds) { _ in
+                    persistFilters()
+                }
+                .onChange(of: selectedTagIds) { _ in
+                    persistFilters()
+                }
+                .onChange(of: frameSortMode) { _ in
+                    scrollToPriorityFrame()
+                }
+                .onChange(of: frameUpdateEvent) { event in
+                    guard let event else { return }
+                    handleFrameUpdateEvent(event)
+                }
+                .onChange(of: frames) { _ in
+                    pruneFilterSelectionsIfNeeded()
+                }
+                .onChange(of: creatives) { _ in
+                    pruneFilterSelectionsIfNeeded()
+                }
+                .onChange(of: scheduleUpdateEvent) { event in
+                    guard let event else { return }
+                    handleScheduleUpdateEvent(event)
+                }
+                .onChange(of: connectionStatus) { newStatus in
+                    updateOfflineModalState(newStatus)
+                }
+        }
+    }
+
+    private struct NavigationContentNavigationModifier: ViewModifier {
+        @Binding var navigationPath: [ScheduleRoute]
+        let applyManualScheduleSelection: (ProjectScheduleItem, ProjectSchedule) -> Void
+
+        func body(content: Content) -> some View {
+            content
+                .navigationDestination(for: ScheduleRoute.self) { route in
+                    switch route {
+                    case .list(let schedule):
+                        SchedulesView(schedule: schedule) { item in
+                            navigationPath.append(ScheduleRoute.detail(schedule, item))
+                        }
+                    case .detail(let schedule, let item):
+                        ScheduleView(schedule: schedule, item: item) { selectedItem in
+                            applyManualScheduleSelection(selectedItem, schedule: schedule)
+                        }
+                    }
+                }
         }
     }
 
