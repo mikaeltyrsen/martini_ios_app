@@ -256,6 +256,7 @@ struct MainView: View {
     @State private var isGridPinching: Bool = false
     @State private var gridUpdatingFrameIds: Set<String> = []
     @State private var gridQuickFilterText = ""
+    @FocusState private var isGridQuickFilterFocused: Bool
 
     enum ViewMode {
         case list
@@ -990,10 +991,18 @@ struct MainView: View {
         }
 
         ToolbarItem(placement: .navigationBarLeading) {
-            filterButton
+            Button {
+                isGridQuickFilterFocused = true
+            } label: {
+                Image(systemName: "magnifyingglass")
+            }
+            .accessibilityLabel("Search boards")
         }
 
         ToolbarItemGroup(placement: .bottomBar) {
+            filterButton
+
+            Spacer()
 
             Button(action: {
                 withAnimation(.easeInOut(duration: 0.12)) {
@@ -1427,6 +1436,7 @@ struct MainView: View {
             placement: .navigationBarDrawer(displayMode: .always),
             prompt: "Filter boards"
         )
+        .searchFocused($isGridQuickFilterFocused)
     }
 
     private var currentCreativeTitle: String {
