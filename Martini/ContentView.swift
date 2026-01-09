@@ -620,132 +620,136 @@ struct MainView: View {
         }
     }
 
+    private var navigationContent: some View {
+        mainContent
+            //.navigationTitle(displayedNavigationTitle)
+            .toolbar { toolbarContent }
+            .navigationBarTitleDisplayMode(.inline)
+            .task {
+                await loadProjectDetailsIfNeeded()
+                await loadCreativesIfNeeded()
+                await loadFramesIfNeeded()
+            }
+            .alert(
+                "Data Load Error",
+                isPresented: dataErrorAlertBinding
+            ) {
+                Button("OK") {
+                    dataError = nil
+                }
+            } message: {
+                Text(dataError ?? "Unknown error")
+            }
+            .overlay {
+                MartiniAlertModal(
+                    isPresented: $showingNoConnectionModal,
+                    iconName: "wifi.exclamationmark",
+                    iconColor: .red,
+                    title: "No Connection",
+                    message: "Martini can’t reach the server at the moment. You can keep working—markings are saved locally.\nOnce connection is restored, we’ll automatically push your updates and sync across all devices.",
+                    actions: [
+                        MartiniAlertAction(title: "CONTINUE OFFLINE", style: .primary) {
+                            showingNoConnectionModal = false
+                        }
+                    ]
+                )
+            }
+            .fullScreenCover(
+                isPresented: isFrameDetailPresented
+            ) {
+                NavigationStack {
+                    let pagerFrames = displayedFramesInCurrentMode
+                    if let initialFrameId = selectedFrameId ?? selectedFrame?.id ?? pagerFrames.first?.id {
+                        FramePagerView(
+                            frames: pagerFrames,
+                            initialFrameID: initialFrameId,
+                            assetOrderBinding: { assetOrderBinding(for: $0) },
+                            onClose: {
+                                selectedFrameId = nil
+                                selectedFrame = nil
+                            },
+                            onStatusSelected: { updatedFrame, _ in
+                                applyLocalStatusUpdate(updatedFrame)
+                            },
+                            onSelectionChanged: { frameId in
+                                selectedFrameId = frameId
+                                if let match = pagerFrames.first(where: { $0.id == frameId }) {
+                                    selectedFrame = match
+                                }
+                            }
+                        )
+                    }
+                }
+                .interactiveDismissDisabled(false)
+            }
+            .sheet(isPresented: $isShowingSettings) {
+                SettingsView(
+                    showDescriptions: $showDescriptions,
+                    showFullDescriptions: $showFullDescriptions,
+                    showGridTags: $showGridTags,
+                    gridSizeStep: $gridSizeStep,
+                    gridFontStep: $gridFontStep,
+                    gridPriority: gridAssetPriorityBinding,
+                    doneCrossLineWidth: $doneCrossLineWidth,
+                    showDoneCrosses: $showDoneCrosses
+                )
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+                .interactiveDismissDisabled(false)
+            }
+            .onAppear(perform: synchronizeCreativeSelection)
+            .onAppear(perform: loadStoredFiltersIfNeeded)
+            .onChange(of: creativesToDisplay.count) { _ in
+                synchronizeCreativeSelection()
+            }
+            .onChange(of: selectedCreativeIds) { _ in
+                synchronizeCreativeSelection()
+            }
+            .onChange(of: selectedCreativeIds) { _ in
+                persistFilters()
+            }
+            .onChange(of: selectedTagIds) { _ in
+                persistFilters()
+            }
+            .onChange(of: frameSortMode) { _ in
+                scrollToPriorityFrame()
+            }
+            .onChange(of: authService.frameUpdateEvent) { event in
+                guard let event else { return }
+                handleFrameUpdateEvent(event)
+            }
+            .onChange(of: authService.frames) { _ in
+                pruneFilterSelectionsIfNeeded()
+            }
+            .onChange(of: authService.creatives) { _ in
+                pruneFilterSelectionsIfNeeded()
+            }
+            .onChange(of: authService.scheduleUpdateEvent) { event in
+                guard let event else { return }
+                handleScheduleUpdateEvent(event)
+            }
+            .onChange(of: connectionMonitor.status) { newStatus in
+                if newStatus == .online || newStatus == .backOnline {
+                    hasShownOfflineModal = false
+                }
+            }
+            .navigationDestination(for: ScheduleRoute.self) { route in
+                switch route {
+                case .list(let schedule):
+                    SchedulesView(schedule: schedule) { item in
+                        navigationPath.append(ScheduleRoute.detail(schedule, item))
+                    }
+                case .detail(let schedule, let item):
+                    ScheduleView(schedule: schedule, item: item) { selectedItem in
+                        applyManualScheduleSelection(selectedItem, schedule: schedule)
+                    }
+                }
+            }
+    }
+
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            mainContent
-                //.navigationTitle(displayedNavigationTitle)
-                .toolbar { toolbarContent }
-                .navigationBarTitleDisplayMode(.inline)
-                .task {
-                    await loadProjectDetailsIfNeeded()
-                    await loadCreativesIfNeeded()
-                    await loadFramesIfNeeded()
-                }
-                .alert(
-                    "Data Load Error",
-                    isPresented: dataErrorAlertBinding
-                ) {
-                    Button("OK") {
-                        dataError = nil
-                    }
-                } message: {
-                    Text(dataError ?? "Unknown error")
-                }
-                .overlay {
-                    MartiniAlertModal(
-                        isPresented: $showingNoConnectionModal,
-                        iconName: "wifi.exclamationmark",
-                        iconColor: .red,
-                        title: "No Connection",
-                        message: "Martini can’t reach the server at the moment. You can keep working—markings are saved locally.\nOnce connection is restored, we’ll automatically push your updates and sync across all devices.",
-                        actions: [
-                            MartiniAlertAction(title: "CONTINUE OFFLINE", style: .primary) {
-                                showingNoConnectionModal = false
-                            }
-                        ]
-                    )
-                }
-                .fullScreenCover(
-                    isPresented: isFrameDetailPresented
-                ) {
-                    NavigationStack {
-                        let pagerFrames = displayedFramesInCurrentMode
-                        if let initialFrameId = selectedFrameId ?? selectedFrame?.id ?? pagerFrames.first?.id {
-                            FramePagerView(
-                                frames: pagerFrames,
-                                initialFrameID: initialFrameId,
-                                assetOrderBinding: { assetOrderBinding(for: $0) },
-                                onClose: {
-                                    selectedFrameId = nil
-                                    selectedFrame = nil
-                                },
-                                onStatusSelected: { updatedFrame, _ in
-                                    applyLocalStatusUpdate(updatedFrame)
-                                },
-                                onSelectionChanged: { frameId in
-                                    selectedFrameId = frameId
-                                    if let match = pagerFrames.first(where: { $0.id == frameId }) {
-                                        selectedFrame = match
-                                    }
-                                }
-                            )
-                        }
-                    }
-                    .interactiveDismissDisabled(false)
-                }
-                .sheet(isPresented: $isShowingSettings) {
-                    SettingsView(
-                        showDescriptions: $showDescriptions,
-                        showFullDescriptions: $showFullDescriptions,
-                        showGridTags: $showGridTags,
-                        gridSizeStep: $gridSizeStep,
-                        gridFontStep: $gridFontStep,
-                        gridPriority: gridAssetPriorityBinding,
-                        doneCrossLineWidth: $doneCrossLineWidth,
-                        showDoneCrosses: $showDoneCrosses
-                    )
-                    .presentationDetents([.large])
-                    .presentationDragIndicator(.visible)
-                    .interactiveDismissDisabled(false)
-                }
-                .onAppear(perform: synchronizeCreativeSelection)
-                .onAppear(perform: loadStoredFiltersIfNeeded)
-                .onChange(of: creativesToDisplay.count) { _ in
-                    synchronizeCreativeSelection()
-                }
-                .onChange(of: selectedCreativeIds) { _ in
-                    synchronizeCreativeSelection()
-                }
-                .onChange(of: selectedCreativeIds) { _ in
-                    persistFilters()
-                }
-                .onChange(of: selectedTagIds) { _ in
-                    persistFilters()
-                }
-                .onChange(of: frameSortMode) { _ in
-                    scrollToPriorityFrame()
-                }
-                .onChange(of: authService.frameUpdateEvent) { event in
-                    guard let event else { return }
-                    handleFrameUpdateEvent(event)
-                }
-                .onChange(of: authService.frames) { _ in
-                    pruneFilterSelectionsIfNeeded()
-                }
-                .onChange(of: authService.creatives) { _ in
-                    pruneFilterSelectionsIfNeeded()
-                }
-                .onChange(of: authService.scheduleUpdateEvent) { event in
-                    guard let event else { return }
-                    handleScheduleUpdateEvent(event)
-                }
-                .onChange(of: connectionMonitor.status) { newStatus in
-                    if newStatus == .online || newStatus == .backOnline {
-                        hasShownOfflineModal = false
-                    }
-                }
-                .navigationDestination(for: ScheduleRoute.self) { route in
-                    switch route {
-                    case .list(let schedule):
-                        SchedulesView(schedule: schedule) { item in
-                            navigationPath.append(ScheduleRoute.detail(schedule, item))
-                        }
-                    case .detail(let schedule, let item):
-                        ScheduleView(schedule: schedule, item: item) { selectedItem in
-                            applyManualScheduleSelection(selectedItem, schedule: schedule)
-                        }
-                    }
-                }
+            navigationContent
         }
     }
 
