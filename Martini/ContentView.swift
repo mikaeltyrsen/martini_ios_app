@@ -823,7 +823,7 @@ struct MainView: View {
         let frames: [Frame]
         let creatives: [Creative]
         let scheduleUpdateEvent: ScheduleUpdateEvent?
-        let connectionStatus: ConnectionStatus
+        let connectionStatus: ConnectionMonitor.Status
         let synchronizeCreativeSelection: () -> Void
         let loadStoredFiltersIfNeeded: () -> Void
         let persistFilters: () -> Void
@@ -831,7 +831,7 @@ struct MainView: View {
         let handleFrameUpdateEvent: (FrameUpdateEvent) -> Void
         let pruneFilterSelectionsIfNeeded: () -> Void
         let handleScheduleUpdateEvent: (ScheduleUpdateEvent) -> Void
-        let updateOfflineModalState: (ConnectionStatus) -> Void
+        let updateOfflineModalState: (ConnectionMonitor.Status) -> Void
 
         func body(content: Content) -> some View {
             content
