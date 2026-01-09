@@ -584,7 +584,17 @@ struct MainView: View {
     }
 
     private var mainContentWithStateUpdates: some View {
-        mainContentWithSheets
+        withRemoteUpdates(
+            withFrameSorting(
+                withFilterPersistence(
+                    withSelectionSync(mainContentWithSheets)
+                )
+            )
+        )
+    }
+
+    private func withSelectionSync<Content: View>(_ content: Content) -> some View {
+        content
             .onAppear(perform: synchronizeCreativeSelection)
             .onAppear(perform: loadStoredFiltersIfNeeded)
             .onChange(of: creativesToDisplay.count) { _ in
@@ -593,15 +603,27 @@ struct MainView: View {
             .onChange(of: selectedCreativeIds) { _ in
                 synchronizeCreativeSelection()
             }
+    }
+
+    private func withFilterPersistence<Content: View>(_ content: Content) -> some View {
+        content
             .onChange(of: selectedCreativeIds) { _ in
                 persistFilters()
             }
             .onChange(of: selectedTagIds) { _ in
                 persistFilters()
             }
+    }
+
+    private func withFrameSorting<Content: View>(_ content: Content) -> some View {
+        content
             .onChange(of: frameSortMode) { _ in
                 scrollToPriorityFrame()
             }
+    }
+
+    private func withRemoteUpdates<Content: View>(_ content: Content) -> some View {
+        content
             .onChange(of: authService.frameUpdateEvent) { event in
                 guard let event else { return }
                 handleFrameUpdateEvent(event)
