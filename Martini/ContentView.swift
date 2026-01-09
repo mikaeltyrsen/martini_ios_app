@@ -554,93 +554,125 @@ struct MainView: View {
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            mainContent
-                //.navigationTitle(displayedNavigationTitle)
-                .toolbar { toolbarContent }
-                .navigationBarTitleDisplayMode(.inline)
-                .task {
-                    await loadProjectDetailsIfNeeded()
-                    await loadCreativesIfNeeded()
-                    await loadFramesIfNeeded()
-                }
-                .alert(
-                    "Data Load Error",
-                    isPresented: dataErrorIsPresented
-                ) {
-                    Button("OK") {
-                        dataError = nil
-                    }
-                } message: {
-                    Text(dataError ?? "Unknown error")
-                }
-                .overlay { noConnectionOverlay }
-                .fullScreenCover(isPresented: selectedFrameIsPresented) {
-                    framePagerSheet
-                }
-                .sheet(isPresented: $isShowingSettings) {
-                    SettingsView(
-                        showDescriptions: $showDescriptions,
-                        showFullDescriptions: $showFullDescriptions,
-                        showGridTags: $showGridTags,
-                        gridSizeStep: $gridSizeStep,
-                        gridFontStep: $gridFontStep,
-                        gridPriority: gridAssetPriorityBinding,
-                        doneCrossLineWidth: $doneCrossLineWidth,
-                        showDoneCrosses: $showDoneCrosses
-                    )
-                    .presentationDetents([.large])
-                    .presentationDragIndicator(.visible)
-                    .interactiveDismissDisabled(false)
-                }
-                .onAppear(perform: synchronizeCreativeSelection)
-                .onAppear(perform: loadStoredFiltersIfNeeded)
-                .onChange(of: creativesToDisplay.count) { _ in
-                    synchronizeCreativeSelection()
-                }
-                .onChange(of: selectedCreativeIds) { _ in
-                    synchronizeCreativeSelection()
-                }
-                .onChange(of: selectedCreativeIds) { _ in
-                    persistFilters()
-                }
-                .onChange(of: selectedTagIds) { _ in
-                    persistFilters()
-                }
-                .onChange(of: frameSortMode) { _ in
-                    scrollToPriorityFrame()
-                }
-                .onChange(of: authService.frameUpdateEvent) { event in
-                    guard let event else { return }
-                    handleFrameUpdateEvent(event)
-                }
-                .onChange(of: authService.frames) { _ in
-                    pruneFilterSelectionsIfNeeded()
-                }
-                .onChange(of: authService.creatives) { _ in
-                    pruneFilterSelectionsIfNeeded()
-                }
-                .onChange(of: authService.scheduleUpdateEvent) { event in
-                    guard let event else { return }
-                    handleScheduleUpdateEvent(event)
-                }
-                .onChange(of: connectionMonitor.status) { newStatus in
-                    if newStatus == .online || newStatus == .backOnline {
-                        hasShownOfflineModal = false
-                    }
-                }
-                .navigationDestination(for: ScheduleRoute.self) { route in
-                    switch route {
-                    case .list(let schedule):
-                        SchedulesView(schedule: schedule) { item in
-                            navigationPath.append(ScheduleRoute.detail(schedule, item))
-                        }
-                    case .detail(let schedule, let item):
-                        ScheduleView(schedule: schedule, item: item) { selectedItem in
-                            applyManualScheduleSelection(selectedItem, schedule: schedule)
-                        }
-                    }
-                }
+            navigationContent
         }
+    }
+
+    private var navigationContent: some View {
+        mainContentWithNavigation
+            .navigationDestination(for: ScheduleRoute.self) { route in
+                switch route {
+                case .list(let schedule):
+                    SchedulesView(schedule: schedule) { item in
+                        navigationPath.append(ScheduleRoute.detail(schedule, item))
+                    }
+                case .detail(let schedule, let item):
+                    ScheduleView(schedule: schedule, item: item) { selectedItem in
+                        applyManualScheduleSelection(selectedItem, schedule: schedule)
+                    }
+                }
+            }
+    }
+
+    private var mainContentWithNavigation: some View {
+        mainContentWithStateUpdates
+            .onChange(of: connectionMonitor.status) { newStatus in
+                if newStatus == .online || newStatus == .backOnline {
+                    hasShownOfflineModal = false
+                }
+            }
+    }
+
+    private var mainContentWithStateUpdates: some View {
+        mainContentWithSheets
+            .onAppear(perform: synchronizeCreativeSelection)
+            .onAppear(perform: loadStoredFiltersIfNeeded)
+            .onChange(of: creativesToDisplay.count) { _ in
+                synchronizeCreativeSelection()
+            }
+            .onChange(of: selectedCreativeIds) { _ in
+                synchronizeCreativeSelection()
+            }
+            .onChange(of: selectedCreativeIds) { _ in
+                persistFilters()
+            }
+            .onChange(of: selectedTagIds) { _ in
+                persistFilters()
+            }
+            .onChange(of: frameSortMode) { _ in
+                scrollToPriorityFrame()
+            }
+            .onChange(of: authService.frameUpdateEvent) { event in
+                guard let event else { return }
+                handleFrameUpdateEvent(event)
+            }
+            .onChange(of: authService.frames) { _ in
+                pruneFilterSelectionsIfNeeded()
+            }
+            .onChange(of: authService.creatives) { _ in
+                pruneFilterSelectionsIfNeeded()
+            }
+            .onChange(of: authService.scheduleUpdateEvent) { event in
+                guard let event else { return }
+                handleScheduleUpdateEvent(event)
+            }
+    }
+
+    private var mainContentWithSheets: some View {
+        mainContentWithOverlays
+            .fullScreenCover(isPresented: selectedFrameIsPresented) {
+                framePagerSheet
+            }
+            .sheet(isPresented: $isShowingSettings) {
+                SettingsView(
+                    showDescriptions: $showDescriptions,
+                    showFullDescriptions: $showFullDescriptions,
+                    showGridTags: $showGridTags,
+                    gridSizeStep: $gridSizeStep,
+                    gridFontStep: $gridFontStep,
+                    gridPriority: gridAssetPriorityBinding,
+                    doneCrossLineWidth: $doneCrossLineWidth,
+                    showDoneCrosses: $showDoneCrosses
+                )
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+                .interactiveDismissDisabled(false)
+            }
+    }
+
+    private var mainContentWithOverlays: some View {
+        mainContentWithAlerts
+            .overlay { noConnectionOverlay }
+    }
+
+    private var mainContentWithAlerts: some View {
+        mainContentWithTasks
+            .alert(
+                "Data Load Error",
+                isPresented: dataErrorIsPresented
+            ) {
+                Button("OK") {
+                    dataError = nil
+                }
+            } message: {
+                Text(dataError ?? "Unknown error")
+            }
+    }
+
+    private var mainContentWithTasks: some View {
+        mainContentWithToolbar
+            .task {
+                await loadProjectDetailsIfNeeded()
+                await loadCreativesIfNeeded()
+                await loadFramesIfNeeded()
+            }
+    }
+
+    private var mainContentWithToolbar: some View {
+        mainContent
+            //.navigationTitle(displayedNavigationTitle)
+            .toolbar { toolbarContent }
+            .navigationBarTitleDisplayMode(.inline)
     }
 
     private var dataErrorIsPresented: Binding<Bool> {
