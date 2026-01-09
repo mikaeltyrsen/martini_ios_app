@@ -2124,11 +2124,6 @@ private struct ScoutCameraSettingsSheet: View {
 
 
 
-private struct ShareItem: Identifiable {
-    let id = UUID()
-    let url: URL
-}
-
 private struct FrameTagGroup: Identifiable {
     let id: String
     let name: String
@@ -2214,17 +2209,6 @@ private struct TagFlowLayout: Layout {
         var width: CGFloat = 0
         var height: CGFloat = 0
     }
-}
-
-private struct ActivityView: UIViewControllerRepresentable {
-    let activityItems: [Any]
-    var applicationActivities: [UIActivity]? = nil
-
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: activityItems, applicationActivities: applicationActivities)
-    }
-
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 enum FrameNavigationDirection {

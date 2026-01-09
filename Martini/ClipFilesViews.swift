@@ -2,6 +2,22 @@ import SwiftUI
 import QuickLook
 import UIKit
 
+struct ShareItem: Identifiable {
+    let id = UUID()
+    let url: URL
+}
+
+struct ActivityView: UIViewControllerRepresentable {
+    let activityItems: [Any]
+    var applicationActivities: [UIActivity]? = nil
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: applicationActivities)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
 struct FilesSheet: View {
     let title: String
     @Binding var clips: [Clip]
