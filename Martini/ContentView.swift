@@ -1361,7 +1361,7 @@ struct MainView: View {
                     }
                     .searchable(
                         text: $gridQuickFilterText,
-                        placement: .navigationBarDrawer(displayMode: .always),
+                        placement: .navigationBarDrawer(displayMode: .automatic),
                         prompt: "Filter boards"
                     )
                     .searchFocused($isGridQuickFilterFocused)
