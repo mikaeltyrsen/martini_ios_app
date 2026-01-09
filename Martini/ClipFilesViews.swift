@@ -2,12 +2,12 @@ import SwiftUI
 import QuickLook
 import UIKit
 
-struct ShareItem: Identifiable {
+private struct ClipShareItem: Identifiable {
     let id = UUID()
     let url: URL
 }
 
-struct ActivityView: UIViewControllerRepresentable {
+private struct ClipActivityView: UIViewControllerRepresentable {
     let activityItems: [Any]
     var applicationActivities: [UIActivity]? = nil
 
@@ -92,7 +92,7 @@ struct FilesSheet: View {
 struct ClipRow: View {
     let clip: Clip
     let onPreview: () -> Void
-    @State private var shareItem: ShareItem?
+    @State private var shareItem: ClipShareItem?
     @State private var photoAccessAlert: PhotoLibraryHelper.PhotoAccessAlert?
     @Environment(\.openURL) private var openURL
 
@@ -149,7 +149,7 @@ struct ClipRow: View {
         .contentShape(Rectangle())
         .onTapGesture { onPreview() }
         .sheet(item: $shareItem) { item in
-            ActivityView(activityItems: [item.url])
+            ClipActivityView(activityItems: [item.url])
         }
         .alert(item: $photoAccessAlert) { alert in
             Alert(
@@ -195,7 +195,7 @@ struct ClipRow: View {
         Task {
             do {
                 let localURL = try await localShareURL(for: url)
-                shareItem = ShareItem(url: localURL)
+                shareItem = ClipShareItem(url: localURL)
             } catch {
                 print("Failed to prepare clip for sharing: \(error)")
             }
