@@ -834,38 +834,50 @@ struct MainView: View {
         let updateOfflineModalState: (ConnectionMonitor.Status) -> Void
 
         func body(content: Content) -> some View {
-            content
-                .onAppear(perform: synchronizeCreativeSelection)
-                .onAppear(perform: loadStoredFiltersIfNeeded)
-                .onChange(of: creativesToDisplayCount) { _ in
-                    synchronizeCreativeSelection()
-                }
-                .onChange(of: selectedCreativeIds) { _ in
-                    synchronizeCreativeSelection()
-                }
-                .onChange(of: selectedCreativeIds) { _ in
-                    persistFilters()
-                }
-                .onChange(of: selectedTagIds) { _ in
-                    persistFilters()
-                }
-                .onChange(of: frameSortMode) { _ in
-                    scrollToPriorityFrame()
-                }
-                .onChange(of: frameUpdateEvent) { event in
-                    guard let event else { return }
-                    handleFrameUpdateEvent(event)
-                }
-                .onChange(of: frames) { _ in
-                    pruneFilterSelectionsIfNeeded()
-                }
-                .onChange(of: creatives) { _ in
-                    pruneFilterSelectionsIfNeeded()
-                }
-                .onChange(of: scheduleUpdateEvent) { event in
-                    guard let event else { return }
-                    handleScheduleUpdateEvent(event)
-                }
+            let appearedContent = AnyView(
+                content
+                    .onAppear(perform: synchronizeCreativeSelection)
+                    .onAppear(perform: loadStoredFiltersIfNeeded)
+            )
+
+            let selectionContent = AnyView(
+                appearedContent
+                    .onChange(of: creativesToDisplayCount) { _ in
+                        synchronizeCreativeSelection()
+                    }
+                    .onChange(of: selectedCreativeIds) { _ in
+                        synchronizeCreativeSelection()
+                    }
+                    .onChange(of: selectedCreativeIds) { _ in
+                        persistFilters()
+                    }
+                    .onChange(of: selectedTagIds) { _ in
+                        persistFilters()
+                    }
+                    .onChange(of: frameSortMode) { _ in
+                        scrollToPriorityFrame()
+                    }
+            )
+
+            let eventContent = AnyView(
+                selectionContent
+                    .onChange(of: frameUpdateEvent) { event in
+                        guard let event else { return }
+                        handleFrameUpdateEvent(event)
+                    }
+                    .onChange(of: frames) { _ in
+                        pruneFilterSelectionsIfNeeded()
+                    }
+                    .onChange(of: creatives) { _ in
+                        pruneFilterSelectionsIfNeeded()
+                    }
+                    .onChange(of: scheduleUpdateEvent) { event in
+                        guard let event else { return }
+                        handleScheduleUpdateEvent(event)
+                    }
+            )
+
+            return eventContent
                 .onChange(of: connectionStatus) { newStatus in
                     updateOfflineModalState(newStatus)
                 }
@@ -886,7 +898,7 @@ struct MainView: View {
                         }
                     case .detail(let schedule, let item):
                         ScheduleView(schedule: schedule, item: item) { selectedItem in
-                            applyManualScheduleSelection(selectedItem, schedule: schedule)
+                            applyManualScheduleSelection(selectedItem, schedule)
                         }
                     }
                 }
