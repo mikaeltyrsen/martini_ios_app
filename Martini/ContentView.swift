@@ -257,9 +257,8 @@ struct MainView: View {
     @State private var gridUpdatingFrameIds: Set<String> = []
     @State private var gridQuickFilterText = ""
     @FocusState private var isGridQuickFilterFocused: Bool
-    @State private var gridPullOffset: CGFloat = 0
-    @State private var hasTriggeredGridSearchPull = false
-    @State private var isGridSearchBarVisible = false
+    @State private var gridScrollOffset: CGFloat = 0
+    @State private var isGridSearchBarVisible = true
 
     enum ViewMode {
         case list
@@ -272,12 +271,13 @@ struct MainView: View {
     }
 
     private enum GridSearchConstants {
-        static let pullThreshold: CGFloat = 72
+        static let collapseThreshold: CGFloat = 12
         static let iconSize: CGFloat = 34
         static let iconPadding: CGFloat = 12
         static let searchBarHorizontalPadding: CGFloat = 16
         static let searchBarVerticalPadding: CGFloat = 8
         static let searchBarCornerRadius: CGFloat = 16
+        static let leadingPadding: CGFloat = 16
     }
 
     enum ScheduleRoute: Hashable {
@@ -1379,12 +1379,6 @@ struct MainView: View {
                         .padding(.vertical)
                         .padding(.bottom, 0)
                     }
-                    .onChange(of: isGridQuickFilterFocused) { isFocused in
-                        hasTriggeredGridSearchPull = isFocused
-                        if !isFocused, gridQuickFilterText.isEmpty {
-                            isGridSearchBarVisible = false
-                        }
-                    }
                     .simultaneousGesture(
                         MagnificationGesture()
                             .onChanged { value in
@@ -1400,13 +1394,10 @@ struct MainView: View {
                     )
                     .coordinateSpace(name: "gridScroll")
                     .onPreferenceChange(GridScrollOffsetPreferenceKey.self) { offset in
-                        let pullOffset = max(offset, 0)
-                        gridPullOffset = pullOffset
-                        guard pullOffset > GridSearchConstants.pullThreshold else { return }
-                        guard !hasTriggeredGridSearchPull else { return }
-                        hasTriggeredGridSearchPull = true
-                        isGridSearchBarVisible = true
-                        isGridQuickFilterFocused = true
+                        gridScrollOffset = offset
+                        withAnimation(.spring(response: 0.22, dampingFraction: 0.9)) {
+                            isGridSearchBarVisible = offset >= -GridSearchConstants.collapseThreshold
+                        }
                     }
                     .overlay(alignment: .top) {
                         gridSearchPullOverlay
@@ -1490,27 +1481,21 @@ struct MainView: View {
     }
 
     private var gridSearchPullOverlay: some View {
-        let progress = min(gridPullOffset / GridSearchConstants.pullThreshold, 1)
-        let shouldShowIcon = gridPullOffset > 0 && !isGridSearchBarVisible
-
-        return ZStack(alignment: .top) {
-            if shouldShowIcon {
+        ZStack(alignment: .topLeading) {
+            if isGridSearchBarVisible {
+                gridSearchBar
+                    .padding(.top, 6)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            } else {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.primary)
                     .padding(GridSearchConstants.iconPadding)
                     .background(.ultraThinMaterial, in: Circle())
                     .glassEffect(.regular.interactive(), in: Circle())
-                    .scaleEffect(0.85 + (0.15 * progress))
-                    .opacity(progress)
                     .padding(.top, 6)
+                    .padding(.leading, GridSearchConstants.leadingPadding)
                     .transition(.opacity)
-            }
-
-            if isGridSearchBarVisible {
-                gridSearchBar
-                    .padding(.top, 6)
-                    .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
     }
@@ -1542,7 +1527,7 @@ struct MainView: View {
         .padding(.vertical, GridSearchConstants.searchBarVerticalPadding)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: GridSearchConstants.searchBarCornerRadius))
         .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: GridSearchConstants.searchBarCornerRadius))
-        .padding(.horizontal)
+        .padding(.leading, GridSearchConstants.leadingPadding)
     }
 
     private func synchronizeCreativeSelection() {
