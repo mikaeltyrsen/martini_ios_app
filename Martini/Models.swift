@@ -297,7 +297,7 @@ struct SafeTags: Codable {
 
 // MARK: - Creative Model
 
-struct Creative: Codable, Identifiable {
+struct Creative: Codable, Identifiable, Equatable {
     let id: String
     let shootId: String?
     let title: String
@@ -338,6 +338,27 @@ struct Creative: Codable, Identifiable {
     var progressPercentage: Double {
         guard totalFrames > 0 else { return 0 }
         return Double(completedFrames) / Double(totalFrames) * 100
+    }
+}
+
+extension Creative {
+    static func == (lhs: Creative, rhs: Creative) -> Bool {
+        lhs.id == rhs.id
+            && lhs.shootId == rhs.shootId
+            && lhs.title == rhs.title
+            && lhs.order == rhs.order
+            && lhs.isArchived == rhs.isArchived
+            && lhs.isLive == rhs.isLive
+            && lhs.totalFrames == rhs.totalFrames
+            && lhs.completedFrames == rhs.completedFrames
+            && lhs.remainingFrames == rhs.remainingFrames
+            && lhs.primaryFrameId == rhs.primaryFrameId
+            && lhs.frameFileName == rhs.frameFileName
+            && lhs.frameImage == rhs.frameImage
+            && lhs.frameBoardType == rhs.frameBoardType
+            && lhs.frameStatus == rhs.frameStatus
+            && lhs.frameNumber == rhs.frameNumber
+            && lhs.image == rhs.image
     }
 }
 
@@ -1060,7 +1081,7 @@ struct FrameBoard: Codable, Identifiable, Hashable {
 
 // MARK: - Frame Model
 
-struct Frame: Codable, Identifiable {
+struct Frame: Codable, Identifiable, Equatable {
     let id: String
     let creativeId: String
     let creativeTitle: String?
@@ -1107,6 +1128,55 @@ struct Frame: Codable, Identifiable {
     let frameStartTime: String?
     @SafeOptionalBool var frameHide: Bool?
     @SafeTags var tags: [FrameTag]?
+
+    static func == (lhs: Frame, rhs: Frame) -> Bool {
+        lhs.id == rhs.id
+            && lhs.creativeId == rhs.creativeId
+            && lhs.creativeTitle == rhs.creativeTitle
+            && lhs.creativeColor == rhs.creativeColor
+            && lhs.creativeAspectRatio == rhs.creativeAspectRatio
+            && lhs.boards == rhs.boards
+            && lhs.mainBoardType == rhs.mainBoardType
+            && lhs.board == rhs.board
+            && lhs.boardThumb == rhs.boardThumb
+            && lhs.boardFileName == rhs.boardFileName
+            && lhs.boardFileType == rhs.boardFileType
+            && lhs.boardFileSize == rhs.boardFileSize
+            && lhs.photoboard == rhs.photoboard
+            && lhs.photoboardThumb == rhs.photoboardThumb
+            && lhs.photoboardFileName == rhs.photoboardFileName
+            && lhs.photoboardFileType == rhs.photoboardFileType
+            && lhs.photoboardFileSize == rhs.photoboardFileSize
+            && lhs.photoboardCrop == rhs.photoboardCrop
+            && lhs.preview == rhs.preview
+            && lhs.previewThumb == rhs.previewThumb
+            && lhs.previewFileName == rhs.previewFileName
+            && lhs.previewFileType == rhs.previewFileType
+            && lhs.previewFileSize == rhs.previewFileSize
+            && lhs.previewCrop == rhs.previewCrop
+            && lhs.captureClipId == rhs.captureClipId
+            && lhs.captureClip == rhs.captureClip
+            && lhs.captureClipThumbnail == rhs.captureClipThumbnail
+            && lhs.captureClipFileName == rhs.captureClipFileName
+            && lhs.captureClipFileType == rhs.captureClipFileType
+            && lhs.captureClipFileSize == rhs.captureClipFileSize
+            && lhs.captureClipCrop == rhs.captureClipCrop
+            && lhs.description == rhs.description
+            && lhs.caption == rhs.caption
+            && lhs.notes == rhs.notes
+            && lhs.crop == rhs.crop
+            && lhs.status == rhs.status
+            && lhs.statusUpdated == rhs.statusUpdated
+            && lhs.isArchived == rhs.isArchived
+            && lhs.createdAt == rhs.createdAt
+            && lhs.lastUpdated == rhs.lastUpdated
+            && lhs.frameOrder == rhs.frameOrder
+            && lhs.frameShootOrder == rhs.frameShootOrder
+            && lhs.schedule == rhs.schedule
+            && lhs.frameStartTime == rhs.frameStartTime
+            && lhs.frameHide == rhs.frameHide
+            && lhs.tags == rhs.tags
+    }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)

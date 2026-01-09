@@ -255,6 +255,9 @@ struct MainView: View {
     @State private var gridMagnification: CGFloat = 1.0
     @State private var isGridPinching: Bool = false
     @State private var gridUpdatingFrameIds: Set<String> = []
+    @State private var gridQuickFilterText = ""
+    @FocusState private var isGridQuickFilterFocused: Bool
+    @State private var isGridSearchPresented = false
 
     enum ViewMode {
         case list
@@ -378,6 +381,37 @@ struct MainView: View {
         let totalOverride = creativesToDisplay.reduce(0) { $0 + $1.totalFrames }
         return progressCounts(for: frames, totalOverride: totalOverride)
     }
+
+    private var gridQuickFilterQuery: String {
+        gridQuickFilterText.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var isGridQuickFilterActive: Bool {
+        !gridQuickFilterQuery.isEmpty
+    }
+
+    private var dataErrorAlertBinding: Binding<Bool> {
+        Binding(
+            get: { dataError != nil },
+            set: { newValue in
+                if !newValue {
+                    dataError = nil
+                }
+            }
+        )
+    }
+
+    private var isFrameDetailPresented: Binding<Bool> {
+        Binding(
+            get: { selectedFrameId != nil },
+            set: { isPresented in
+                if !isPresented {
+                    selectedFrameId = nil
+                    selectedFrame = nil
+                }
+            }
+        )
+    }
     
     private var navigationProgress: ProgressCounts {
         guard frameSortMode == .story, !isScrolledToTop else { return overallProgress }
@@ -453,7 +487,7 @@ struct MainView: View {
                 let frames = frames(for: creative)
                 let progress = creativeProgress(creative)
 
-                if isFilterActive && frames.isEmpty {
+                if (isFilterActive || isGridQuickFilterActive) && frames.isEmpty {
                     return nil
                 }
 
@@ -521,9 +555,44 @@ struct MainView: View {
             }
         }
 
+        if isGridQuickFilterActive {
+            frames = frames.filter { matchesGridQuickFilter($0) }
+        }
+
         return frames.sorted { lhs, rhs in
             sortingTuple(for: lhs, mode: sortMode) < sortingTuple(for: rhs, mode: sortMode)
         }
+    }
+
+    private func matchesGridQuickFilter(_ frame: Frame) -> Bool {
+        let query = gridQuickFilterQuery.lowercased()
+        guard !query.isEmpty else { return true }
+
+        let terms = query.split(separator: " ").map(String.init)
+        let searchableTokens = gridQuickFilterTokens(for: frame).map { $0.lowercased() }
+
+        return terms.allSatisfy { term in
+            searchableTokens.contains { $0.contains(term) }
+        }
+    }
+
+    private func gridQuickFilterTokens(for frame: Frame) -> [String] {
+        var tokens: [String] = []
+
+        if let frameOrder = frame.frameOrder { tokens.append(frameOrder) }
+        if let frameShootOrder = frame.frameShootOrder { tokens.append(frameShootOrder) }
+        if let frameStartTime = frame.formattedStartTime ?? frame.frameStartTime { tokens.append(frameStartTime) }
+
+        if let tags = frame.tags {
+            tokens.append(contentsOf: tags.map { $0.name })
+        }
+
+        if let boards = frame.boards {
+            tokens.append(contentsOf: boards.compactMap { $0.label })
+            tokens.append(contentsOf: boards.compactMap { $0.order.map(String.init) })
+        }
+
+        return tokens
     }
 
     private func mockFrames(for creative: Creative) -> [Frame] {
@@ -552,27 +621,111 @@ struct MainView: View {
         }
     }
 
+    private var navigationContent: some View {
+        navigationContentWithNavigation
+    }
+
+    private var navigationContentBase: some View {
+        mainContent
+            //.navigationTitle(displayedNavigationTitle)
+            .toolbar { toolbarContent }
+            .navigationBarTitleDisplayMode(.inline)
+            .task {
+                await loadProjectDetailsIfNeeded()
+                await loadCreativesIfNeeded()
+                await loadFramesIfNeeded()
+            }
+    }
+
+    private var navigationContentWithAlerts: some View {
+        navigationContentBase
+            .modifier(
+                NavigationContentAlertsModifier(
+                    isPresented: dataErrorAlertBinding,
+                    dataError: $dataError,
+                    showingNoConnectionModal: $showingNoConnectionModal
+                )
+            )
+    }
+
+    private var navigationContentWithSheets: some View {
+        navigationContentWithAlerts
+            .modifier(
+                NavigationContentSheetsModifier(
+                    isFrameDetailPresented: isFrameDetailPresented,
+                    selectedFrameId: $selectedFrameId,
+                    selectedFrame: $selectedFrame,
+                    displayedFramesInCurrentMode: displayedFramesInCurrentMode,
+                    assetOrderBinding: { assetOrderBinding(for: $0) },
+                    applyLocalStatusUpdate: applyLocalStatusUpdate,
+                    isShowingSettings: $isShowingSettings,
+                    showDescriptions: $showDescriptions,
+                    showFullDescriptions: $showFullDescriptions,
+                    showGridTags: $showGridTags,
+                    gridSizeStep: $gridSizeStep,
+                    gridFontStep: $gridFontStep,
+                    gridPriority: gridAssetPriorityBinding,
+                    doneCrossLineWidth: $doneCrossLineWidth,
+                    showDoneCrosses: $showDoneCrosses
+                )
+            )
+    }
+
+    private var navigationContentWithHandlers: some View {
+        navigationContentWithSheets
+            .modifier(
+                NavigationContentHandlersModifier(
+                    creativesToDisplayCount: creativesToDisplay.count,
+                    selectedCreativeIds: selectedCreativeIds,
+                    selectedTagIds: selectedTagIds,
+                    frameSortMode: frameSortMode,
+                    frameUpdateEvent: authService.frameUpdateEvent,
+                    frames: authService.frames,
+                    creatives: authService.creatives,
+                    scheduleUpdateEvent: authService.scheduleUpdateEvent,
+                    connectionStatus: connectionMonitor.status,
+                    synchronizeCreativeSelection: synchronizeCreativeSelection,
+                    loadStoredFiltersIfNeeded: loadStoredFiltersIfNeeded,
+                    persistFilters: persistFilters,
+                    scrollToPriorityFrame: scrollToPriorityFrame,
+                    handleFrameUpdateEvent: handleFrameUpdateEvent,
+                    pruneFilterSelectionsIfNeeded: pruneFilterSelectionsIfNeeded,
+                    handleScheduleUpdateEvent: handleScheduleUpdateEvent,
+                    updateOfflineModalState: { newStatus in
+                        if newStatus == .online || newStatus == .backOnline {
+                            hasShownOfflineModal = false
+                        }
+                    }
+                )
+            )
+    }
+
+    private var navigationContentWithNavigation: some View {
+        navigationContentWithHandlers
+            .modifier(
+                NavigationContentNavigationModifier(
+                    navigationPath: $navigationPath,
+                    applyManualScheduleSelection: applyManualScheduleSelection
+                )
+            )
+    }
+
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            mainContent
-                //.navigationTitle(displayedNavigationTitle)
-                .toolbar { toolbarContent }
-                .navigationBarTitleDisplayMode(.inline)
-                .task {
-                    await loadProjectDetailsIfNeeded()
-                    await loadCreativesIfNeeded()
-                    await loadFramesIfNeeded()
-                }
+            navigationContent
+        }
+    }
+
+    private struct NavigationContentAlertsModifier: ViewModifier {
+        let isPresented: Binding<Bool>
+        @Binding var dataError: String?
+        @Binding var showingNoConnectionModal: Bool
+
+        func body(content: Content) -> some View {
+            content
                 .alert(
                     "Data Load Error",
-                    isPresented: Binding(
-                        get: { dataError != nil },
-                        set: { newValue in
-                            if !newValue {
-                                dataError = nil
-                            }
-                        }
-                    )
+                    isPresented: isPresented
                 ) {
                     Button("OK") {
                         dataError = nil
@@ -594,16 +747,30 @@ struct MainView: View {
                         ]
                     )
                 }
+        }
+    }
+
+    private struct NavigationContentSheetsModifier: ViewModifier {
+        let isFrameDetailPresented: Binding<Bool>
+        @Binding var selectedFrameId: String?
+        @Binding var selectedFrame: Frame?
+        let displayedFramesInCurrentMode: [Frame]
+        let assetOrderBinding: (Frame) -> Binding<[FrameAssetKind]>
+        let applyLocalStatusUpdate: (Frame) -> Void
+        @Binding var isShowingSettings: Bool
+        @Binding var showDescriptions: Bool
+        @Binding var showFullDescriptions: Bool
+        @Binding var showGridTags: Bool
+        @Binding var gridSizeStep: Int
+        @Binding var gridFontStep: Int
+        let gridPriority: Binding<FrameAssetKind>
+        @Binding var doneCrossLineWidth: Double
+        @Binding var showDoneCrosses: Bool
+
+        func body(content: Content) -> some View {
+            content
                 .fullScreenCover(
-                    isPresented: Binding(
-                        get: { selectedFrameId != nil },
-                        set: { isPresented in
-                            if !isPresented {
-                                selectedFrameId = nil
-                                selectedFrame = nil
-                            }
-                        }
-                    )
+                    isPresented: isFrameDetailPresented
                 ) {
                     NavigationStack {
                         let pagerFrames = displayedFramesInCurrentMode
@@ -611,7 +778,7 @@ struct MainView: View {
                             FramePagerView(
                                 frames: pagerFrames,
                                 initialFrameID: initialFrameId,
-                                assetOrderBinding: { assetOrderBinding(for: $0) },
+                                assetOrderBinding: { assetOrderBinding($0) },
                                 onClose: {
                                     selectedFrameId = nil
                                     selectedFrame = nil
@@ -637,7 +804,7 @@ struct MainView: View {
                         showGridTags: $showGridTags,
                         gridSizeStep: $gridSizeStep,
                         gridFontStep: $gridFontStep,
-                        gridPriority: gridAssetPriorityBinding,
+                        gridPriority: gridPriority,
                         doneCrossLineWidth: $doneCrossLineWidth,
                         showDoneCrosses: $showDoneCrosses
                     )
@@ -645,42 +812,85 @@ struct MainView: View {
                     .presentationDragIndicator(.visible)
                     .interactiveDismissDisabled(false)
                 }
-                .onAppear(perform: synchronizeCreativeSelection)
-                .onAppear(perform: loadStoredFiltersIfNeeded)
-                .onChange(of: creativesToDisplay.count) { _ in
-                    synchronizeCreativeSelection()
-                }
-                .onChange(of: selectedCreativeIds) { _ in
-                    synchronizeCreativeSelection()
-                }
-                .onChange(of: selectedCreativeIds) { _ in
-                    persistFilters()
-                }
-                .onChange(of: selectedTagIds) { _ in
-                    persistFilters()
-                }
-                .onChange(of: frameSortMode) { _ in
-                    scrollToPriorityFrame()
-                }
-                .onChange(of: authService.frameUpdateEvent) { event in
-                    guard let event else { return }
-                    handleFrameUpdateEvent(event)
-                }
-                .onChange(of: authService.frames) { _ in
-                    pruneFilterSelectionsIfNeeded()
-                }
-                .onChange(of: authService.creatives) { _ in
-                    pruneFilterSelectionsIfNeeded()
-                }
-                .onChange(of: authService.scheduleUpdateEvent) { event in
-                    guard let event else { return }
-                    handleScheduleUpdateEvent(event)
-                }
-                .onChange(of: connectionMonitor.status) { newStatus in
-                    if newStatus == .online || newStatus == .backOnline {
-                        hasShownOfflineModal = false
+        }
+    }
+
+    private struct NavigationContentHandlersModifier: ViewModifier {
+        let creativesToDisplayCount: Int
+        let selectedCreativeIds: Set<String>
+        let selectedTagIds: Set<String>
+        let frameSortMode: FrameSortMode
+        let frameUpdateEvent: FrameUpdateEvent?
+        let frames: [Frame]
+        let creatives: [Creative]
+        let scheduleUpdateEvent: ScheduleUpdateEvent?
+        let connectionStatus: ConnectionMonitor.Status
+        let synchronizeCreativeSelection: () -> Void
+        let loadStoredFiltersIfNeeded: () -> Void
+        let persistFilters: () -> Void
+        let scrollToPriorityFrame: () -> Void
+        let handleFrameUpdateEvent: (FrameUpdateEvent) -> Void
+        let pruneFilterSelectionsIfNeeded: () -> Void
+        let handleScheduleUpdateEvent: (ScheduleUpdateEvent) -> Void
+        let updateOfflineModalState: (ConnectionMonitor.Status) -> Void
+
+        func body(content: Content) -> some View {
+            let appearedContent = AnyView(
+                content
+                    .onAppear(perform: synchronizeCreativeSelection)
+                    .onAppear(perform: loadStoredFiltersIfNeeded)
+            )
+
+            let selectionContent = AnyView(
+                appearedContent
+                    .onChange(of: creativesToDisplayCount) { _ in
+                        synchronizeCreativeSelection()
                     }
+                    .onChange(of: selectedCreativeIds) { _ in
+                        synchronizeCreativeSelection()
+                    }
+                    .onChange(of: selectedCreativeIds) { _ in
+                        persistFilters()
+                    }
+                    .onChange(of: selectedTagIds) { _ in
+                        persistFilters()
+                    }
+                    .onChange(of: frameSortMode) { _ in
+                        scrollToPriorityFrame()
+                    }
+            )
+
+            let eventContent = AnyView(
+                selectionContent
+                    .onChange(of: frameUpdateEvent) { event in
+                        guard let event else { return }
+                        handleFrameUpdateEvent(event)
+                    }
+                    .onChange(of: frames) { _ in
+                        pruneFilterSelectionsIfNeeded()
+                    }
+                    .onChange(of: creatives) { _ in
+                        pruneFilterSelectionsIfNeeded()
+                    }
+                    .onChange(of: scheduleUpdateEvent) { event in
+                        guard let event else { return }
+                        handleScheduleUpdateEvent(event)
+                    }
+            )
+
+            return eventContent
+                .onChange(of: connectionStatus) { newStatus in
+                    updateOfflineModalState(newStatus)
                 }
+        }
+    }
+
+    private struct NavigationContentNavigationModifier: ViewModifier {
+        @Binding var navigationPath: [ScheduleRoute]
+        let applyManualScheduleSelection: (ProjectScheduleItem, ProjectSchedule) -> Void
+
+        func body(content: Content) -> some View {
+            content
                 .navigationDestination(for: ScheduleRoute.self) { route in
                     switch route {
                     case .list(let schedule):
@@ -689,7 +899,7 @@ struct MainView: View {
                         }
                     case .detail(let schedule, let item):
                         ScheduleView(schedule: schedule, item: item) { selectedItem in
-                            applyManualScheduleSelection(selectedItem, schedule: schedule)
+                            applyManualScheduleSelection(selectedItem, schedule)
                         }
                     }
                 }
@@ -782,11 +992,14 @@ struct MainView: View {
         }
 
         ToolbarItem(placement: .navigationBarLeading) {
-            filterButton
+            if isGridSearchPresented {
+                EmptyView()
+            } else {
+                filterButton
+            }
         }
 
         ToolbarItemGroup(placement: .bottomBar) {
-
             Button(action: {
                 withAnimation(.easeInOut(duration: 0.12)) {
                     viewMode = (viewMode == .grid) ? .list : .grid
@@ -806,6 +1019,16 @@ struct MainView: View {
             }
             .pickerStyle(.segmented)
             .frame(width: 200)
+            Button {
+                isGridSearchPresented = true
+                isGridQuickFilterFocused = true
+            } label: {
+                Image(systemName: "magnifyingglass")
+            }
+            .accessibilityLabel("Search boards")
+            .scaleEffect(isGridSearchPresented ? 0.85 : 1.0)
+            .opacity(isGridSearchPresented ? 0 : 1)
+            .animation(.spring(response: 0.2, dampingFraction: 0.85), value: isGridSearchPresented)
 
             Spacer()
 
@@ -1111,45 +1334,7 @@ struct MainView: View {
         ScrollViewReader { proxy in
             GeometryReader { outerGeo in
                 ZStack(alignment: .top) {
-                    ScrollView {
-                        LazyVStack(spacing: 50) {
-                            ForEach(gridSections) { section in
-                                VStack(alignment: .leading, spacing: 12) {
-                                    CreativeGridSection(
-                                        section: section,
-                                        onFrameTap: { frameId in
-                                            selectedFrameId = frameId
-                                            if let found = authService.frames.first(where: { $0.id == frameId }) {
-                                                selectedFrame = found
-                                            }
-                                            withAnimation(.easeInOut(duration: 0.12)) {
-                                                viewMode = .list
-                                            }
-                                        },
-                                        columnCount: gridColumnCount,
-                                        forceThinCrosses: viewMode == .grid,
-                                        showDescriptions: effectiveShowDescriptions,
-                                        showFullDescriptions: effectiveShowFullDescriptions,
-                                        showTags: effectiveShowGridTags,
-                                        showFrameTimeOverlay: shouldShowFrameTimeOverlay,
-                                        fontScale: fontScale,
-                                        coordinateSpaceName: "gridScroll",
-                                        viewportHeight: outerGeo.size.height,
-                                        primaryAsset: { primaryAsset(for: $0) },
-                                        onStatusSelected: { frame, status in
-                                            updateFrameStatus(frame, to: status)
-                                        },
-                                        showSkeleton: shouldShowFrameSkeleton && section.frames.isEmpty,
-                                        isPinching: isGridPinching,
-                                        updatingFrameIds: gridUpdatingFrameIds
-                                    )
-                                }
-                                .id(section.id)
-                            }
-                        }
-                        .padding(.vertical)
-                        .padding(.bottom, 0)
-                    }
+                    gridScrollContent(outerGeo: outerGeo)
                     .simultaneousGesture(
                         MagnificationGesture()
                             .onChanged { value in
@@ -1208,6 +1393,69 @@ struct MainView: View {
                     }
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func gridScrollContent(outerGeo: GeometryProxy) -> some View {
+        let content = ScrollView {
+            LazyVStack(spacing: 50) {
+                ForEach(gridSections) { section in
+                    VStack(alignment: .leading, spacing: 12) {
+                        CreativeGridSection(
+                            section: section,
+                            onFrameTap: { frameId in
+                                selectedFrameId = frameId
+                                if let found = authService.frames.first(where: { $0.id == frameId }) {
+                                    selectedFrame = found
+                                }
+                                withAnimation(.easeInOut(duration: 0.12)) {
+                                    viewMode = .list
+                                }
+                            },
+                            columnCount: gridColumnCount,
+                            forceThinCrosses: viewMode == .grid,
+                            showDescriptions: effectiveShowDescriptions,
+                            showFullDescriptions: effectiveShowFullDescriptions,
+                            showTags: effectiveShowGridTags,
+                            showFrameTimeOverlay: shouldShowFrameTimeOverlay,
+                            fontScale: fontScale,
+                            coordinateSpaceName: "gridScroll",
+                            viewportHeight: outerGeo.size.height,
+                            primaryAsset: { primaryAsset(for: $0) },
+                            onStatusSelected: { frame, status in
+                                updateFrameStatus(frame, to: status)
+                            },
+                            showSkeleton: shouldShowFrameSkeleton && section.frames.isEmpty,
+                            isPinching: isGridPinching,
+                            updatingFrameIds: gridUpdatingFrameIds
+                        )
+                    }
+                    .id(section.id)
+                }
+            }
+            .padding(.vertical)
+            .padding(.bottom, 0)
+        }
+
+        if isGridSearchPresented {
+            content
+                .searchable(
+                    text: $gridQuickFilterText,
+                    placement: .navigationBarDrawer(displayMode: .always),
+                    prompt: "Filter boards"
+                )
+                .searchFocused($isGridQuickFilterFocused)
+                .onChange(of: isGridQuickFilterFocused) { isFocused in
+                    if isFocused {
+                        isGridSearchPresented = true
+                    }
+                    if !isFocused && gridQuickFilterText.isEmpty {
+                        isGridSearchPresented = false
+                    }
+                }
+        } else {
+            content
         }
     }
 
