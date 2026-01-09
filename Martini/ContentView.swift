@@ -256,6 +256,8 @@ struct MainView: View {
     @State private var isGridPinching: Bool = false
     @State private var gridUpdatingFrameIds: Set<String> = []
     @State private var gridQuickFilterText = ""
+    @FocusState private var isGridQuickFilterFocused: Bool
+    @State private var isGridSearchExpanded = true
 
     enum ViewMode {
         case list
@@ -987,6 +989,15 @@ struct MainView: View {
             if shouldShowScheduleButton {
                 scheduleButton
             }
+            if !isGridSearchExpanded {
+                Button {
+                    isGridSearchExpanded = true
+                    isGridQuickFilterFocused = true
+                } label: {
+                    Image(systemName: "magnifyingglass")
+                }
+                .accessibilityLabel("Open search")
+            }
         }
 
         ToolbarItem(placement: .navigationBarLeading) {
@@ -1319,50 +1330,7 @@ struct MainView: View {
         ScrollViewReader { proxy in
             GeometryReader { outerGeo in
                 ZStack(alignment: .top) {
-                    ScrollView {
-                        LazyVStack(spacing: 50) {
-                            ForEach(gridSections) { section in
-                                VStack(alignment: .leading, spacing: 12) {
-                                    CreativeGridSection(
-                                        section: section,
-                                        onFrameTap: { frameId in
-                                            selectedFrameId = frameId
-                                            if let found = authService.frames.first(where: { $0.id == frameId }) {
-                                                selectedFrame = found
-                                            }
-                                            withAnimation(.easeInOut(duration: 0.12)) {
-                                                viewMode = .list
-                                            }
-                                        },
-                                        columnCount: gridColumnCount,
-                                        forceThinCrosses: viewMode == .grid,
-                                        showDescriptions: effectiveShowDescriptions,
-                                        showFullDescriptions: effectiveShowFullDescriptions,
-                                        showTags: effectiveShowGridTags,
-                                        showFrameTimeOverlay: shouldShowFrameTimeOverlay,
-                                        fontScale: fontScale,
-                                        coordinateSpaceName: "gridScroll",
-                                        viewportHeight: outerGeo.size.height,
-                                        primaryAsset: { primaryAsset(for: $0) },
-                                        onStatusSelected: { frame, status in
-                                            updateFrameStatus(frame, to: status)
-                                        },
-                                        showSkeleton: shouldShowFrameSkeleton && section.frames.isEmpty,
-                                        isPinching: isGridPinching,
-                                        updatingFrameIds: gridUpdatingFrameIds
-                                    )
-                                }
-                                .id(section.id)
-                            }
-                        }
-                        .padding(.vertical)
-                        .padding(.bottom, 0)
-                    }
-                    .searchable(
-                        text: $gridQuickFilterText,
-                        placement: .navigationBarDrawer(displayMode: .always),
-                        prompt: "Filter boards"
-                    )
+                    gridScrollContent(outerGeo: outerGeo)
                     .simultaneousGesture(
                         MagnificationGesture()
                             .onChanged { value in
@@ -1377,6 +1345,14 @@ struct MainView: View {
                             }
                     )
                     .coordinateSpace(name: "gridScroll")
+                    .onChange(of: isScrolledToTop) { isAtTop in
+                        if isAtTop {
+                            isGridSearchExpanded = true
+                        } else if gridQuickFilterText.isEmpty {
+                            isGridSearchExpanded = false
+                            isGridQuickFilterFocused = false
+                        }
+                    }
                     .onAppear { gridScrollProxy = proxy }
                     .onPreferenceChange(VisibleFramePreferenceKey.self) { ids in
                         // Defer state updates to avoid mutating view state during the render pass while scrolling
@@ -1421,6 +1397,61 @@ struct MainView: View {
                     }
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func gridScrollContent(outerGeo: GeometryProxy) -> some View {
+        let content = ScrollView {
+            LazyVStack(spacing: 50) {
+                ForEach(gridSections) { section in
+                    VStack(alignment: .leading, spacing: 12) {
+                        CreativeGridSection(
+                            section: section,
+                            onFrameTap: { frameId in
+                                selectedFrameId = frameId
+                                if let found = authService.frames.first(where: { $0.id == frameId }) {
+                                    selectedFrame = found
+                                }
+                                withAnimation(.easeInOut(duration: 0.12)) {
+                                    viewMode = .list
+                                }
+                            },
+                            columnCount: gridColumnCount,
+                            forceThinCrosses: viewMode == .grid,
+                            showDescriptions: effectiveShowDescriptions,
+                            showFullDescriptions: effectiveShowFullDescriptions,
+                            showTags: effectiveShowGridTags,
+                            showFrameTimeOverlay: shouldShowFrameTimeOverlay,
+                            fontScale: fontScale,
+                            coordinateSpaceName: "gridScroll",
+                            viewportHeight: outerGeo.size.height,
+                            primaryAsset: { primaryAsset(for: $0) },
+                            onStatusSelected: { frame, status in
+                                updateFrameStatus(frame, to: status)
+                            },
+                            showSkeleton: shouldShowFrameSkeleton && section.frames.isEmpty,
+                            isPinching: isGridPinching,
+                            updatingFrameIds: gridUpdatingFrameIds
+                        )
+                    }
+                    .id(section.id)
+                }
+            }
+            .padding(.vertical)
+            .padding(.bottom, 0)
+        }
+
+        if isGridSearchExpanded {
+            content
+                .searchable(
+                    text: $gridQuickFilterText,
+                    placement: .navigationBarDrawer(displayMode: .always),
+                    prompt: "Filter boards"
+                )
+                .searchFocused($isGridQuickFilterFocused)
+        } else {
+            content
         }
     }
 
