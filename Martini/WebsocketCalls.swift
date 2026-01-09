@@ -64,6 +64,10 @@ final class WebsocketCalls {
                 self?.authService.publishScheduleUpdate(eventName: name)
             }
         }
+
+        if name == "project-files-updated" {
+            authService.publishProjectFilesUpdate(eventName: name)
+        }
     }
 
     private func handleFrameEvent(name: String, dataString: String) async {

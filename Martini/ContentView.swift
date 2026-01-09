@@ -214,6 +214,7 @@ struct NearbySignInRequestSheet: View {
 struct MainView: View {
     @EnvironmentObject var authService: AuthService
     @EnvironmentObject var connectionMonitor: ConnectionMonitor
+    @EnvironmentObject var fullscreenCoordinator: FullscreenMediaCoordinator
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @State private var viewMode: ViewMode = .list
@@ -232,6 +233,11 @@ struct MainView: View {
     @AppStorage("gridAssetPriority") private var gridAssetPriorityRawValue: String = FrameAssetKind.board.rawValue
     @State private var isLoadingSchedule = false
     @State private var manuallySelectedScheduleId: String? = nil
+    @State private var projectFiles: [Clip] = []
+    @State private var isLoadingProjectFiles: Bool = false
+    @State private var projectFilesError: String?
+    @State private var showingProjectFiles: Bool = false
+    @State private var projectFilesSheetDetent: PresentationDetent = .medium
 
     @AppStorage("showDescriptions") private var showDescriptions: Bool = true
     @AppStorage("showFullDescriptions") private var showFullDescriptions: Bool = false
@@ -364,6 +370,10 @@ struct MainView: View {
 
     private var activeScheduleTitle: String {
         activeSchedule?.name ?? "Schedule"
+    }
+
+    private var hasProjectFiles: Bool {
+        !projectFiles.isEmpty
     }
 
     private var projectDisplayTitle: String {
@@ -638,12 +648,43 @@ struct MainView: View {
                 guard let event else { return }
                 handleScheduleUpdateEvent(event)
             }
+            .onChange(of: authService.projectFilesUpdateEvent) { event in
+                guard event != nil else { return }
+                Task {
+                    await loadProjectFiles(force: true)
+                }
+            }
+            .onChange(of: authService.projectId) { _ in
+                resetProjectFiles()
+                Task {
+                    await loadProjectFiles(force: false)
+                }
+            }
     }
 
     private var mainContentWithSheets: some View {
         mainContentWithOverlays
             .fullScreenCover(isPresented: selectedFrameIsPresented) {
                 framePagerSheet
+            }
+            .sheet(isPresented: $showingProjectFiles) {
+                FilesSheet(
+                    title: "Project Files",
+                    clips: $projectFiles,
+                    isLoading: $isLoadingProjectFiles,
+                    errorMessage: $projectFilesError,
+                    onReload: { await loadProjectFiles(force: true) },
+                    onMediaPreview: { clip in
+                        openProjectFilePreview(clip)
+                    }
+                )
+                .presentationDetents([.medium, .large], selection: $projectFilesSheetDetent)
+                .presentationDragIndicator(.visible)
+            }
+            .onChange(of: showingProjectFiles) { isShowing in
+                if isShowing {
+                    projectFilesSheetDetent = .medium
+                }
             }
             .sheet(isPresented: $isShowingSettings) {
                 SettingsView(
@@ -687,6 +728,7 @@ struct MainView: View {
                 await loadProjectDetailsIfNeeded()
                 await loadCreativesIfNeeded()
                 await loadFramesIfNeeded()
+                await loadProjectFilesIfNeeded()
             }
     }
 
@@ -849,6 +891,9 @@ struct MainView: View {
             if shouldShowScheduleButton {
                 scheduleButton
             }
+            if hasProjectFiles {
+                projectFilesButton
+            }
         }
 
         ToolbarItem(placement: .navigationBarLeading) {
@@ -894,6 +939,17 @@ struct MainView: View {
         Task {
             await loadSchedule(schedule)
         }
+    }
+
+    private func openProjectFilePreview(_ clip: Clip) {
+        guard let url = clip.fileURL else { return }
+        let media: MediaItem = clip.isVideo ? .videoURL(url) : .imageURL(url)
+        fullscreenCoordinator.configuration = FullscreenMediaConfiguration(
+            media: media,
+            config: .default,
+            metadataItem: nil,
+            thumbnailURL: clip.thumbnailURL
+        )
     }
 
     @MainActor
@@ -1155,6 +1211,39 @@ struct MainView: View {
             print("❌ Failed to load frames: \(error)")
         }
     }
+
+    private func loadProjectFilesIfNeeded() async {
+        guard !useMockData else { return }
+        guard authService.projectId != nil else { return }
+        guard projectFiles.isEmpty else { return }
+
+        await loadProjectFiles(force: false)
+    }
+
+    @MainActor
+    private func loadProjectFiles(force: Bool) async {
+        guard let projectId = authService.projectId else {
+            projectFilesError = "Missing project ID"
+            return
+        }
+
+        if !force && !projectFiles.isEmpty { return }
+
+        isLoadingProjectFiles = true
+        defer { isLoadingProjectFiles = false }
+        do {
+            let fetched = try await authService.fetchProjectFiles(projectId: projectId, onlyLive: true)
+            projectFiles = fetched
+            projectFilesError = nil
+        } catch {
+            projectFilesError = error.localizedDescription
+        }
+    }
+
+    private func resetProjectFiles() {
+        projectFiles = []
+        projectFilesError = nil
+    }
     
     private var showCreativeHeaders: Bool { frameSortMode == .story }
 
@@ -1362,6 +1451,16 @@ struct MainView: View {
             }
         }
         .accessibilityLabel("Open Schedule")
+    }
+
+    private var projectFilesButton: some View {
+        Button {
+            showingProjectFiles = true
+        } label: {
+            Image(systemName: "folder")
+                .imageScale(.large)
+        }
+        .accessibilityLabel("Open Project Files")
     }
 
     @ViewBuilder
