@@ -3,6 +3,7 @@ import AVKit
 import UIKit
 import Combine
 import Foundation
+import PencilKit
 
 @MainActor
 struct FrameView: View {
@@ -64,6 +65,7 @@ struct FrameView: View {
     @State private var boardActionError: String?
     @State private var isUploadingBoardAsset: Bool = false
     @State private var metadataSheetItem: BoardMetadataItem?
+    @State private var annotationEditorContext: BoardAnnotationEditorContext?
     @State private var boardPhotoAccessAlert: PhotoLibraryHelper.PhotoAccessAlert?
     @State private var descriptionAttributedText: NSAttributedString?
     @State private var showingDescriptionEditor: Bool = false
@@ -172,6 +174,18 @@ struct FrameView: View {
             }
             .sheet(item: $metadataSheetItem) { item in
                 BoardMetadataSheet(item: item)
+            }
+            .sheet(item: $annotationEditorContext) { context in
+                BoardAnnotationEditor(
+                    title: context.title,
+                    aspectRatio: context.aspectRatio,
+                    backgroundURL: context.backgroundURL,
+                    initialDrawing: context.initialDrawing
+                ) {
+                    annotationEditorContext = nil
+                } onSave: { drawing in
+                    saveAnnotation(drawing, context: context)
+                }
             }
             .fullScreenCover(isPresented: $showingSystemCamera) {
                 MediaPicker(
@@ -431,6 +445,10 @@ struct FrameView: View {
                         onUpload: {
                             showingAddBoardOptions = false
                             showingUploadPicker = true
+                        },
+                        onDraw: {
+                            showingAddBoardOptions = false
+                            openAnnotationEditorForNewBoard()
                         },
                         onCancel: {
                             showingAddBoardOptions = false
@@ -859,6 +877,11 @@ struct FrameView: View {
         if asset.kind == .board {
             let isBoardEntry = boardEntry(for: asset) != nil
             if isBoardEntry {
+                Button {
+                    openAnnotationEditor(for: asset)
+                } label: {
+                    Label("Edit", systemImage: "pencil")
+                }
                 Button {
                     boardRenameTarget = asset
                     boardRenameText = asset.displayLabel
@@ -2018,6 +2041,157 @@ private extension FrameView {
         return metadata
     }
 
+    private func openAnnotationEditor(for asset: FrameAssetItem) {
+        guard let board = boardEntry(for: asset) else {
+            boardActionError = "Board not found for annotation."
+            return
+        }
+        let aspectRatio = FrameLayout.aspectRatio(from: frame.creativeAspectRatio ?? "") ?? (16.0 / 9.0)
+        let backgroundURL = asset.isVideo ? nil : asset.url
+        let existingMetadata = board.metadata
+        let initialDrawing = annotationDrawing(from: existingMetadata) ?? PKDrawing()
+
+        annotationEditorContext = BoardAnnotationEditorContext(
+            title: "Edit \(asset.displayLabel)",
+            boardId: board.id,
+            aspectRatio: aspectRatio,
+            backgroundURL: backgroundURL,
+            existingMetadata: existingMetadata,
+            initialDrawing: initialDrawing,
+            isNewBoard: false
+        )
+    }
+
+    private func openAnnotationEditorForNewBoard() {
+        let aspectRatio = FrameLayout.aspectRatio(from: frame.creativeAspectRatio ?? "") ?? (16.0 / 9.0)
+        annotationEditorContext = BoardAnnotationEditorContext(
+            title: "Draw Board",
+            boardId: nil,
+            aspectRatio: aspectRatio,
+            backgroundURL: nil,
+            existingMetadata: nil,
+            initialDrawing: PKDrawing(),
+            isNewBoard: true
+        )
+    }
+
+    private func saveAnnotation(_ drawing: PKDrawing, context: BoardAnnotationEditorContext) {
+        let updatedMetadata = annotationMetadata(existing: context.existingMetadata, drawing: drawing)
+
+        if context.isNewBoard {
+            Task {
+                let didUpload = await uploadDrawingBoard(drawing: drawing, metadata: updatedMetadata)
+                if didUpload {
+                    annotationEditorContext = nil
+                }
+            }
+            return
+        }
+
+        guard let boardId = context.boardId else {
+            boardActionError = "Board ID not found for annotation."
+            return
+        }
+
+        Task {
+            do {
+                try await authService.updateBoardMetadata(
+                    frameId: frame.id,
+                    boardId: boardId,
+                    metadata: updatedMetadata
+                )
+                annotationEditorContext = nil
+            } catch {
+                boardActionError = error.localizedDescription
+            }
+        }
+    }
+
+    private func annotationMetadata(existing: JSONValue?, drawing: PKDrawing) -> JSONValue {
+        let base64 = drawing.dataRepresentation().base64EncodedString()
+        let updatedAt = ISO8601DateFormatter().string(from: Date())
+        let annotation: JSONValue = .object([
+            "type": .string("pencilkit"),
+            "format": .string("pkdrawing.dataRepresentation"),
+            "data_base64": .string(base64),
+            "updatedAt": .string(updatedAt)
+        ])
+
+        if let existing, case .object(var object) = existing {
+            object["annotation"] = annotation
+            return .object(object)
+        }
+
+        return .object(["annotation": annotation])
+    }
+
+    private func annotationDrawing(from metadata: JSONValue?) -> PKDrawing? {
+        guard let metadata, case .object(let root) = metadata,
+              let annotationValue = root["annotation"],
+              case .object(let annotation) = annotationValue,
+              let dataValue = annotation["data_base64"],
+              case .string(let base64) = dataValue,
+              let data = Data(base64Encoded: base64)
+        else {
+            return nil
+        }
+        return try? PKDrawing(data: data)
+    }
+
+    private func uploadDrawingBoard(drawing: PKDrawing, metadata: JSONValue) async -> Bool {
+        guard let projectId = authService.projectId else {
+            boardActionError = "Missing project ID for upload."
+            return false
+        }
+        guard let imageData = drawingImageData(drawing, aspectRatio: frameAspectRatio) else {
+            boardActionError = "Failed to create drawing image."
+            return false
+        }
+        guard let metadataString = annotationMetadataString(metadata) else {
+            boardActionError = "Failed to encode annotation metadata."
+            return false
+        }
+        isUploadingBoardAsset = true
+        defer { isUploadingBoardAsset = false }
+        do {
+            try await uploadService.uploadBoardAsset(
+                data: imageData,
+                filename: "draw-board.jpg",
+                mimeType: "image/jpeg",
+                boardLabel: "Draw",
+                shootId: projectId,
+                creativeId: frame.creativeId,
+                frameId: frame.id,
+                bearerToken: authService.currentBearerToken(),
+                metadata: metadataString
+            )
+            return true
+        } catch {
+            boardActionError = error.localizedDescription
+            return false
+        }
+    }
+
+    private func annotationMetadataString(_ metadata: JSONValue) -> String? {
+        let encoder = JSONEncoder()
+        guard let data = try? encoder.encode(metadata) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    private func drawingImageData(_ drawing: PKDrawing, aspectRatio: CGFloat) -> Data? {
+        let width: CGFloat = 2048
+        let height = width / max(aspectRatio, 0.01)
+        let size = CGSize(width: width, height: height)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { context in
+            UIColor.white.setFill()
+            context.fill(CGRect(origin: .zero, size: size))
+            let drawingImage = drawing.image(from: CGRect(origin: .zero, size: size), scale: 1)
+            drawingImage.draw(in: CGRect(origin: .zero, size: size))
+        }
+        return image.jpegData(compressionQuality: 0.92)
+    }
+
     private func openBoardPreview(_ asset: FrameAssetItem) {
         guard let url = asset.url else { return }
         let media: MediaItem = asset.isVideo ? .videoURL(url) : .imageURL(url)
@@ -2550,6 +2724,7 @@ private struct AddBoardAlert: View {
     let onTakePhoto: () -> Void
     let onScoutCamera: () -> Void
     let onUpload: () -> Void
+    let onDraw: () -> Void
     let onCancel: () -> Void
     @State private var isExpanded: Bool = false
 
@@ -2590,7 +2765,7 @@ private struct AddBoardAlert: View {
                         .opacity(isExpanded ? 1 : 0)
                         .scaleEffect(isExpanded ? 1 : 0.88)
                         .animation(buttonPop.delay(0.15), value: isExpanded)
-                        
+
                         actionButton(title: "Upload", systemImage: "square.and.arrow.up") {
                             onUpload()
                         }
@@ -2598,6 +2773,15 @@ private struct AddBoardAlert: View {
                         .opacity(isExpanded ? 1 : 0)
                         .scaleEffect(isExpanded ? 1 : 0.88)
                         .animation(buttonPop.delay(0.15), value: isExpanded)
+                    }
+
+                    HStack(spacing: 20) {
+                        actionButton(title: "Draw", systemImage: "pencil") {
+                            onDraw()
+                        }
+                        .opacity(isExpanded ? 1 : 0)
+                        .scaleEffect(isExpanded ? 1 : 0.88)
+                        .animation(buttonPop.delay(0.2), value: isExpanded)
                     }
                     
                 }
@@ -2750,6 +2934,17 @@ private struct MediaPicker: UIViewControllerRepresentable {
 private struct CapturedPhoto: Identifiable {
     let id = UUID()
     let image: UIImage
+}
+
+private struct BoardAnnotationEditorContext: Identifiable {
+    let id = UUID()
+    let title: String
+    let boardId: String?
+    let aspectRatio: CGFloat
+    let backgroundURL: URL?
+    let existingMetadata: JSONValue?
+    let initialDrawing: PKDrawing
+    let isNewBoard: Bool
 }
 
 private final class RotatingImagePickerController: UIImagePickerController {

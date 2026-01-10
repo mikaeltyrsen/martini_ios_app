@@ -1056,6 +1056,25 @@ struct FrameBoard: Codable, Identifiable, Hashable {
         case createdAt = "created_at"
         case lastUpdated = "last_updated"
     }
+
+    func updatingMetadata(_ metadata: JSONValue?) -> FrameBoard {
+        FrameBoard(
+            id: id,
+            label: label,
+            order: order,
+            isPinned: isPinned,
+            fileUrl: fileUrl,
+            fileThumbUrl: fileThumbUrl,
+            fileName: fileName,
+            fileType: fileType,
+            fileSize: fileSize,
+            fileCrop: fileCrop,
+            metadata: metadata,
+            createdBy: createdBy,
+            createdAt: createdAt,
+            lastUpdated: lastUpdated
+        )
+    }
 }
 
 // MARK: - Frame Model
@@ -1440,6 +1459,17 @@ struct Frame: Codable, Identifiable {
             boardFileType: primaryBoard?.fileType,
             boardFileSize: primaryBoard?.fileSize
         )
+    }
+
+    func updatingBoardMetadata(boardId: String, metadata: JSONValue?) -> Frame {
+        guard let boards else { return self }
+        let updatedBoards = boards.map { board in
+            if board.id == boardId {
+                return board.updatingMetadata(metadata)
+            }
+            return board
+        }
+        return updatingBoards(updatedBoards, mainBoardType: mainBoardType)
     }
 
     private func copyFrame(

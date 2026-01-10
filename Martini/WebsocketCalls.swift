@@ -45,6 +45,13 @@ final class WebsocketCalls {
             return
         }
 
+        if name == "frame-board-metadata-updated" {
+            Task { [weak self] in
+                await self?.handleFrameBoardMetadataUpdate(dataString: dataString)
+            }
+            return
+        }
+
         if frameEvents.contains(name) {
             Task { [weak self] in
                 await self?.handleFrameEvent(name: name, dataString: dataString)
@@ -173,6 +180,24 @@ final class WebsocketCalls {
         authService.updateFramesAspectRatio(creativeId: creativeId, aspectRatio: aspectRatio)
     }
 
+    private func handleFrameBoardMetadataUpdate(dataString: String) async {
+        guard let update = FrameBoardMetadataUpdate.parse(dataString: dataString) else { return }
+        applyFrameBoardMetadataUpdate(update)
+    }
+
+    private func applyFrameBoardMetadataUpdate(_ update: FrameBoardMetadataUpdate) {
+        guard let frameId = update.resolvedFrameId,
+              let boardId = update.resolvedBoardId else { return }
+        guard let index = authService.frames.firstIndex(where: { $0.id == frameId }) else { return }
+
+        authService.frames[index] = authService.frames[index].updatingBoardMetadata(
+            boardId: boardId,
+            metadata: update.metadata
+        )
+
+        notifyFrameUpdate(id: frameId, eventName: "frame-board-metadata-updated")
+    }
+
     private func notifyFrameUpdate(id: String?, eventName: String) {
         guard let id else { return }
         authService.publishFrameUpdate(frameId: id, context: .websocket(event: eventName))
@@ -269,6 +294,25 @@ private struct FrameCaptionUpdate: Decodable {
     static func parse(dataString: String) -> FrameCaptionUpdate? {
         guard let data = dataString.data(using: .utf8) else { return nil }
         return try? JSONDecoder().decode(FrameCaptionUpdate.self, from: data)
+    }
+}
+
+private struct FrameBoardMetadataUpdate: Decodable {
+    let id: String?
+    let frameId: String?
+    let frameID: String?
+    let frame_id: String?
+    let boardId: String?
+    let boardID: String?
+    let board_id: String?
+    let metadata: JSONValue?
+
+    var resolvedFrameId: String? { id ?? frameId ?? frameID ?? frame_id }
+    var resolvedBoardId: String? { boardId ?? boardID ?? board_id }
+
+    static func parse(dataString: String) -> FrameBoardMetadataUpdate? {
+        guard let data = dataString.data(using: .utf8) else { return nil }
+        return try? JSONDecoder().decode(FrameBoardMetadataUpdate.self, from: data)
     }
 }
 
