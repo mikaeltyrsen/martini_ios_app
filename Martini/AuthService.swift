@@ -33,6 +33,16 @@ struct ScheduleUpdateEvent: Equatable {
     }
 }
 
+struct ProjectFilesUpdateEvent: Equatable {
+    let eventName: String
+
+    private let identifier = UUID()
+
+    static func == (lhs: ProjectFilesUpdateEvent, rhs: ProjectFilesUpdateEvent) -> Bool {
+        lhs.identifier == rhs.identifier
+    }
+}
+
 struct PendingFrameStatusUpdate: Equatable, Identifiable {
     let id = UUID()
     let frameId: String
@@ -77,6 +87,7 @@ class AuthService: ObservableObject {
     @Published var tagGroups: [TagGroupDefinition] = []
     @Published var frameUpdateEvent: FrameUpdateEvent?
     @Published var scheduleUpdateEvent: ScheduleUpdateEvent?
+    @Published var projectFilesUpdateEvent: ProjectFilesUpdateEvent?
     @Published var isLoadingFrames: Bool = false
     @Published var isScheduleActive: Bool = false
     @Published var isLoadingProjectDetails: Bool = false
@@ -590,6 +601,51 @@ class AuthService: ObservableObject {
         return clipsResponse.clips
     }
 
+    func fetchProjectFiles(projectId: String, onlyLive: Bool = true) async throws -> [Clip] {
+        let body: [String: Any] = [
+            "projectId": projectId,
+            "onlyLive": onlyLive,
+            "context": "projectFiles"
+        ]
+
+        var request = try authorizedRequest(for: .clips, body: body)
+
+        let requestJSON = String(data: request.httpBody ?? Data(), encoding: .utf8) ?? "Unable to encode"
+        print("📤 Fetching project files...")
+        print("🔗 URL: \(request.url?.absoluteString ?? "unknown")")
+        print("📝 Request body: \(requestJSON)")
+
+        let (data, response) = try await performRequest(request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw AuthError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let errorBody = String(data: data, encoding: .utf8) ?? "No response body"
+            print("❌ Failed to fetch project files - Status: \(httpResponse.statusCode)")
+            print("📝 Response: \(errorBody)")
+            if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
+                logout()
+                throw AuthError.unauthorized
+            }
+            throw AuthError.requestFailed(statusCode: httpResponse.statusCode)
+        }
+
+        print("📥 Project files response received (\(httpResponse.statusCode))")
+
+        let decoder = JSONDecoder()
+        let clipsResponse = try decoder.decode(ClipsResponse.self, from: data)
+
+        guard clipsResponse.success else {
+            print("❌ Project files response failed: \(clipsResponse.error ?? "Unknown error")")
+            throw AuthError.authenticationFailedWithMessage(clipsResponse.error ?? "Failed to fetch project files")
+        }
+
+        print("✅ Successfully fetched \(clipsResponse.clips.count) project files")
+        return clipsResponse.clips
+    }
+
     func fetchComments(creativeId: String, frameId: String?) async throws -> CommentsResponse {
         var body: [String: Any] = [
             "creativeId": creativeId
@@ -717,6 +773,10 @@ class AuthService: ObservableObject {
 
     func publishScheduleUpdate(eventName: String) {
         scheduleUpdateEvent = ScheduleUpdateEvent(eventName: eventName)
+    }
+
+    func publishProjectFilesUpdate(eventName: String) {
+        projectFilesUpdateEvent = ProjectFilesUpdateEvent(eventName: eventName)
     }
 
     func updateFramesAspectRatio(creativeId: String, aspectRatio: String) {
