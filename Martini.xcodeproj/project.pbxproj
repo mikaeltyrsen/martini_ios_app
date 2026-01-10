@@ -54,6 +54,7 @@
 		07FFA2722F0FEE60006BEAF4 /* ScheduleCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07FFA26A2F0FEE60006BEAF4 /* ScheduleCache.swift */; };
 		07FFA27D2F129F45006BEAF4 /* BoardAnnotationEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07FFA27B2F129F45006BEAF4 /* BoardAnnotationEditor.swift */; };
 		07FFA27E2F129F45006BEAF4 /* ClipFilesViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07FFA27C2F129F45006BEAF4 /* ClipFilesViews.swift */; };
+		07FFA2802F1304F6006BEAF4 /* MarkupOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07FFA27F2F1304F6006BEAF4 /* MarkupOverlayView.swift */; };
 		08D1C0A32FFF111100000001 /* NearbySignInService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08D1C0A22FFF111100000001 /* NearbySignInService.swift */; };
 		13952330E1EF424FADD563ED /* ScoutCamera/ScoutCameraLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F825837CC9D4A3C884F0F59 /* ScoutCamera/ScoutCameraLayout.swift */; };
 		1F7A3C5E4D1B4C3A8B9C0D1E /* ScoutCamera/ScoutCameraSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F7A3C5D4D1B4C3A8B9C0D1E /* ScoutCamera/ScoutCameraSettingsView.swift */; };
@@ -136,6 +137,7 @@
 		07FFA26D2F0FEE60006BEAF4 /* ScheduleWeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleWeatherService.swift; sourceTree = "<group>"; };
 		07FFA27B2F129F45006BEAF4 /* BoardAnnotationEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardAnnotationEditor.swift; sourceTree = "<group>"; };
 		07FFA27C2F129F45006BEAF4 /* ClipFilesViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipFilesViews.swift; sourceTree = "<group>"; };
+		07FFA27F2F1304F6006BEAF4 /* MarkupOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkupOverlayView.swift; sourceTree = "<group>"; };
 		08D1C0A22FFF111100000001 /* NearbySignInService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbySignInService.swift; sourceTree = "<group>"; };
 		107AD8B89F4A441698E034E1 /* ScoutCamera/Processing/PhotoProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/Processing/PhotoProcessor.swift; sourceTree = "<group>"; };
 		10F9CB29EE71481EB424475E /* ScoutCamera/FOV/FOVMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/FOV/FOVMath.swift; sourceTree = "<group>"; };
@@ -214,6 +216,7 @@
 		07A6A6842EC9A272002C8EB9 /* Martini */ = {
 			isa = PBXGroup;
 			children = (
+				07FFA27F2F1304F6006BEAF4 /* MarkupOverlayView.swift */,
 				07FFA27B2F129F45006BEAF4 /* BoardAnnotationEditor.swift */,
 				07FFA27C2F129F45006BEAF4 /* ClipFilesViews.swift */,
 				07FFA26E2F0FEE60006BEAF4 /* Schedule */,
@@ -387,6 +390,7 @@
 				07C904B72FE2B5E9004EDBFA /* FrameLayout.swift in Sources */,
 				0730F41C2F0CE88E000B598F /* CreativeAspectRatioConfig.swift in Sources */,
 				07D1C1032FF0BBBB00000001 /* ImageCache.swift in Sources */,
+				07FFA2802F1304F6006BEAF4 /* MarkupOverlayView.swift in Sources */,
 				07D1C1052FF0BBBB00000002 /* ScheduleCache.swift in Sources */,
 				07A6A6882EC9A272002C8EB9 /* ContentView.swift in Sources */,
 				08D1C0A32FFF111100000001 /* NearbySignInService.swift in Sources */,
