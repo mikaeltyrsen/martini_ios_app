@@ -60,6 +60,7 @@ struct FullscreenMediaViewer: View {
     @State private var isMarkupMode: Bool
     @State private var markupDrawing: PKDrawing
     @State private var isToolPickerVisible: Bool
+    @State private var showMarkupOverlay: Bool
     @State private var showsDiscardMarkupAlert: Bool = false
     @State private var mediaAspectRatio: CGFloat?
     @State private var isLoadingImage: Bool = false
@@ -92,11 +93,13 @@ struct FullscreenMediaViewer: View {
         self.markupConfiguration = markupConfiguration
         self.startsInMarkupMode = startsInMarkupMode
         let shouldStartMarkup = startsInMarkupMode && markupConfiguration != nil && !media.isVideo
+        let hasInitialMarkup = !(markupConfiguration?.initialDrawing.strokes.isEmpty ?? true)
         _isToolbarVisible = State(initialValue: config.showsTopToolbar)
         _isMetadataOverlayVisible = State(initialValue: metadataItem != nil && config.showsTopToolbar && !shouldStartMarkup)
         _isMarkupMode = State(initialValue: shouldStartMarkup)
         _markupDrawing = State(initialValue: markupConfiguration?.initialDrawing ?? PKDrawing())
         _isToolPickerVisible = State(initialValue: shouldStartMarkup)
+        _showMarkupOverlay = State(initialValue: hasInitialMarkup)
     }
 
     var body: some View {
@@ -113,6 +116,11 @@ struct FullscreenMediaViewer: View {
                 ZStack {
                     mediaView
                         .frame(width: mediaSize.width, height: mediaSize.height)
+
+                    if canMarkup, hasMarkup, showMarkupOverlay, !isMarkupMode {
+                        MarkupOverlayView(drawing: markupDrawing)
+                            .frame(width: mediaSize.width, height: mediaSize.height)
+                    }
 
                     if canMarkup {
                         PencilCanvasView(drawing: $markupDrawing, showsToolPicker: isToolPickerVisible)
@@ -349,10 +357,10 @@ struct FullscreenMediaViewer: View {
     }
 
     private func handleCloseTapped() {
-        if isMarkupMode, hasMarkup {
-            showsDiscardMarkupAlert = true
-            return
-        }
+                if isMarkupMode, hasMarkup {
+                    showsDiscardMarkupAlert = true
+                    return
+                }
         dismissViewer()
     }
 
@@ -360,6 +368,7 @@ struct FullscreenMediaViewer: View {
         if isMarkupMode {
             markupConfiguration?.onSave(markupDrawing)
             isMarkupMode = false
+            showMarkupOverlay = hasMarkup
             return
         }
         isMarkupMode = true
@@ -379,6 +388,9 @@ struct FullscreenMediaViewer: View {
                 }
                 if !metadata.frameLines.isEmpty {
                     overlayToggles
+                }
+                if canMarkup, hasMarkup {
+                    markupToggle
                 }
             }
             .padding(12)
@@ -418,6 +430,14 @@ struct FullscreenMediaViewer: View {
             overlayToggle(title: "Shading", isOn: $showFrameShading)
         }
         .padding(.vertical, 10)
+    }
+
+    private var markupToggle: some View {
+        HStack {
+            overlayToggle(title: "Markup", isOn: $showMarkupOverlay)
+        }
+        .padding(.top, 4)
+        .padding(.bottom, 6)
     }
 
     private func overlayToggle(title: String, isOn: Binding<Bool>) -> some View {

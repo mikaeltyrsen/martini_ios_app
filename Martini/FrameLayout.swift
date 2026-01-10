@@ -3,6 +3,7 @@ import UIKit
 import AVFoundation
 import AVKit
 import CryptoKit
+import PencilKit
 
 final class VideoCacheManager {
     static let shared = VideoCacheManager()
@@ -167,6 +168,11 @@ struct FrameLayout: View {
                     heroMedia(isFullscreen: false)
                 }
                 .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+
+            if let annotationDrawing = boardAnnotationDrawing, !annotationDrawing.strokes.isEmpty {
+                MarkupOverlayView(drawing: annotationDrawing)
+                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+            }
 
             if let resolvedTitle {
                 captionOverlay(for: resolvedTitle)
@@ -397,6 +403,19 @@ struct FrameLayout: View {
         primaryAsset ?? frame.availableAssets.first
     }
 
+    private var boardMetadata: JSONValue? {
+        guard let resolvedAsset, resolvedAsset.kind == .board else { return nil }
+        guard let board = frame.boards?.first(where: { $0.id == resolvedAsset.id }) else { return nil }
+        if case .null = board.metadata {
+            return nil
+        }
+        return board.metadata
+    }
+
+    private var boardAnnotationDrawing: PKDrawing? {
+        annotationDrawing(from: boardMetadata)
+    }
+
     private var resolvedMediaURL: URL? {
         if let primaryURL = resolvedAsset?.url {
             return primaryURL
@@ -470,6 +489,19 @@ struct FrameLayout: View {
 
     private var frameHasPinnedBoard: Bool {
         frame.boards?.contains(where: { $0.isPinned }) ?? false
+    }
+
+    private func annotationDrawing(from metadata: JSONValue?) -> PKDrawing? {
+        guard let metadata, case .object(let root) = metadata,
+              let annotationValue = root["annotation"],
+              case .object(let annotation) = annotationValue,
+              let dataValue = annotation["data_base64"],
+              case .string(let base64) = dataValue,
+              let data = Data(base64Encoded: base64)
+        else {
+            return nil
+        }
+        return try? PKDrawing(data: data)
     }
 
     @ViewBuilder
