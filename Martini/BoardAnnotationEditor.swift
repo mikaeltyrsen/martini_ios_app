@@ -57,7 +57,7 @@ struct BoardAnnotationEditor: View {
                             Color.white
                         }
 
-                        PencilCanvasView(drawing: $drawing)
+                        PencilCanvasView(drawing: $drawing, showsToolPicker: true)
                     }
                     .aspectRatio(aspectRatio, contentMode: .fit)
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -89,8 +89,9 @@ struct BoardAnnotationEditor: View {
     }
 }
 
-private struct PencilCanvasView: UIViewRepresentable {
+struct PencilCanvasView: UIViewRepresentable {
     @Binding var drawing: PKDrawing
+    var showsToolPicker: Bool = true
 
     func makeCoordinator() -> Coordinator {
         Coordinator(drawing: $drawing)
@@ -114,9 +115,14 @@ private struct PencilCanvasView: UIViewRepresentable {
         }
 
         if let window = uiView.window, let toolPicker = PKToolPicker.shared(for: window) {
-            toolPicker.setVisible(true, forFirstResponder: uiView)
-            toolPicker.addObserver(uiView)
-            uiView.becomeFirstResponder()
+            toolPicker.setVisible(showsToolPicker, forFirstResponder: uiView)
+            if showsToolPicker {
+                toolPicker.addObserver(uiView)
+                uiView.becomeFirstResponder()
+            } else {
+                toolPicker.removeObserver(uiView)
+                uiView.resignFirstResponder()
+            }
         }
     }
 

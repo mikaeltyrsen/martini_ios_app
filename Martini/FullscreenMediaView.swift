@@ -1,6 +1,7 @@
 import AVFoundation
 import AVKit
 import ImageIO
+import PencilKit
 import SwiftUI
 
 enum MediaItem: Equatable {
@@ -47,6 +48,8 @@ struct FullscreenMediaViewer: View {
     let config: MediaViewerConfig
     let metadataItem: BoardMetadataItem?
     let thumbnailURL: URL?
+    let markupConfiguration: BoardMarkupConfiguration?
+    let startsInMarkupMode: Bool
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
@@ -54,6 +57,10 @@ struct FullscreenMediaViewer: View {
     @State private var isVisible: Bool = false
     @State private var isToolbarVisible: Bool
     @State private var isMetadataOverlayVisible: Bool
+    @State private var isMarkupMode: Bool
+    @State private var markupDrawing: PKDrawing
+    @State private var isToolPickerVisible: Bool
+    @State private var showsDiscardMarkupAlert: Bool = false
     @State private var mediaAspectRatio: CGFloat?
     @State private var isLoadingImage: Bool = false
     @State private var isMapSheetPresented: Bool = false
@@ -73,15 +80,23 @@ struct FullscreenMediaViewer: View {
         media: MediaItem,
         config: MediaViewerConfig = .default,
         metadataItem: BoardMetadataItem? = nil,
-        thumbnailURL: URL? = nil
+        thumbnailURL: URL? = nil,
+        markupConfiguration: BoardMarkupConfiguration? = nil,
+        startsInMarkupMode: Bool = false
     ) {
         _isPresented = isPresented
         self.media = media
         self.config = config
         self.metadataItem = metadataItem
         self.thumbnailURL = thumbnailURL
+        self.markupConfiguration = markupConfiguration
+        self.startsInMarkupMode = startsInMarkupMode
+        let shouldStartMarkup = startsInMarkupMode && markupConfiguration != nil && !media.isVideo
         _isToolbarVisible = State(initialValue: config.showsTopToolbar)
-        _isMetadataOverlayVisible = State(initialValue: metadataItem != nil && config.showsTopToolbar)
+        _isMetadataOverlayVisible = State(initialValue: metadataItem != nil && config.showsTopToolbar && !shouldStartMarkup)
+        _isMarkupMode = State(initialValue: shouldStartMarkup)
+        _markupDrawing = State(initialValue: markupConfiguration?.initialDrawing ?? PKDrawing())
+        _isToolPickerVisible = State(initialValue: shouldStartMarkup)
     }
 
     var body: some View {
@@ -98,6 +113,13 @@ struct FullscreenMediaViewer: View {
                 ZStack {
                     mediaView
                         .frame(width: mediaSize.width, height: mediaSize.height)
+
+                    if canMarkup {
+                        PencilCanvasView(drawing: $markupDrawing, showsToolPicker: isToolPickerVisible)
+                            .frame(width: mediaSize.width, height: mediaSize.height)
+                            .opacity(isMarkupMode ? 1 : 0)
+                            .allowsHitTesting(isMarkupMode)
+                    }
 
                     if let scoutMetadata {
                         let hasFrameLines = !scoutMetadata.frameLines.isEmpty
@@ -118,7 +140,7 @@ struct FullscreenMediaViewer: View {
                             CrosshairOverlay()
                                 .frame(width: mediaSize.width, height: mediaSize.height)
                         }
-                        if isMetadataOverlayVisible {
+                        if isMetadataOverlayVisible && !isMarkupMode {
                             fullscreenMetadataOverlay(scoutMetadata)
                         }
                     }
@@ -134,7 +156,7 @@ struct FullscreenMediaViewer: View {
                     guard config.tapTogglesChrome else { return }
                     withAnimation(.easeInOut(duration: 0.2)) {
                         isToolbarVisible.toggle()
-                        if metadataItem != nil {
+                        if metadataItem != nil, !isMarkupMode {
                             isMetadataOverlayVisible = isToolbarVisible
                         }
                     }
@@ -149,8 +171,20 @@ struct FullscreenMediaViewer: View {
             .onChange(of: isPresented) { newValue in
                 if newValue, config.showsTopToolbar {
                     isToolbarVisible = true
-                    if metadataItem != nil {
+                    if metadataItem != nil, !isMarkupMode {
                         isMetadataOverlayVisible = true
+                    }
+                }
+            }
+            .onChange(of: isMarkupMode) { _, isActive in
+                if isActive {
+                    isToolbarVisible = true
+                    isToolPickerVisible = true
+                    isMetadataOverlayVisible = false
+                } else {
+                    isToolPickerVisible = false
+                    if metadataItem != nil, config.showsTopToolbar {
+                        isMetadataOverlayVisible = isToolbarVisible
                     }
                 }
             }
@@ -167,7 +201,7 @@ struct FullscreenMediaViewer: View {
             if config.showsTopToolbar, shouldShowCloseButton {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
-                        dismissViewer()
+                        handleCloseTapped()
                     } label: {
                         Image(systemName: "xmark")
                             .font(.system(size: 16, weight: .semibold))
@@ -175,6 +209,19 @@ struct FullscreenMediaViewer: View {
                             .padding(8)
                     }
                     .accessibilityLabel("Close fullscreen")
+                }
+            }
+            if config.showsTopToolbar, canMarkup {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        handleMarkupAction()
+                    } label: {
+                        Image(systemName: isMarkupMode ? "checkmark" : "pencil.and.scribble")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .padding(8)
+                    }
+                    .accessibilityLabel(isMarkupMode ? "Save markup" : "Markup")
                 }
             }
         }
@@ -189,6 +236,32 @@ struct FullscreenMediaViewer: View {
                     sensorWidthMm: scoutMetadata.sensorWidthMm
                 )
             }
+        }
+        .overlay(alignment: .bottomTrailing) {
+            if isMarkupMode, canMarkup {
+                Button {
+                    isToolPickerVisible.toggle()
+                } label: {
+                    Image(systemName: isToolPickerVisible ? "pencil.tip.crop.circle.fill" : "pencil.tip.crop.circle")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .padding(12)
+                        .background(
+                            Circle()
+                                .fill(.ultraThinMaterial)
+                        )
+                }
+                .padding(20)
+                .accessibilityLabel(isToolPickerVisible ? "Hide pencil tools" : "Show pencil tools")
+            }
+        }
+        .alert("Close markup without saving?", isPresented: $showsDiscardMarkupAlert) {
+            Button("Close", role: .destructive) {
+                dismissViewer()
+            }
+            Button("Keep Editing", role: .cancel) {}
+        } message: {
+            Text("You have markup on this board. Are you sure you want to close without saving?")
         }
     }
 
@@ -263,8 +336,33 @@ struct FullscreenMediaViewer: View {
         true
     }
 
+    private var canMarkup: Bool {
+        markupConfiguration != nil && !media.isVideo
+    }
+
+    private var hasMarkup: Bool {
+        !markupDrawing.strokes.isEmpty
+    }
+
     private var scoutMetadata: ScoutCameraMetadata? {
         metadataItem.map { ScoutCameraMetadataParser.parse($0.metadata) }.flatMap { $0 }
+    }
+
+    private func handleCloseTapped() {
+        if isMarkupMode, hasMarkup {
+            showsDiscardMarkupAlert = true
+            return
+        }
+        dismissViewer()
+    }
+
+    private func handleMarkupAction() {
+        if isMarkupMode {
+            markupConfiguration?.onSave(markupDrawing)
+            isMarkupMode = false
+            return
+        }
+        isMarkupMode = true
     }
 
     @ViewBuilder

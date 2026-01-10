@@ -307,7 +307,9 @@ struct FrameLayout: View {
                         media: media,
                         config: .default,
                         metadataItem: nil,
-                        thumbnailURL: resolvedThumbnailURL
+                        thumbnailURL: resolvedThumbnailURL,
+                        markupConfiguration: nil,
+                        startsInMarkupMode: false
                     )
                 }
         } else {

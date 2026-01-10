@@ -2042,24 +2042,7 @@ private extension FrameView {
     }
 
     private func openAnnotationEditor(for asset: FrameAssetItem) {
-        guard let board = boardEntry(for: asset) else {
-            boardActionError = "Board not found for annotation."
-            return
-        }
-        let aspectRatio = FrameLayout.aspectRatio(from: frame.creativeAspectRatio ?? "") ?? (16.0 / 9.0)
-        let backgroundURL = asset.isVideo ? nil : asset.url
-        let existingMetadata = board.metadata
-        let initialDrawing = annotationDrawing(from: existingMetadata) ?? PKDrawing()
-
-        annotationEditorContext = BoardAnnotationEditorContext(
-            title: "Edit \(asset.displayLabel)",
-            boardId: board.id,
-            aspectRatio: aspectRatio,
-            backgroundURL: backgroundURL,
-            existingMetadata: existingMetadata,
-            initialDrawing: initialDrawing,
-            isNewBoard: false
-        )
+        openBoardPreview(asset, startInMarkup: true)
     }
 
     private func openAnnotationEditorForNewBoard() {
@@ -2192,7 +2175,7 @@ private extension FrameView {
         return image.jpegData(compressionQuality: 0.92)
     }
 
-    private func openBoardPreview(_ asset: FrameAssetItem) {
+    private func openBoardPreview(_ asset: FrameAssetItem, startInMarkup: Bool = false) {
         guard let url = asset.url else { return }
         let media: MediaItem = asset.isVideo ? .videoURL(url) : .imageURL(url)
         let metadataItem = metadataForAsset(asset).map { metadata in
@@ -2203,11 +2186,36 @@ private extension FrameView {
                 assetIsVideo: asset.isVideo
             )
         }
+        var markupConfiguration: BoardMarkupConfiguration?
+        if let board = boardEntry(for: asset),
+           !asset.isVideo {
+            let aspectRatio = FrameLayout.aspectRatio(from: frame.creativeAspectRatio ?? "") ?? (16.0 / 9.0)
+            let backgroundURL = asset.url
+            let existingMetadata = board.metadata
+            let initialDrawing = annotationDrawing(from: existingMetadata) ?? PKDrawing()
+            let context = BoardAnnotationEditorContext(
+                title: "Edit \(asset.displayLabel)",
+                boardId: board.id,
+                aspectRatio: aspectRatio,
+                backgroundURL: backgroundURL,
+                existingMetadata: existingMetadata,
+                initialDrawing: initialDrawing,
+                isNewBoard: false
+            )
+            markupConfiguration = BoardMarkupConfiguration(
+                initialDrawing: initialDrawing,
+                onSave: { drawing in
+                    saveAnnotation(drawing, context: context)
+                }
+            )
+        }
         fullscreenCoordinator?.configuration = FullscreenMediaConfiguration(
             media: media,
             config: .default,
             metadataItem: metadataItem,
-            thumbnailURL: asset.thumbnailURL
+            thumbnailURL: asset.thumbnailURL,
+            markupConfiguration: markupConfiguration,
+            startsInMarkupMode: startInMarkup
         )
     }
 
@@ -2218,7 +2226,9 @@ private extension FrameView {
             media: media,
             config: .default,
             metadataItem: nil,
-            thumbnailURL: clip.thumbnailURL
+            thumbnailURL: clip.thumbnailURL,
+            markupConfiguration: nil,
+            startsInMarkupMode: false
         )
     }
 

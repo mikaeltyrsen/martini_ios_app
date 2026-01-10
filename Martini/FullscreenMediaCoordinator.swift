@@ -1,4 +1,10 @@
+import PencilKit
 import SwiftUI
+
+struct BoardMarkupConfiguration {
+    let initialDrawing: PKDrawing
+    let onSave: (PKDrawing) -> Void
+}
 
 struct FullscreenMediaConfiguration: Identifiable {
     let id = UUID()
@@ -6,6 +12,8 @@ struct FullscreenMediaConfiguration: Identifiable {
     let config: MediaViewerConfig
     let metadataItem: BoardMetadataItem?
     let thumbnailURL: URL?
+    let markupConfiguration: BoardMarkupConfiguration?
+    let startsInMarkupMode: Bool
 }
 
 final class FullscreenMediaCoordinator: ObservableObject {
