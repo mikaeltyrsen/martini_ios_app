@@ -553,7 +553,8 @@ struct ScheduleView: View {
                             showStatusBadge: true,
                             showFrameTimeOverlay: false,
                             showTextBlock: false,
-                            enablesFullScreen: false
+                            enablesFullScreen: false,
+                            usePinnedBoardMarkupFallback: true
                         )
                         .frame(maxWidth: .infinity)
                         .overlay {

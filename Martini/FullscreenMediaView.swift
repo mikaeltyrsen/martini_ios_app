@@ -62,6 +62,7 @@ struct FullscreenMediaViewer: View {
     @State private var isToolPickerVisible: Bool
     @State private var showMarkupOverlay: Bool
     @State private var showsDiscardMarkupAlert: Bool = false
+    @State private var showsClearMarkupAlert: Bool = false
     @State private var mediaAspectRatio: CGFloat?
     @State private var isLoadingImage: Bool = false
     @State private var isMapSheetPresented: Bool = false
@@ -221,15 +222,29 @@ struct FullscreenMediaViewer: View {
             }
             if config.showsTopToolbar, canMarkup {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        handleMarkupAction()
-                    } label: {
-                        Image(systemName: isMarkupMode ? "checkmark" : "pencil.and.scribble")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(.primary)
-                            .padding(8)
+                    HStack(spacing: 4) {
+                        if isMarkupMode {
+                            Button {
+                                showsClearMarkupAlert = true
+                            } label: {
+                                Image(systemName: "eraser")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundStyle(.primary)
+                                    .padding(8)
+                            }
+                            .accessibilityLabel("Clear markup")
+                        }
+
+                        Button {
+                            handleMarkupAction()
+                        } label: {
+                            Image(systemName: isMarkupMode ? "checkmark" : "pencil.and.scribble")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(.primary)
+                                .padding(8)
+                        }
+                        .accessibilityLabel(isMarkupMode ? "Save markup" : "Markup")
                     }
-                    .accessibilityLabel(isMarkupMode ? "Save markup" : "Markup")
                 }
             }
         }
@@ -270,6 +285,15 @@ struct FullscreenMediaViewer: View {
             Button("Keep Editing", role: .cancel) {}
         } message: {
             Text("You have markup on this board. Are you sure you want to close without saving?")
+        }
+        .alert("Clear all markup?", isPresented: $showsClearMarkupAlert) {
+            Button("Clear", role: .destructive) {
+                markupDrawing = PKDrawing()
+                showMarkupOverlay = false
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will remove all markup from the board.")
         }
     }
 
