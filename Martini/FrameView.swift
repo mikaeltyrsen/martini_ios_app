@@ -2091,6 +2091,13 @@ private extension FrameView {
     }
 
     private func annotationMetadata(existing: JSONValue?, drawing: PKDrawing) -> JSONValue {
+        guard !drawing.strokes.isEmpty else {
+            if let existing, case .object(var object) = existing {
+                object["annotation"] = nil
+                return object.isEmpty ? .null : .object(object)
+            }
+            return existing ?? .null
+        }
         let base64 = drawing.dataRepresentation().base64EncodedString()
         let updatedAt = ISO8601DateFormatter().string(from: Date())
         let annotation: JSONValue = .object([

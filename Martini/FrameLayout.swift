@@ -113,6 +113,7 @@ struct FrameLayout: View {
     var cornerRadius: CGFloat = 8
     var enablesFullScreen: Bool = true
     var doneCrossLineWidthOverride: Double? = nil
+    var usePinnedBoardMarkupFallback: Bool = false
 
 
     @Environment(\.horizontalSizeClass) private var hSizeClass
@@ -405,7 +406,16 @@ struct FrameLayout: View {
 
     private var boardMetadata: JSONValue? {
         guard let resolvedAsset, resolvedAsset.kind == .board else { return nil }
-        guard let board = frame.boards?.first(where: { $0.id == resolvedAsset.id }) else { return nil }
+        return metadataForBoard(id: resolvedAsset.id)
+    }
+
+    private var pinnedBoardMetadata: JSONValue? {
+        guard let pinnedBoard = frame.boards?.first(where: { $0.isPinned }) else { return nil }
+        return metadataForBoard(id: pinnedBoard.id)
+    }
+
+    private func metadataForBoard(id: String) -> JSONValue? {
+        guard let board = frame.boards?.first(where: { $0.id == id }) else { return nil }
         if case .null = board.metadata {
             return nil
         }
@@ -413,7 +423,13 @@ struct FrameLayout: View {
     }
 
     private var boardAnnotationDrawing: PKDrawing? {
-        annotationDrawing(from: boardMetadata)
+        if let resolvedMetadata = boardMetadata {
+            return annotationDrawing(from: resolvedMetadata)
+        }
+        if usePinnedBoardMarkupFallback, let pinnedMetadata = pinnedBoardMetadata {
+            return annotationDrawing(from: pinnedMetadata)
+        }
+        return nil
     }
 
     private var resolvedMediaURL: URL? {

@@ -2374,6 +2374,7 @@ struct GridFrameCell: View {
                 showTextBlock: false,
                 cornerRadius: 6,
                 enablesFullScreen: false,
+                usePinnedBoardMarkupFallback: true,
                 doneCrossLineWidthOverride: forceThinCrosses ? 1 : nil
             )
             .overlay {
