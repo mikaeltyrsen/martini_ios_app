@@ -84,7 +84,9 @@ struct FramePagerView: View {
                     media: configuration.media,
                     config: configuration.config,
                     metadataItem: configuration.metadataItem,
-                    thumbnailURL: configuration.thumbnailURL
+                    thumbnailURL: configuration.thumbnailURL,
+                    markupConfiguration: configuration.markupConfiguration,
+                    startsInMarkupMode: configuration.startsInMarkupMode
                 )
             }
         }

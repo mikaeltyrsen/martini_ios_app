@@ -79,7 +79,9 @@ struct ContentView: View {
                     media: configuration.media,
                     config: configuration.config,
                     metadataItem: configuration.metadataItem,
-                    thumbnailURL: configuration.thumbnailURL
+                    thumbnailURL: configuration.thumbnailURL,
+                    markupConfiguration: configuration.markupConfiguration,
+                    startsInMarkupMode: configuration.startsInMarkupMode
                 )
             }
         }
@@ -948,7 +950,9 @@ struct MainView: View {
             media: media,
             config: .default,
             metadataItem: nil,
-            thumbnailURL: clip.thumbnailURL
+            thumbnailURL: clip.thumbnailURL,
+            markupConfiguration: nil,
+            startsInMarkupMode: false
         )
     }
 

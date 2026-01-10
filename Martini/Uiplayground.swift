@@ -119,7 +119,9 @@ struct Uiplayground: View {
                         isPresented: $isViewerPresented,
                         media: selectedMedia.media,
                         config: selectedMedia.config,
-                        thumbnailURL: selectedMedia.thumbnailURL
+                        thumbnailURL: selectedMedia.thumbnailURL,
+                        markupConfiguration: nil,
+                        startsInMarkupMode: false
                     )
                     .onDisappear {
                         if !isViewerPresented {
