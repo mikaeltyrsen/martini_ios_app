@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		08D1C0A32FFF111100000001 /* NearbySignInService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08D1C0A22FFF111100000001 /* NearbySignInService.swift */; };
 		0730F3E52EF6E788000B598F /* FullscreenMediaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F3E42EF6E788000B598F /* FullscreenMediaView.swift */; };
 		0730F3E72EFC14E3000B598F /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F3E62EFC14E3000B598F /* Config.swift */; };
 		0730F3EB2EFD9B85000B598F /* martini_master_offline_db_v2.json in Resources */ = {isa = PBXBuildFile; fileRef = 0730F3EA2EFD9B85000B598F /* martini_master_offline_db_v2.json */; };
@@ -53,6 +52,9 @@
 		07FFA2702F0FEE60006BEAF4 /* ScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07FFA26C2F0FEE60006BEAF4 /* ScheduleView.swift */; };
 		07FFA2712F0FEE60006BEAF4 /* ScheduleWeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07FFA26D2F0FEE60006BEAF4 /* ScheduleWeatherService.swift */; };
 		07FFA2722F0FEE60006BEAF4 /* ScheduleCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07FFA26A2F0FEE60006BEAF4 /* ScheduleCache.swift */; };
+		07FFA27D2F129F45006BEAF4 /* BoardAnnotationEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07FFA27B2F129F45006BEAF4 /* BoardAnnotationEditor.swift */; };
+		07FFA27E2F129F45006BEAF4 /* ClipFilesViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07FFA27C2F129F45006BEAF4 /* ClipFilesViews.swift */; };
+		08D1C0A32FFF111100000001 /* NearbySignInService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08D1C0A22FFF111100000001 /* NearbySignInService.swift */; };
 		13952330E1EF424FADD563ED /* ScoutCamera/ScoutCameraLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F825837CC9D4A3C884F0F59 /* ScoutCamera/ScoutCameraLayout.swift */; };
 		1F7A3C5E4D1B4C3A8B9C0D1E /* ScoutCamera/ScoutCameraSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F7A3C5D4D1B4C3A8B9C0D1E /* ScoutCamera/ScoutCameraSettingsView.swift */; };
 		212769B0E99B412F8D9C27E8 /* ScoutCamera/ScoutCameraViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30240C00983A4B208F56B246 /* ScoutCamera/ScoutCameraViewModel.swift */; };
@@ -83,7 +85,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		08D1C0A22FFF111100000001 /* NearbySignInService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbySignInService.swift; sourceTree = "<group>"; };
 		0187390DAD5C4818AD9A0A1B /* ScoutCamera/ScoutCameraReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/ScoutCameraReviewView.swift; sourceTree = "<group>"; };
 		0730F3E42EF6E788000B598F /* FullscreenMediaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullscreenMediaView.swift; sourceTree = "<group>"; };
 		0730F3E62EFC14E3000B598F /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
@@ -133,6 +134,9 @@
 		07FFA26B2F0FEE60006BEAF4 /* SchedulesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchedulesView.swift; sourceTree = "<group>"; };
 		07FFA26C2F0FEE60006BEAF4 /* ScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleView.swift; sourceTree = "<group>"; };
 		07FFA26D2F0FEE60006BEAF4 /* ScheduleWeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleWeatherService.swift; sourceTree = "<group>"; };
+		07FFA27B2F129F45006BEAF4 /* BoardAnnotationEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardAnnotationEditor.swift; sourceTree = "<group>"; };
+		07FFA27C2F129F45006BEAF4 /* ClipFilesViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipFilesViews.swift; sourceTree = "<group>"; };
+		08D1C0A22FFF111100000001 /* NearbySignInService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbySignInService.swift; sourceTree = "<group>"; };
 		107AD8B89F4A441698E034E1 /* ScoutCamera/Processing/PhotoProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/Processing/PhotoProcessor.swift; sourceTree = "<group>"; };
 		10F9CB29EE71481EB424475E /* ScoutCamera/FOV/FOVMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/FOV/FOVMath.swift; sourceTree = "<group>"; };
 		1F7A3C5D4D1B4C3A8B9C0D1E /* ScoutCamera/ScoutCameraSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/ScoutCameraSettingsView.swift; sourceTree = "<group>"; };
@@ -210,6 +214,8 @@
 		07A6A6842EC9A272002C8EB9 /* Martini */ = {
 			isa = PBXGroup;
 			children = (
+				07FFA27B2F129F45006BEAF4 /* BoardAnnotationEditor.swift */,
+				07FFA27C2F129F45006BEAF4 /* ClipFilesViews.swift */,
 				07FFA26E2F0FEE60006BEAF4 /* Schedule */,
 				07FFA2682F0F01D8006BEAF4 /* ScoutCameraMetadata.swift */,
 				07FFA25D2F0F0183006BEAF4 /* FullscreenMediaMapView.swift */,
@@ -390,6 +396,8 @@
 				0730F3E72EFC14E3000B598F /* Config.swift in Sources */,
 				0730F40A2F0B8736000B598F /* RichTextDisplayView.swift in Sources */,
 				07C904BE2FF4B4A4004EDBFA /* FullscreenMediaCoordinator.swift in Sources */,
+				07FFA27D2F129F45006BEAF4 /* BoardAnnotationEditor.swift in Sources */,
+				07FFA27E2F129F45006BEAF4 /* ClipFilesViews.swift in Sources */,
 				07F4E0022FF0AAAA00000001 /* RealtimeService.swift in Sources */,
 				07F4E0052FF0AAAA00000002 /* WebsocketCalls.swift in Sources */,
 				07C904B82EDC888C004EDBFA /* Helpers.swift in Sources */,
