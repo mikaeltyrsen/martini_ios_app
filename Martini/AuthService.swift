@@ -1094,6 +1094,24 @@ class AuthService: ObservableObject {
         try await applyBoardUpdate(response, fallbackFrameId: frameId)
     }
 
+    func updateBoardMetadata(frameId: String, boardId: String, metadata: JSONValue) async throws {
+        guard let projectId else {
+            throw AuthError.noAuth
+        }
+
+        let body: [String: Any] = [
+            "projectId": projectId,
+            "frameId": frameId,
+            "action": "metadata",
+            "boardId": boardId,
+            "metadata": metadata.anyValue
+        ]
+
+        let data = try await sendBoardRequest(body: body, logLabel: "Updating board metadata")
+        let response = try JSONDecoder().decode(UpdateBoardResponse.self, from: data)
+        try await applyBoardUpdate(response, fallbackFrameId: frameId)
+    }
+
     func removeBoardImage(frameId: String, boardLabel: String) async throws {
         guard let projectId else {
             throw AuthError.noAuth
