@@ -691,12 +691,19 @@ struct MainView: View {
             showDoneCrosses: $showDoneCrosses
         )
         .tabItem {
-            Label {
-                Text("Settings")
-            } icon: {
+            if horizontalSizeClass == .regular {
                 Image(systemName: "switch.2")
                     .symbolEffect(.drawOn.byLayer, options: .nonRepeating, isActive: shouldAnimateTabIcons)
                     .symbolEffect(.bounce, value: selectedTab == .settings)
+                    .accessibilityLabel("Settings")
+            } else {
+                Label {
+                    Text("Settings")
+                } icon: {
+                    Image(systemName: "switch.2")
+                        .symbolEffect(.drawOn.byLayer, options: .nonRepeating, isActive: shouldAnimateTabIcons)
+                        .symbolEffect(.bounce, value: selectedTab == .settings)
+                }
             }
         }
         .tag(MainTab.settings)
