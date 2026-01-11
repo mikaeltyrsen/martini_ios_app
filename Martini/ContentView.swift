@@ -1093,9 +1093,7 @@ struct MainView: View {
     }
 
     private var navCluster: some View {
-        HStack(spacing: 10) {
-            filterButton
-        }
+        EmptyView()
     }
 
     private var searchField: some View {
