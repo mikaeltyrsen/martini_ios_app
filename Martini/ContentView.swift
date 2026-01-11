@@ -593,17 +593,6 @@ struct MainView: View {
         NavigationStack {
             mainContentWithNavigation
         }
-        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search boards")
-        .searchFocused($isSearchFocused)
-        .toolbar(isSearchExpanded ? .hidden : .visible, for: .tabBar)
-        .onChange(of: isSearchFocused) { focused in
-            if focused, !isSearchExpanded {
-                isSearchExpanded = true
-            }
-            if !focused, isSearchExpanded {
-                isSearchExpanded = false
-            }
-        }
         .tabItem {
             Label {
                 Text("Boards")
@@ -1044,11 +1033,14 @@ struct MainView: View {
 
         ToolbarItemGroup(placement: .navigationBarTrailing) {
             sortModeToggleButton
-            searchToolbarButton
         }
 
         ToolbarItem(placement: .navigationBarLeading) {
             filterButton
+        }
+
+        ToolbarItemGroup(placement: .bottomBar) {
+            bottomSearchBar
         }
     }
 
@@ -1066,11 +1058,63 @@ struct MainView: View {
         .accessibilityLabel(frameSortMode == .story ? "Switch to shoot order" : "Switch to storyboard")
     }
 
+    private var bottomSearchBar: some View {
+        HStack(spacing: 12) {
+            if !isSearchExpanded {
+                navCluster
+                    .transition(.move(edge: .leading).combined(with: .opacity))
+            }
+
+            Spacer()
+
+            if isSearchExpanded {
+                searchField
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+            } else {
+                searchToolbarButton
+                    .transition(.scale.combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: isSearchExpanded)
+    }
+
+    private var navCluster: some View {
+        HStack(spacing: 10) {
+            filterButton
+        }
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+            TextField("Search boards", text: $searchText)
+                .textFieldStyle(.plain)
+                .submitLabel(.search)
+                .focused($isSearchFocused)
+            Button {
+                withAnimation(.easeInOut(duration: 0.12)) {
+                    isSearchExpanded = false
+                    isSearchFocused = false
+                }
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(.secondary)
+            }
+            .accessibilityLabel("Close search")
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(.ultraThickMaterial, in: Capsule())
+        .onAppear {
+            isSearchFocused = true
+        }
+    }
+
     private var searchToolbarButton: some View {
         Button {
             withAnimation(.easeInOut(duration: 0.12)) {
                 isSearchExpanded = true
-                isSearchFocused = true
             }
         } label: {
             Image(systemName: "magnifyingglass")
