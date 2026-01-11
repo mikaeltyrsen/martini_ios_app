@@ -628,13 +628,13 @@ struct FrameView: View {
                     }
                 }
                 .labelStyle(.titleAndIcon)
-                .foregroundStyle(.white)
+                .foregroundStyle(selectedStatus.markerBackgroundColor)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)
-                .background(
-                    Capsule()
-                        .fill(selectedStatus.markerBackgroundColor)
-                )
+//                .background(
+//                    Capsule()
+//                        .fill(selectedStatus.markerBackgroundColor)
+//                )
                 .fixedSize(horizontal: true, vertical: false)
                 .layoutPriority(1)
 //                .shadow(color: selectedStatus.markerBackgroundColor.opacity(0.8), radius: 12, x: 0, y: 0)
@@ -643,7 +643,7 @@ struct FrameView: View {
             }
             .buttonStyle(.plain)
             .disabled(isUpdatingStatus)
-            //.tint(.yellow)
+            .glassEffect(.regular.tint(selectedStatus.markerBackgroundColor.opacity(0.3)))
 
             Spacer()
 
@@ -794,23 +794,35 @@ struct FrameView: View {
 
     private var sheetContent: some View {
         HStack(spacing: 0) {
-            statusSelectionButton(for: .here)
-            Divider()
-            statusSelectionButton(for: .next)
-            Divider()
-            statusSelectionButton(for: .done)
-            Divider()
-            statusSelectionButton(for: .omit)
+            if selectedStatus != .here {
+                statusSelectionButton(for: .here)
+            }
+            if selectedStatus != .next {
+//                if selectedStatus != .here {
+//                    Divider()
+//                }
+                statusSelectionButton(for: .next)
+            }
+            if selectedStatus != .done {
+                //Divider()
+                statusSelectionButton(for: .done)
+            }
+            if selectedStatus != .omit {
+                //Divider()
+                statusSelectionButton(for: .omit)
+            }
             if selectedStatus != .none {
-                Divider()
+                //Divider()
                 statusSelectionButton(for: .none)
             }
         }
         .frame(maxWidth: .infinity)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color(.markerPopup).opacity(1))
-        )
+        .background(.ultraThinMaterial)
+        .padding(10)
+//        .background(
+//            RoundedRectangle(cornerRadius: 20, style: .continuous)
+//                .fill(Color(.markerPopup).opacity(1))
+//        )
     }
 
     private func openStatusSheet() {
@@ -1780,7 +1792,9 @@ struct FrameView: View {
                             .foregroundStyle(status.markerBackgroundColor)
                     }
                 }
-                .frame(width: 40, height: 40)
+                .frame(width: 60, height: 60)
+                .foregroundStyle(status.markerBackgroundColor)
+                .glassEffect(.regular.tint(status.markerBackgroundColor.opacity(0.3)).interactive())
                 //.background(RoundedRectangle(cornerRadius: 12).fill(Color.white))
                 Text(status.displayName)
                     .font(.system(size: 12, weight: .semibold))
