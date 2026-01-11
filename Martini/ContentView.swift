@@ -222,6 +222,8 @@ struct MainView: View {
     @State private var selectedTab: MainTab = .boards
     @State private var shouldAnimateTabIcons = false
     @State private var viewMode: ViewMode = .list
+    @State private var isSearchExpanded = false
+    @State private var searchText = ""
     @State private var selectedFrameId: String?
     @State private var selectedFrame: Frame?
     @State private var dataError: String?
@@ -575,8 +577,18 @@ struct MainView: View {
             commentsTab
             settingsTab
         }
+        .overlay(alignment: .bottomTrailing) {
+            if selectedTab == .boards {
+                searchShortcut
+            }
+        }
         .onAppear {
             shouldAnimateTabIcons = true
+        }
+        .onChange(of: selectedTab) { newValue in
+            if newValue != .boards, isSearchExpanded {
+                isSearchExpanded = false
+            }
         }
     }
 
@@ -584,6 +596,7 @@ struct MainView: View {
         NavigationStack {
             mainContentWithNavigation
         }
+        .toolbar(isSearchExpanded ? .hidden : .visible, for: .tabBar)
         .tabItem {
             Label {
                 Text("Boards")
@@ -1043,6 +1056,50 @@ struct MainView: View {
             )
         }
         .accessibilityLabel(frameSortMode == .story ? "Switch to shoot order" : "Switch to storyboard")
+    }
+
+    private var searchShortcut: some View {
+        Group {
+            if isSearchExpanded {
+                HStack(spacing: 10) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundStyle(.secondary)
+                    TextField("Search boards", text: $searchText)
+                        .textFieldStyle(.plain)
+                        .submitLabel(.search)
+                    Button {
+                        withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
+                            isSearchExpanded = false
+                        }
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                    .accessibilityLabel("Close search")
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .background(.ultraThickMaterial, in: Capsule())
+                .transition(.move(edge: .trailing).combined(with: .opacity))
+            } else {
+                Button {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
+                        isSearchExpanded = true
+                    }
+                } label: {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .frame(width: 44, height: 44)
+                        .background(.ultraThickMaterial, in: Circle())
+                }
+                .accessibilityLabel("Search boards")
+                .transition(.scale.combined(with: .opacity))
+            }
+        }
+        .padding(.trailing, 16)
+        .padding(.bottom, 12)
+        .animation(.spring(response: 0.28, dampingFraction: 0.9), value: isSearchExpanded)
     }
 
     private func openProjectFilePreview(_ clip: Clip) {
