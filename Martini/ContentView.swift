@@ -589,7 +589,7 @@ struct MainView: View {
                 Text("Boards")
             } icon: {
                 Image(systemName: "rectangle.grid.3x3.fill")
-                    .symbolEffect(.drawOn.byLayer, options: .nonRepeating, value: shouldAnimateTabIcons)
+                    .symbolEffect(.drawOn.byLayer, options: .nonRepeating, isActive: shouldAnimateTabIcons)
                     .symbolEffect(.bounce, value: selectedTab == .boards)
             }
         }
@@ -621,7 +621,7 @@ struct MainView: View {
                 Text("Schedule")
             } icon: {
                 Image(systemName: "calendar.day.timeline.left")
-                    .symbolEffect(.drawOn.byLayer, options: .nonRepeating, value: shouldAnimateTabIcons)
+                    .symbolEffect(.drawOn.byLayer, options: .nonRepeating, isActive: shouldAnimateTabIcons)
                     .symbolEffect(.bounce, value: selectedTab == .schedule)
             }
         }
@@ -644,7 +644,7 @@ struct MainView: View {
                 Text("Files")
             } icon: {
                 Image(systemName: "document.on.document")
-                    .symbolEffect(.drawOn.byLayer, options: .nonRepeating, value: shouldAnimateTabIcons)
+                    .symbolEffect(.drawOn.byLayer, options: .nonRepeating, isActive: shouldAnimateTabIcons)
                     .symbolEffect(.bounce, value: selectedTab == .files)
             }
         }
@@ -672,7 +672,7 @@ struct MainView: View {
                 Text("Comments")
             } icon: {
                 Image(systemName: "text.bubble")
-                    .symbolEffect(.drawOn.byLayer, options: .nonRepeating, value: shouldAnimateTabIcons)
+                    .symbolEffect(.drawOn.byLayer, options: .nonRepeating, isActive: shouldAnimateTabIcons)
                     .symbolEffect(.bounce, value: selectedTab == .comments)
             }
         }
@@ -695,7 +695,7 @@ struct MainView: View {
                 Text("Settings")
             } icon: {
                 Image(systemName: "switch.2")
-                    .symbolEffect(.drawOn.byLayer, options: .nonRepeating, value: shouldAnimateTabIcons)
+                    .symbolEffect(.drawOn.byLayer, options: .nonRepeating, isActive: shouldAnimateTabIcons)
                     .symbolEffect(.bounce, value: selectedTab == .settings)
             }
         }
