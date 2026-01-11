@@ -220,6 +220,7 @@ struct MainView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @State private var selectedTab: MainTab = .boards
+    @State private var shouldAnimateTabIcons = false
     @State private var viewMode: ViewMode = .list
     @State private var selectedFrameId: String?
     @State private var selectedFrame: Frame?
@@ -574,6 +575,9 @@ struct MainView: View {
             commentsTab
             settingsTab
         }
+        .onAppear {
+            shouldAnimateTabIcons = true
+        }
     }
 
     private var boardsTab: some View {
@@ -581,7 +585,13 @@ struct MainView: View {
             mainContentWithNavigation
         }
         .tabItem {
-            Label("Boards", systemImage: "square.grid.2x2")
+            Label {
+                Text("Boards")
+            } icon: {
+                Image(systemName: "rectangle.grid.3x3.fill")
+                    .symbolEffect(.drawOn.byLayer, options: .nonRepeating, value: shouldAnimateTabIcons)
+                    .symbolEffect(.bounce, value: selectedTab == .boards)
+            }
         }
         .tag(MainTab.boards)
     }
@@ -607,7 +617,13 @@ struct MainView: View {
             await loadSchedule(schedule, openDetail: false)
         }
         .tabItem {
-            Label("Schedule", systemImage: "calendar")
+            Label {
+                Text("Schedule")
+            } icon: {
+                Image(systemName: "calendar.day.timeline.left")
+                    .symbolEffect(.drawOn.byLayer, options: .nonRepeating, value: shouldAnimateTabIcons)
+                    .symbolEffect(.bounce, value: selectedTab == .schedule)
+            }
         }
         .tag(MainTab.schedule)
     }
@@ -624,7 +640,13 @@ struct MainView: View {
             }
         )
         .tabItem {
-            Label("Files", systemImage: "folder")
+            Label {
+                Text("Files")
+            } icon: {
+                Image(systemName: "document.on.document")
+                    .symbolEffect(.drawOn.byLayer, options: .nonRepeating, value: shouldAnimateTabIcons)
+                    .symbolEffect(.bounce, value: selectedTab == .files)
+            }
         }
         .tag(MainTab.files)
     }
@@ -646,7 +668,13 @@ struct MainView: View {
             .navigationBarTitleDisplayMode(.inline)
         }
         .tabItem {
-            Label("Comments", systemImage: "text.bubble")
+            Label {
+                Text("Comments")
+            } icon: {
+                Image(systemName: "text.bubble")
+                    .symbolEffect(.drawOn.byLayer, options: .nonRepeating, value: shouldAnimateTabIcons)
+                    .symbolEffect(.bounce, value: selectedTab == .comments)
+            }
         }
         .tag(MainTab.comments)
     }
@@ -663,7 +691,13 @@ struct MainView: View {
             showDoneCrosses: $showDoneCrosses
         )
         .tabItem {
-            Label("Settings", systemImage: "switch.2")
+            Label {
+                Text("Settings")
+            } icon: {
+                Image(systemName: "switch.2")
+                    .symbolEffect(.drawOn.byLayer, options: .nonRepeating, value: shouldAnimateTabIcons)
+                    .symbolEffect(.bounce, value: selectedTab == .settings)
+            }
         }
         .tag(MainTab.settings)
     }
@@ -982,27 +1016,12 @@ struct MainView: View {
         }
 
         ToolbarItemGroup(placement: .navigationBarTrailing) {
-            quickOverviewButton
             sortModeToggleButton
         }
 
         ToolbarItem(placement: .navigationBarLeading) {
             filterButton
         }
-    }
-
-    private var quickOverviewButton: some View {
-        Button(action: {
-            withAnimation(.easeInOut(duration: 0.12)) {
-                viewMode = (viewMode == .grid) ? .list : .grid
-            }
-        }) {
-            Label(
-                viewMode == .grid ? "Close Overview" : "Open Overview",
-                systemImage: viewMode == .grid ? "square.grid.4x3.fill" : "eye"
-            )
-        }
-        .accessibilityLabel(viewMode == .grid ? "Close Overview" : "Open Overview")
     }
 
     private var sortModeToggleButton: some View {
