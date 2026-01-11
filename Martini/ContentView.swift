@@ -224,7 +224,7 @@ struct MainView: View {
     @State private var viewMode: ViewMode = .list
     @State private var isSearchExpanded = false
     @State private var searchText = ""
-    @State private var isSearchFocused = false
+    @FocusState private var isSearchFocused: Bool
     @State private var selectedFrameId: String?
     @State private var selectedFrame: Frame?
     @State private var dataError: String?
