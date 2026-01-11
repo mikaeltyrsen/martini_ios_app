@@ -225,6 +225,7 @@ struct MainView: View {
     @State private var isSearchExpanded = false
     @State private var searchText = ""
     @FocusState private var isSearchFocused: Bool
+    @State private var selectedMoreTab: MoreTab = .files
     @State private var selectedFrameId: String?
     @State private var selectedFrame: Frame?
     @State private var dataError: String?
@@ -279,9 +280,13 @@ struct MainView: View {
     enum MainTab: Hashable {
         case boards
         case schedule
+        case more
+        case settings
+    }
+
+    enum MoreTab: Hashable {
         case files
         case comments
-        case settings
     }
 
     enum ScheduleRoute: Hashable {
@@ -574,8 +579,7 @@ struct MainView: View {
         TabView(selection: $selectedTab) {
             boardsTab
             scheduleTab
-            filesTab
-            commentsTab
+            moreTab
             settingsTab
         }
         .onAppear {
@@ -637,55 +641,65 @@ struct MainView: View {
         .tag(MainTab.schedule)
     }
 
-    private var filesTab: some View {
-        FilesSheet(
-            title: "Files",
-            clips: $projectFiles,
-            isLoading: $isLoadingProjectFiles,
-            errorMessage: $projectFilesError,
-            onReload: { await loadProjectFiles(force: true) },
-            onMediaPreview: { clip in
-                openProjectFilePreview(clip)
-            }
-        )
-        .tabItem {
-            Label {
-                Text("Files")
-            } icon: {
-                Image(systemName: "document.on.document")
-                    .symbolEffect(.drawOn.byLayer, options: .nonRepeating, isActive: shouldAnimateTabIcons)
-                    .symbolEffect(.bounce, value: selectedTab == .files)
-            }
-        }
-        .tag(MainTab.files)
-    }
-
-    private var commentsTab: some View {
+    private var moreTab: some View {
         NavigationStack {
-            VStack(spacing: 12) {
-                Image(systemName: "text.bubble")
-                    .font(.system(size: 44))
-                    .foregroundStyle(.secondary)
-                Text("Comments")
-                    .font(.title2.weight(.semibold))
-                Text("Comments will live here soon.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+            VStack(spacing: 0) {
+                Picker("More", selection: $selectedMoreTab) {
+                    Text("Files").tag(MoreTab.files)
+                    Text("Comments").tag(MoreTab.comments)
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal)
+                .padding(.top, 8)
+
+                Divider()
+
+                Group {
+                    switch selectedMoreTab {
+                    case .files:
+                        FilesSheet(
+                            title: "Files",
+                            clips: $projectFiles,
+                            isLoading: $isLoadingProjectFiles,
+                            errorMessage: $projectFilesError,
+                            onReload: { await loadProjectFiles(force: true) },
+                            onMediaPreview: { clip in
+                                openProjectFilePreview(clip)
+                            },
+                            showsNavigation: false
+                        )
+                    case .comments:
+                        commentsPlaceholder
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .navigationTitle("Comments")
+            .navigationTitle("More")
             .navigationBarTitleDisplayMode(.inline)
         }
         .tabItem {
             Label {
-                Text("Comments")
+                Text("More")
             } icon: {
-                Image(systemName: "text.bubble")
+                Image(systemName: "ellipsis.circle")
                     .symbolEffect(.drawOn.byLayer, options: .nonRepeating, isActive: shouldAnimateTabIcons)
-                    .symbolEffect(.bounce, value: selectedTab == .comments)
+                    .symbolEffect(.bounce, value: selectedTab == .more)
             }
         }
-        .tag(MainTab.comments)
+        .tag(MainTab.more)
+    }
+
+    private var commentsPlaceholder: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "text.bubble")
+                .font(.system(size: 44))
+                .foregroundStyle(.secondary)
+            Text("Comments")
+                .font(.title2.weight(.semibold))
+            Text("Comments will live here soon.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
     }
 
     private var settingsTab: some View {
