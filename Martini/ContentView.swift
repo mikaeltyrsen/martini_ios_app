@@ -905,6 +905,9 @@ struct MainView: View {
     private var mainContentWithOverlays: some View {
         mainContentWithAlerts
             .overlay { noConnectionOverlay }
+            .overlay(alignment: .leading) {
+                filterSidebar
+            }
     }
 
     private var mainContentWithAlerts: some View {
@@ -1048,9 +1051,6 @@ struct MainView: View {
     private var contentStack: some View {
         ZStack(alignment: .bottom) {
             gridView
-                .overlay(alignment: .leading) {
-                    filterSidebar
-                }
 
             if isHereShortcutVisible {
                 Button(action: scrollToHereFrame) {
