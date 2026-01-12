@@ -220,6 +220,7 @@ struct MainView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @State private var selectedTab: MainTab = .boards
+    @State private var lastNonSearchTab: MainTab = .boards
     @State private var shouldAnimateTabIcons = false
     @State private var viewMode: ViewMode = .list
     @State private var isSearchExpanded = false
@@ -282,6 +283,7 @@ struct MainView: View {
         case schedule
         case more
         case settings
+        case search
     }
 
     enum MoreTab: Hashable {
@@ -581,14 +583,34 @@ struct MainView: View {
             scheduleTab
             moreTab
             settingsTab
+            searchTab
         }
         .onAppear {
             shouldAnimateTabIcons = true
         }
         .onChange(of: selectedTab) { newValue in
-            if newValue != .boards, isSearchExpanded {
+            if newValue == .search {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isSearchExpanded = true
+                }
+                isSearchFocused = true
+                selectedTab = lastNonSearchTab
+                return
+            }
+
+            lastNonSearchTab = newValue
+
+            if isSearchExpanded {
                 isSearchExpanded = false
                 isSearchFocused = false
+            }
+        }
+        .safeAreaInset(edge: .bottom) {
+            if isSearchExpanded {
+                searchField
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 8)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
     }
@@ -596,6 +618,11 @@ struct MainView: View {
     private var boardsTab: some View {
         NavigationStack {
             mainContentWithNavigation
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .bottomBar) {
+                storyShootAccessory
+            }
         }
         .tabItem {
             Label {
@@ -687,6 +714,20 @@ struct MainView: View {
             }
         }
         .tag(MainTab.more)
+    }
+
+    private var searchTab: some View {
+        Color.clear
+            .tabItem {
+                Label {
+                    Text("Search")
+                } icon: {
+                    Image(systemName: "magnifyingglass")
+                        .symbolEffect(.drawOn.byLayer, options: .nonRepeating, isActive: shouldAnimateTabIcons)
+                        .symbolEffect(.bounce, value: selectedTab == .search)
+                }
+            }
+            .tag(MainTab.search)
     }
 
     private var commentsPlaceholder: some View {
@@ -1045,55 +1086,9 @@ struct MainView: View {
             }
         }
 
-        ToolbarItemGroup(placement: .navigationBarTrailing) {
-            sortModeToggleButton
-        }
-
         ToolbarItem(placement: .navigationBarLeading) {
             filterButton
         }
-
-        ToolbarItemGroup(placement: .bottomBar) {
-            bottomSearchBar
-        }
-    }
-
-    private var sortModeToggleButton: some View {
-        Button {
-            withAnimation(.easeInOut(duration: 0.12)) {
-                frameSortMode = (frameSortMode == .story) ? .shoot : .story
-            }
-        } label: {
-            Label(
-                frameSortMode == .story ? "Storyboard" : "Shoot Order",
-                systemImage: frameSortMode == .story ? "rectangle.stack" : "list.number"
-            )
-        }
-        .accessibilityLabel(frameSortMode == .story ? "Switch to shoot order" : "Switch to storyboard")
-    }
-
-    private var bottomSearchBar: some View {
-        HStack(spacing: 12) {
-            if !isSearchExpanded {
-                navCluster
-                    .transition(.move(edge: .leading).combined(with: .opacity))
-            }
-
-            Spacer()
-
-            if isSearchExpanded {
-                searchField
-                    .transition(.move(edge: .trailing).combined(with: .opacity))
-            } else {
-                searchToolbarButton
-                    .transition(.scale.combined(with: .opacity))
-            }
-        }
-        .animation(.easeInOut(duration: 0.2), value: isSearchExpanded)
-    }
-
-    private var navCluster: some View {
-        EmptyView()
     }
 
     private var searchField: some View {
@@ -1123,15 +1118,13 @@ struct MainView: View {
         }
     }
 
-    private var searchToolbarButton: some View {
-        Button {
-            withAnimation(.easeInOut(duration: 0.12)) {
-                isSearchExpanded = true
-            }
-        } label: {
-            Image(systemName: "magnifyingglass")
+    private var storyShootAccessory: some View {
+        Picker("Sort order", selection: $frameSortMode) {
+            Text("Story").tag(FrameSortMode.story)
+            Text("Shoot").tag(FrameSortMode.shoot)
         }
-        .accessibilityLabel("Search boards")
+        .pickerStyle(.segmented)
+        .frame(maxWidth: 240)
     }
 
     private func openProjectFilePreview(_ clip: Clip) {
