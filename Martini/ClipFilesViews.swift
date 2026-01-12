@@ -18,8 +18,7 @@ private struct ClipActivityView: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
-struct FilesSheet: View {
-    let title: String
+struct FilesListView: View {
     @Binding var clips: [Clip]
     @Binding var isLoading: Bool
     @Binding var errorMessage: String?
@@ -28,22 +27,18 @@ struct FilesSheet: View {
     @State private var selectedClip: Clip?
 
     var body: some View {
-        NavigationStack {
-            content
-                .navigationTitle(title)
-                .navigationBarTitleDisplayMode(.inline)
-                .task {
-                    await onReload()
-                }
-                .alert("Error", isPresented: Binding(
-                    get: { errorMessage != nil },
-                    set: { if !$0 { errorMessage = nil } }
-                )) {
-                    Button("OK", role: .cancel) { errorMessage = nil }
-                } message: {
-                    Text(errorMessage ?? "Unknown error")
-                }
-        }
+        content
+            .task {
+                await onReload()
+            }
+            .alert("Error", isPresented: Binding(
+                get: { errorMessage != nil },
+                set: { if !$0 { errorMessage = nil } }
+            )) {
+                Button("OK", role: .cancel) { errorMessage = nil }
+            } message: {
+                Text(errorMessage ?? "Unknown error")
+            }
     }
 
     private var content: some View {
@@ -85,6 +80,29 @@ struct FilesSheet: View {
             onMediaPreview(clip)
         } else {
             selectedClip = clip
+        }
+    }
+}
+
+struct FilesSheet: View {
+    let title: String
+    @Binding var clips: [Clip]
+    @Binding var isLoading: Bool
+    @Binding var errorMessage: String?
+    let onReload: () async -> Void
+    let onMediaPreview: (Clip) -> Void
+
+    var body: some View {
+        NavigationStack {
+            FilesListView(
+                clips: $clips,
+                isLoading: $isLoading,
+                errorMessage: $errorMessage,
+                onReload: onReload,
+                onMediaPreview: onMediaPreview
+            )
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 }
