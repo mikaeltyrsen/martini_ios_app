@@ -13,6 +13,17 @@ private enum FilterStorageKeys {
     static let selectedCreativeIds = "filterSelectedCreativeIds"
 }
 
+private extension View {
+    @ViewBuilder
+    func tabBarSearchable(text: Binding<String>) -> some View {
+        if #available(iOS 18.0, *) {
+            searchable(text: text, placement: .tabBar, prompt: "Search")
+        } else {
+            searchable(text: text, prompt: "Search")
+        }
+    }
+}
+
 struct ContentView: View {
     @EnvironmentObject var authService: AuthService
     @EnvironmentObject var realtimeService: RealtimeService
@@ -775,7 +786,7 @@ struct MainView: View {
                 }
                 .tag(MainTab.settings)
         }
-        .searchable(text: $searchText, placement: .tabBar, prompt: "Search")
+        .tabBarSearchable(text: $searchText)
         .searchFocused($isSearchFieldFocused)
         .onChange(of: isSearching) { searching in
             isSearchFieldFocused = searching
