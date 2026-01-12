@@ -584,11 +584,16 @@ struct MainView: View {
                 scheduleTab
                 moreTab
                 settingsTab
-                searchTab
+                if #available(iOS 18.0, *) {
+                    EmptyView()
+                } else {
+                    searchTab
+                }
             }
             .navigationTitle(isSearching ? "" : navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { searchToolbar }
+            .toolbar { tabBarSearchButton }
             .navigationDestination(for: ScheduleRoute.self) { route in
                 switch route {
                 case .list(let schedule):
@@ -1116,6 +1121,23 @@ struct MainView: View {
                 .padding(.vertical, 8)
                 .background(Capsule().fill(.thinMaterial))
                 .frame(maxWidth: 420)
+            }
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var tabBarSearchButton: some ToolbarContent {
+        if #available(iOS 18.0, *) {
+            ToolbarItem(placement: .tabBarTrailing) {
+                Button {
+                    withAnimation(.snappy) {
+                        isSearching = true
+                        isSearchFocused = true
+                    }
+                } label: {
+                    Image(systemName: "magnifyingglass")
+                }
+                .accessibilityLabel("Search")
             }
         }
     }
