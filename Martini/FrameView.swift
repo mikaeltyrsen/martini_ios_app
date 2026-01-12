@@ -516,6 +516,11 @@ struct FrameView: View {
                     }
                 }
             }
+            .overlay(alignment: .bottom) {
+                if shouldShowBottomToolbar {
+                    markerButtonOverlay
+                }
+            }
     }
 
     private var uploadingBoardOverlay: some View {
@@ -608,43 +613,6 @@ struct FrameView: View {
 
             Spacer()
 
-            Button {
-                openStatusSheet()
-            } label: {
-                let statusLabel: String = {
-                    if isUpdatingStatus { return "Updating Status" }
-                    return selectedStatus == .none ? "Mark Frame" : selectedStatus.displayName
-                }()
-                Label {
-                    Text(statusLabel)
-                        .font(.system(size: 14, weight: .semibold))
-                        .lineLimit(1)
-                } icon: {
-                    if isUpdatingStatus {
-                        ProgressView()
-                            .tint(.white)
-                    } else {
-                        Image(systemName: selectedStatus == .none ? "pencil.tip" : selectedStatus.systemImageName)
-                    }
-                }
-                .labelStyle(.titleAndIcon)
-                .foregroundStyle(selectedStatus.markerBackgroundColor)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-//                .background(
-//                    Capsule()
-//                        .fill(selectedStatus.markerBackgroundColor)
-//                )
-                .fixedSize(horizontal: true, vertical: false)
-                .layoutPriority(1)
-//                .shadow(color: selectedStatus.markerBackgroundColor.opacity(0.8), radius: 12, x: 0, y: 0)
-//                .shadow(color: selectedStatus.markerBackgroundColor.opacity(0.5), radius: 50, x: 0, y: 0)
-//                .shadow(color: selectedStatus.markerBackgroundColor.opacity(0.3), radius: 100, x: 0, y: 0)
-            }
-            .buttonStyle(.plain)
-            .disabled(isUpdatingStatus)
-            .glassEffect(.regular.tint(selectedStatus.markerBackgroundColor.opacity(0.3)))
-
             Spacer()
 
             NavigationLink {
@@ -662,6 +630,48 @@ struct FrameView: View {
             
             
         }
+    }
+
+    private var markerButtonOverlay: some View {
+        HStack {
+            Spacer()
+            markerButton
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.bottom, 6)
+    }
+
+    private var markerButton: some View {
+        Button {
+            openStatusSheet()
+        } label: {
+            let statusLabel: String = {
+                if isUpdatingStatus { return "Updating Status" }
+                return selectedStatus == .none ? "Mark Frame" : selectedStatus.displayName
+            }()
+            Label {
+                Text(statusLabel)
+                    .font(.system(size: 14, weight: .semibold))
+                    .lineLimit(1)
+            } icon: {
+                if isUpdatingStatus {
+                    ProgressView()
+                        .tint(.white)
+                } else {
+                    Image(systemName: selectedStatus == .none ? "pencil.tip" : selectedStatus.systemImageName)
+                }
+            }
+            .labelStyle(.titleAndIcon)
+            .foregroundStyle(selectedStatus.markerBackgroundColor)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .fixedSize(horizontal: true, vertical: false)
+            .layoutPriority(1)
+        }
+        .buttonStyle(.plain)
+        .disabled(isUpdatingStatus)
+        .glassEffect(.regular.tint(selectedStatus.markerBackgroundColor.opacity(0.3)))
     }
 
     @ViewBuilder
