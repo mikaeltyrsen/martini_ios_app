@@ -223,7 +223,7 @@ struct MainView: View {
     @State private var lastNonSearchTab: MainTab = .boards
     @State private var shouldAnimateTabIcons = false
     @State private var viewMode: ViewMode = .list
-    @State private var isSearchExpanded = false
+    @State private var isSearching = false
     @State private var searchText = ""
     @FocusState private var isSearchFocused: Bool
     @State private var selectedMoreTab: MoreTab = .files
@@ -578,52 +578,69 @@ struct MainView: View {
     }
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            boardsTab
-            scheduleTab
-            moreTab
-            settingsTab
-            searchTab
+        NavigationStack(path: $scheduleNavigationPath) {
+            TabView(selection: $selectedTab) {
+                boardsTab
+                scheduleTab
+                moreTab
+                settingsTab
+                searchTab
+            }
+            .navigationTitle(isSearching ? "" : navigationTitle)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { searchToolbar }
+            .navigationDestination(for: ScheduleRoute.self) { route in
+                switch route {
+                case .list(let schedule):
+                    SchedulesView(schedule: schedule) { item in
+                        scheduleNavigationPath.append(ScheduleRoute.detail(schedule, item))
+                    }
+                case .detail(let schedule, let item):
+                    ScheduleView(schedule: schedule, item: item) { selectedItem in
+                        applyManualScheduleSelection(selectedItem, schedule: schedule)
+                    }
+                }
+            }
+            .safeAreaInset(edge: .bottom) {
+                if selectedTab == .boards {
+                    storyShootAccessoryBar
+                }
+            }
+            .onChange(of: selectedTab) { newValue in
+                if newValue == .search {
+                    withAnimation(.snappy) {
+                        isSearching = true
+                        isSearchFocused = true
+                    }
+                    selectedTab = lastNonSearchTab
+                    return
+                }
+
+                lastNonSearchTab = newValue
+            }
         }
         .onAppear {
             shouldAnimateTabIcons = true
         }
-        .onChange(of: selectedTab) { newValue in
-            if newValue == .search {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    isSearchExpanded = true
-                }
-                isSearchFocused = true
-                selectedTab = lastNonSearchTab
-                return
-            }
+    }
 
-            lastNonSearchTab = newValue
-
-            if isSearchExpanded {
-                isSearchExpanded = false
-                isSearchFocused = false
-            }
-        }
-        .safeAreaInset(edge: .bottom) {
-            if isSearchExpanded {
-                searchField
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 8)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
+    private var navigationTitle: String {
+        switch selectedTab {
+        case .boards:
+            return displayedNavigationTitle
+        case .schedule:
+            return "Schedule"
+        case .more:
+            return "More"
+        case .settings:
+            return "Settings"
+        case .search:
+            return ""
         }
     }
 
     private var boardsTab: some View {
-        NavigationStack {
-            mainContentWithNavigation
-        }
-        .toolbar {
-            ToolbarItemGroup(placement: .bottomBar) {
-                storyShootAccessory
-            }
-        }
+        mainContentWithNavigation
         .tabItem {
             Label {
                 Text("Boards")
@@ -637,21 +654,7 @@ struct MainView: View {
     }
 
     private var scheduleTab: some View {
-        NavigationStack(path: $scheduleNavigationPath) {
-            scheduleRootView
-                .navigationDestination(for: ScheduleRoute.self) { route in
-                    switch route {
-                    case .list(let schedule):
-                        SchedulesView(schedule: schedule) { item in
-                            scheduleNavigationPath.append(ScheduleRoute.detail(schedule, item))
-                        }
-                    case .detail(let schedule, let item):
-                        ScheduleView(schedule: schedule, item: item) { selectedItem in
-                            applyManualScheduleSelection(selectedItem, schedule: schedule)
-                        }
-                    }
-                }
-        }
+        scheduleRootView
         .task(id: activeSchedule?.id) {
             guard let schedule = activeSchedule else { return }
             await loadSchedule(schedule, openDetail: false)
@@ -669,40 +672,36 @@ struct MainView: View {
     }
 
     private var moreTab: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                Picker("More", selection: $selectedMoreTab) {
-                    Text("Files").tag(MoreTab.files)
-                    Text("Comments").tag(MoreTab.comments)
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal)
-                .padding(.top, 8)
-
-                Divider()
-
-                Group {
-                    switch selectedMoreTab {
-                    case .files:
-                        FilesSheet(
-                            title: "Files",
-                            clips: $projectFiles,
-                            isLoading: $isLoadingProjectFiles,
-                            errorMessage: $projectFilesError,
-                            onReload: { await loadProjectFiles(force: true) },
-                            onMediaPreview: { clip in
-                                openProjectFilePreview(clip)
-                            },
-                            showsNavigation: false
-                        )
-                    case .comments:
-                        commentsPlaceholder
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        VStack(spacing: 0) {
+            Picker("More", selection: $selectedMoreTab) {
+                Text("Files").tag(MoreTab.files)
+                Text("Comments").tag(MoreTab.comments)
             }
-            .navigationTitle("More")
-            .navigationBarTitleDisplayMode(.inline)
+            .pickerStyle(.segmented)
+            .padding(.horizontal)
+            .padding(.top, 8)
+
+            Divider()
+
+            Group {
+                switch selectedMoreTab {
+                case .files:
+                    FilesSheet(
+                        title: "Files",
+                        clips: $projectFiles,
+                        isLoading: $isLoadingProjectFiles,
+                        errorMessage: $projectFilesError,
+                        onReload: { await loadProjectFiles(force: true) },
+                        onMediaPreview: { clip in
+                            openProjectFilePreview(clip)
+                        },
+                        showsNavigation: false
+                    )
+                case .comments:
+                    commentsPlaceholder
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .tabItem {
             Label {
@@ -714,6 +713,19 @@ struct MainView: View {
             }
         }
         .tag(MainTab.more)
+    }
+
+    private var commentsPlaceholder: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "text.bubble")
+                .font(.system(size: 44))
+                .foregroundStyle(.secondary)
+            Text("Comments")
+                .font(.title2.weight(.semibold))
+            Text("Comments will live here soon.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
     }
 
     private var searchTab: some View {
@@ -728,19 +740,6 @@ struct MainView: View {
                 }
             }
             .tag(MainTab.search)
-    }
-
-    private var commentsPlaceholder: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "text.bubble")
-                .font(.system(size: 44))
-                .foregroundStyle(.secondary)
-            Text("Comments")
-                .font(.title2.weight(.semibold))
-            Text("Comments will live here soon.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
     }
 
     private var settingsTab: some View {
@@ -1091,30 +1090,33 @@ struct MainView: View {
         }
     }
 
-    private var searchField: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(.secondary)
-            TextField("Search boards", text: $searchText)
-                .textFieldStyle(.plain)
-                .submitLabel(.search)
-                .focused($isSearchFocused)
-            Button {
-                withAnimation(.easeInOut(duration: 0.12)) {
-                    isSearchExpanded = false
-                    isSearchFocused = false
+    @ToolbarContentBuilder
+    private var searchToolbar: some ToolbarContent {
+        if isSearching {
+            ToolbarItem(placement: .principal) {
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                    TextField("Search…", text: $searchText)
+                        .textInputAutocapitalization(.never)
+                        .disableAutocorrection(true)
+                        .submitLabel(.search)
+                        .focused($isSearchFocused)
+                    Button {
+                        withAnimation(.snappy) {
+                            isSearching = false
+                            searchText = ""
+                            isSearchFocused = false
+                        }
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                    }
+                    .accessibilityLabel("Cancel search")
                 }
-            } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(.secondary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Capsule().fill(.thinMaterial))
+                .frame(maxWidth: 420)
             }
-            .accessibilityLabel("Close search")
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background(.ultraThickMaterial, in: Capsule())
-        .onAppear {
-            isSearchFocused = true
         }
     }
 
@@ -1125,6 +1127,20 @@ struct MainView: View {
         }
         .pickerStyle(.segmented)
         .frame(maxWidth: 240)
+    }
+
+    private var storyShootAccessoryBar: some View {
+        HStack {
+            storyShootAccessory
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.thinMaterial)
+        .overlay(
+            Divider().offset(y: -0.5),
+            alignment: .top
+        )
     }
 
     private func openProjectFilePreview(_ clip: Clip) {
