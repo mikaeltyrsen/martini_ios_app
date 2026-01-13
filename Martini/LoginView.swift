@@ -10,18 +10,24 @@ import SwiftUI
 struct LoginView: View {
     @EnvironmentObject var authService: AuthService
     @EnvironmentObject var nearbySignInService: NearbySignInService
+    @Environment(\.colorScheme) private var colorScheme
     @State private var showScanner = false
     @State private var isAuthenticating = false
     @State private var scannedQRCode = ""
     @State private var showSavedProjects = false
     @State private var showSignInFailureAlert = false
+
+    private var gradientColor: Color {
+        colorScheme == .dark ? .black : .white
+    }
     
     var body: some View {
         ZStack {
             // Background
-            Color.black
+            Color(.systemBackground)
                 .ignoresSafeArea()
             ParallaxBoardBackground()
+                .opacity(colorScheme == .dark ? 1.0 : 0.25)
                 .edgesIgnoringSafeArea(.all)
 
 //            Color(.systemBackground)
@@ -29,9 +35,9 @@ struct LoginView: View {
 //                .edgesIgnoringSafeArea(.all)
             LinearGradient(
                 gradient: Gradient(stops: [
-                    .init(color: .black.opacity(1.0), location: 0.0),   // top 100%
-                    .init(color: .black.opacity(0.0), location: 0.5),   // middle 0%
-                    .init(color: .black.opacity(1.0), location: 1.0)    // bottom 100%
+                    .init(color: gradientColor.opacity(1.0), location: 0.0),   // top 100%
+                    .init(color: gradientColor.opacity(0.0), location: 0.5),   // middle 0%
+                    .init(color: gradientColor.opacity(1.0), location: 1.0)    // bottom 100%
                 ]),
                 startPoint: .top,
                 endPoint: .bottom
@@ -44,7 +50,7 @@ struct LoginView: View {
                     Image("martini-logo")
                         .resizable()
                         .renderingMode(.template)
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 240, height: 120)
                     
