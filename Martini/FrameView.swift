@@ -516,11 +516,11 @@ struct FrameView: View {
                     }
                 }
             }
-            .overlay(alignment: .bottom) {
-                if shouldShowBottomToolbar {
-                    markerButtonOverlay
-                }
-            }
+//            .overlay(alignment: .bottom) {
+//                if shouldShowBottomToolbar {
+//                    markerButtonOverlay
+//                }
+//            }
     }
 
     private var uploadingBoardOverlay: some View {
@@ -613,6 +613,8 @@ struct FrameView: View {
 
             Spacer()
 
+            markerButton
+            
             Spacer()
 
             NavigationLink {
@@ -2790,39 +2792,43 @@ private struct AddBoardAlert: View {
                 
                 GlassEffectContainer(spacing: 20.0) {
                     
-                    
-                    HStack(spacing: 20) {
-                        actionButton(title: "Take Photo", systemImage: "camera") {
-                            onTakePhoto()
+                    VStack(spacing: 20) {
+                        HStack(spacing: 20) {
+                            actionButton(title: "Take Photo", systemImage: "camera") {
+                                onTakePhoto()
+                            }
+                            .offset(x: isExpanded ? buttonSpacing : 40, y: isExpanded ? buttonSpacing : 40)
+                            .opacity(isExpanded ? 1 : 0)
+                            .scaleEffect(isExpanded ? 1 : 0.88)
+                            .animation(buttonPop.delay(0.15), value: isExpanded)
+                            
+                            actionButton(title: "Scout Camera", systemImage: "camera.viewfinder") {
+                                onScoutCamera()
+                            }
+                            .offset(x: isExpanded ? buttonSpacing : -40, y: isExpanded ? buttonSpacing : 40)
+                            .opacity(isExpanded ? 1 : 0)
+                            .scaleEffect(isExpanded ? 1 : 0.88)
+                            .animation(buttonPop.delay(0.15), value: isExpanded)
                         }
-                        .offset(x: isExpanded ? buttonSpacing : 80)
-                        .opacity(isExpanded ? 1 : 0)
-                        .scaleEffect(isExpanded ? 1 : 0.88)
-                        .animation(buttonPop.delay(0.15), value: isExpanded)
                         
-                        actionButton(title: "Scout Camera", systemImage: "camera.viewfinder") {
-                            onScoutCamera()
+                        HStack(spacing: 20) {
+                            
+                            actionButton(title: "Upload", systemImage: "square.and.arrow.up") {
+                                onUpload()
+                            }
+                            .offset(x: isExpanded ? buttonSpacing : 40, y: isExpanded ? buttonSpacing : -40)
+                            .opacity(isExpanded ? 1 : 0)
+                            .scaleEffect(isExpanded ? 1 : 0.88)
+                            .animation(buttonPop.delay(0.15), value: isExpanded)
+                            
+                            actionButton(title: "Draw", systemImage: "pencil") {
+                                onDraw()
+                            }
+                            .offset(x: isExpanded ? buttonSpacing : -40, y: isExpanded ? buttonSpacing : -40)
+                            .opacity(isExpanded ? 1 : 0)
+                            .scaleEffect(isExpanded ? 1 : 0.88)
+                            .animation(buttonPop.delay(0.15), value: isExpanded)
                         }
-                        .opacity(isExpanded ? 1 : 0)
-                        .scaleEffect(isExpanded ? 1 : 0.88)
-                        .animation(buttonPop.delay(0.15), value: isExpanded)
-
-                        actionButton(title: "Upload", systemImage: "square.and.arrow.up") {
-                            onUpload()
-                        }
-                        .offset(x: isExpanded ? buttonSpacing : -80)
-                        .opacity(isExpanded ? 1 : 0)
-                        .scaleEffect(isExpanded ? 1 : 0.88)
-                        .animation(buttonPop.delay(0.15), value: isExpanded)
-                    }
-
-                    HStack(spacing: 20) {
-                        actionButton(title: "Draw", systemImage: "pencil") {
-                            onDraw()
-                        }
-                        .opacity(isExpanded ? 1 : 0)
-                        .scaleEffect(isExpanded ? 1 : 0.88)
-                        .animation(buttonPop.delay(0.2), value: isExpanded)
                     }
                     
                 }
