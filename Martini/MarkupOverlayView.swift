@@ -3,6 +3,7 @@ import SwiftUI
 
 struct MarkupOverlayView: View {
     let drawing: PKDrawing
+    var contentMode: ContentMode = .fit
 
     var body: some View {
         GeometryReader { proxy in
@@ -10,8 +11,9 @@ struct MarkupOverlayView: View {
             if size.width > 0, size.height > 0 {
                 Image(uiImage: drawing.image(from: CGRect(origin: .zero, size: size), scale: UIScreen.main.scale))
                     .resizable()
-                    .scaledToFit()
+                    .aspectRatio(contentMode: contentMode)
                     .frame(width: size.width, height: size.height)
+                    .clipped()
             }
         }
         .allowsHitTesting(false)
