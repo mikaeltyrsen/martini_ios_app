@@ -648,7 +648,7 @@ struct FrameView: View {
         Button {
             openStatusSheet()
         } label: {
-            let labelColor: Color = selectedStatus == .none ? .martiniDefaultText : selectedStatus.markerBackgroundColor
+            let labelColor: Color = selectedStatus == .none ? .primary : selectedStatus.markerBackgroundColor
             let statusLabel: String = {
                 if isUpdatingStatus { return "Updating Status" }
                 return selectedStatus == .none ? "Mark Frame" : selectedStatus.displayName
@@ -1790,7 +1790,7 @@ struct FrameView: View {
     private func statusSelectionButton(for status: FrameStatus) -> some View {
         let isSelected: Bool = (selectedStatus == status)
         let isLoading: Bool = isUpdatingStatus && statusBeingUpdated == status
-        let labelColor: Color = status == .none ? .martiniDefaultText : status.markerBackgroundColor
+        let labelColor: Color = status == .none ? .primary : status.markerBackgroundColor
 
         Button {
             updateStatus(to: status)
