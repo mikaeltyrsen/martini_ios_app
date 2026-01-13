@@ -163,15 +163,17 @@ struct FrameLayout: View {
     @ViewBuilder
     private var imageCard: some View {
         let card = ZStack {
+            let hasAnnotation = boardAnnotationDrawing?.strokes.isEmpty == false
+            let shouldFillImage = !hasAnnotation
             RoundedRectangle(cornerRadius: cornerRadius)
                 .fill(Color.gray.opacity(0.2))
                 .overlay(alignment: .center) {
-                    heroMedia(isFullscreen: false)
+                    heroMedia(isFullscreen: false, shouldFillImage: shouldFillImage)
                 }
                 .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
 
             if let annotationDrawing = boardAnnotationDrawing, !annotationDrawing.strokes.isEmpty {
-                MarkupOverlayView(drawing: annotationDrawing, contentMode: .fill)
+                MarkupOverlayView(drawing: annotationDrawing, contentMode: .fit)
                     .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
             }
 
@@ -662,7 +664,7 @@ struct FrameLayout: View {
     private var mediaHeroID: String { "frame-media-\(frame.id)" }
 
     @ViewBuilder
-    private func heroMedia(isFullscreen: Bool) -> some View {
+    private func heroMedia(isFullscreen: Bool, shouldFillImage: Bool) -> some View {
         HeroMediaView(
             url: resolvedMediaURL,
             isVideo: shouldPlayAsVideo,
@@ -671,7 +673,7 @@ struct FrameLayout: View {
             heroID: mediaHeroID,
             frameNumberLabel: frameNumberLabel,
             placeholder: AnyView(placeholder),
-            imageShouldFill: !isFullscreen,
+            imageShouldFill: isFullscreen ? false : shouldFillImage,
             isSource: !isFullscreen,
             useMatchedGeometry: !isFullscreen
         )
