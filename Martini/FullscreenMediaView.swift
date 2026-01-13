@@ -560,6 +560,7 @@ struct FullscreenMediaViewer: View {
         markupCanvasSize = newSize
 
         guard !hasScaledInitialDrawing else { return }
+        guard mediaAspectRatio != nil else { return }
         let sourceSize = markupConfiguration?.initialCanvasSize ?? mediaPixelSize ?? newSize
         if !markupDrawing.strokes.isEmpty, sourceSize != newSize {
             markupDrawing = scaledDrawing(markupDrawing, from: sourceSize, to: newSize)
