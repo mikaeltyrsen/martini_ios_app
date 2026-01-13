@@ -648,6 +648,7 @@ struct FrameView: View {
         Button {
             openStatusSheet()
         } label: {
+            let labelColor: Color = selectedStatus == .none ? .martiniDefaultText : selectedStatus.markerBackgroundColor
             let statusLabel: String = {
                 if isUpdatingStatus { return "Updating Status" }
                 return selectedStatus == .none ? "Mark Frame" : selectedStatus.displayName
@@ -665,7 +666,7 @@ struct FrameView: View {
                 }
             }
             .labelStyle(.titleAndIcon)
-            .foregroundStyle(selectedStatus.markerBackgroundColor)
+            .foregroundStyle(labelColor)
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
             .fixedSize(horizontal: true, vertical: false)
@@ -1789,6 +1790,7 @@ struct FrameView: View {
     private func statusSelectionButton(for status: FrameStatus) -> some View {
         let isSelected: Bool = (selectedStatus == status)
         let isLoading: Bool = isUpdatingStatus && statusBeingUpdated == status
+        let labelColor: Color = status == .none ? .martiniDefaultText : status.markerBackgroundColor
 
         Button {
             updateStatus(to: status)
@@ -1797,16 +1799,20 @@ struct FrameView: View {
                 Group {
                     if isLoading {
                         ProgressView()
-                            .tint(status.markerBackgroundColor)
+                            .tint(labelColor)
                     } else {
                         Image(systemName: status.systemImageName)
                             .font(.system(size: 25, weight: .semibold))
-                            .foregroundStyle(status.markerBackgroundColor)
+                            .foregroundStyle(labelColor)
                     }
                 }
                 .frame(width: 60, height: 60)
-                .foregroundStyle(status.markerBackgroundColor)
-                .glassEffect(.regular.tint(status.markerBackgroundColor.opacity(0.3)).interactive())
+                .foregroundStyle(labelColor)
+                .glassEffect(
+                    status == .none
+                        ? .regular.interactive()
+                        : .regular.tint(status.markerBackgroundColor.opacity(0.3)).interactive()
+                )
                 //.background(RoundedRectangle(cornerRadius: 12).fill(Color.white))
                 Text(status.displayName)
                     .font(.system(size: 12, weight: .semibold))
