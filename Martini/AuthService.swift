@@ -243,11 +243,10 @@ class AuthService: ObservableObject {
         }
     }
 
-    func confirmPendingProjectSwitch() {
-        guard let pendingProjectSwitch else { return }
-        self.pendingProjectSwitch = nil
+    func confirmPendingProjectSwitch(_ pendingLink: PendingDeepLink) {
+        pendingProjectSwitch = nil
         logout()
-        processDeepLink(pendingProjectSwitch, bypassSwitchPrompt: true)
+        processDeepLink(pendingLink, bypassSwitchPrompt: true)
     }
 
     func cancelPendingProjectSwitch() {
