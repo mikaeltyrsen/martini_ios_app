@@ -77,7 +77,7 @@ struct LoginView: View {
                                     .font(.headline)
                                     .fontWeight(.semibold)
                             }
-                            .frame(maxWidth: .infinity)
+                            .frame(maxWidth: 300)
                             .padding()
                             .background(Color.colorAccent)
                             .foregroundColor(.white)
@@ -89,13 +89,13 @@ struct LoginView: View {
                             showSavedProjects = true
                         } label: {
                             HStack {
-                                Image(systemName: "folder.fill")
+                                Image(systemName: "photo.stack")
                                     .font(.title2)
                                 Text("SELECT PROJECT")
                                     .font(.headline)
                                     .fontWeight(.semibold)
                             }
-                            .frame(maxWidth: .infinity)
+                            .frame(maxWidth: 300)
                             .padding()
                             .background(Color(.systemGray6))
                             .foregroundColor(.primary)
