@@ -72,12 +72,12 @@ struct ContentView: View {
         .onOpenURL { url in
             handleIncomingURL(url)
         }
-        .alert(item: $authService.pendingProjectSwitch) { _ in
+        .alert(item: $authService.pendingProjectSwitch) { pendingSwitch in
             Alert(
                 title: Text("Switch projects?"),
                 message: Text(switchProjectMessage()),
                 primaryButton: .destructive(Text("Switch")) {
-                    authService.confirmPendingProjectSwitch()
+                    authService.confirmPendingProjectSwitch(pendingSwitch)
                 },
                 secondaryButton: .cancel {
                     authService.cancelPendingProjectSwitch()
