@@ -16,8 +16,7 @@ struct LoginView: View {
     @State private var scannedQRCode = ""
     @State private var showAccessCodeEntry = false
     @State private var scannedProjectId = ""
-    @State private var showProjectIdEntry = false
-    @State private var projectIdInput = ""
+    @State private var showSavedProjects = false
     
     var body: some View {
         ZStack {
@@ -104,13 +103,13 @@ struct LoginView: View {
                             .padding(.horizontal, 40)
 
                             Button {
-                                showProjectIdEntry = true
+                                showSavedProjects = true
                                 errorMessage = nil
                             } label: {
                                 HStack {
-                                    Image(systemName: "key.fill")
+                                    Image(systemName: "folder.fill")
                                         .font(.title2)
-                                    Text("LOGIN WITH PROJECT ID")
+                                    Text("SELECT PROJECT")
                                         .font(.headline)
                                         .fontWeight(.semibold)
                                 }
@@ -157,13 +156,11 @@ struct LoginView: View {
                 handleQRCode(qrCode)
             }
         }
-        .sheet(isPresented: $showProjectIdEntry) {
-            ProjectIdEntryView(projectId: $projectIdInput) { projectId in
-                handleManualProjectId(projectId)
-            } onCancel: {
-                showProjectIdEntry = false
-                projectIdInput = ""
-            }
+        .sheet(isPresented: $showSavedProjects) {
+            SavedProjectsSheet(onSelect: { project in
+                handleSavedProjectSelection(project)
+            })
+            .environmentObject(authService)
         }
         .onAppear {
             processPendingDeepLinkIfNeeded()
@@ -197,20 +194,28 @@ struct LoginView: View {
         checkAndProceedWithAuthentication()
     }
 
-    private func handleManualProjectId(_ projectId: String) {
-        let trimmed = projectId.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        guard !trimmed.isEmpty else {
-            errorMessage = "Please enter a valid project ID."
-            return
-        }
-
-        scannedQRCode = trimmed
+    private func handleSavedProjectSelection(_ project: StoredProject) {
+        showSavedProjects = false
+        scannedQRCode = "\(project.projectId)-\(project.accessCode)"
         isAuthenticating = true
         errorMessage = nil
-        showProjectIdEntry = false
 
-        checkAndProceedWithAuthentication()
+        Task {
+            do {
+                try await authService.authenticate(withQRCode: scannedQRCode)
+            } catch {
+                await MainActor.run {
+                    errorMessage = error.localizedDescription
+                    isAuthenticating = false
+                }
+
+                if shouldMarkProjectExpired(for: error) {
+                    await MainActor.run {
+                        authService.markStoredProjectExpired(projectId: project.projectId)
+                    }
+                }
+            }
+        }
     }
 
     private func processPendingDeepLinkIfNeeded() {
@@ -244,7 +249,6 @@ struct LoginView: View {
         isAuthenticating = true
         errorMessage = nil
         showAccessCodeEntry = false
-        showProjectIdEntry = false
         checkAndProceedWithAuthentication()
     }
 
@@ -266,6 +270,19 @@ struct LoginView: View {
                     isAuthenticating = false
                 }
             }
+        }
+    }
+
+    private func shouldMarkProjectExpired(for error: Error) -> Bool {
+        guard let authError = error as? AuthError else {
+            return false
+        }
+
+        switch authError {
+        case .authenticationFailed, .authenticationFailedWithMessage:
+            return true
+        default:
+            return false
         }
     }
 }
@@ -545,6 +562,77 @@ struct ProjectIdEntryView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") {
                         onCancel()
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Saved Projects Sheet
+
+struct SavedProjectsSheet: View {
+    @EnvironmentObject var authService: AuthService
+    let onSelect: (StoredProject) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationView {
+            Group {
+                if authService.savedProjects.isEmpty {
+                    VStack(spacing: 16) {
+                        Image(systemName: "folder")
+                            .font(.system(size: 48))
+                            .foregroundColor(.secondary)
+
+                        Text("No saved projects yet")
+                            .font(.headline)
+
+                        Text("Sign in successfully and your project will appear here.")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(.systemBackground))
+                } else {
+                    List {
+                        ForEach(authService.savedProjects) { project in
+                            Button {
+                                onSelect(project)
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Text(project.projectName)
+                                        .font(.headline)
+                                        .foregroundColor(.primary)
+
+                                    Spacer()
+
+                                    if project.isExpired {
+                                        Text("Expired")
+                                            .font(.caption2)
+                                            .fontWeight(.semibold)
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 4)
+                                            .background(Capsule().fill(Color.red.opacity(0.2)))
+                                            .foregroundColor(.red)
+                                    }
+                                }
+                                .padding(.vertical, 6)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .onDelete(perform: authService.removeStoredProjects)
+                    }
+                    .listStyle(.insetGrouped)
+                }
+            }
+            .navigationTitle("Select Project")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") {
+                        dismiss()
                     }
                 }
             }

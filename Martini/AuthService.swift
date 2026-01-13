@@ -33,6 +33,16 @@ struct ScheduleUpdateEvent: Equatable {
     }
 }
 
+struct StoredProject: Codable, Identifiable, Equatable {
+    let projectId: String
+    var projectName: String
+    var accessCode: String
+    var lastSignedIn: Date
+    var isExpired: Bool
+
+    var id: String { projectId }
+}
+
 struct ProjectFilesUpdateEvent: Equatable {
     let eventName: String
 
@@ -92,6 +102,7 @@ class AuthService: ObservableObject {
     @Published var isScheduleActive: Bool = false
     @Published var isLoadingProjectDetails: Bool = false
     @Published var pendingDeepLink: String?
+    @Published private(set) var savedProjects: [StoredProject] = []
     @Published private(set) var pendingFrameStatusUpdates: [PendingFrameStatusUpdate] = []
     @Published private(set) var queuedFrameSyncStatus: QueuedFrameSyncStatus = .idle
     private var queuedFrameSyncResetTask: Task<Void, Never>?
@@ -100,6 +111,7 @@ class AuthService: ObservableObject {
     private let projectIdKey = "martini_project_id"
     private let projectTitleKey = "martini_project_title"
     private let accessCodeKey = "martini_access_code"
+    private let savedProjectsKey = "martini_saved_projects"
     private let cachedCreativesKeyPrefix = "martini_cached_creatives_"
     private let cachedFramesKeyPrefix = "martini_cached_frames_"
     private let baseScriptsURL = "https://dev.staging.trymartini.com/scripts/"
@@ -111,6 +123,7 @@ class AuthService: ObservableObject {
     init(connectionMonitor: (any ConnectionMonitoring)? = nil) {
         self.connectionMonitor = connectionMonitor
         loadAuthData()
+        loadSavedProjects()
     }
 
     private enum APIEndpoint: String {
@@ -217,6 +230,85 @@ class AuthService: ObservableObject {
         self.accessCode = accessCode
         self.token = token
         self.isAuthenticated = true
+        recordSuccessfulSignIn(projectId: projectId, projectName: projectTitle, accessCode: accessCode)
+    }
+
+    private func loadSavedProjects() {
+        guard let data = UserDefaults.standard.data(forKey: savedProjectsKey) else {
+            savedProjects = []
+            return
+        }
+
+        do {
+            let decoded = try JSONDecoder().decode([StoredProject].self, from: data)
+            savedProjects = decoded.sorted(by: { $0.lastSignedIn > $1.lastSignedIn })
+        } catch {
+            savedProjects = []
+        }
+    }
+
+    private func persistSavedProjects() {
+        do {
+            let data = try JSONEncoder().encode(savedProjects)
+            UserDefaults.standard.set(data, forKey: savedProjectsKey)
+        } catch {
+            print("❌ Failed to save stored projects: \(error.localizedDescription)")
+        }
+    }
+
+    private func recordSuccessfulSignIn(projectId: String, projectName: String?, accessCode: String) {
+        let trimmedName = projectName?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let displayName = trimmedName?.isEmpty == false ? trimmedName! : "Untitled Project"
+
+        if let index = savedProjects.firstIndex(where: { $0.projectId == projectId }) {
+            savedProjects[index].projectName = displayName
+            savedProjects[index].accessCode = accessCode
+            savedProjects[index].lastSignedIn = Date()
+            savedProjects[index].isExpired = false
+        } else {
+            savedProjects.append(
+                StoredProject(
+                    projectId: projectId,
+                    projectName: displayName,
+                    accessCode: accessCode,
+                    lastSignedIn: Date(),
+                    isExpired: false
+                )
+            )
+        }
+
+        savedProjects.sort(by: { $0.lastSignedIn > $1.lastSignedIn })
+        persistSavedProjects()
+    }
+
+    func updateStoredProjectName(projectId: String, projectName: String) {
+        guard let index = savedProjects.firstIndex(where: { $0.projectId == projectId }) else {
+            return
+        }
+
+        if savedProjects[index].projectName != projectName {
+            savedProjects[index].projectName = projectName
+            persistSavedProjects()
+        }
+    }
+
+    func markStoredProjectExpired(projectId: String) {
+        guard let index = savedProjects.firstIndex(where: { $0.projectId == projectId }) else {
+            return
+        }
+
+        savedProjects[index].isExpired = true
+        persistSavedProjects()
+    }
+
+    func removeStoredProjects(at offsets: IndexSet) {
+        savedProjects.remove(atOffsets: offsets)
+        persistSavedProjects()
+    }
+
+    func removeStoredProject(projectId: String) {
+        savedProjects.removeAll(where: { $0.projectId == projectId })
+        persistSavedProjects()
     }
     
     // Authenticate with QR code data and optional manual access code
@@ -754,6 +846,11 @@ class AuthService: ObservableObject {
                 if let schedule = frame.schedule, !schedule.isEmpty { return true }
                 return false
             }
+            if projectTitle != projectResponse.name {
+                projectTitle = projectResponse.name
+                UserDefaults.standard.set(projectResponse.name, forKey: projectTitleKey)
+            }
+            updateStoredProjectName(projectId: projectResponse.id, projectName: projectResponse.name)
 
             print("✅ Successfully fetched project details for \(projectResponse.name)")
         }
