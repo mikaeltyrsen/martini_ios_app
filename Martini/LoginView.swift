@@ -121,12 +121,12 @@ struct LoginView: View {
                 }
                 
                 // Footer
-                Text("Scan a QR code to access your Martini project")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
-                    .padding(.bottom, 40)
+//                Text("Scan a QR code to access your Martini project")
+//                    .font(.caption)
+//                    .foregroundColor(.secondary)
+//                    .multilineTextAlignment(.center)
+//                    .padding(.horizontal)
+//                    .padding(.bottom, 40)
             }
         }
         .sheet(isPresented: $showScanner) {
