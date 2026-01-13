@@ -596,13 +596,16 @@ struct SavedProjectsSheet: View {
                         .onDelete(perform: authService.removeStoredProjects)
                     }
                     .listStyle(.insetGrouped)
+                    .padding(.top, 12)
                 }
             }
             .navigationTitle("Select Project")
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
                         dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
                     }
                 }
             }
