@@ -183,8 +183,8 @@ struct FrameView: View {
                     initialDrawing: context.initialDrawing
                 ) {
                     annotationEditorContext = nil
-                } onSave: { drawing in
-                    saveAnnotation(drawing, context: context)
+                } onSave: { drawing, canvasSize in
+                    saveAnnotation(drawing, canvasSize: canvasSize, context: context)
                 }
             }
             .fullScreenCover(isPresented: $showingSystemCamera) {
@@ -2090,8 +2090,12 @@ private extension FrameView {
         )
     }
 
-    private func saveAnnotation(_ drawing: PKDrawing, context: BoardAnnotationEditorContext) {
-        let updatedMetadata = annotationMetadata(existing: context.existingMetadata, drawing: drawing)
+    private func saveAnnotation(_ drawing: PKDrawing, canvasSize: CGSize, context: BoardAnnotationEditorContext) {
+        let updatedMetadata = annotationMetadata(
+            existing: context.existingMetadata,
+            drawing: drawing,
+            canvasSize: canvasSize
+        )
 
         if context.isNewBoard {
             Task {
@@ -2122,7 +2126,11 @@ private extension FrameView {
         }
     }
 
-    private func annotationMetadata(existing: JSONValue?, drawing: PKDrawing) -> JSONValue {
+    private func annotationMetadata(
+        existing: JSONValue?,
+        drawing: PKDrawing,
+        canvasSize: CGSize?
+    ) -> JSONValue {
         guard !drawing.strokes.isEmpty else {
             if let existing, case .object(var object) = existing {
                 object["annotation"] = nil
@@ -2132,12 +2140,19 @@ private extension FrameView {
         }
         let base64 = drawing.dataRepresentation().base64EncodedString()
         let updatedAt = ISO8601DateFormatter().string(from: Date())
-        let annotation: JSONValue = .object([
+        var annotationValues: [String: JSONValue] = [
             "type": .string("pencilkit"),
             "format": .string("pkdrawing.dataRepresentation"),
             "data_base64": .string(base64),
             "updatedAt": .string(updatedAt)
-        ])
+        ]
+        if let canvasSize,
+           canvasSize.width > 0,
+           canvasSize.height > 0 {
+            annotationValues["canvas_width"] = .number(Double(canvasSize.width))
+            annotationValues["canvas_height"] = .number(Double(canvasSize.height))
+        }
+        let annotation: JSONValue = .object(annotationValues)
 
         if let existing, case .object(var object) = existing {
             object["annotation"] = annotation
@@ -2147,7 +2162,7 @@ private extension FrameView {
         return .object(["annotation": annotation])
     }
 
-    private func annotationDrawing(from metadata: JSONValue?) -> PKDrawing? {
+    private func annotationData(from metadata: JSONValue?) -> (drawing: PKDrawing, canvasSize: CGSize?)? {
         guard let metadata, case .object(let root) = metadata,
               let annotationValue = root["annotation"],
               case .object(let annotation) = annotationValue,
@@ -2157,7 +2172,21 @@ private extension FrameView {
         else {
             return nil
         }
-        return try? PKDrawing(data: data)
+        guard let drawing = try? PKDrawing(data: data) else { return nil }
+        let canvasSize = annotationCanvasSize(from: annotation)
+        return (drawing, canvasSize)
+    }
+
+    private func annotationCanvasSize(from annotation: [String: JSONValue]) -> CGSize? {
+        guard let widthValue = annotation["canvas_width"],
+              let heightValue = annotation["canvas_height"],
+              case .number(let width) = widthValue,
+              case .number(let height) = heightValue,
+              width > 0,
+              height > 0 else {
+            return nil
+        }
+        return CGSize(width: width, height: height)
     }
 
     private func uploadDrawingBoard(drawing: PKDrawing, metadata: JSONValue) async -> Bool {
@@ -2231,7 +2260,8 @@ private extension FrameView {
             let aspectRatio = FrameLayout.aspectRatio(from: frame.creativeAspectRatio ?? "") ?? (16.0 / 9.0)
             let backgroundURL = asset.url
             let existingMetadata = board.metadata
-            let initialDrawing = annotationDrawing(from: existingMetadata) ?? PKDrawing()
+            let annotationData = annotationData(from: existingMetadata)
+            let initialDrawing = annotationData?.drawing ?? PKDrawing()
             let context = BoardAnnotationEditorContext(
                 title: "Edit \(asset.displayLabel)",
                 boardId: board.id,
@@ -2243,8 +2273,9 @@ private extension FrameView {
             )
             markupConfiguration = BoardMarkupConfiguration(
                 initialDrawing: initialDrawing,
-                onSave: { drawing in
-                    saveAnnotation(drawing, context: context)
+                initialCanvasSize: annotationData?.canvasSize,
+                onSave: { drawing, canvasSize in
+                    saveAnnotation(drawing, canvasSize: canvasSize, context: context)
                 }
             )
         }
