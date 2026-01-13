@@ -119,6 +119,7 @@ struct LoginView: View {
                             .transition(.opacity)
                     }
                 }
+                .padding(.bottom, 40)
                 
                 // Footer
 //                Text("Scan a QR code to access your Martini project")
@@ -399,7 +400,7 @@ struct BoardCardView: View {
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(borderColor, lineWidth: borderWidth)
                 )
-                .shadow(color: Color.black.opacity(1), radius: 20, x: 0, y: 4)
+                .shadow(color: Color.black.opacity(0.7), radius: 14, x: 0, y: 6)
 
             if status == .omit {
 //                RoundedRectangle(cornerRadius: 8)
