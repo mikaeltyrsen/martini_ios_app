@@ -171,7 +171,7 @@ struct FrameLayout: View {
                 .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
 
             if let annotationDrawing = boardAnnotationDrawing, !annotationDrawing.strokes.isEmpty {
-                MarkupOverlayView(drawing: annotationDrawing)
+                MarkupOverlayView(drawing: annotationDrawing, contentMode: .fill)
                     .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
             }
 
