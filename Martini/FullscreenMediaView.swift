@@ -557,15 +557,24 @@ struct FullscreenMediaViewer: View {
 
     private func updateMarkupCanvasSize(_ newSize: CGSize) {
         guard newSize.width > 0, newSize.height > 0 else { return }
+        let previousSize = markupCanvasSize
         markupCanvasSize = newSize
 
-        guard !hasScaledInitialDrawing else { return }
-        guard mediaAspectRatio != nil else { return }
-        let sourceSize = markupConfiguration?.initialCanvasSize ?? mediaPixelSize ?? newSize
-        if !markupDrawing.strokes.isEmpty, sourceSize != newSize {
-            markupDrawing = scaledDrawing(markupDrawing, from: sourceSize, to: newSize)
+        if !hasScaledInitialDrawing {
+            guard mediaAspectRatio != nil else { return }
+            let sourceSize = markupConfiguration?.initialCanvasSize ?? mediaPixelSize ?? newSize
+            if !markupDrawing.strokes.isEmpty, sourceSize != newSize {
+                markupDrawing = scaledDrawing(markupDrawing, from: sourceSize, to: newSize)
+            }
+            hasScaledInitialDrawing = true
+            return
         }
-        hasScaledInitialDrawing = true
+
+        guard !markupDrawing.strokes.isEmpty else { return }
+        guard previousSize.width > 0, previousSize.height > 0 else { return }
+        if previousSize != newSize {
+            markupDrawing = scaledDrawing(markupDrawing, from: previousSize, to: newSize)
+        }
     }
 
     private func normalizedDrawingForSave(_ drawing: PKDrawing) -> (PKDrawing, CGSize) {
