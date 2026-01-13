@@ -128,6 +128,11 @@ struct FrameLayout: View {
     @State private var doneSecondLineProgress: CGFloat = 0
     @State private var lastAnimatedStatus: FrameStatus = .none
 
+    private struct BoardAnnotationData {
+        let drawing: PKDrawing
+        let canvasSize: CGSize?
+    }
+
     private var resolvedTitle: String? {
         if let title, !title.isEmpty {
             return title
@@ -163,7 +168,7 @@ struct FrameLayout: View {
     @ViewBuilder
     private var imageCard: some View {
         let card = ZStack {
-            let hasAnnotation = boardAnnotationDrawing?.strokes.isEmpty == false
+            let hasAnnotation = boardAnnotationData?.drawing.strokes.isEmpty == false
             let shouldFillImage = !hasAnnotation
             RoundedRectangle(cornerRadius: cornerRadius)
                 .fill(Color.gray.opacity(0.2))
@@ -172,8 +177,12 @@ struct FrameLayout: View {
                 }
                 .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
 
-            if let annotationDrawing = boardAnnotationDrawing, !annotationDrawing.strokes.isEmpty {
-                MarkupOverlayView(drawing: annotationDrawing, contentMode: .fit)
+            if let annotation = boardAnnotationData, !annotation.drawing.strokes.isEmpty {
+                MarkupOverlayView(
+                    drawing: annotation.drawing,
+                    contentMode: .fit,
+                    canvasSize: annotation.canvasSize
+                )
                     .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
             }
 
@@ -424,12 +433,12 @@ struct FrameLayout: View {
         return board.metadata
     }
 
-    private var boardAnnotationDrawing: PKDrawing? {
+    private var boardAnnotationData: BoardAnnotationData? {
         if let resolvedMetadata = boardMetadata {
-            return annotationDrawing(from: resolvedMetadata)
+            return annotationData(from: resolvedMetadata)
         }
         if usePinnedBoardMarkupFallback, let pinnedMetadata = pinnedBoardMetadata {
-            return annotationDrawing(from: pinnedMetadata)
+            return annotationData(from: pinnedMetadata)
         }
         return nil
     }
@@ -509,7 +518,7 @@ struct FrameLayout: View {
         frame.boards?.contains(where: { $0.isPinned }) ?? false
     }
 
-    private func annotationDrawing(from metadata: JSONValue?) -> PKDrawing? {
+    private func annotationData(from metadata: JSONValue?) -> BoardAnnotationData? {
         guard let metadata, case .object(let root) = metadata,
               let annotationValue = root["annotation"],
               case .object(let annotation) = annotationValue,
@@ -519,7 +528,21 @@ struct FrameLayout: View {
         else {
             return nil
         }
-        return try? PKDrawing(data: data)
+        guard let drawing = try? PKDrawing(data: data) else { return nil }
+        let canvasSize = annotationCanvasSize(from: annotation)
+        return BoardAnnotationData(drawing: drawing, canvasSize: canvasSize)
+    }
+
+    private func annotationCanvasSize(from annotation: [String: JSONValue]) -> CGSize? {
+        guard let widthValue = annotation["canvas_width"],
+              let heightValue = annotation["canvas_height"],
+              case .number(let width) = widthValue,
+              case .number(let height) = heightValue,
+              width > 0,
+              height > 0 else {
+            return nil
+        }
+        return CGSize(width: width, height: height)
     }
 
     @ViewBuilder

@@ -7,9 +7,10 @@ struct BoardAnnotationEditor: View {
     let backgroundURL: URL?
     let initialDrawing: PKDrawing
     let onCancel: () -> Void
-    let onSave: (PKDrawing) -> Void
+    let onSave: (PKDrawing, CGSize) -> Void
 
     @State private var drawing: PKDrawing
+    @State private var canvasSize: CGSize = .zero
 
     init(
         title: String,
@@ -17,7 +18,7 @@ struct BoardAnnotationEditor: View {
         backgroundURL: URL?,
         initialDrawing: PKDrawing = PKDrawing(),
         onCancel: @escaping () -> Void,
-        onSave: @escaping (PKDrawing) -> Void
+        onSave: @escaping (PKDrawing, CGSize) -> Void
     ) {
         self.title = title
         self.aspectRatio = aspectRatio
@@ -65,6 +66,17 @@ struct BoardAnnotationEditor: View {
                         RoundedRectangle(cornerRadius: 12, style: .continuous)
                             .stroke(Color.black.opacity(0.08), lineWidth: 1)
                     )
+                    .background(
+                        GeometryReader { geo in
+                            Color.clear
+                                .onAppear {
+                                    canvasSize = geo.size
+                                }
+                                .onChange(of: geo.size) { _, newSize in
+                                    canvasSize = newSize
+                                }
+                        }
+                    )
                     .padding(.horizontal, 20)
 
                     Spacer(minLength: 12)
@@ -81,7 +93,7 @@ struct BoardAnnotationEditor: View {
 
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        onSave(drawing)
+                        onSave(drawing, canvasSize)
                     }
                 }
             }

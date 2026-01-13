@@ -64,8 +64,11 @@ struct FullscreenMediaViewer: View {
     @State private var showsDiscardMarkupAlert: Bool = false
     @State private var showsClearMarkupAlert: Bool = false
     @State private var mediaAspectRatio: CGFloat?
+    @State private var mediaPixelSize: CGSize?
     @State private var isLoadingImage: Bool = false
     @State private var isMapSheetPresented: Bool = false
+    @State private var markupCanvasSize: CGSize = .zero
+    @State private var hasScaledInitialDrawing: Bool = false
     @AppStorage("scoutCameraFullscreenShowFrameLines") private var showFrameLines: Bool = true
     @AppStorage("scoutCameraFullscreenShowFrameShading") private var showFrameShading: Bool = true
     @AppStorage("scoutCameraFullscreenShowCrosshair") private var showCrosshair: Bool = true
@@ -119,7 +122,7 @@ struct FullscreenMediaViewer: View {
                         .frame(width: mediaSize.width, height: mediaSize.height)
 
                     if canMarkup, hasMarkup, showMarkupOverlay, !isMarkupMode {
-                        MarkupOverlayView(drawing: markupDrawing)
+                        MarkupOverlayView(drawing: markupDrawing, canvasSize: markupCanvasSize)
                             .frame(width: mediaSize.width, height: mediaSize.height)
                     }
 
@@ -158,6 +161,12 @@ struct FullscreenMediaViewer: View {
                 .opacity(isVisible ? 1 : 0)
                 .scaleEffect(isVisible ? 1 : 0.98)
 
+            }
+            .onAppear {
+                updateMarkupCanvasSize(mediaSize)
+            }
+            .onChange(of: mediaSize) { _, newSize in
+                updateMarkupCanvasSize(newSize)
             }
             .contentShape(Rectangle())
             .gesture(
@@ -390,7 +399,10 @@ struct FullscreenMediaViewer: View {
 
     private func handleMarkupAction() {
         if isMarkupMode {
-            markupConfiguration?.onSave(markupDrawing)
+            if let markupConfiguration {
+                let (drawing, canvasSize) = normalizedDrawingForSave(markupDrawing)
+                markupConfiguration.onSave(drawing, canvasSize)
+            }
             isMarkupMode = false
             showMarkupOverlay = hasMarkup
             return
@@ -503,8 +515,15 @@ struct FullscreenMediaViewer: View {
         switch media {
         case .imageURL(let url):
             ratio = imageAspectRatio(from: url)
+            let pixelSize = imagePixelSize(from: url)
+            await MainActor.run {
+                mediaPixelSize = pixelSize
+            }
         case .videoURL(let url):
             ratio = await videoAspectRatio(from: url)
+            await MainActor.run {
+                mediaPixelSize = nil
+            }
         }
 
         guard let ratio, ratio > 0 else { return }
@@ -522,6 +541,68 @@ struct FullscreenMediaViewer: View {
             return nil
         }
         return width / height
+    }
+
+    private func imagePixelSize(from url: URL) -> CGSize? {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let width = properties[kCGImagePropertyPixelWidth] as? CGFloat,
+              let height = properties[kCGImagePropertyPixelHeight] as? CGFloat,
+              width > 0,
+              height > 0 else {
+            return nil
+        }
+        return CGSize(width: width, height: height)
+    }
+
+    private func updateMarkupCanvasSize(_ newSize: CGSize) {
+        guard newSize.width > 0, newSize.height > 0 else { return }
+        markupCanvasSize = newSize
+
+        guard !hasScaledInitialDrawing else { return }
+        let sourceSize = markupConfiguration?.initialCanvasSize ?? mediaPixelSize ?? newSize
+        if !markupDrawing.strokes.isEmpty, sourceSize != newSize {
+            markupDrawing = scaledDrawing(markupDrawing, from: sourceSize, to: newSize)
+        }
+        hasScaledInitialDrawing = true
+    }
+
+    private func normalizedDrawingForSave(_ drawing: PKDrawing) -> (PKDrawing, CGSize) {
+        let sourceSize = markupCanvasSize
+        let preferredTargetSize = markupConfiguration?.initialCanvasSize ?? mediaPixelSize ?? sourceSize
+        let targetSize = preferredTargetSize.width > 0 && preferredTargetSize.height > 0
+        ? preferredTargetSize
+        : sourceSize
+
+        guard targetSize.width > 0,
+              targetSize.height > 0,
+              sourceSize.width > 0,
+              sourceSize.height > 0 else {
+            return (drawing, targetSize)
+        }
+
+        if sourceSize == targetSize {
+            return (drawing, targetSize)
+        }
+
+        let normalized = scaledDrawing(drawing, from: sourceSize, to: targetSize)
+        return (normalized, targetSize)
+    }
+
+    private func scaledDrawing(_ drawing: PKDrawing, from sourceSize: CGSize, to targetSize: CGSize) -> PKDrawing {
+        guard sourceSize.width > 0,
+              sourceSize.height > 0,
+              targetSize.width > 0,
+              targetSize.height > 0 else {
+            return drawing
+        }
+
+        let scaleX = targetSize.width / sourceSize.width
+        let scaleY = targetSize.height / sourceSize.height
+        if abs(scaleX - 1) < 0.001, abs(scaleY - 1) < 0.001 {
+            return drawing
+        }
+        return drawing.transformed(using: CGAffineTransform(scaleX: scaleX, y: scaleY))
     }
 
     private func videoAspectRatio(from url: URL) async -> CGFloat? {

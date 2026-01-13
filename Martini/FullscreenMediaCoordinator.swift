@@ -3,7 +3,8 @@ import SwiftUI
 
 struct BoardMarkupConfiguration {
     let initialDrawing: PKDrawing
-    let onSave: (PKDrawing) -> Void
+    let initialCanvasSize: CGSize?
+    let onSave: (PKDrawing, CGSize) -> Void
 }
 
 struct FullscreenMediaConfiguration: Identifiable {
