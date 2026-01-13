@@ -2911,13 +2911,13 @@ struct SettingsView: View {
                                     Text(preference.label)
                                         .font(.system(size: 11, weight: .medium))
                                 }
-                                .foregroundStyle(isSelected ? Color.white : Color.primary)
+                                .foregroundStyle(isSelected ? Color.martiniDefaultTextColor : Color.primary)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 8)
                                 .background(
                                     RoundedRectangle(cornerRadius: 8)
                                         .fill(isSelected
-                                              ? Color.accentColor
+                                              ? Color.martiniDefaultColor
                                               : Color.secondary.opacity(0.15))
                                 )
                             }
@@ -2946,8 +2946,9 @@ struct SettingsView: View {
                         authService.logout()
                         dismiss()
                     } label: {
-                        Label("Logout", systemImage: "rectangle.portrait.and.arrow.right")
+                        Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
                     }
+                    .foregroundStyle(.red)
                 }
             }
             .navigationTitle("Settings")
@@ -2963,7 +2964,7 @@ struct SettingsView: View {
 //                }
 //            }
         }
-        .tint(.martiniDefaultColor)
+        .tint(.martiniAccentColor)
     }
 
     private var gridSizeLabel: String {
