@@ -27,7 +27,7 @@ struct LoginView: View {
             Color(.systemBackground)
                 .ignoresSafeArea()
             ParallaxBoardBackground()
-                .opacity(colorScheme == .dark ? 1.0 : 0.25)
+                .opacity(colorScheme == .dark ? 1.0 : 1.0)
                 .edgesIgnoringSafeArea(.all)
 
 //            Color(.systemBackground)
