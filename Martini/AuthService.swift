@@ -43,6 +43,13 @@ struct StoredProject: Codable, Identifiable, Equatable {
     var id: String { projectId }
 }
 
+struct PendingDeepLink: Identifiable, Equatable {
+    let id = UUID()
+    let link: String
+    let projectId: String
+    let accessCode: String?
+}
+
 struct ProjectFilesUpdateEvent: Equatable {
     let eventName: String
 
@@ -102,6 +109,7 @@ class AuthService: ObservableObject {
     @Published var isScheduleActive: Bool = false
     @Published var isLoadingProjectDetails: Bool = false
     @Published var pendingDeepLink: String?
+    @Published var pendingProjectSwitch: PendingDeepLink?
     @Published private(set) var savedProjects: [StoredProject] = []
     @Published private(set) var pendingFrameStatusUpdates: [PendingFrameStatusUpdate] = []
     @Published private(set) var queuedFrameSyncStatus: QueuedFrameSyncStatus = .idle
@@ -162,25 +170,88 @@ class AuthService: ObservableObject {
         print("🌐 Received deeplink: \(qrString)")
 
         do {
-            let (accessCode, _) = try parseQRCode(qrString)
-
-            if let accessCode {
-                Task {
-                    do {
-                        try await self.authenticate(withQRCode: qrString, manualAccessCode: accessCode)
-                    } catch {
-                        print("❌ Failed to authenticate from deeplink: \(error.localizedDescription)")
-                    }
-                }
-            } else {
-                if isAuthenticated {
-                    logout()
-                }
-                pendingDeepLink = qrString
-            }
+            let pendingLink = try parsePendingDeepLink(qrString)
+            processDeepLink(pendingLink)
         } catch {
             print("❌ Failed to parse deeplink: \(error.localizedDescription)")
         }
+    }
+
+    private func parsePendingDeepLink(_ link: String) throws -> PendingDeepLink {
+        let (accessCode, projectId) = try parseQRCode(link)
+        return PendingDeepLink(link: link, projectId: projectId, accessCode: accessCode)
+    }
+
+    private func processDeepLink(_ pendingLink: PendingDeepLink, bypassSwitchPrompt: Bool = false) {
+        if isAuthenticated,
+           let activeProjectId = projectId,
+           activeProjectId != pendingLink.projectId,
+           !bypassSwitchPrompt {
+            pendingProjectSwitch = pendingLink
+            return
+        }
+
+        if isAuthenticated {
+            if let accessCode = pendingLink.accessCode,
+               pendingLink.projectId == projectId,
+               accessCode != self.accessCode {
+                authenticateDeepLink(pendingLink, accessCode: accessCode, fallbackToManualEntry: false)
+            }
+            return
+        }
+
+        if let accessCode = pendingLink.accessCode {
+            authenticateDeepLink(pendingLink, accessCode: accessCode, fallbackToManualEntry: false)
+            return
+        }
+
+        if let storedProject = savedProjects.first(where: { $0.projectId == pendingLink.projectId }) {
+            authenticateDeepLink(
+                pendingLink,
+                accessCode: storedProject.accessCode,
+                fallbackToManualEntry: true,
+                storedProjectId: storedProject.projectId
+            )
+            return
+        }
+
+        pendingDeepLink = pendingLink.link
+    }
+
+    private func authenticateDeepLink(
+        _ pendingLink: PendingDeepLink,
+        accessCode: String,
+        fallbackToManualEntry: Bool,
+        storedProjectId: String? = nil
+    ) {
+        Task {
+            do {
+                try await self.authenticate(withQRCode: pendingLink.link, manualAccessCode: accessCode)
+            } catch {
+                print("❌ Failed to authenticate from deeplink: \(error.localizedDescription)")
+                if let storedProjectId, shouldMarkStoredProjectExpired(for: error) {
+                    await MainActor.run {
+                        self.markStoredProjectExpired(projectId: storedProjectId)
+                    }
+                }
+                if fallbackToManualEntry {
+                    await MainActor.run {
+                        self.pendingDeepLink = pendingLink.link
+                    }
+                }
+            }
+        }
+    }
+
+    func confirmPendingProjectSwitch() {
+        guard let pendingProjectSwitch else { return }
+        self.pendingProjectSwitch = nil
+        logout()
+        processDeepLink(pendingProjectSwitch, bypassSwitchPrompt: true)
+    }
+
+    func cancelPendingProjectSwitch() {
+        pendingProjectSwitch = nil
     }
 
     private func authorizedRequest(for endpoint: APIEndpoint, method: String = "POST", body: [String: Any]? = nil) throws -> URLRequest {
@@ -261,6 +332,11 @@ class AuthService: ObservableObject {
         let displayName = trimmedName?.isEmpty == false ? trimmedName! : "Untitled Project"
 
         if let index = savedProjects.firstIndex(where: { $0.projectId == projectId }) {
+            if savedProjects[index].projectName == displayName,
+               savedProjects[index].accessCode == accessCode,
+               savedProjects[index].isExpired == false {
+                return
+            }
             savedProjects[index].projectName = displayName
             savedProjects[index].accessCode = accessCode
             savedProjects[index].lastSignedIn = Date()
@@ -453,11 +529,19 @@ class AuthService: ObservableObject {
     //     or: https://trymartini.com/*/<uuid7>-<code> (code included)
     func parseQRCode(_ qrCode: String) throws -> (accessCode: String?, projectId: String) {
         print("🔍 Parsing QR code: \(qrCode)")
-        let pattern = "([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(?:-([0-9a-zA-Z]{4}))?"
-        let regex = try NSRegularExpression(pattern: pattern)
-        let nsString = qrCode as NSString
+        let trimmedCode = qrCode.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        if let match = regex.firstMatch(in: qrCode, range: NSRange(location: 0, length: nsString.length)) {
+        if let url = URL(string: trimmedCode),
+           let parsed = parseDeepLinkURL(url) {
+            print("🔍 Extracted - projectId: \(parsed.projectId), accessCode: \(parsed.accessCode ?? "(needs manual entry)")")
+            return parsed
+        }
+
+        let pattern = "([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(?:-([0-9a-zA-Z]{4,}))?"
+        let regex = try NSRegularExpression(pattern: pattern)
+        let nsString = trimmedCode as NSString
+
+        if let match = regex.firstMatch(in: trimmedCode, range: NSRange(location: 0, length: nsString.length)) {
             let projectIdRange = match.range(at: 1)
             let accessCodeRange = match.range(at: 2)
 
@@ -474,6 +558,52 @@ class AuthService: ObservableObject {
         
         print("🔍 Could not find valid code pattern")
         throw AuthError.invalidQRCode
+    }
+
+    private func parseDeepLinkURL(_ url: URL) -> (accessCode: String?, projectId: String)? {
+        let components = url.pathComponents.filter { $0 != "/" }
+        guard !components.isEmpty else {
+            return nil
+        }
+
+        switch components[0] {
+        case "account":
+            guard components.count >= 3, components[1] == "project" else { return nil }
+            let projectId = components[2]
+            return validateProjectId(projectId, accessCode: nil)
+        case "live":
+            guard components.count >= 2 else { return nil }
+            let projectId = components[1]
+            return validateProjectId(projectId, accessCode: nil)
+        case "access":
+            guard components.count >= 2 else { return nil }
+            let projectId = components[1]
+            let accessCode = components.count >= 3 ? components[2] : nil
+            return validateProjectId(projectId, accessCode: accessCode)
+        default:
+            return nil
+        }
+    }
+
+    private func validateProjectId(_ projectId: String, accessCode: String?) -> (accessCode: String?, projectId: String)? {
+        guard UUID(uuidString: projectId) != nil else {
+            return nil
+        }
+        let sanitizedCode = accessCode?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return (accessCode: sanitizedCode?.isEmpty == true ? nil : sanitizedCode, projectId: projectId)
+    }
+
+    private func shouldMarkStoredProjectExpired(for error: Error) -> Bool {
+        guard let authError = error as? AuthError else {
+            return false
+        }
+
+        switch authError {
+        case .authenticationFailed, .authenticationFailedWithMessage:
+            return true
+        default:
+            return false
+        }
     }
     
     // Make authenticated API call

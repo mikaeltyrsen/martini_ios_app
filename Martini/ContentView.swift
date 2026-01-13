@@ -72,6 +72,18 @@ struct ContentView: View {
         .onOpenURL { url in
             handleIncomingURL(url)
         }
+        .alert(item: $authService.pendingProjectSwitch) { _ in
+            Alert(
+                title: Text("Switch projects?"),
+                message: Text(switchProjectMessage()),
+                primaryButton: .destructive(Text("Switch")) {
+                    authService.confirmPendingProjectSwitch()
+                },
+                secondaryButton: .cancel {
+                    authService.cancelPendingProjectSwitch()
+                }
+            )
+        }
         .fullScreenCover(item: fullscreenConfigurationBinding) { configuration in
             NavigationStack {
                 FullscreenMediaViewer(
@@ -116,6 +128,11 @@ struct ContentView: View {
 
     private func handleIncomingURL(_ url: URL) {
         authService.handleDeepLink(url)
+    }
+
+    private func switchProjectMessage() -> String {
+        let currentProject = authService.projectTitle ?? "your current project"
+        return "You are signed in to \(currentProject). Would you like to sign out and switch to a new project?"
     }
 
     private func clearStoredFilters() {
