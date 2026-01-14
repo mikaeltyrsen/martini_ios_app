@@ -262,8 +262,15 @@ struct MainView: View {
     @AppStorage("showFullDescriptions") private var showFullDescriptions: Bool = false
     @AppStorage("showGridTags") private var showGridTags: Bool = false
     @AppStorage("gridFontStep") private var gridFontStep: Int = 3 // 1..5
+    @AppStorage("gridCornerRadiusStep") private var gridCornerRadiusStep: Int = 5 // 0..9
     @AppStorage("doneCrossLineWidth") private var doneCrossLineWidth: Double = 5.0
     @AppStorage("showDoneCrosses") private var showDoneCrosses: Bool = true
+    @AppStorage("markerBorderWidth") private var markerBorderWidth: Double = 3.0
+    @AppStorage("boardSizingCleared") private var boardSizingClearedRawValue: String = BoardSizingOption.full.rawValue
+    @AppStorage("boardSizingCrossed") private var boardSizingCrossedRawValue: String = BoardSizingOption.full.rawValue
+    @AppStorage("boardSizingOmitted") private var boardSizingOmittedRawValue: String = BoardSizingOption.full.rawValue
+    @AppStorage("boardSizingUpNext") private var boardSizingUpNextRawValue: String = BoardSizingOption.full.rawValue
+    @AppStorage("boardSizingHere") private var boardSizingHereRawValue: String = BoardSizingOption.full.rawValue
     @State private var visibleFrameIds: Set<String> = []
     @State private var isHereShortcutVisible = false
     @State private var hereShortcutIconName = "arrow.up"
@@ -429,6 +436,51 @@ struct MainView: View {
         Binding<FrameAssetKind>(
             get: { FrameAssetKind(rawValue: gridAssetPriorityRawValue) ?? .board },
             set: { gridAssetPriorityRawValue = $0.rawValue }
+        )
+    }
+
+    private var boardSizingClearedBinding: Binding<BoardSizingOption> {
+        Binding(
+            get: { BoardSizingOption(rawValue: boardSizingClearedRawValue) ?? .full },
+            set: { boardSizingClearedRawValue = $0.rawValue }
+        )
+    }
+
+    private var boardSizingCrossedBinding: Binding<BoardSizingOption> {
+        Binding(
+            get: { BoardSizingOption(rawValue: boardSizingCrossedRawValue) ?? .full },
+            set: { boardSizingCrossedRawValue = $0.rawValue }
+        )
+    }
+
+    private var boardSizingOmittedBinding: Binding<BoardSizingOption> {
+        Binding(
+            get: { BoardSizingOption(rawValue: boardSizingOmittedRawValue) ?? .full },
+            set: { boardSizingOmittedRawValue = $0.rawValue }
+        )
+    }
+
+    private var boardSizingUpNextBinding: Binding<BoardSizingOption> {
+        Binding(
+            get: { BoardSizingOption(rawValue: boardSizingUpNextRawValue) ?? .full },
+            set: { boardSizingUpNextRawValue = $0.rawValue }
+        )
+    }
+
+    private var boardSizingHereBinding: Binding<BoardSizingOption> {
+        Binding(
+            get: { BoardSizingOption(rawValue: boardSizingHereRawValue) ?? .full },
+            set: { boardSizingHereRawValue = $0.rawValue }
+        )
+    }
+
+    private var boardSizingConfiguration: BoardSizingConfiguration {
+        BoardSizingConfiguration(
+            cleared: boardSizingClearedBinding.wrappedValue,
+            crossed: boardSizingCrossedBinding.wrappedValue,
+            omitted: boardSizingOmittedBinding.wrappedValue,
+            upNext: boardSizingUpNextBinding.wrappedValue,
+            here: boardSizingHereBinding.wrappedValue
         )
     }
 
@@ -712,9 +764,16 @@ struct MainView: View {
                     showGridTags: $showGridTags,
                     gridSizeStep: $gridSizeStep,
                     gridFontStep: $gridFontStep,
+                    gridCornerRadiusStep: $gridCornerRadiusStep,
                     gridPriority: gridAssetPriorityBinding,
                     doneCrossLineWidth: $doneCrossLineWidth,
-                    showDoneCrosses: $showDoneCrosses
+                    showDoneCrosses: $showDoneCrosses,
+                    markerBorderWidth: $markerBorderWidth,
+                    boardSizingCleared: boardSizingClearedBinding,
+                    boardSizingCrossed: boardSizingCrossedBinding,
+                    boardSizingOmitted: boardSizingOmittedBinding,
+                    boardSizingUpNext: boardSizingUpNextBinding,
+                    boardSizingHere: boardSizingHereBinding
                 )
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
@@ -1313,6 +1372,8 @@ struct MainView: View {
                                         showTags: effectiveShowGridTags,
                                         showFrameTimeOverlay: shouldShowFrameTimeOverlay,
                                         fontScale: fontScale,
+                                        cornerRadius: CGFloat(gridCornerRadiusStep),
+                                        boardSizing: boardSizingConfiguration,
                                         coordinateSpaceName: "gridScroll",
                                         viewportHeight: outerGeo.size.height,
                                         primaryAsset: { primaryAsset(for: $0) },
@@ -2238,6 +2299,8 @@ struct CreativeGridSection: View {
     let showTags: Bool
     let showFrameTimeOverlay: Bool
     let fontScale: CGFloat
+    let cornerRadius: CGFloat
+    let boardSizing: BoardSizingConfiguration
     let coordinateSpaceName: String
     let viewportHeight: CGFloat
     let primaryAsset: (Frame) -> FrameAssetItem?
@@ -2256,6 +2319,8 @@ struct CreativeGridSection: View {
         showTags: Bool,
         showFrameTimeOverlay: Bool,
         fontScale: CGFloat,
+        cornerRadius: CGFloat,
+        boardSizing: BoardSizingConfiguration,
         coordinateSpaceName: String,
         viewportHeight: CGFloat,
         primaryAsset: @escaping (Frame) -> FrameAssetItem?,
@@ -2273,6 +2338,8 @@ struct CreativeGridSection: View {
         self.showTags = showTags
         self.showFrameTimeOverlay = showFrameTimeOverlay
         self.fontScale = fontScale
+        self.cornerRadius = cornerRadius
+        self.boardSizing = boardSizing
         self.coordinateSpaceName = coordinateSpaceName
         self.viewportHeight = viewportHeight
         self.primaryAsset = primaryAsset
@@ -2346,6 +2413,8 @@ struct CreativeGridSection: View {
                                     showTags: showTags,
                                     showFrameTimeOverlay: showFrameTimeOverlay,
                                     fontScale: fontScale,
+                                    cornerRadius: cornerRadius,
+                                    boardSizing: boardSizing,
                                     coordinateSpaceName: coordinateSpaceName,
                                     viewportHeight: viewportHeight,
                                     isUpdating: updatingFrameIds.contains(frame.id),
@@ -2375,6 +2444,8 @@ struct GridFrameCell: View {
     var showTags: Bool = false
     var showFrameTimeOverlay: Bool = true
     var fontScale: CGFloat
+    var cornerRadius: CGFloat
+    var boardSizing: BoardSizingConfiguration
     let coordinateSpaceName: String
     let viewportHeight: CGFloat
     var isUpdating: Bool = false
@@ -2389,15 +2460,16 @@ struct GridFrameCell: View {
                 title: frame.caption,
                 showFrameTimeOverlay: showFrameTimeOverlay,
                 showTextBlock: false,
-                cornerRadius: 6,
+                cornerRadius: cornerRadius,
                 enablesFullScreen: false,
                 doneCrossLineWidthOverride: forceThinCrosses ? 1 : nil,
                 usePinnedBoardMarkupFallback: true
             )
+            .scaleEffect(boardSizingScale)
             .overlay {
                 if isUpdating {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 6)
+                        RoundedRectangle(cornerRadius: cornerRadius)
                             .fill(Color.black.opacity(0.6))
                         ProgressView()
                             .progressViewStyle(.circular)
@@ -2449,6 +2521,17 @@ struct GridFrameCell: View {
 
     private func isVisible(_ rect: CGRect) -> Bool {
         rect.maxY >= 0 && rect.minY <= viewportHeight
+    }
+
+    private var boardSizingScale: CGFloat {
+        switch boardSizing.option(for: frame.statusEnum) {
+        case .full:
+            return 1.0
+        case .medium:
+            return 0.92
+        case .small:
+            return 0.84
+        }
     }
 
     private var statusMenu: some View {
@@ -2835,9 +2918,16 @@ struct SettingsView: View {
     @Binding var showGridTags: Bool
     @Binding var gridSizeStep: Int // 1..4 (portrait: 4->1, landscape: 5->2)
     @Binding var gridFontStep: Int // 1..5
+    @Binding var gridCornerRadiusStep: Int // 0..9
     @Binding var gridPriority: FrameAssetKind
     @Binding var doneCrossLineWidth: Double
     @Binding var showDoneCrosses: Bool
+    @Binding var markerBorderWidth: Double
+    @Binding var boardSizingCleared: BoardSizingOption
+    @Binding var boardSizingCrossed: BoardSizingOption
+    @Binding var boardSizingOmitted: BoardSizingOption
+    @Binding var boardSizingUpNext: BoardSizingOption
+    @Binding var boardSizingHere: BoardSizingOption
 
     var body: some View {
         NavigationStack {
@@ -2863,6 +2953,9 @@ struct SettingsView: View {
                             Spacer()
                             Image(systemName: "rectangle.fill")
                         }
+                        Text("Pinch and zoom on grid to change size.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
                     }
 
                     // Font size slider: 1..5 steps
@@ -2880,9 +2973,41 @@ struct SettingsView: View {
                         }
                     }
 
+                    VStack(alignment: .leading) {
+                        Text("Border Radius")
+                        HStack {
+                            Image(systemName: "square")
+                            Spacer()
+                            Slider(value: Binding(
+                                get: { Double(gridCornerRadiusStep) },
+                                set: { gridCornerRadiusStep = Int($0.rounded()) }
+                            ), in: 0...9, step: 1)
+                            Spacer()
+                            Image(systemName: "capsule")
+                        }
+                    }
+
+                    NavigationLink {
+                        BoardSizingView(
+                            boardSizingCleared: $boardSizingCleared,
+                            boardSizingCrossed: $boardSizingCrossed,
+                            boardSizingOmitted: $boardSizingOmitted,
+                            boardSizingUpNext: $boardSizingUpNext,
+                            boardSizingHere: $boardSizingHere
+                        )
+                    } label: {
+                        Text("Board Sizing")
+                    }
+
                 }
 
                 Section("Markers") {
+                    VStack(alignment: .leading) {
+                        Text("Border Width")
+                        HStack {
+                            Slider(value: $markerBorderWidth, in: 1...12, step: 0.5)
+                        }
+                    }
                     VStack(alignment: .leading) {
                         Text("Crosses Thickness")
                         HStack {
@@ -2982,6 +3107,79 @@ struct SettingsView: View {
             get: { ThemePreference(rawValue: themePreferenceRawValue) ?? .system },
             set: { themePreferenceRawValue = $0.rawValue }
         )
+    }
+}
+
+enum BoardSizingOption: String, CaseIterable, Identifiable {
+    case small
+    case medium
+    case full
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .small:
+            return "Small"
+        case .medium:
+            return "Medium"
+        case .full:
+            return "Full"
+        }
+    }
+}
+
+struct BoardSizingConfiguration {
+    let cleared: BoardSizingOption
+    let crossed: BoardSizingOption
+    let omitted: BoardSizingOption
+    let upNext: BoardSizingOption
+    let here: BoardSizingOption
+
+    func option(for status: FrameStatus) -> BoardSizingOption {
+        switch status {
+        case .done:
+            return crossed
+        case .here:
+            return here
+        case .next:
+            return upNext
+        case .omit:
+            return omitted
+        case .none:
+            return cleared
+        }
+    }
+}
+
+struct BoardSizingView: View {
+    @Binding var boardSizingCleared: BoardSizingOption
+    @Binding var boardSizingCrossed: BoardSizingOption
+    @Binding var boardSizingOmitted: BoardSizingOption
+    @Binding var boardSizingUpNext: BoardSizingOption
+    @Binding var boardSizingHere: BoardSizingOption
+
+    var body: some View {
+        Form {
+            Section {
+                sizePicker(title: "Cleared", selection: $boardSizingCleared)
+                sizePicker(title: "Crossed", selection: $boardSizingCrossed)
+                sizePicker(title: "Omitted", selection: $boardSizingOmitted)
+                sizePicker(title: "Up Next", selection: $boardSizingUpNext)
+                sizePicker(title: "Here", selection: $boardSizingHere)
+            }
+        }
+        .navigationTitle("Board Sizing")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func sizePicker(title: String, selection: Binding<BoardSizingOption>) -> some View {
+        Picker(title, selection: selection) {
+            ForEach(BoardSizingOption.allCases) { option in
+                Text(option.label).tag(option)
+            }
+        }
+        .pickerStyle(.segmented)
     }
 }
 
