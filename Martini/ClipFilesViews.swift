@@ -292,6 +292,7 @@ struct ClipPreviewView: View {
     @State private var localPreviewURL: URL?
     @State private var isLoadingPreview = false
     @State private var previewErrorMessage: String?
+    @EnvironmentObject private var authService: AuthService
 
     var body: some View {
         VStack {
@@ -333,14 +334,18 @@ struct ClipPreviewView: View {
     private func loadPreview() async {
         guard !clip.isVideo, !clip.isImage else { return }
         guard localPreviewURL == nil else { return }
-        guard let remoteURL = clip.fileURL else {
+        guard let remoteURL = previewSourceURL() else {
             previewErrorMessage = "Unable to load file."
             return
         }
         isLoadingPreview = true
         defer { isLoadingPreview = false }
         do {
-            let (tempURL, _) = try await URLSession.shared.download(from: remoteURL)
+            var request = URLRequest(url: remoteURL)
+            if let token = authService.currentBearerToken() {
+                request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            }
+            let (tempURL, _) = try await URLSession.shared.download(for: request)
             let destinationURL = FileManager.default.temporaryDirectory.appendingPathComponent(remoteURL.lastPathComponent)
             if FileManager.default.fileExists(atPath: destinationURL.path) {
                 try FileManager.default.removeItem(at: destinationURL)
@@ -351,6 +356,13 @@ struct ClipPreviewView: View {
             previewErrorMessage = "Unable to load file."
             print("Failed to download preview file: \(error)")
         }
+    }
+
+    private func previewSourceURL() -> URL? {
+        if let previewURL = clip.previewURL, let url = URL(string: previewURL) {
+            return url
+        }
+        return clip.fileURL
     }
 }
 
