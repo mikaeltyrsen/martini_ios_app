@@ -8,6 +8,7 @@ struct ScriptView: View {
     @State private var isShowingSettings = false
     @State private var selectedCreativeId: String?
     @AppStorage("scriptShowBoard") private var showBoard: Bool = UIControlConfig.scriptShowBoardDefault
+    @AppStorage("scriptShowFrameDivider") private var showFrameDivider: Bool = UIControlConfig.scriptShowFrameDividerDefault
     @AppStorage("scriptBoardScale") private var boardScale: Double = Double(UIControlConfig.scriptBoardScaleDefault)
 
     private let minFontScale: CGFloat = UIControlConfig.scriptFontScaleMin
@@ -24,8 +25,9 @@ struct ScriptView: View {
                     LazyVStack(alignment: .leading, spacing: 16) {
                         ForEach(scriptFrames) { entry in
                             VStack(alignment: .leading, spacing: 12) {
-                                frameDivider(for: entry.frame)
-                                    .id(entry.frame.id)
+                                if showFrameDivider {
+                                    frameDivider(for: entry.frame)
+                                }
 
                                 HStack(alignment: .top, spacing: 16) {
                                     if showBoard {
@@ -41,6 +43,7 @@ struct ScriptView: View {
                                 }
                             }
                             .padding(.horizontal)
+                            .id(entry.frame.id)
                         }
                     }
                     .padding(.vertical, 16)
@@ -80,6 +83,7 @@ struct ScriptView: View {
                     ScriptSettingsSheet(
                         fontScale: $fontScale,
                         showBoard: $showBoard,
+                        showFrameDivider: $showFrameDivider,
                         boardScale: $boardScale
                     )
                         .presentationDetents([.medium])
@@ -187,10 +191,6 @@ struct ScriptView: View {
             )
             .frame(width: boardSize, height: boardSize * 0.7)
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-
-            Text(frame.frameNumber > 0 ? "Frame \(frame.frameNumber)" : "Frame")
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
         .frame(width: boardSize, alignment: .leading)
     }
@@ -264,6 +264,7 @@ struct ScriptView: View {
 private struct ScriptSettingsSheet: View {
     @Binding var fontScale: CGFloat
     @Binding var showBoard: Bool
+    @Binding var showFrameDivider: Bool
     @Binding var boardScale: Double
 
     private let minFontScale: CGFloat = UIControlConfig.scriptFontScaleMin
@@ -296,6 +297,10 @@ private struct ScriptSettingsSheet: View {
                         Image(systemName: "photo.fill")
                             .foregroundStyle(showBoard ? .primary : .secondary)
                     }
+                }
+
+                Section("Frame Divider") {
+                    Toggle("Show Frame Divider", isOn: $showFrameDivider)
                 }
             }
             .navigationTitle("Script Settings")
