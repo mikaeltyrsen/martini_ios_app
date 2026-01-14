@@ -187,10 +187,12 @@ struct FrameLayout: View {
                     .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
             }
 
-            GeometryReader { geo in
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .strokeBorder(borderColor, lineWidth: scaledBorderWidth(for: geo.size))
-                    .allowsHitTesting(false)
+            if frame.statusEnum != .none {
+                GeometryReader { geo in
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .strokeBorder(borderColor, lineWidth: scaledBorderWidth(for: geo.size))
+                        .allowsHitTesting(false)
+                }
             }
 
             if let resolvedTitle {
