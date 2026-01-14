@@ -236,7 +236,14 @@ struct MainView: View {
     @EnvironmentObject var fullscreenCoordinator: FullscreenMediaCoordinator
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @State private var selectedTab: MainTab = .boards
+    @State private var lastNonSearchTab: MainTab = .boards
+    @State private var shouldAnimateTabIcons = false
     @State private var viewMode: ViewMode = .list
+    @State private var isSearching = false
+    @State private var searchText = ""
+    @FocusState private var isSearchFocused: Bool
+    @State private var selectedMoreTab: MoreTab = .files
     @State private var selectedFrameId: String?
     @State private var selectedFrame: Frame?
     @State private var dataError: String?
@@ -247,7 +254,6 @@ struct MainView: View {
     @State private var hasLoadedCreatives = false
     @AppStorage("gridSizeStep") private var gridSizeStep: Int = 1 // 1..4, portrait: 4->1 columns, landscape: 5->2 columns
     @State private var frameSortMode: FrameSortMode = .story
-    @State private var isShowingSettings = false
     @State private var frameAssetOrders: [String: [FrameAssetKind]] = [:]
     @AppStorage("gridAssetPriority") private var gridAssetPriorityRawValue: String = FrameAssetKind.board.rawValue
     @State private var isLoadingSchedule = false
@@ -255,8 +261,6 @@ struct MainView: View {
     @State private var projectFiles: [Clip] = []
     @State private var isLoadingProjectFiles: Bool = false
     @State private var projectFilesError: String?
-    @State private var showingProjectFiles: Bool = false
-    @State private var projectFilesSheetDetent: PresentationDetent = .medium
 
     @AppStorage("showDescriptions") private var showDescriptions: Bool = true
     @AppStorage("showFullDescriptions") private var showFullDescriptions: Bool = false
@@ -270,7 +274,7 @@ struct MainView: View {
     @State private var gridScrollProxy: ScrollViewProxy?
     @State private var currentCreativeId: String? = nil
     @State private var isScrolledToTop: Bool = true
-    @State private var navigationPath: [ScheduleRoute] = []
+    @State private var scheduleNavigationPath: [ScheduleRoute] = []
     @State private var isShowingFilters = false
     @State private var selectedCreativeIds: Set<String> = []
     @State private var selectedTagIds: Set<String> = []
@@ -289,6 +293,19 @@ struct MainView: View {
     enum FrameSortMode {
         case story
         case shoot
+    }
+
+    enum MainTab: Hashable {
+        case boards
+        case schedule
+        case more
+        case settings
+        case search
+    }
+
+    enum MoreTab: Hashable {
+        case files
+        case comments
     }
 
     enum ScheduleRoute: Hashable {
@@ -389,10 +406,6 @@ struct MainView: View {
 
     private var activeScheduleTitle: String {
         activeSchedule?.name ?? "Schedule"
-    }
-
-    private var shouldShowProjectFilesButton: Bool {
-        authService.projectId != nil
     }
 
     private var projectDisplayTitle: String {
@@ -582,18 +595,27 @@ struct MainView: View {
     }
 
     var body: some View {
-        NavigationStack(path: $navigationPath) {
-            navigationContent
-        }
-    }
-
-    private var navigationContent: some View {
-        mainContentWithNavigation
+        NavigationStack(path: $scheduleNavigationPath) {
+            TabView(selection: $selectedTab) {
+                boardsTab
+                scheduleTab
+                moreTab
+                settingsTab
+                if #available(iOS 18.0, *) {
+                    EmptyView()
+                } else {
+                    searchTab
+                }
+            }
+            .navigationTitle(isSearching ? "" : navigationTitle)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { searchToolbar }
+            .toolbar { tabBarSearchButton }
             .navigationDestination(for: ScheduleRoute.self) { route in
                 switch route {
                 case .list(let schedule):
                     SchedulesView(schedule: schedule) { item in
-                        navigationPath.append(ScheduleRoute.detail(schedule, item))
+                        scheduleNavigationPath.append(ScheduleRoute.detail(schedule, item))
                     }
                 case .detail(let schedule, let item):
                     ScheduleView(schedule: schedule, item: item) { selectedItem in
@@ -601,6 +623,219 @@ struct MainView: View {
                     }
                 }
             }
+            .safeAreaInset(edge: .bottom) {
+                if selectedTab == .boards {
+                    storyShootAccessoryBar
+                }
+            }
+            .onChange(of: selectedTab) { newValue in
+                if newValue == .search {
+                    withAnimation(.snappy) {
+                        isSearching = true
+                        isSearchFocused = true
+                    }
+                    selectedTab = lastNonSearchTab
+                    return
+                }
+
+                lastNonSearchTab = newValue
+            }
+        }
+        .onAppear {
+            shouldAnimateTabIcons = true
+        }
+    }
+
+    private var navigationTitle: String {
+        switch selectedTab {
+        case .boards:
+            return displayedNavigationTitle
+        case .schedule:
+            return "Schedule"
+        case .more:
+            return "More"
+        case .settings:
+            return "Settings"
+        case .search:
+            return ""
+        }
+    }
+
+    private var boardsTab: some View {
+        mainContentWithNavigation
+        .tabItem {
+            Label {
+                Text("Boards")
+            } icon: {
+                Image(systemName: "rectangle.grid.3x3.fill")
+                    .symbolEffect(.drawOn.byLayer, options: .nonRepeating, isActive: shouldAnimateTabIcons)
+                    .symbolEffect(.bounce, value: selectedTab == .boards)
+            }
+        }
+        .tag(MainTab.boards)
+    }
+
+    private var scheduleTab: some View {
+        scheduleRootView
+        .task(id: activeSchedule?.id) {
+            guard let schedule = activeSchedule else { return }
+            await loadSchedule(schedule, openDetail: false)
+        }
+        .tabItem {
+            Label {
+                Text("Schedule")
+            } icon: {
+                Image(systemName: "calendar.day.timeline.left")
+                    .symbolEffect(.drawOn.byLayer, options: .nonRepeating, isActive: shouldAnimateTabIcons)
+                    .symbolEffect(.bounce, value: selectedTab == .schedule)
+            }
+        }
+        .tag(MainTab.schedule)
+    }
+
+    private var moreTab: some View {
+        VStack(spacing: 0) {
+            Picker("More", selection: $selectedMoreTab) {
+                Text("Files").tag(MoreTab.files)
+                Text("Comments").tag(MoreTab.comments)
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal)
+            .padding(.top, 8)
+
+            Divider()
+
+            Group {
+                switch selectedMoreTab {
+                case .files:
+                    FilesSheet(
+                        title: "Files",
+                        clips: $projectFiles,
+                        isLoading: $isLoadingProjectFiles,
+                        errorMessage: $projectFilesError,
+                        onReload: { await loadProjectFiles(force: true) },
+                        onMediaPreview: { clip in
+                            openProjectFilePreview(clip)
+                        },
+                        showsNavigation: false
+                    )
+                case .comments:
+                    commentsPlaceholder
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .tabItem {
+            Label {
+                Text("More")
+            } icon: {
+                Image(systemName: "ellipsis.circle")
+                    .symbolEffect(.drawOn.byLayer, options: .nonRepeating, isActive: shouldAnimateTabIcons)
+                    .symbolEffect(.bounce, value: selectedTab == .more)
+            }
+        }
+        .tag(MainTab.more)
+    }
+
+    private var commentsPlaceholder: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "text.bubble")
+                .font(.system(size: 44))
+                .foregroundStyle(.secondary)
+            Text("Comments")
+                .font(.title2.weight(.semibold))
+            Text("Comments will live here soon.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var searchTab: some View {
+        Color.clear
+            .tabItem {
+                Label {
+                    Text("Search")
+                } icon: {
+                    Image(systemName: "magnifyingglass")
+                        .symbolEffect(.drawOn.byLayer, options: .nonRepeating, isActive: shouldAnimateTabIcons)
+                        .symbolEffect(.bounce, value: selectedTab == .search)
+                }
+            }
+            .tag(MainTab.search)
+    }
+
+    private var settingsTab: some View {
+        SettingsView(
+            showDescriptions: $showDescriptions,
+            showFullDescriptions: $showFullDescriptions,
+            showGridTags: $showGridTags,
+            gridSizeStep: $gridSizeStep,
+            gridFontStep: $gridFontStep,
+            gridPriority: gridAssetPriorityBinding,
+            doneCrossLineWidth: $doneCrossLineWidth,
+            showDoneCrosses: $showDoneCrosses
+        )
+        .tabItem {
+            if horizontalSizeClass == .regular {
+                Image(systemName: "switch.2")
+                    .symbolEffect(.drawOn.byLayer, options: .nonRepeating, isActive: shouldAnimateTabIcons)
+                    .symbolEffect(.bounce, value: selectedTab == .settings)
+                    .accessibilityLabel("Settings")
+            } else {
+                Label {
+                    Text("Settings")
+                } icon: {
+                    Image(systemName: "switch.2")
+                        .symbolEffect(.drawOn.byLayer, options: .nonRepeating, isActive: shouldAnimateTabIcons)
+                        .symbolEffect(.bounce, value: selectedTab == .settings)
+                }
+            }
+        }
+        .tag(MainTab.settings)
+    }
+
+    @ViewBuilder
+    private var scheduleRootView: some View {
+        if let schedule = activeSchedule {
+            if let entries = schedule.schedules, !entries.isEmpty {
+                SchedulesView(schedule: schedule) { item in
+                    scheduleNavigationPath.append(ScheduleRoute.detail(schedule, item))
+                }
+            } else if isLoadingSchedule {
+                VStack(spacing: 12) {
+                    ProgressView()
+                    Text("Loading schedule...")
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .navigationTitle("Schedule")
+                .navigationBarTitleDisplayMode(.inline)
+            } else {
+                VStack(spacing: 12) {
+                    Image(systemName: "calendar.badge.exclamationmark")
+                        .font(.system(size: 44))
+                        .foregroundStyle(.secondary)
+                    Text("No schedule available")
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .navigationTitle("Schedule")
+                .navigationBarTitleDisplayMode(.inline)
+            }
+        } else {
+            VStack(spacing: 12) {
+                Image(systemName: "calendar")
+                    .font(.system(size: 44))
+                    .foregroundStyle(.secondary)
+                Text("Schedule not active")
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .navigationTitle("Schedule")
+            .navigationBarTitleDisplayMode(.inline)
+        }
     }
 
     private var mainContentWithNavigation: some View {
@@ -686,45 +921,14 @@ struct MainView: View {
             .fullScreenCover(isPresented: selectedFrameIsPresented) {
                 framePagerSheet
             }
-            .sheet(isPresented: $showingProjectFiles) {
-                FilesSheet(
-                    title: "Project Files",
-                    clips: $projectFiles,
-                    isLoading: $isLoadingProjectFiles,
-                    errorMessage: $projectFilesError,
-                    onReload: { await loadProjectFiles(force: true) },
-                    onMediaPreview: { clip in
-                        openProjectFilePreview(clip)
-                    }
-                )
-                .presentationDetents([.medium, .large], selection: $projectFilesSheetDetent)
-                .presentationDragIndicator(.visible)
-            }
-            .onChange(of: showingProjectFiles) { isShowing in
-                if isShowing {
-                    projectFilesSheetDetent = .medium
-                }
-            }
-            .sheet(isPresented: $isShowingSettings) {
-                SettingsView(
-                    showDescriptions: $showDescriptions,
-                    showFullDescriptions: $showFullDescriptions,
-                    showGridTags: $showGridTags,
-                    gridSizeStep: $gridSizeStep,
-                    gridFontStep: $gridFontStep,
-                    gridPriority: gridAssetPriorityBinding,
-                    doneCrossLineWidth: $doneCrossLineWidth,
-                    showDoneCrosses: $showDoneCrosses
-                )
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
-                .interactiveDismissDisabled(false)
-            }
     }
 
     private var mainContentWithOverlays: some View {
         mainContentWithAlerts
             .overlay { noConnectionOverlay }
+            .overlay(alignment: .leading) {
+                filterSidebar
+            }
     }
 
     private var mainContentWithAlerts: some View {
@@ -868,9 +1072,6 @@ struct MainView: View {
     private var contentStack: some View {
         ZStack(alignment: .bottom) {
             gridView
-                .overlay(alignment: .leading) {
-                    filterSidebar
-                }
 
             if isHereShortcutVisible {
                 Button(action: scrollToHereFrame) {
@@ -906,58 +1107,79 @@ struct MainView: View {
             }
         }
 
-        ToolbarItemGroup(placement: .navigationBarTrailing) {
-            if shouldShowScheduleButton {
-                scheduleButton
-            }
-            if shouldShowProjectFilesButton {
-                projectFilesButton
-            }
-        }
-
         ToolbarItem(placement: .navigationBarLeading) {
             filterButton
         }
+    }
 
-        ToolbarItemGroup(placement: .bottomBar) {
-
-            Button(action: {
-                withAnimation(.easeInOut(duration: 0.12)) {
-                    viewMode = (viewMode == .grid) ? .list : .grid
+    @ToolbarContentBuilder
+    private var searchToolbar: some ToolbarContent {
+        if isSearching {
+            ToolbarItem(placement: .principal) {
+                HStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                    TextField("Search…", text: $searchText)
+                        .textInputAutocapitalization(.never)
+                        .disableAutocorrection(true)
+                        .submitLabel(.search)
+                        .focused($isSearchFocused)
+                    Button {
+                        withAnimation(.snappy) {
+                            isSearching = false
+                            searchText = ""
+                            isSearchFocused = false
+                        }
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                    }
+                    .accessibilityLabel("Cancel search")
                 }
-            }) {
-                Label(viewMode == .grid ? "Close Overview" : "Open Overview", systemImage: viewMode == .grid ? "square.grid.4x3.fill" : "eye")
-                    .labelStyle(.titleAndIcon)
-                    .font(.system(size: 17, weight: .semibold))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Capsule().fill(.thinMaterial))
+                .frame(maxWidth: 420)
             }
-            .accessibilityLabel(viewMode == .grid ? "Close Overview" : "Open Overview")
-
-            Spacer()
-
-            Picker("Sort order", selection: $frameSortMode) {
-                Text("Story").tag(FrameSortMode.story)
-                Text("Shoot").tag(FrameSortMode.shoot)
-            }
-            .pickerStyle(.segmented)
-            .frame(width: 200)
-
-            Spacer()
-
-            Button {
-                isShowingSettings = true
-            } label: {
-                Label("Settings", systemImage: "switch.2")
-            }
-            .accessibilityLabel("Open Settings")
         }
     }
 
-    private func openSchedule() {
-        guard let schedule = activeSchedule else { return }
-
-        Task {
-            await loadSchedule(schedule)
+    @ToolbarContentBuilder
+    private var tabBarSearchButton: some ToolbarContent {
+        if #available(iOS 18.0, *) {
+            ToolbarItem(placement: .tabBarTrailing) {
+                Button {
+                    withAnimation(.snappy) {
+                        isSearching = true
+                        isSearchFocused = true
+                    }
+                } label: {
+                    Image(systemName: "magnifyingglass")
+                }
+                .accessibilityLabel("Search")
+            }
         }
+    }
+
+    private var storyShootAccessory: some View {
+        Picker("Sort order", selection: $frameSortMode) {
+            Text("Story").tag(FrameSortMode.story)
+            Text("Shoot").tag(FrameSortMode.shoot)
+        }
+        .pickerStyle(.segmented)
+        .frame(maxWidth: 240)
+    }
+
+    private var storyShootAccessoryBar: some View {
+        HStack {
+            storyShootAccessory
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.thinMaterial)
+        .overlay(
+            Divider().offset(y: -0.5),
+            alignment: .top
+        )
     }
 
     private func openProjectFilePreview(_ clip: Clip) {
@@ -974,24 +1196,43 @@ struct MainView: View {
     }
 
     @MainActor
-    private func loadSchedule(_ schedule: ProjectSchedule, replaceExistingRoutes: Bool = false) async {
-        showSchedule(schedule, replaceExistingRoutes: replaceExistingRoutes)
+    private func loadSchedule(
+        _ schedule: ProjectSchedule,
+        replaceExistingRoutes: Bool = false,
+        openDetail: Bool = false
+    ) async {
+        if openDetail {
+            showSchedule(schedule, replaceExistingRoutes: replaceExistingRoutes)
+        } else if replaceExistingRoutes, navigationPathContainsScheduleRoute {
+            if let selectedItem = resolvedScheduleItem(in: schedule) {
+                scheduleNavigationPath = updatedNavigationPath(with: schedule, fallbackItem: selectedItem)
+            }
+        }
 
         isLoadingSchedule = true
         defer { isLoadingSchedule = false }
 
         if let cached = await authService.cachedScheduleAsync(for: schedule.id) {
-            showSchedule(cached, replaceExistingRoutes: true)
+            refreshScheduleNavigation(with: cached, openDetail: openDetail)
         }
 
         do {
             let latest = try await authService.fetchSchedule(for: schedule.id)
-            showSchedule(latest, replaceExistingRoutes: true)
+            refreshScheduleNavigation(with: latest, openDetail: openDetail)
         } catch {
             dataError = error.localizedDescription
             if let cached = authService.cachedSchedule(for: schedule.id) {
-                showSchedule(cached, replaceExistingRoutes: true)
+                refreshScheduleNavigation(with: cached, openDetail: openDetail)
             }
+        }
+    }
+
+    private func refreshScheduleNavigation(with schedule: ProjectSchedule, openDetail: Bool) {
+        if openDetail {
+            showSchedule(schedule, replaceExistingRoutes: true)
+        } else if navigationPathContainsScheduleRoute,
+                  let selectedItem = resolvedScheduleItem(in: schedule) {
+            scheduleNavigationPath = updatedNavigationPath(with: schedule, fallbackItem: selectedItem)
         }
     }
 
@@ -999,17 +1240,17 @@ struct MainView: View {
         guard let selectedItem = resolvedScheduleItem(in: schedule) else { return }
 
         if replaceExistingRoutes, navigationPathContainsScheduleRoute {
-            navigationPath = updatedNavigationPath(with: schedule, fallbackItem: selectedItem)
+            scheduleNavigationPath = updatedNavigationPath(with: schedule, fallbackItem: selectedItem)
             return
         }
 
-        navigationPath.append(ScheduleRoute.detail(schedule, selectedItem))
+        scheduleNavigationPath.append(ScheduleRoute.detail(schedule, selectedItem))
     }
 
-    private var navigationPathContainsScheduleRoute: Bool { !navigationPath.isEmpty }
+    private var navigationPathContainsScheduleRoute: Bool { !scheduleNavigationPath.isEmpty }
 
     private var currentScheduleId: String? {
-        for route in navigationPath.reversed() {
+        for route in scheduleNavigationPath.reversed() {
             switch route {
             case .list(let schedule):
                 return schedule.id
@@ -1025,7 +1266,7 @@ struct MainView: View {
         var newPath: [ScheduleRoute] = []
         let fallbackItem = fallbackItem ?? resolvedScheduleItem(in: schedule)
 
-        for route in navigationPath {
+        for route in scheduleNavigationPath {
             switch route {
             case .list:
                 if let fallbackItem {
@@ -1054,16 +1295,16 @@ struct MainView: View {
 
     private func replaceScheduleRoute(schedule: ProjectSchedule, item: ProjectScheduleItem) {
         guard navigationPathContainsScheduleRoute else {
-            navigationPath = [.detail(schedule, item)]
+            scheduleNavigationPath = [.detail(schedule, item)]
             return
         }
 
-        var updatedPath = navigationPath
+        var updatedPath = scheduleNavigationPath
         if !updatedPath.isEmpty {
             updatedPath.removeLast()
         }
         updatedPath.append(.detail(schedule, item))
-        navigationPath = updatedPath
+        scheduleNavigationPath = updatedPath
     }
 
     private func resolvedScheduleItem(in schedule: ProjectSchedule) -> ProjectScheduleItem? {
@@ -1135,28 +1376,25 @@ struct MainView: View {
               let entries = schedule.schedules,
               !entries.isEmpty
         else {
-            closeScheduleAndReturnToGrid()
+            resetScheduleNavigation()
             return
         }
 
         if let currentScheduleId, currentScheduleId != schedule.id {
-            navigationPath = []
+            scheduleNavigationPath = []
             Task {
-                await loadSchedule(schedule)
+                await loadSchedule(schedule, openDetail: false)
             }
             return
         }
 
         Task {
-            await loadSchedule(schedule, replaceExistingRoutes: true)
+            await loadSchedule(schedule, replaceExistingRoutes: true, openDetail: false)
         }
     }
 
-    private func closeScheduleAndReturnToGrid() {
-        navigationPath = []
-        withAnimation(.easeInOut(duration: 0.12)) {
-            viewMode = .grid
-        }
+    private func resetScheduleNavigation() {
+        scheduleNavigationPath = []
     }
 
     private func loadProjectDetailsIfNeeded() async {
@@ -1453,35 +1691,6 @@ struct MainView: View {
 
     private var displayedNavigationTitle: String {
         isScrolledToTop ? projectDisplayTitle : currentCreativeTitle
-    }
-
-    private var shouldShowScheduleButton: Bool {
-        guard authService.isScheduleActive else { return false }
-        guard let entries = activeSchedule?.schedules else { return false }
-        return !entries.isEmpty
-    }
-
-    private var scheduleButton: some View {
-        Button(action: openSchedule) {
-            if isLoadingSchedule {
-                ProgressView()
-                    .progressViewStyle(.circular)
-            } else {
-                Image(systemName: "calendar")
-                    .imageScale(.large)
-            }
-        }
-        .accessibilityLabel("Open Schedule")
-    }
-
-    private var projectFilesButton: some View {
-        Button {
-            showingProjectFiles = true
-        } label: {
-            Image(systemName: "folder")
-                .imageScale(.large)
-        }
-        .accessibilityLabel("Open Project Files")
     }
 
     @ViewBuilder

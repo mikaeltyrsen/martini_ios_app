@@ -26,25 +26,52 @@ struct FilesSheet: View {
     @Binding var errorMessage: String?
     let onReload: () async -> Void
     let onMediaPreview: (Clip) -> Void
+    let showsNavigation: Bool
     @State private var selectedClip: Clip?
 
+    init(
+        title: String,
+        clips: Binding<[Clip]>,
+        isLoading: Binding<Bool>,
+        errorMessage: Binding<String?>,
+        onReload: @escaping () async -> Void,
+        onMediaPreview: @escaping (Clip) -> Void,
+        showsNavigation: Bool = true
+    ) {
+        self.title = title
+        self._clips = clips
+        self._isLoading = isLoading
+        self._errorMessage = errorMessage
+        self.onReload = onReload
+        self.onMediaPreview = onMediaPreview
+        self.showsNavigation = showsNavigation
+    }
+
     var body: some View {
-        NavigationStack {
-            content
-                .navigationTitle(title)
-                .navigationBarTitleDisplayMode(.inline)
-                .task {
-                    await onReload()
-                }
-                .alert("Error", isPresented: Binding(
-                    get: { errorMessage != nil },
-                    set: { if !$0 { errorMessage = nil } }
-                )) {
-                    Button("OK", role: .cancel) { errorMessage = nil }
-                } message: {
-                    Text(errorMessage ?? "Unknown error")
-                }
+        if showsNavigation {
+            NavigationStack {
+                baseContent
+                    .navigationTitle(title)
+                    .navigationBarTitleDisplayMode(.inline)
+            }
+        } else {
+            baseContent
         }
+    }
+
+    private var baseContent: some View {
+        content
+            .task {
+                await onReload()
+            }
+            .alert("Error", isPresented: Binding(
+                get: { errorMessage != nil },
+                set: { if !$0 { errorMessage = nil } }
+            )) {
+                Button("OK", role: .cancel) { errorMessage = nil }
+            } message: {
+                Text(errorMessage ?? "Unknown error")
+            }
     }
 
     private var content: some View {
