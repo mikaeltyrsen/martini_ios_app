@@ -3241,24 +3241,33 @@ struct BoardSizingView: View {
     var body: some View {
         Form {
             Section {
-                sizePicker(title: "Cleared", selection: $boardSizingCleared)
-                sizePicker(title: "Crossed", selection: $boardSizingCrossed)
-                sizePicker(title: "Omitted", selection: $boardSizingOmitted)
-                sizePicker(title: "Up Next", selection: $boardSizingUpNext)
-                sizePicker(title: "Here", selection: $boardSizingHere)
+                sizePicker(title: "Cleared", status: .none, selection: $boardSizingCleared)
+                sizePicker(title: "Crossed", status: .done, selection: $boardSizingCrossed)
+                sizePicker(title: "Omitted", status: .omit, selection: $boardSizingOmitted)
+                sizePicker(title: "Up Next", status: .next, selection: $boardSizingUpNext)
+                sizePicker(title: "Here", status: .here, selection: $boardSizingHere)
             }
         }
         .navigationTitle("Board Sizing")
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    private func sizePicker(title: String, selection: Binding<BoardSizingOption>) -> some View {
-        Picker(title, selection: selection) {
-            ForEach(BoardSizingOption.allCases) { option in
-                Text(option.label).tag(option)
+    private func sizePicker(title: String, status: FrameStatus, selection: Binding<BoardSizingOption>) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: AppConfig.MarkerIcons.systemImageName(for: status))
+                    .foregroundStyle(.secondary)
+                Text(title)
+                    .font(.headline)
             }
+            Picker(title, selection: selection) {
+                ForEach(BoardSizingOption.allCases) { option in
+                    Text(option.label).tag(option)
+                }
+            }
+            .pickerStyle(.segmented)
         }
-        .pickerStyle(.segmented)
+        .padding(.vertical, 4)
     }
 }
 
