@@ -121,6 +121,7 @@ struct FrameLayout: View {
     @Environment(\.fullscreenMediaCoordinator) private var fullscreenCoordinator
     @AppStorage("showDoneCrosses") private var showDoneCrosses: Bool = true
     @AppStorage("doneCrossLineWidth") private var doneCrossLineWidth: Double = 5.0
+    @AppStorage("markerBorderWidth") private var markerBorderWidth: Double = 3.0
     @Namespace private var fullscreenNamespace
     @State private var borderScale: CGFloat = 1.0
     @State private var omitOverlayOpacity: Double = 0
@@ -386,7 +387,7 @@ struct FrameLayout: View {
     }
 
     private var borderWidth: CGFloat {
-        frame.statusEnum != .none ? 3 : 1
+        CGFloat(markerBorderWidth)
     }
 
     private var borderColor: Color {
