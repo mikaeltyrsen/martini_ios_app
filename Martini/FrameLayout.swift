@@ -187,6 +187,12 @@ struct FrameLayout: View {
                     .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
             }
 
+            GeometryReader { geo in
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .strokeBorder(borderColor, lineWidth: scaledBorderWidth(for: geo.size))
+                    .allowsHitTesting(false)
+            }
+
             if let resolvedTitle {
                 captionOverlay(for: resolvedTitle)
             }
@@ -291,12 +297,6 @@ struct FrameLayout: View {
             .contentShape(Rectangle())
             .scaleEffect(borderScale)
             .animation(.spring(response: 0.3, dampingFraction: 0.55, blendDuration: 0.12), value: borderScale)
-            .overlay {
-                GeometryReader { geo in
-                    RoundedRectangle(cornerRadius: cornerRadius)
-                        .strokeBorder(borderColor, lineWidth: scaledBorderWidth(for: geo.size))
-                }
-            }
 //            .shadow(color: borderColor.opacity(0.8), radius: 8, x: 0, y: 0)
 //            .shadow(color: borderColor.opacity(0.5), radius: 40, x: 0, y: 0)
 //            .shadow(color: borderColor.opacity(0.3), radius: 80, x: 0, y: 0)
