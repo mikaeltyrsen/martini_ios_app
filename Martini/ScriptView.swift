@@ -16,80 +16,84 @@ struct ScriptView: View {
     private let baseBoardSize: CGFloat = 120
 
     var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 16) {
-                    ForEach(scriptFrames) { entry in
-                        VStack(alignment: .leading, spacing: 12) {
-                            frameDivider(for: entry.frame)
-                                .id(entry.frame.id)
+        GeometryReader { geometry in
+            let deviceMultiplier = deviceScaleMultiplier(for: geometry.size)
 
-                            HStack(alignment: .top, spacing: 16) {
-                                if showBoard {
-                                    boardReference(for: entry.frame)
-                                }
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 16) {
+                        ForEach(scriptFrames) { entry in
+                            VStack(alignment: .leading, spacing: 12) {
+                                frameDivider(for: entry.frame)
+                                    .id(entry.frame.id)
 
-                                VStack(alignment: .leading, spacing: 12) {
-                                    ForEach(entry.blocks) { block in
-                                        scriptBlockView(block)
+                                HStack(alignment: .top, spacing: 16) {
+                                    if showBoard {
+                                        boardReference(for: entry.frame, multiplier: deviceMultiplier)
                                     }
+
+                                    VStack(alignment: .leading, spacing: 12) {
+                                        ForEach(entry.blocks) { block in
+                                            scriptBlockView(block, multiplier: deviceMultiplier)
+                                        }
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                                 }
-                                .frame(maxWidth: .infinity, alignment: .leading)
                             }
+                            .padding(.horizontal)
                         }
-                        .padding(.horizontal)
+                    }
+                    .padding(.vertical, 16)
+                }
+                .navigationTitle("Script")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Menu {
+                            creativeMenuContent
+                        } label: {
+                            Image(systemName: "list.bullet")
+                        }
+                        .accessibilityLabel("Select creative")
+                    }
+
+                    ToolbarItemGroup(placement: .bottomBar) {
+                        Button {
+                            scrollToHere(using: proxy)
+                        } label: {
+                            Image(systemName: "location.fill")
+                        }
+                        .accessibilityLabel("Scroll to here")
+                        .disabled(hereFrameId == nil)
+
+                        Spacer()
+
+                        Button {
+                            isShowingSettings = true
+                        } label: {
+                            Image(systemName: "slider.horizontal.3")
+                        }
+                        .accessibilityLabel("Script settings")
                     }
                 }
-                .padding(.vertical, 16)
-            }
-            .navigationTitle("Script")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        creativeMenuContent
-                    } label: {
-                        Image(systemName: "list.bullet")
-                    }
-                    .accessibilityLabel("Select creative")
+                .sheet(isPresented: $isShowingSettings) {
+                    ScriptSettingsSheet(
+                        fontScale: $fontScale,
+                        showBoard: $showBoard,
+                        boardScale: $boardScale
+                    )
+                        .presentationDetents([.medium])
                 }
-
-                ToolbarItemGroup(placement: .bottomBar) {
-                    Button {
-                        scrollToHere(using: proxy)
-                    } label: {
-                        Image(systemName: "location.fill")
-                    }
-                    .accessibilityLabel("Scroll to here")
-                    .disabled(hereFrameId == nil)
-
-                    Spacer()
-
-                    Button {
-                        isShowingSettings = true
-                    } label: {
-                        Image(systemName: "slider.horizontal.3")
-                    }
-                    .accessibilityLabel("Script settings")
+                .onAppear {
+                    updateSelectedCreativeIfNeeded()
+                    scrollToTarget(using: proxy)
                 }
-            }
-            .sheet(isPresented: $isShowingSettings) {
-                ScriptSettingsSheet(
-                    fontScale: $fontScale,
-                    showBoard: $showBoard,
-                    boardScale: $boardScale
-                )
-                    .presentationDetents([.medium])
-            }
-            .onAppear {
-                updateSelectedCreativeIfNeeded()
-                scrollToTarget(using: proxy)
-            }
-            .onChange(of: targetDialogId) { _ in
-                scrollToTarget(using: proxy)
-            }
-            .onChange(of: authService.creatives.map(\.id)) { _ in
-                updateSelectedCreativeIfNeeded()
+                .onChange(of: targetDialogId) { _ in
+                    scrollToTarget(using: proxy)
+                }
+                .onChange(of: authService.creatives.map(\.id)) { _ in
+                    updateSelectedCreativeIfNeeded()
+                }
             }
         }
     }
@@ -149,9 +153,9 @@ struct ScriptView: View {
     }
 
     @ViewBuilder
-    private func scriptBlockView(_ block: ScriptBlock) -> some View {
+    private func scriptBlockView(_ block: ScriptBlock, multiplier: CGFloat) -> some View {
         let textView = Text(block.text)
-            .font(.system(size: baseFontSize * effectiveScale))
+            .font(.system(size: baseFontSize * effectiveScale * multiplier))
             .fontWeight(block.isDialog ? .bold : .regular)
             .foregroundStyle(block.isDialog ? Color.primary : Color.martiniDefaultDescriptionColor)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -169,8 +173,8 @@ struct ScriptView: View {
     }
 
     @ViewBuilder
-    private func boardReference(for frame: Frame) -> some View {
-        let boardSize = baseBoardSize * effectiveBoardScale
+    private func boardReference(for frame: Frame, multiplier: CGFloat) -> some View {
+        let boardSize = baseBoardSize * effectiveBoardScale * multiplier
 
         VStack(alignment: .leading, spacing: 6) {
             FrameLayout(
@@ -239,6 +243,21 @@ struct ScriptView: View {
         if selectedCreativeId == nil || !authService.creatives.contains(where: { $0.id == selectedCreativeId }) {
             selectedCreativeId = preferredCreativeId
         }
+    }
+
+    private func deviceScaleMultiplier(for size: CGSize) -> CGFloat {
+        let step = UIControlConfig.scriptDeviceScaleStep
+        guard step > 0 else { return 1 }
+        let isPad = UIDevice.current.userInterfaceIdiom == .pad
+        let isLandscape = size.width > size.height
+        if isPad {
+            return powCGFloat(step, isLandscape ? 3 : 2)
+        }
+        return isLandscape ? step : 1
+    }
+
+    private func powCGFloat(_ base: CGFloat, _ exponent: Int) -> CGFloat {
+        CGFloat(pow(Double(base), Double(exponent)))
     }
 }
 

@@ -44,4 +44,5 @@ enum UIControlConfig {
     static let scriptBoardScaleMin: CGFloat = 0.6
     static let scriptBoardScaleMax: CGFloat = 1.6
     static let scriptBoardScaleDefault: CGFloat = 1.0
+    static let scriptDeviceScaleStep: CGFloat = 1.25
 }
