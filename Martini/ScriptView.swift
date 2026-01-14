@@ -102,7 +102,7 @@ struct ScriptView: View {
         return filteredFrames.compactMap { frame in
             let blocks = ScriptParser.blocks(from: frame.description ?? "", frameId: frame.id)
             guard !blocks.isEmpty else { return nil }
-            ScriptFrameEntry(
+            return ScriptFrameEntry(
                 frame: frame,
                 blocks: blocks
             )
