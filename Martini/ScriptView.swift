@@ -4,7 +4,7 @@ struct ScriptView: View {
     @EnvironmentObject private var authService: AuthService
     let targetDialogId: String?
     let targetFrameId: String?
-    @State private var fontScale: CGFloat = UIControlConfig.scriptFontScaleDefault
+    @AppStorage("scriptFontScale") private var fontScale: Double = Double(UIControlConfig.scriptFontScaleDefault)
     @State private var isShowingSettings = false
     @State private var selectedCreativeId: String?
     @AppStorage("scriptShowBoard") private var showBoard: Bool = UIControlConfig.scriptShowBoardDefault
@@ -103,7 +103,8 @@ struct ScriptView: View {
     }
 
     private var effectiveScale: CGFloat {
-        min(max(fontScale, minFontScale), maxFontScale)
+        let clamped = min(max(CGFloat(fontScale), minFontScale), maxFontScale)
+        return clamped
     }
 
     private var effectiveBoardScale: CGFloat {
@@ -262,7 +263,7 @@ struct ScriptView: View {
 }
 
 private struct ScriptSettingsSheet: View {
-    @Binding var fontScale: CGFloat
+    @Binding var fontScale: Double
     @Binding var showBoard: Bool
     @Binding var showFrameDivider: Bool
     @Binding var boardScale: Double
@@ -278,10 +279,7 @@ private struct ScriptSettingsSheet: View {
                 Section("Font Size") {
                     HStack {
                         Image(systemName: "textformat.size.smaller")
-                        Slider(value: Binding(
-                            get: { Double(fontScale) },
-                            set: { fontScale = CGFloat($0) }
-                        ), in: Double(minFontScale)...Double(maxFontScale))
+                        Slider(value: $fontScale, in: Double(minFontScale)...Double(maxFontScale))
                         Image(systemName: "textformat.size.larger")
                     }
                 }
