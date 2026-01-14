@@ -4,11 +4,11 @@ struct ScriptView: View {
     @EnvironmentObject private var authService: AuthService
     let targetDialogId: String?
     let targetFrameId: String?
-    @State private var fontScale: CGFloat = 1.0
+    @State private var fontScale: CGFloat = UIControlConfig.scriptFontScaleDefault
     @GestureState private var magnifyBy: CGFloat = 1.0
 
-    private let minFontScale: CGFloat = 0.8
-    private let maxFontScale: CGFloat = 1.8
+    private let minFontScale: CGFloat = UIControlConfig.scriptFontScaleMin
+    private let maxFontScale: CGFloat = UIControlConfig.scriptFontScaleMax
     private let baseFontSize: CGFloat = 16
 
     var body: some View {
