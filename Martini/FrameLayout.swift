@@ -609,7 +609,7 @@ struct FrameLayout: View {
 
         case .omit:
             // Transparent overlay layer
-            Color.red.opacity(0.3 * omitOverlayOpacity)
+            Color.red.opacity(omitOverlayOpacity)
                 .cornerRadius(cornerRadius)
                 .overlay {
                     GeometryReader { geometry in
@@ -628,7 +628,7 @@ struct FrameLayout: View {
 
     private func configureInitialStatusAnimation() {
         lastAnimatedStatus = frame.statusEnum
-        omitOverlayOpacity = frame.statusEnum == .omit ? 0.6 : 0
+        omitOverlayOpacity = frame.statusEnum == .omit ? 0.5 : 0
         let isDone = frame.statusEnum == .done
         doneFirstLineProgress = isDone ? 1 : 0
         doneSecondLineProgress = isDone ? 1 : 0
@@ -654,7 +654,7 @@ struct FrameLayout: View {
                 doneSecondLineProgress = 0
             }
             withAnimation(.easeInOut(duration: 0.35)) {
-                omitOverlayOpacity = 0.6
+                omitOverlayOpacity = 0.5
             }
         case .done:
             withAnimation(.easeOut(duration: 0.2)) {
@@ -662,10 +662,10 @@ struct FrameLayout: View {
             }
             doneFirstLineProgress = 0
             doneSecondLineProgress = 0
-            withAnimation(.linear(duration: 0.16)) {
+            withAnimation(.timingCurve(0.15, 0.0, 0.85, 1.0, duration: 0.25)) {
                 doneFirstLineProgress = 1
             }
-            withAnimation(.linear(duration: 0.16).delay(0.08)) {
+            withAnimation(.timingCurve(0.15, 0.0, 0.85, 1.0, duration: 0.25).delay(0.25)) {
                 doneSecondLineProgress = 1
             }
         case .here, .next, .none:
