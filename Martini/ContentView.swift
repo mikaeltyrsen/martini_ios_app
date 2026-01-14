@@ -3103,6 +3103,12 @@ struct SettingsView: View {
                     }
                     .foregroundStyle(.red)
                 }
+
+                Section("Version") {
+                    Text(appVersionDescription)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
@@ -3153,6 +3159,16 @@ struct SettingsView: View {
             get: { ThemePreference(rawValue: themePreferenceRawValue) ?? .system },
             set: { themePreferenceRawValue = $0.rawValue }
         )
+    }
+
+    private var appVersionDescription: String {
+        let info = Bundle.main.infoDictionary
+        let version = info?["CFBundleShortVersionString"] as? String ?? "Unknown"
+        let build = info?["CFBundleVersion"] as? String
+        if let build, !build.isEmpty {
+            return "Version \(version) (Build \(build))"
+        }
+        return "Version \(version)"
     }
 
     private func restoreDefaults() {
