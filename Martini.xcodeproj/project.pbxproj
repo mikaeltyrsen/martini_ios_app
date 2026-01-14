@@ -23,6 +23,7 @@
 		0730F4112F0C6F7D000B598F /* CachedVideoPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4102F0C6F7D000B598F /* CachedVideoPlayerView.swift */; };
 		0730F4122F0C6F7D000B598F /* BoardMetadataSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F40F2F0C6F7D000B598F /* BoardMetadataSheet.swift */; };
 		0730F41C2F0CE88E000B598F /* CreativeAspectRatioConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F41B2F0CE88E000B598F /* CreativeAspectRatioConfig.swift */; };
+		0733190F2F17ED1800D6FE10 /* UIControlConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0733190E2F17ED1800D6FE10 /* UIControlConfig.swift */; };
 		075456022EC9A6E200C45739 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075455FE2EC9A6E100C45739 /* AuthService.swift */; };
 		075456032EC9A6E200C45739 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075455FF2EC9A6E100C45739 /* LoginView.swift */; };
 		075456042EC9A6E200C45739 /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075456002EC9A6E100C45739 /* QRScannerView.swift */; };
@@ -104,6 +105,7 @@
 		0730F40F2F0C6F7D000B598F /* BoardMetadataSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardMetadataSheet.swift; sourceTree = "<group>"; };
 		0730F4102F0C6F7D000B598F /* CachedVideoPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedVideoPlayerView.swift; sourceTree = "<group>"; };
 		0730F41B2F0CE88E000B598F /* CreativeAspectRatioConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreativeAspectRatioConfig.swift; sourceTree = "<group>"; };
+		0733190E2F17ED1800D6FE10 /* UIControlConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIControlConfig.swift; sourceTree = "<group>"; };
 		075455FE2EC9A6E100C45739 /* AuthService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		075455FF2EC9A6E100C45739 /* LoginView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		075456002EC9A6E100C45739 /* QRScannerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
@@ -216,6 +218,7 @@
 		07A6A6842EC9A272002C8EB9 /* Martini */ = {
 			isa = PBXGroup;
 			children = (
+				0733190E2F17ED1800D6FE10 /* UIControlConfig.swift */,
 				07FFA27F2F1304F6006BEAF4 /* MarkupOverlayView.swift */,
 				07FFA27B2F129F45006BEAF4 /* BoardAnnotationEditor.swift */,
 				07FFA27C2F129F45006BEAF4 /* ClipFilesViews.swift */,
@@ -413,6 +416,7 @@
 				07A6A6862EC9A272002C8EB9 /* MartiniApp.swift in Sources */,
 				07FFA26F2F0FEE60006BEAF4 /* SchedulesView.swift in Sources */,
 				07FFA2702F0FEE60006BEAF4 /* ScheduleView.swift in Sources */,
+				0733190F2F17ED1800D6FE10 /* UIControlConfig.swift in Sources */,
 				07FFA2712F0FEE60006BEAF4 /* ScheduleWeatherService.swift in Sources */,
 				07FFA2722F0FEE60006BEAF4 /* ScheduleCache.swift in Sources */,
 				075456042EC9A6E200C45739 /* QRScannerView.swift in Sources */,
