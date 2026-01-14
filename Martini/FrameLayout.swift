@@ -584,20 +584,21 @@ struct FrameLayout: View {
             if showDoneCrosses {
                 // Red X lines from corner to corner
                 GeometryReader { geometry in
+                    let lineWidth = scaledCrossLineWidth(for: geometry.size)
                     ZStack {
                         Path { path in
                             path.move(to: .zero)
                             path.addLine(to: CGPoint(x: geometry.size.width, y: geometry.size.height))
                         }
                         .trim(from: 0, to: doneFirstLineProgress)
-                        .stroke(Color.red, style: StrokeStyle(lineWidth: doneCrossVisibleLineWidth, lineCap: .round))
+                        .stroke(Color.red, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
 
                         Path { path in
                             path.move(to: CGPoint(x: geometry.size.width, y: 0))
                             path.addLine(to: CGPoint(x: 0, y: geometry.size.height))
                         }
                         .trim(from: 0, to: doneSecondLineProgress)
-                        .stroke(Color.red, style: StrokeStyle(lineWidth: doneCrossVisibleLineWidth, lineCap: .round))
+                        .stroke(Color.red, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                     }
                 }
                 .aspectRatio(aspectRatio, contentMode: .fit)
@@ -632,8 +633,13 @@ struct FrameLayout: View {
         borderScale = 1
     }
 
-    private var doneCrossVisibleLineWidth: CGFloat {
-        CGFloat(doneCrossLineWidthOverride ?? doneCrossLineWidth)
+    private func scaledCrossLineWidth(for size: CGSize) -> CGFloat {
+        guard size.width > 0, size.height > 0 else {
+            return CGFloat(doneCrossLineWidthOverride ?? doneCrossLineWidth)
+        }
+        let minDimension = min(size.width, size.height)
+        let percentage = max(doneCrossLineWidthOverride ?? doneCrossLineWidth, 0) * 0.01
+        return minDimension * percentage
     }
 
     private func animateStatusChange(to status: FrameStatus) {
