@@ -3161,7 +3161,15 @@ struct SettingsView: View {
         showGridTags = UIControlConfig.showGridTagsDefault
         gridSizeStep = UIControlConfig.gridSizeDefault
         gridFontStep = UIControlConfig.gridFontSizeDefault
+        gridCornerRadiusStep = UIControlConfig.borderRadiusDefault
+        doneCrossLineWidth = UIControlConfig.crossMarkThicknessDefault
         showDoneCrosses = UIControlConfig.showDoneCrossesDefault
+        markerBorderWidth = UIControlConfig.borderThicknessDefault
+        boardSizingCleared = UIControlConfig.boardSizingDefault
+        boardSizingCrossed = UIControlConfig.boardSizingDefault
+        boardSizingOmitted = UIControlConfig.boardSizingDefault
+        boardSizingUpNext = UIControlConfig.boardSizingDefault
+        boardSizingHere = UIControlConfig.boardSizingDefault
     }
 }
 
