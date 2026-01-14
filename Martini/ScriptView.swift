@@ -7,10 +7,13 @@ struct ScriptView: View {
     @State private var fontScale: CGFloat = UIControlConfig.scriptFontScaleDefault
     @State private var isShowingSettings = false
     @State private var selectedCreativeId: String?
+    @AppStorage("scriptShowBoard") private var showBoard: Bool = UIControlConfig.scriptShowBoardDefault
+    @AppStorage("scriptBoardScale") private var boardScale: Double = Double(UIControlConfig.scriptBoardScaleDefault)
 
     private let minFontScale: CGFloat = UIControlConfig.scriptFontScaleMin
     private let maxFontScale: CGFloat = UIControlConfig.scriptFontScaleMax
     private let baseFontSize: CGFloat = 16
+    private let baseBoardSize: CGFloat = 120
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -21,8 +24,17 @@ struct ScriptView: View {
                             frameDivider(for: entry.frame)
                                 .id(entry.frame.id)
 
-                            ForEach(entry.blocks) { block in
-                                scriptBlockView(block)
+                            HStack(alignment: .top, spacing: 16) {
+                                if showBoard {
+                                    boardReference(for: entry.frame)
+                                }
+
+                                VStack(alignment: .leading, spacing: 12) {
+                                    ForEach(entry.blocks) { block in
+                                        scriptBlockView(block)
+                                    }
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             }
                         }
                         .padding(.horizontal)
@@ -62,7 +74,11 @@ struct ScriptView: View {
                 }
             }
             .sheet(isPresented: $isShowingSettings) {
-                ScriptSettingsSheet(fontScale: $fontScale)
+                ScriptSettingsSheet(
+                    fontScale: $fontScale,
+                    showBoard: $showBoard,
+                    boardScale: $boardScale
+                )
                     .presentationDetents([.medium])
             }
             .onAppear {
@@ -80,6 +96,12 @@ struct ScriptView: View {
 
     private var effectiveScale: CGFloat {
         min(max(fontScale, minFontScale), maxFontScale)
+    }
+
+    private var effectiveBoardScale: CGFloat {
+        let minScale = UIControlConfig.scriptBoardScaleMin
+        let maxScale = UIControlConfig.scriptBoardScaleMax
+        return min(max(CGFloat(boardScale), minScale), maxScale)
     }
 
     private var scriptFrames: [ScriptFrameEntry] {
@@ -146,6 +168,29 @@ struct ScriptView: View {
         }
     }
 
+    @ViewBuilder
+    private func boardReference(for frame: Frame) -> some View {
+        let boardSize = baseBoardSize * effectiveBoardScale
+
+        VStack(alignment: .leading, spacing: 6) {
+            FrameLayout(
+                frame: frame,
+                showStatusBadge: false,
+                showFrameTimeOverlay: false,
+                showTextBlock: false,
+                enablesFullScreen: false,
+                usePinnedBoardMarkupFallback: true
+            )
+            .frame(width: boardSize, height: boardSize * 0.7)
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+            Text(frame.frameNumber > 0 ? "Frame \(frame.frameNumber)" : "Frame")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(width: boardSize, alignment: .leading)
+    }
+
     private var creativeMenuContent: some View {
         Group {
             if authService.creatives.isEmpty {
@@ -199,9 +244,13 @@ struct ScriptView: View {
 
 private struct ScriptSettingsSheet: View {
     @Binding var fontScale: CGFloat
+    @Binding var showBoard: Bool
+    @Binding var boardScale: Double
 
     private let minFontScale: CGFloat = UIControlConfig.scriptFontScaleMin
     private let maxFontScale: CGFloat = UIControlConfig.scriptFontScaleMax
+    private let minBoardScale: Double = Double(UIControlConfig.scriptBoardScaleMin)
+    private let maxBoardScale: Double = Double(UIControlConfig.scriptBoardScaleMax)
 
     var body: some View {
         NavigationStack {
@@ -214,6 +263,19 @@ private struct ScriptSettingsSheet: View {
                             set: { fontScale = CGFloat($0) }
                         ), in: Double(minFontScale)...Double(maxFontScale))
                         Image(systemName: "textformat.size.larger")
+                    }
+                }
+
+                Section("Board Reference") {
+                    Toggle("Show Board", isOn: $showBoard)
+
+                    HStack {
+                        Image(systemName: "photo.on.rectangle.angled")
+                            .foregroundStyle(showBoard ? .primary : .secondary)
+                        Slider(value: $boardScale, in: minBoardScale...maxBoardScale)
+                            .disabled(!showBoard)
+                        Image(systemName: "photo.fill")
+                            .foregroundStyle(showBoard ? .primary : .secondary)
                     }
                 }
             }
