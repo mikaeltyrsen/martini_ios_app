@@ -1669,6 +1669,74 @@ struct Clip: Codable, Identifiable, Hashable {
         case thumbnail
         case previewURL = "preview_url"
         case linkType = "link_type"
+        case fileNameCamel = "fileName"
+        case fileTypeCamel = "fileType"
+        case fileSizeCamel = "fileSize"
+        case previewURLCamel = "previewUrl"
+        case thumbnailUrl = "thumbnailUrl"
+        case url
+    }
+
+    init(
+        id: String,
+        name: String? = nil,
+        fileName: String? = nil,
+        fileNameRaw: String? = nil,
+        fileType: String? = nil,
+        fileSize: Int? = nil,
+        thumbnail: String? = nil,
+        previewURL: String? = nil,
+        linkType: String? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.fileName = fileName
+        self.fileNameRaw = fileNameRaw
+        self.fileType = fileType
+        self.fileSize = fileSize
+        self.thumbnail = thumbnail
+        self.previewURL = previewURL
+        self.linkType = linkType
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decodeIfPresent(String.self, forKey: .name)
+
+        let fileNameSnake = try container.decodeIfPresent(String.self, forKey: .fileName)
+        let fileNameCamel = try container.decodeIfPresent(String.self, forKey: .fileNameCamel)
+        let urlValue = try container.decodeIfPresent(String.self, forKey: .url)
+        fileName = fileNameSnake ?? fileNameCamel ?? urlValue
+        fileNameRaw = try container.decodeIfPresent(String.self, forKey: .fileNameRaw)
+        fileType = try container.decodeIfPresent(String.self, forKey: .fileType)
+            ?? container.decodeIfPresent(String.self, forKey: .fileTypeCamel)
+
+        if let decodedSize = try container.decodeIfPresent(SafeOptionalInt.self, forKey: .fileSize)
+            ?? container.decodeIfPresent(SafeOptionalInt.self, forKey: .fileSizeCamel) {
+            _fileSize = decodedSize
+        } else {
+            _fileSize = SafeOptionalInt()
+        }
+
+        thumbnail = try container.decodeIfPresent(String.self, forKey: .thumbnail)
+            ?? container.decodeIfPresent(String.self, forKey: .thumbnailUrl)
+        previewURL = try container.decodeIfPresent(String.self, forKey: .previewURL)
+            ?? container.decodeIfPresent(String.self, forKey: .previewURLCamel)
+        linkType = try container.decodeIfPresent(String.self, forKey: .linkType)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encodeIfPresent(name, forKey: .name)
+        try container.encodeIfPresent(fileName, forKey: .fileName)
+        try container.encodeIfPresent(fileNameRaw, forKey: .fileNameRaw)
+        try container.encodeIfPresent(fileType, forKey: .fileType)
+        try container.encodeIfPresent(fileSize, forKey: .fileSize)
+        try container.encodeIfPresent(thumbnail, forKey: .thumbnail)
+        try container.encodeIfPresent(previewURL, forKey: .previewURL)
+        try container.encodeIfPresent(linkType, forKey: .linkType)
     }
 
     var fileURL: URL? {
@@ -1731,6 +1799,39 @@ struct ClipsResponse: Codable {
     @SafeBool var success: Bool
     let clips: [Clip]
     let error: String?
+
+    enum CodingKeys: String, CodingKey {
+        case success
+        case clips
+        case files
+        case error
+    }
+
+    init(success: Bool, clips: [Clip], error: String? = nil) {
+        self.success = success
+        self.clips = clips
+        self.error = error
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        _success = try container.decodeIfPresent(SafeBool.self, forKey: .success) ?? SafeBool()
+        error = try container.decodeIfPresent(String.self, forKey: .error)
+        if let decodedClips = try container.decodeIfPresent([Clip].self, forKey: .clips) {
+            clips = decodedClips
+        } else if let decodedFiles = try container.decodeIfPresent([Clip].self, forKey: .files) {
+            clips = decodedFiles
+        } else {
+            clips = []
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(success, forKey: .success)
+        try container.encode(clips, forKey: .clips)
+        try container.encodeIfPresent(error, forKey: .error)
+    }
 }
 
 // MARK: - Comments
