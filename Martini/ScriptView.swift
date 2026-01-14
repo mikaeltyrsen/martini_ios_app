@@ -3,6 +3,7 @@ import SwiftUI
 struct ScriptView: View {
     @EnvironmentObject private var authService: AuthService
     let targetDialogId: String?
+    let targetFrameId: String?
     @State private var fontScale: CGFloat = 1.0
     @GestureState private var magnifyBy: CGFloat = 1.0
 
@@ -146,10 +147,14 @@ struct ScriptView: View {
     }
 
     private func scrollToTarget(using proxy: ScrollViewProxy) {
-        guard let targetDialogId else { return }
+        guard targetDialogId != nil || targetFrameId != nil else { return }
         DispatchQueue.main.async {
             withAnimation(.easeInOut(duration: 0.3)) {
-                proxy.scrollTo(targetDialogId, anchor: .center)
+                if let targetDialogId {
+                    proxy.scrollTo(targetDialogId, anchor: .center)
+                } else if let targetFrameId {
+                    proxy.scrollTo(targetFrameId, anchor: .top)
+                }
             }
         }
     }

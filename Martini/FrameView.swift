@@ -170,7 +170,7 @@ struct FrameView: View {
                 )
             }
             .navigationDestination(item: $scriptNavigationTarget) { target in
-                ScriptView(targetDialogId: target.dialogId)
+                ScriptView(targetDialogId: target.dialogId, targetFrameId: target.frameId)
             }
             .sheet(item: $metadataSheetItem) { item in
                 BoardMetadataSheet(item: item)
@@ -1007,7 +1007,7 @@ struct FrameView: View {
                 let hasScriptMarkup = secondaryText.range(of: "qr-syntax", options: .caseInsensitive) != nil
                 if hasScriptMarkup, scriptBlocks.contains(where: { $0.isDialog }) {
                     ScriptDescriptionPreview(blocks: scriptBlocks, fontSize: scriptPreviewFontSize) { dialogId in
-                        scriptNavigationTarget = ScriptNavigationTarget(dialogId: dialogId)
+                        scriptNavigationTarget = ScriptNavigationTarget(frameId: frame.id, dialogId: dialogId)
                     }
                 } else if let attributedText = descriptionAttributedText {
                     RichTextDisplayView(attributedText: attributedText)
@@ -1061,7 +1061,15 @@ struct FrameView: View {
 
     private struct ScriptNavigationTarget: Identifiable, Hashable {
         let id = UUID()
-        let dialogId: String
+        let frameId: String
+        let dialogId: String?
+    }
+
+    private var descriptionScriptNavigationTarget: ScriptNavigationTarget? {
+        guard let secondaryText, !secondaryText.isEmpty else { return nil }
+        let blocks = ScriptParser.blocks(from: secondaryText, frameId: frame.id)
+        let dialogId = blocks.first { $0.dialogId != nil }?.dialogId
+        return ScriptNavigationTarget(frameId: frame.id, dialogId: dialogId)
     }
 
     private var frameTagGroups: [FrameTagGroup] {
@@ -1305,6 +1313,21 @@ struct FrameView: View {
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
                     .stroke(Color.gray.opacity(0.3), lineWidth: 1)
             )
+            .overlay(alignment: .bottomTrailing) {
+                if let target = descriptionScriptNavigationTarget {
+                    Button {
+                        scriptNavigationTarget = target
+                    } label: {
+                        Image(systemName: "doc.text")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .padding(10)
+                            .background(.ultraThinMaterial, in: Circle())
+                    }
+                    .accessibilityLabel("Open Script")
+                    .padding(12)
+                }
+            }
             .contextMenu {
                 Button {
                     UIPasteboard.general.string = descriptionCopyText ?? ""
