@@ -187,12 +187,10 @@ struct FrameLayout: View {
                     .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
             }
 
-            if frame.statusEnum != .none {
-                GeometryReader { geo in
-                    RoundedRectangle(cornerRadius: cornerRadius)
-                        .strokeBorder(borderColor, lineWidth: scaledBorderWidth(for: geo.size))
-                        .allowsHitTesting(false)
-                }
+            GeometryReader { geo in
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .strokeBorder(borderColor, lineWidth: borderWidth(for: geo.size))
+                    .allowsHitTesting(false)
             }
 
             if let resolvedTitle {
@@ -399,6 +397,10 @@ struct FrameLayout: View {
         return minDimension * percentage
     }
 
+    private func borderWidth(for size: CGSize) -> CGFloat {
+        frame.statusEnum == .none ? 1 : scaledBorderWidth(for: size)
+    }
+
     private var borderColor: Color {
         let status = frame.statusEnum
 
@@ -412,7 +414,7 @@ struct FrameLayout: View {
         case .omit:
             return .red
         case .none:
-            return .gray.opacity(0.3)
+            return .white.opacity(0.3)
         }
     }
 
