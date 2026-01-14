@@ -5,7 +5,8 @@ struct ScriptView: View {
     let targetDialogId: String?
     let targetFrameId: String?
     @State private var fontScale: CGFloat = UIControlConfig.scriptFontScaleDefault
-    @GestureState private var magnifyBy: CGFloat = 1.0
+    @State private var isShowingSettings = false
+    @State private var selectedCreativeId: String?
 
     private let minFontScale: CGFloat = UIControlConfig.scriptFontScaleMin
     private let maxFontScale: CGFloat = UIControlConfig.scriptFontScaleMax
@@ -20,14 +21,8 @@ struct ScriptView: View {
                             frameDivider(for: entry.frame)
                                 .id(entry.frame.id)
 
-                            if entry.blocks.isEmpty {
-                                Text("No description provided for this frame.")
-                                    .font(.system(size: baseFontSize * effectiveScale))
-                                    .foregroundStyle(.secondary)
-                            } else {
-                                ForEach(entry.blocks) { block in
-                                    scriptBlockView(block)
-                                }
+                            ForEach(entry.blocks) { block in
+                                scriptBlockView(block)
                             }
                         }
                         .padding(.horizontal)
@@ -37,33 +32,54 @@ struct ScriptView: View {
             }
             .navigationTitle("Script")
             .navigationBarTitleDisplayMode(.inline)
-            .gesture(magnificationGesture)
-            .safeAreaInset(edge: .bottom) {
-                scriptToolbar(proxy: proxy)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        creativeMenuContent
+                    } label: {
+                        Image(systemName: "list.bullet")
+                    }
+                    .accessibilityLabel("Select creative")
+                }
+
+                ToolbarItemGroup(placement: .bottomBar) {
+                    Button {
+                        scrollToHere(using: proxy)
+                    } label: {
+                        Image(systemName: "location.fill")
+                    }
+                    .accessibilityLabel("Scroll to here")
+                    .disabled(hereFrameId == nil)
+
+                    Spacer()
+
+                    Button {
+                        isShowingSettings = true
+                    } label: {
+                        Image(systemName: "slider.horizontal.3")
+                    }
+                    .accessibilityLabel("Script settings")
+                }
+            }
+            .sheet(isPresented: $isShowingSettings) {
+                ScriptSettingsSheet(fontScale: $fontScale)
+                    .presentationDetents([.medium])
             }
             .onAppear {
+                updateSelectedCreativeIfNeeded()
                 scrollToTarget(using: proxy)
             }
             .onChange(of: targetDialogId) { _ in
                 scrollToTarget(using: proxy)
             }
+            .onChange(of: authService.creatives.map(\.id)) { _ in
+                updateSelectedCreativeIfNeeded()
+            }
         }
     }
 
     private var effectiveScale: CGFloat {
-        let scaled = fontScale * magnifyBy
-        return min(max(scaled, minFontScale), maxFontScale)
-    }
-
-    private var magnificationGesture: some Gesture {
-        MagnificationGesture()
-            .updating($magnifyBy) { value, state, _ in
-                state = value
-            }
-            .onEnded { value in
-                let newScale = fontScale * value
-                fontScale = min(max(newScale, minFontScale), maxFontScale)
-            }
+        min(max(fontScale, minFontScale), maxFontScale)
     }
 
     private var scriptFrames: [ScriptFrameEntry] {
@@ -78,10 +94,17 @@ struct ScriptView: View {
             return lhsShoot < rhsShoot
         }
 
-        return sortedFrames.map { frame in
+        let filteredFrames = sortedFrames.filter { frame in
+            guard let selectedCreativeId else { return true }
+            return frame.creativeId == selectedCreativeId
+        }
+
+        return filteredFrames.compactMap { frame in
+            let blocks = ScriptParser.blocks(from: frame.description ?? "", frameId: frame.id)
+            guard !blocks.isEmpty else { return nil }
             ScriptFrameEntry(
                 frame: frame,
-                blocks: ScriptParser.blocks(from: frame.description ?? "", frameId: frame.id)
+                blocks: blocks
             )
         }
     }
@@ -123,27 +146,24 @@ struct ScriptView: View {
         }
     }
 
-    @ViewBuilder
-    private func scriptToolbar(proxy: ScrollViewProxy) -> some View {
-        HStack {
-            Button {
-                scrollToHere(using: proxy)
-            } label: {
-                Label("Here", systemImage: "location.fill")
-                    .font(.footnote.weight(.semibold))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Color.martiniDefaultColor.opacity(0.15))
-                    .clipShape(Capsule())
+    private var creativeMenuContent: some View {
+        Group {
+            if authService.creatives.isEmpty {
+                Text("No creatives available")
+            } else {
+                ForEach(authService.creatives) { creative in
+                    Button {
+                        selectedCreativeId = creative.id
+                    } label: {
+                        if creative.id == selectedCreativeId {
+                            Label(creative.title, systemImage: "checkmark")
+                        } else {
+                            Text(creative.title)
+                        }
+                    }
+                }
             }
-            .buttonStyle(.plain)
-            .disabled(hereFrameId == nil)
-
-            Spacer()
         }
-        .padding(.horizontal)
-        .padding(.vertical, 8)
-        .background(.ultraThinMaterial)
     }
 
     private func scrollToTarget(using proxy: ScrollViewProxy) {
@@ -163,6 +183,42 @@ struct ScriptView: View {
         guard let hereFrameId else { return }
         withAnimation(.easeInOut(duration: 0.3)) {
             proxy.scrollTo(hereFrameId, anchor: .top)
+        }
+    }
+
+    private func updateSelectedCreativeIfNeeded() {
+        let targetCreativeId = authService.frames.first { $0.id == targetFrameId }?.creativeId
+        let fallbackCreativeId = authService.creatives.first?.id
+        let preferredCreativeId = targetCreativeId ?? fallbackCreativeId
+        guard let preferredCreativeId else { return }
+        if selectedCreativeId == nil || !authService.creatives.contains(where: { $0.id == selectedCreativeId }) {
+            selectedCreativeId = preferredCreativeId
+        }
+    }
+}
+
+private struct ScriptSettingsSheet: View {
+    @Binding var fontScale: CGFloat
+
+    private let minFontScale: CGFloat = UIControlConfig.scriptFontScaleMin
+    private let maxFontScale: CGFloat = UIControlConfig.scriptFontScaleMax
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Font Size") {
+                    HStack {
+                        Image(systemName: "textformat.size.smaller")
+                        Slider(value: Binding(
+                            get: { Double(fontScale) },
+                            set: { fontScale = CGFloat($0) }
+                        ), in: Double(minFontScale)...Double(maxFontScale))
+                        Image(systemName: "textformat.size.larger")
+                    }
+                }
+            }
+            .navigationTitle("Script Settings")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 }
