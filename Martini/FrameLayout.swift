@@ -291,10 +291,12 @@ struct FrameLayout: View {
             .contentShape(Rectangle())
             .scaleEffect(borderScale)
             .animation(.spring(response: 0.3, dampingFraction: 0.55, blendDuration: 0.12), value: borderScale)
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .strokeBorder(borderColor, lineWidth: borderWidth)
-            )
+            .overlay {
+                GeometryReader { geo in
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .strokeBorder(borderColor, lineWidth: scaledBorderWidth(for: geo.size))
+                }
+            }
 //            .shadow(color: borderColor.opacity(0.8), radius: 8, x: 0, y: 0)
 //            .shadow(color: borderColor.opacity(0.5), radius: 40, x: 0, y: 0)
 //            .shadow(color: borderColor.opacity(0.3), radius: 80, x: 0, y: 0)
@@ -386,8 +388,13 @@ struct FrameLayout: View {
         }
     }
 
-    private var borderWidth: CGFloat {
-        CGFloat(markerBorderWidth)
+    private func scaledBorderWidth(for size: CGSize) -> CGFloat {
+        guard size.width > 0, size.height > 0 else {
+            return CGFloat(markerBorderWidth)
+        }
+        let minDimension = min(size.width, size.height)
+        let percentage = max(markerBorderWidth, 0) * 0.01
+        return minDimension * percentage
     }
 
     private var borderColor: Color {
