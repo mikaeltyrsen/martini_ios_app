@@ -35,4 +35,8 @@ enum UIControlConfig {
     static let boardSizingMediumScale: CGFloat = 0.8
     static let boardSizingFullScale: CGFloat = 1.0
     static let boardSizingDefault: BoardSizingOption = .full
+
+    static let scriptFontScaleMin: CGFloat = 0.8
+    static let scriptFontScaleMax: CGFloat = 1.8
+    static let scriptFontScaleDefault: CGFloat = 1.0
 }
