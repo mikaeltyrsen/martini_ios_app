@@ -2451,6 +2451,7 @@ struct GridFrameCell: View {
     var isUpdating: Bool = false
     var onStatusSelected: (FrameStatus) -> Void
     @EnvironmentObject private var authService: AuthService
+    @State private var resolvedCornerRadius: CGFloat = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -2460,16 +2461,27 @@ struct GridFrameCell: View {
                 title: frame.caption,
                 showFrameTimeOverlay: showFrameTimeOverlay,
                 showTextBlock: false,
-                cornerRadius: cornerRadius,
+                cornerRadius: effectiveCornerRadius,
                 enablesFullScreen: false,
                 doneCrossLineWidthOverride: forceThinCrosses ? 1 : nil,
                 usePinnedBoardMarkupFallback: true
             )
             .scaleEffect(boardSizingScale)
+            .background(
+                GeometryReader { geo in
+                    Color.clear
+                        .onAppear {
+                            updateCornerRadius(for: geo.size)
+                        }
+                        .onChange(of: geo.size) { newSize in
+                            updateCornerRadius(for: newSize)
+                        }
+                }
+            )
             .overlay {
                 if isUpdating {
                     ZStack {
-                        RoundedRectangle(cornerRadius: cornerRadius)
+                        RoundedRectangle(cornerRadius: effectiveCornerRadius)
                             .fill(Color.black.opacity(0.6))
                         ProgressView()
                             .progressViewStyle(.circular)
@@ -2521,6 +2533,21 @@ struct GridFrameCell: View {
 
     private func isVisible(_ rect: CGRect) -> Bool {
         rect.maxY >= 0 && rect.minY <= viewportHeight
+    }
+
+    private var effectiveCornerRadius: CGFloat {
+        resolvedCornerRadius == 0 ? cornerRadius : resolvedCornerRadius
+    }
+
+    private func updateCornerRadius(for size: CGSize) {
+        guard size.width > 0, size.height > 0 else { return }
+        let minDimension = min(size.width, size.height)
+        let radiusScale = max(cornerRadius, 0) * 0.01
+        let newRadius = minDimension * radiusScale
+
+        if abs(newRadius - resolvedCornerRadius) > 0.5 {
+            resolvedCornerRadius = newRadius
+        }
     }
 
     private var boardSizingScale: CGFloat {
