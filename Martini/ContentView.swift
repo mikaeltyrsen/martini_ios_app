@@ -245,7 +245,7 @@ struct MainView: View {
     @State private var hasLoadedFrames = false
     @State private var hasLoadedProjectDetails = false
     @State private var hasLoadedCreatives = false
-    @AppStorage("gridSizeStep") private var gridSizeStep: Int = 1 // 1..4, portrait: 4->1 columns, landscape: 5->2 columns
+    @AppStorage("gridSizeStep") private var gridSizeStep: Int = UIControlConfig.gridSizeDefault // 1..4, portrait: 4->1 columns, landscape: 5->2 columns
     @State private var frameSortMode: FrameSortMode = .story
     @State private var isShowingSettings = false
     @State private var frameAssetOrders: [String: [FrameAssetKind]] = [:]
@@ -258,13 +258,13 @@ struct MainView: View {
     @State private var showingProjectFiles: Bool = false
     @State private var projectFilesSheetDetent: PresentationDetent = .medium
 
-    @AppStorage("showDescriptions") private var showDescriptions: Bool = true
-    @AppStorage("showFullDescriptions") private var showFullDescriptions: Bool = false
-    @AppStorage("showGridTags") private var showGridTags: Bool = false
-    @AppStorage("gridFontStep") private var gridFontStep: Int = 3 // 1..5
+    @AppStorage("showDescriptions") private var showDescriptions: Bool = UIControlConfig.showDescriptionsDefault
+    @AppStorage("showFullDescriptions") private var showFullDescriptions: Bool = UIControlConfig.showFullDescriptionsDefault
+    @AppStorage("showGridTags") private var showGridTags: Bool = UIControlConfig.showGridTagsDefault
+    @AppStorage("gridFontStep") private var gridFontStep: Int = UIControlConfig.gridFontSizeDefault // 1..5
     @AppStorage("gridCornerRadiusStep") private var gridCornerRadiusStep: Int = UIControlConfig.borderRadiusDefault
     @AppStorage("doneCrossLineWidth") private var doneCrossLineWidth: Double = UIControlConfig.crossMarkThicknessDefault
-    @AppStorage("showDoneCrosses") private var showDoneCrosses: Bool = true
+    @AppStorage("showDoneCrosses") private var showDoneCrosses: Bool = UIControlConfig.showDoneCrossesDefault
     @AppStorage("markerBorderWidth") private var markerBorderWidth: Double = UIControlConfig.borderThicknessDefault
     @AppStorage("boardSizingCleared") private var boardSizingClearedRawValue: String = UIControlConfig.boardSizingDefault.rawValue
     @AppStorage("boardSizingCrossed") private var boardSizingCrossedRawValue: String = UIControlConfig.boardSizingDefault.rawValue
@@ -2940,6 +2940,7 @@ struct SettingsView: View {
     @EnvironmentObject var authService: AuthService
     @Environment(\.dismiss) private var dismiss
     @AppStorage("themePreference") private var themePreferenceRawValue = ThemePreference.system.rawValue
+    @State private var showingRestoreAlert = false
     @Binding var showDescriptions: Bool
     @Binding var showFullDescriptions: Bool
     @Binding var showGridTags: Bool
@@ -2976,7 +2977,7 @@ struct SettingsView: View {
                             Slider(value: Binding(
                                 get: { Double(gridSizeStep) },
                                 set: { gridSizeStep = Int($0.rounded()) }
-                            ), in: 1...4, step: 1)
+                            ), in: Double(UIControlConfig.gridSizeMin)...Double(UIControlConfig.gridSizeMax), step: Double(UIControlConfig.gridSizeStep))
                             Spacer()
                             Image(systemName: "rectangle.fill")
                         }
@@ -2994,7 +2995,7 @@ struct SettingsView: View {
                             Slider(value: Binding(
                                 get: { Double(gridFontStep) },
                                 set: { gridFontStep = Int($0.rounded()) }
-                            ), in: 1...5, step: 1)
+                            ), in: Double(UIControlConfig.gridFontSizeMin)...Double(UIControlConfig.gridFontSizeMax), step: Double(UIControlConfig.gridFontSizeStep))
                             Spacer()
                             Image(systemName: "textformat.size.larger")
                         }
@@ -3105,6 +3106,24 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showingRestoreAlert = true
+                    } label: {
+                        Image(systemName: "arrow.counterclockwise")
+                    }
+                    .accessibilityLabel("Restore Settings")
+                }
+            }
+            .alert("Restore Settings", isPresented: $showingRestoreAlert) {
+                Button("Restore", role: .destructive) {
+                    restoreDefaults()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Are you sure you wanna restore all settings?")
+            }
 //            .toolbar {
 //                ToolbarItem(placement: .topBarLeading) {
 //                    Button {
@@ -3134,6 +3153,15 @@ struct SettingsView: View {
             get: { ThemePreference(rawValue: themePreferenceRawValue) ?? .system },
             set: { themePreferenceRawValue = $0.rawValue }
         )
+    }
+
+    private func restoreDefaults() {
+        showDescriptions = UIControlConfig.showDescriptionsDefault
+        showFullDescriptions = UIControlConfig.showFullDescriptionsDefault
+        showGridTags = UIControlConfig.showGridTagsDefault
+        gridSizeStep = UIControlConfig.gridSizeDefault
+        gridFontStep = UIControlConfig.gridFontSizeDefault
+        showDoneCrosses = UIControlConfig.showDoneCrossesDefault
     }
 }
 

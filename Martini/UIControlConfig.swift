@@ -1,6 +1,21 @@
 import SwiftUI
 
 enum UIControlConfig {
+    static let showDescriptionsDefault: Bool = true
+    static let showFullDescriptionsDefault: Bool = false
+    static let showGridTagsDefault: Bool = false
+    static let showDoneCrossesDefault: Bool = true
+
+    static let gridSizeMin: Int = 1
+    static let gridSizeMax: Int = 4
+    static let gridSizeStep: Int = 1
+    static let gridSizeDefault: Int = 1
+
+    static let gridFontSizeMin: Int = 1
+    static let gridFontSizeMax: Int = 5
+    static let gridFontSizeStep: Int = 1
+    static let gridFontSizeDefault: Int = 3
+
     static let borderThicknessMin: Double = 1
     static let borderThicknessMax: Double = 9
     static let borderThicknessStep: Double = 1
