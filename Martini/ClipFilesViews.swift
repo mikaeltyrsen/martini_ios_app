@@ -1,6 +1,7 @@
 import SwiftUI
 import QuickLook
 import UIKit
+import UniformTypeIdentifiers
 
 private struct ClipShareItem: Identifiable {
     let id = UUID()
@@ -346,7 +347,7 @@ struct ClipPreviewView: View {
                 request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             }
             let (tempURL, _) = try await URLSession.shared.download(for: request)
-            let destinationURL = FileManager.default.temporaryDirectory.appendingPathComponent(remoteURL.lastPathComponent)
+            let destinationURL = previewDestinationURL(for: remoteURL)
             if FileManager.default.fileExists(atPath: destinationURL.path) {
                 try FileManager.default.removeItem(at: destinationURL)
             }
@@ -363,6 +364,47 @@ struct ClipPreviewView: View {
             return url
         }
         return clip.fileURL
+    }
+
+    private func previewDestinationURL(for remoteURL: URL) -> URL {
+        let baseName = previewBaseName() ?? remoteURL.deletingPathExtension().lastPathComponent
+        let fallbackBaseName = baseName.isEmpty ? "clip-preview-\(clip.id)" : baseName
+        let preferredExtension = previewFileExtension()
+        let remoteExtension = normalizedExtension(remoteURL.pathExtension)
+        let chosenExtension = preferredExtension ?? remoteExtension
+        let filename = chosenExtension.map { "\(fallbackBaseName).\($0)" } ?? fallbackBaseName
+        return FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+    }
+
+    private func previewBaseName() -> String? {
+        guard let fileNameRaw = clip.fileNameRaw, !fileNameRaw.isEmpty else { return nil }
+        let rawURL = URL(fileURLWithPath: fileNameRaw)
+        let rawBase = rawURL.deletingPathExtension().lastPathComponent
+        return rawBase.isEmpty ? nil : rawBase
+    }
+
+    private func previewFileExtension() -> String? {
+        if let fileNameRaw = clip.fileNameRaw, !fileNameRaw.isEmpty {
+            let rawExtension = normalizedExtension(URL(fileURLWithPath: fileNameRaw).pathExtension)
+            if let rawExtension { return rawExtension }
+        }
+        guard let fileType = clip.fileType?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !fileType.isEmpty
+        else { return nil }
+        if fileType.contains("/") {
+            return UTType(mimeType: fileType)?.preferredFilenameExtension
+        }
+        return normalizedExtension(fileType)
+    }
+
+    private func normalizedExtension(_ value: String) -> String? {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        if trimmed.hasPrefix(".") {
+            let dropped = trimmed.dropFirst()
+            return dropped.isEmpty ? nil : String(dropped)
+        }
+        return trimmed
     }
 }
 
