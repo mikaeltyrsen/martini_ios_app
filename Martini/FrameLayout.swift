@@ -120,8 +120,8 @@ struct FrameLayout: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.fullscreenMediaCoordinator) private var fullscreenCoordinator
     @AppStorage("showDoneCrosses") private var showDoneCrosses: Bool = true
-    @AppStorage("doneCrossLineWidth") private var doneCrossLineWidth: Double = 5.0
-    @AppStorage("markerBorderWidth") private var markerBorderWidth: Double = 3.0
+    @AppStorage("doneCrossLineWidth") private var doneCrossLineWidth: Double = UIControlConfig.crossMarkThicknessDefault
+    @AppStorage("markerBorderWidth") private var markerBorderWidth: Double = UIControlConfig.borderThicknessDefault
     @Namespace private var fullscreenNamespace
     @State private var borderScale: CGFloat = 1.0
     @State private var omitOverlayOpacity: Double = 0

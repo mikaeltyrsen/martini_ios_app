@@ -262,15 +262,15 @@ struct MainView: View {
     @AppStorage("showFullDescriptions") private var showFullDescriptions: Bool = false
     @AppStorage("showGridTags") private var showGridTags: Bool = false
     @AppStorage("gridFontStep") private var gridFontStep: Int = 3 // 1..5
-    @AppStorage("gridCornerRadiusStep") private var gridCornerRadiusStep: Int = 5 // 0..9
-    @AppStorage("doneCrossLineWidth") private var doneCrossLineWidth: Double = 5.0
+    @AppStorage("gridCornerRadiusStep") private var gridCornerRadiusStep: Int = UIControlConfig.borderRadiusDefault
+    @AppStorage("doneCrossLineWidth") private var doneCrossLineWidth: Double = UIControlConfig.crossMarkThicknessDefault
     @AppStorage("showDoneCrosses") private var showDoneCrosses: Bool = true
-    @AppStorage("markerBorderWidth") private var markerBorderWidth: Double = 3.0
-    @AppStorage("boardSizingCleared") private var boardSizingClearedRawValue: String = BoardSizingOption.full.rawValue
-    @AppStorage("boardSizingCrossed") private var boardSizingCrossedRawValue: String = BoardSizingOption.full.rawValue
-    @AppStorage("boardSizingOmitted") private var boardSizingOmittedRawValue: String = BoardSizingOption.full.rawValue
-    @AppStorage("boardSizingUpNext") private var boardSizingUpNextRawValue: String = BoardSizingOption.full.rawValue
-    @AppStorage("boardSizingHere") private var boardSizingHereRawValue: String = BoardSizingOption.full.rawValue
+    @AppStorage("markerBorderWidth") private var markerBorderWidth: Double = UIControlConfig.borderThicknessDefault
+    @AppStorage("boardSizingCleared") private var boardSizingClearedRawValue: String = UIControlConfig.boardSizingDefault.rawValue
+    @AppStorage("boardSizingCrossed") private var boardSizingCrossedRawValue: String = UIControlConfig.boardSizingDefault.rawValue
+    @AppStorage("boardSizingOmitted") private var boardSizingOmittedRawValue: String = UIControlConfig.boardSizingDefault.rawValue
+    @AppStorage("boardSizingUpNext") private var boardSizingUpNextRawValue: String = UIControlConfig.boardSizingDefault.rawValue
+    @AppStorage("boardSizingHere") private var boardSizingHereRawValue: String = UIControlConfig.boardSizingDefault.rawValue
     @State private var visibleFrameIds: Set<String> = []
     @State private var isHereShortcutVisible = false
     @State private var hereShortcutIconName = "arrow.up"
@@ -2553,11 +2553,11 @@ struct GridFrameCell: View {
     private var boardSizingScale: CGFloat {
         switch boardSizing.option(for: frame.statusEnum) {
         case .full:
-            return 1.0
+            return UIControlConfig.boardSizingFullScale
         case .medium:
-            return 0.92
+            return UIControlConfig.boardSizingMediumScale
         case .small:
-            return 0.84
+            return UIControlConfig.boardSizingSmallScale
         }
     }
 
@@ -3008,7 +3008,7 @@ struct SettingsView: View {
                             Slider(value: Binding(
                                 get: { Double(gridCornerRadiusStep) },
                                 set: { gridCornerRadiusStep = Int($0.rounded()) }
-                            ), in: 0...9, step: 1)
+                            ), in: Double(UIControlConfig.borderRadiusMin)...Double(UIControlConfig.borderRadiusMax), step: Double(UIControlConfig.borderRadiusStep))
                             Spacer()
                             Image(systemName: "capsule")
                         }
@@ -3032,7 +3032,7 @@ struct SettingsView: View {
                     VStack(alignment: .leading) {
                         Text("Border Width")
                         HStack {
-                            Slider(value: $markerBorderWidth, in: 1...12, step: 0.5)
+                            Slider(value: $markerBorderWidth, in: UIControlConfig.borderThicknessMin...UIControlConfig.borderThicknessMax, step: UIControlConfig.borderThicknessStep)
                         }
                     }
                     VStack(alignment: .leading) {
@@ -3040,7 +3040,7 @@ struct SettingsView: View {
                         HStack {
                             //Image(systemName: "line.diagonal")
                             //Spacer()
-                            Slider(value: $doneCrossLineWidth, in: 1...12, step: 0.5)
+                            Slider(value: $doneCrossLineWidth, in: UIControlConfig.crossMarkThicknessMin...UIControlConfig.crossMarkThicknessMax, step: UIControlConfig.crossMarkThicknessStep)
                             //Spacer()
                             //Image(systemName: "line.diagonal.arrow")
                         }
