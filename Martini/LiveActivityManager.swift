@@ -26,15 +26,14 @@ enum LiveActivityManager {
             return
         }
 
-        let visibleFrames = frames.filter { !$0.isHidden }
-        let sortedFrames = visibleFrames.sorted { $0.frameNumber < $1.frameNumber }
+        let sortedFrames = frames.sorted(by: storyOrderSort)
         let currentFrame = sortedFrames.first { $0.statusEnum == .here }
         let nextFrame = sortedFrames.first { $0.statusEnum == .next }
 
         let resolvedTitle = projectTitle?.trimmingCharacters(in: .whitespacesAndNewlines)
         let displayTitle = (resolvedTitle?.isEmpty == false) ? resolvedTitle! : "Martini"
 
-        let progress = progressCounts(for: visibleFrames)
+        let progress = progressCounts(for: frames)
         let contentState = MartiniLiveActivityAttributes.ContentState(
             currentFrame: currentFrame.map(activityFrame(from:)),
             nextFrame: nextFrame.map(activityFrame(from:)),
@@ -85,7 +84,35 @@ enum LiveActivityManager {
         return MartiniLiveActivityFrame(
             id: frame.id,
             title: displayTitle,
-            number: frame.frameNumber
+            number: frame.frameNumber,
+            thumbnailUrl: frameThumbnailUrl(for: frame)
         )
+    }
+
+    private static func storyOrderSort(_ lhs: Frame, _ rhs: Frame) -> Bool {
+        let leftOrder = storyOrderValue(for: lhs)
+        let rightOrder = storyOrderValue(for: rhs)
+        if leftOrder != rightOrder {
+            return leftOrder < rightOrder
+        }
+        return lhs.frameNumber < rhs.frameNumber
+    }
+
+    private static func storyOrderValue(for frame: Frame) -> Int {
+        if let order = frame.frameOrder, let value = Int(order) {
+            return value
+        }
+        return Int.max
+    }
+
+    private static func frameThumbnailUrl(for frame: Frame) -> String? {
+        return frame.boardThumb
+            ?? frame.previewThumb
+            ?? frame.photoboardThumb
+            ?? frame.captureClipThumbnail
+            ?? frame.board
+            ?? frame.preview
+            ?? frame.photoboard
+            ?? frame.captureClip
     }
 }
