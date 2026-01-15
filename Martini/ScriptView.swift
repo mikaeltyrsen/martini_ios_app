@@ -5,6 +5,8 @@ struct ScriptView: View {
     let targetDialogId: String?
     let targetFrameId: String?
     @AppStorage("scriptFontScale") private var fontScale: Double = Double(UIControlConfig.scriptFontScaleDefault)
+    @AppStorage("scriptDialogFontScale") private var dialogFontScale: Double = Double(UIControlConfig.scriptDialogFontScaleDefault)
+    @AppStorage("scriptDialogFontScaleEnabled") private var isDialogFontScaleEnabled: Bool = UIControlConfig.scriptDialogFontScaleEnabledDefault
     @State private var isShowingSettings = false
     @State private var selectedCreativeId: String?
     @AppStorage("scriptShowBoard") private var showBoard: Bool = UIControlConfig.scriptShowBoardDefault
@@ -13,6 +15,8 @@ struct ScriptView: View {
 
     private let minFontScale: CGFloat = UIControlConfig.scriptFontScaleMin
     private let maxFontScale: CGFloat = UIControlConfig.scriptFontScaleMax
+    private let minDialogFontScale: CGFloat = UIControlConfig.scriptDialogFontScaleMin
+    private let maxDialogFontScale: CGFloat = UIControlConfig.scriptDialogFontScaleMax
     private let baseFontSize: CGFloat = 16
     private let baseBoardSize: CGFloat = 120
 
@@ -83,6 +87,8 @@ struct ScriptView: View {
                 .sheet(isPresented: $isShowingSettings) {
                     ScriptSettingsSheet(
                         fontScale: $fontScale,
+                        dialogFontScale: $dialogFontScale,
+                        isDialogFontScaleEnabled: $isDialogFontScaleEnabled,
                         showBoard: $showBoard,
                         showFrameDivider: $showFrameDivider,
                         boardScale: $boardScale
@@ -105,6 +111,14 @@ struct ScriptView: View {
 
     private var effectiveScale: CGFloat {
         let clamped = min(max(CGFloat(fontScale), minFontScale), maxFontScale)
+        return clamped
+    }
+
+    private var effectiveDialogScale: CGFloat {
+        guard isDialogFontScaleEnabled else {
+            return effectiveScale
+        }
+        let clamped = min(max(CGFloat(dialogFontScale), minDialogFontScale), maxDialogFontScale)
         return clamped
     }
 
@@ -161,7 +175,7 @@ struct ScriptView: View {
     @ViewBuilder
     private func scriptBlockView(_ block: ScriptBlock, multiplier: CGFloat) -> some View {
         let textView = Text(block.text)
-            .font(.system(size: baseFontSize * effectiveScale * multiplier,
+            .font(.system(size: baseFontSize * (block.isDialog ? effectiveDialogScale : effectiveScale) * multiplier,
                           design: block.isDialog ? .monospaced : .default))
             .fontWeight(block.isDialog ? .bold : .regular)
             .foregroundStyle(block.isDialog ? Color.primary : Color.martiniDefaultDescriptionColor)
@@ -262,12 +276,16 @@ struct ScriptView: View {
 
 private struct ScriptSettingsSheet: View {
     @Binding var fontScale: Double
+    @Binding var dialogFontScale: Double
+    @Binding var isDialogFontScaleEnabled: Bool
     @Binding var showBoard: Bool
     @Binding var showFrameDivider: Bool
     @Binding var boardScale: Double
 
     private let minFontScale: CGFloat = UIControlConfig.scriptFontScaleMin
     private let maxFontScale: CGFloat = UIControlConfig.scriptFontScaleMax
+    private let minDialogFontScale: CGFloat = UIControlConfig.scriptDialogFontScaleMin
+    private let maxDialogFontScale: CGFloat = UIControlConfig.scriptDialogFontScaleMax
     private let minBoardScale: Double = Double(UIControlConfig.scriptBoardScaleMin)
     private let maxBoardScale: Double = Double(UIControlConfig.scriptBoardScaleMax)
 
@@ -279,6 +297,16 @@ private struct ScriptSettingsSheet: View {
                         Image(systemName: "textformat.size.smaller")
                         Slider(value: $fontScale, in: Double(minFontScale)...Double(maxFontScale))
                         Image(systemName: "textformat.size.larger")
+                    }
+
+                    Toggle("Size dialogs separate", isOn: $isDialogFontScaleEnabled)
+
+                    if isDialogFontScaleEnabled {
+                        HStack {
+                            Image(systemName: "textformat.size.smaller")
+                            Slider(value: $dialogFontScale, in: Double(minDialogFontScale)...Double(maxDialogFontScale))
+                            Image(systemName: "textformat.size.larger")
+                        }
                     }
                 }
 

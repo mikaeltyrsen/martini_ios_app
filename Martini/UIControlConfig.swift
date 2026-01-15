@@ -39,6 +39,10 @@ enum UIControlConfig {
     static let scriptFontScaleMin: CGFloat = 0.8
     static let scriptFontScaleMax: CGFloat = 1.8
     static let scriptFontScaleDefault: CGFloat = 1.0
+    static let scriptDialogFontScaleMin: CGFloat = 0.8
+    static let scriptDialogFontScaleMax: CGFloat = 1.8
+    static let scriptDialogFontScaleDefault: CGFloat = 1.0
+    static let scriptDialogFontScaleEnabledDefault: Bool = false
 
     static let scriptShowBoardDefault: Bool = true
     static let scriptShowFrameDividerDefault: Bool = true
