@@ -74,11 +74,22 @@ private struct LiveActivityView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(context.attributes.projectTitle)
-                .font(.caption.weight(.semibold))
-                .foregroundColor(.secondary)
+            HStack(spacing: 6) {
+                Text(context.attributes.projectTitle)
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(.primary)
+                
+                Spacer()
+                
+                Image("MartiniLogo")
+                    .resizable()
+                    .renderingMode(.template)
+                    .scaledToFit()
+                    .frame(width: 80, height: 40)
+                    .foregroundStyle(.primary)
+            }
 
-            VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
                 LiveActivityFrameLabel(
                     label: "Current",
                     frame: context.state.currentFrame,
@@ -135,6 +146,8 @@ private struct LiveActivityProgressView: View {
 
             ProgressView(value: Double(completed), total: Double(safeTotal))
                 .tint(.accentColor)
+                .progressViewStyle(.linear)
+                .frame(height: 8)
 
             Text("\(total)")
                 .font(.caption.weight(.semibold))
