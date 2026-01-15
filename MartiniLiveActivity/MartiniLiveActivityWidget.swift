@@ -36,8 +36,10 @@ struct MartiniLiveActivityWidget: Widget {
             } compactLeading: {
                 Image("martini-logo-icon-only")
                     .resizable()
+                    .renderingMode(.template)
                     .scaledToFit()
                     .frame(width: 22, height: 22)
+                    .foregroundColor(.white)
                 //LiveActivityCompactFrameBadge(label: "N", frame: context.state.currentFrame)
             } compactTrailing: {
                 LiveActivityCompactFrameBadge(label: "X", frame: context.state.nextFrame)
@@ -45,9 +47,11 @@ struct MartiniLiveActivityWidget: Widget {
                 //LiveActivityMinimalBadge(frame: context.state.currentFrame ?? context.state.nextFrame)
                 Image("martini-logo-icon-only")
                         .resizable()
+                        .renderingMode(.template)
                         .scaledToFit()
                         .frame(width: 20, height: 20)
                         .padding(4)
+                        .foregroundColor(.white)
             }
         }
     }
@@ -249,3 +253,58 @@ private struct LiveActivityMinimalBadge: View {
         return String(frame.number)
     }
 }
+
+#if DEBUG
+@available(iOS 16.1, *)
+#Preview("Live Activity", as: .content, using: previewAttributes) {
+    MartiniLiveActivityWidget()
+} contentStates: {
+    previewContentState
+}
+
+@available(iOS 16.1, *)
+#Preview("Dynamic Island Expanded", as: .dynamicIsland(.expanded), using: previewAttributes) {
+    MartiniLiveActivityWidget()
+} contentStates: {
+    previewContentState
+}
+
+@available(iOS 16.1, *)
+#Preview("Dynamic Island Compact", as: .dynamicIsland(.compact), using: previewAttributes) {
+    MartiniLiveActivityWidget()
+} contentStates: {
+    previewContentState
+}
+
+@available(iOS 16.1, *)
+#Preview("Dynamic Island Minimal", as: .dynamicIsland(.minimal), using: previewAttributes) {
+    MartiniLiveActivityWidget()
+} contentStates: {
+    previewContentState
+}
+
+@available(iOS 16.1, *)
+private var previewAttributes: MartiniLiveActivityAttributes {
+    MartiniLiveActivityAttributes(projectTitle: "Espresso Sprint")
+}
+
+@available(iOS 16.1, *)
+private var previewContentState: MartiniLiveActivityAttributes.ContentState {
+    MartiniLiveActivityAttributes.ContentState(
+        currentFrame: MartiniLiveActivityFrame(
+            id: "frame-12",
+            title: "Storyboard",
+            number: 12,
+            thumbnailUrl: nil
+        ),
+        nextFrame: MartiniLiveActivityFrame(
+            id: "frame-13",
+            title: "Animatic",
+            number: 13,
+            thumbnailUrl: nil
+        ),
+        completed: 12,
+        total: 48
+    )
+}
+#endif
