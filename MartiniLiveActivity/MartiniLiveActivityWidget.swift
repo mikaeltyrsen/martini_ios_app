@@ -262,7 +262,7 @@ private struct LiveActivityFrameProgressBadge: View {
                 )
                 .rotationEffect(.degrees(-90))
 
-            Text(frameNumber)
+            Text(progressLabel)
                 .font(.system(size: 8, weight: .semibold))
                 .foregroundColor(activeColor)
                 .minimumScaleFactor(0.5)
@@ -271,7 +271,10 @@ private struct LiveActivityFrameProgressBadge: View {
         .padding(2)
     }
 
-    private var frameNumber: String {
+    private var progressLabel: String {
+        if completed > 0 {
+            return String(completed)
+        }
         guard let frame, frame.number > 0 else { return "-" }
         return String(frame.number)
     }
