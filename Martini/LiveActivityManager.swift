@@ -13,6 +13,8 @@ import UIKit
 #endif
 
 enum LiveActivityManager {
+    private static let isDebugLoggingEnabled = true
+
     static func refresh(using frames: [Frame], projectTitle: String?, isInProject: Bool) {
         guard #available(iOS 16.1, *) else { return }
         Task {
@@ -30,8 +32,20 @@ enum LiveActivityManager {
         }
 
         let sortedFrames = frames.sorted(by: storyOrderSort)
-        let currentFrame = sortedFrames.first { $0.statusEnum == .here }
-        let nextFrame = sortedFrames.first { $0.statusEnum == .next }
+        let visibleFrames = sortedFrames.filter { !$0.isHidden }
+        let statusCurrentFrame = sortedFrames.first { $0.statusEnum == .here && !$0.isHidden }
+        let statusNextFrame = sortedFrames.first { $0.statusEnum == .next && !$0.isHidden }
+        let currentFrame = statusCurrentFrame ?? visibleFrames.first
+        let nextFrame = statusNextFrame ?? nextVisibleFrame(after: currentFrame, in: visibleFrames)
+
+        logDebugFrameSelection(
+            totalFrames: frames.count,
+            visibleFrames: visibleFrames.count,
+            statusCurrentFrame: statusCurrentFrame,
+            statusNextFrame: statusNextFrame,
+            currentFrame: currentFrame,
+            nextFrame: nextFrame
+        )
 
         let resolvedTitle = projectTitle?.trimmingCharacters(in: .whitespacesAndNewlines)
         let displayTitle = (resolvedTitle?.isEmpty == false) ? resolvedTitle! : "Martini"
@@ -42,6 +56,11 @@ enum LiveActivityManager {
             nextFrame: nextFrame.map(activityFrame(from:)),
             completed: progress.completed,
             total: progress.total
+        )
+
+        logDebugActivityState(
+            projectTitle: displayTitle,
+            contentState: contentState
         )
 
         if let activity = Activity<MartiniLiveActivityAttributes>.activities.first {
@@ -65,6 +84,18 @@ enum LiveActivityManager {
         } catch {
             return
         }
+    }
+
+    private static func nextVisibleFrame(after currentFrame: Frame?, in frames: [Frame]) -> Frame? {
+        guard let currentFrame else {
+            return frames.count > 1 ? frames[1] : frames.first
+        }
+        guard let currentIndex = frames.firstIndex(where: { $0.id == currentFrame.id }) else {
+            return frames.count > 1 ? frames[1] : frames.first
+        }
+        let nextIndex = frames.index(after: currentIndex)
+        guard nextIndex < frames.endIndex else { return nil }
+        return frames[nextIndex]
     }
 
     @available(iOS 16.1, *)
@@ -124,21 +155,25 @@ enum LiveActivityManager {
     private static func frameThumbnailUrl(for frame: Frame) -> String? {
         let boardAsset = frame.availableAssets.first { $0.kind == .board }
         if let thumbnailUrl = boardAsset?.thumbnailURL?.absoluteString {
+            logDebugThumbnail(frame: frame, source: "boardAsset.thumbnailURL", url: thumbnailUrl)
             return thumbnailUrl
         }
         if let url = boardAsset?.url?.absoluteString {
+            logDebugThumbnail(frame: frame, source: "boardAsset.url", url: url)
             return url
         }
 
         let fallbackAsset = frame.availableAssets.first
         if let thumbnailUrl = fallbackAsset?.thumbnailURL?.absoluteString {
+            logDebugThumbnail(frame: frame, source: "fallbackAsset.thumbnailURL", url: thumbnailUrl)
             return thumbnailUrl
         }
         if let url = fallbackAsset?.url?.absoluteString {
+            logDebugThumbnail(frame: frame, source: "fallbackAsset.url", url: url)
             return url
         }
 
-        return frame.boardThumb
+        let fallbackUrl = frame.boardThumb
             ?? frame.previewThumb
             ?? frame.photoboardThumb
             ?? frame.captureClipThumbnail
@@ -146,5 +181,43 @@ enum LiveActivityManager {
             ?? frame.preview
             ?? frame.photoboard
             ?? frame.captureClip
+
+        if let fallbackUrl {
+            logDebugThumbnail(frame: frame, source: "frame.fallback", url: fallbackUrl)
+        } else {
+            logDebugThumbnail(frame: frame, source: "frame.fallback", url: nil)
+        }
+
+        return fallbackUrl
+    }
+
+    private static func logDebugFrameSelection(
+        totalFrames: Int,
+        visibleFrames: Int,
+        statusCurrentFrame: Frame?,
+        statusNextFrame: Frame?,
+        currentFrame: Frame?,
+        nextFrame: Frame?
+    ) {
+        guard isDebugLoggingEnabled else { return }
+        print("🧩 LiveActivity selection: total=\(totalFrames) visible=\(visibleFrames)")
+        print("🧩 LiveActivity status current=\(statusCurrentFrame?.id ?? "nil") next=\(statusNextFrame?.id ?? "nil")")
+        print("🧩 LiveActivity resolved current=\(currentFrame?.id ?? "nil") next=\(nextFrame?.id ?? "nil")")
+    }
+
+    private static func logDebugActivityState(
+        projectTitle: String,
+        contentState: MartiniLiveActivityAttributes.ContentState
+    ) {
+        guard isDebugLoggingEnabled else { return }
+        let currentThumb = contentState.currentFrame?.thumbnailUrl ?? "nil"
+        let nextThumb = contentState.nextFrame?.thumbnailUrl ?? "nil"
+        print("🧩 LiveActivity state: title=\(projectTitle) completed=\(contentState.completed) total=\(contentState.total)")
+        print("🧩 LiveActivity thumbnails: current=\(currentThumb) next=\(nextThumb)")
+    }
+
+    private static func logDebugThumbnail(frame: Frame, source: String, url: String?) {
+        guard isDebugLoggingEnabled else { return }
+        print("🧩 LiveActivity thumbnail: frame=\(frame.id) source=\(source) url=\(url ?? "nil")")
     }
 }
