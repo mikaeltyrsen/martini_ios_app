@@ -136,18 +136,35 @@ private struct LiveActivityProgressView: View {
     let completed: Int
     let total: Int
 
+    struct ThickProgressViewStyle: ProgressViewStyle {
+        var height: CGFloat = 8
+        var cornerRadius: CGFloat = 4
+        
+        func makeBody(configuration: Configuration) -> some View {
+            GeometryReader { geo in
+                let fraction = CGFloat(configuration.fractionCompleted ?? 0)
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(height: height)
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .fill(.primary)
+                        .frame(width: geo.size.width * fraction, height: height)
+                }
+            }
+        }
+    }
+    
     var body: some View {
         let safeTotal = max(total, 1)
 
-        HStack(spacing: 8) {
+        HStack(alignment: .center, spacing: 8) {
             Text("\(completed)")
                 .font(.caption.weight(.semibold))
                 .foregroundColor(.secondary)
 
             ProgressView(value: Double(completed), total: Double(safeTotal))
-                .tint(.accentColor)
-                .progressViewStyle(.linear)
-                .frame(height: 8)
+                .progressViewStyle(ThickProgressViewStyle(height: 10))
 
             Text("\(total)")
                 .font(.caption.weight(.semibold))
