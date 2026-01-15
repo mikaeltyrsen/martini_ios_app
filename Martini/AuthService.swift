@@ -102,7 +102,8 @@ class AuthService: ObservableObject {
     @Published var fetchedSchedules: [ProjectSchedule] = []
     @Published var frames: [Frame] = [] {
         didSet {
-            LiveActivityManager.refresh(using: frames, projectTitle: projectTitle)
+            let isInProject = isAuthenticated && projectId != nil
+            LiveActivityManager.refresh(using: frames, projectTitle: projectTitle, isInProject: isInProject)
         }
     }
     @Published var tagGroups: [TagGroupDefinition] = []

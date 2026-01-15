@@ -10,26 +10,29 @@ import ActivityKit
 #endif
 
 enum LiveActivityManager {
-    static func refresh(using frames: [Frame], projectTitle: String?) {
-        guard #available(iOS 16.1, *), !frames.isEmpty else { return }
+    static func refresh(using frames: [Frame], projectTitle: String?, isInProject: Bool) {
+        guard #available(iOS 16.1, *) else { return }
         Task {
-            await refreshActivity(using: frames, projectTitle: projectTitle)
+            await refreshActivity(using: frames, projectTitle: projectTitle, isInProject: isInProject)
         }
     }
 
     @available(iOS 16.1, *)
-    private static func refreshActivity(using frames: [Frame], projectTitle: String?) async {
+    private static func refreshActivity(using frames: [Frame], projectTitle: String?, isInProject: Bool) async {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+
+        guard isInProject else {
+            await endActivitiesIfNeeded()
+            return
+        }
 
         let visibleFrames = frames.filter { !$0.isHidden }
         let sortedFrames = visibleFrames.sorted { $0.frameNumber < $1.frameNumber }
         let currentFrame = sortedFrames.first { $0.statusEnum == .here }
         let nextFrame = sortedFrames.first { $0.statusEnum == .next }
 
-        if currentFrame == nil && nextFrame == nil {
-            await endActivitiesIfNeeded()
-            return
-        }
+        let resolvedTitle = projectTitle?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let displayTitle = (resolvedTitle?.isEmpty == false) ? resolvedTitle! : "Martini"
 
         let progress = progressCounts(for: visibleFrames)
         let contentState = MartiniLiveActivityAttributes.ContentState(
@@ -40,18 +43,23 @@ enum LiveActivityManager {
         )
 
         if let activity = Activity<MartiniLiveActivityAttributes>.activities.first {
-            await activity.update(using: contentState)
-        } else {
-            let attributes = MartiniLiveActivityAttributes(projectTitle: projectTitle ?? "Martini")
-            do {
-                _ = try Activity.request(
-                    attributes: attributes,
-                    contentState: contentState,
-                    pushType: nil
-                )
-            } catch {
+            if activity.attributes.projectTitle == displayTitle {
+                await activity.update(using: contentState)
                 return
             }
+
+            await activity.end(nil, dismissalPolicy: .immediate)
+        }
+
+        let attributes = MartiniLiveActivityAttributes(projectTitle: displayTitle)
+        do {
+            _ = try Activity.request(
+                attributes: attributes,
+                contentState: contentState,
+                pushType: nil
+            )
+        } catch {
+            return
         }
     }
 
