@@ -8,6 +8,9 @@ import Foundation
 #if canImport(ActivityKit)
 import ActivityKit
 #endif
+#if canImport(UIKit)
+import UIKit
+#endif
 
 enum LiveActivityManager {
     static func refresh(using frames: [Frame], projectTitle: String?, isInProject: Bool) {
@@ -50,6 +53,8 @@ enum LiveActivityManager {
             await activity.end(nil, dismissalPolicy: .immediate)
         }
 
+        guard await isAppActiveForNewActivity() else { return }
+
         let attributes = MartiniLiveActivityAttributes(projectTitle: displayTitle)
         do {
             _ = try Activity.request(
@@ -60,6 +65,17 @@ enum LiveActivityManager {
         } catch {
             return
         }
+    }
+
+    @available(iOS 16.1, *)
+    private static func isAppActiveForNewActivity() async -> Bool {
+#if canImport(UIKit)
+        return await MainActor.run {
+            UIApplication.shared.applicationState == .active
+        }
+#else
+        return true
+#endif
     }
 
     @available(iOS 16.1, *)
