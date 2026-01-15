@@ -263,7 +263,7 @@ final class ScoutCameraViewModel: ObservableObject {
             cameraLine: cameraLine,
             lensLine: lensLine
         )
-        let logo = UIImage(named: "martini-logo")
+        let logo = UIImage(named: "MartiniLogo")
         return PhotoProcessor.composeFinalImage(
             capturedImage: image,
             targetAspectRatio: targetAspectRatio,

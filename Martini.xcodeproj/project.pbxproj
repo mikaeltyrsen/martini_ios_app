@@ -24,6 +24,7 @@
 		0730F4122F0C6F7D000B598F /* BoardMetadataSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F40F2F0C6F7D000B598F /* BoardMetadataSheet.swift */; };
 		0730F41C2F0CE88E000B598F /* CreativeAspectRatioConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F41B2F0CE88E000B598F /* CreativeAspectRatioConfig.swift */; };
 		0733190F2F17ED1800D6FE10 /* UIControlConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0733190E2F17ED1800D6FE10 /* UIControlConfig.swift */; };
+		073319122F19611700D6FE10 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 075456072EC9AA2100C45739 /* Assets.xcassets */; };
 		075456022EC9A6E200C45739 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075455FE2EC9A6E100C45739 /* AuthService.swift */; };
 		075456032EC9A6E200C45739 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075455FF2EC9A6E100C45739 /* LoginView.swift */; };
 		075456042EC9A6E200C45739 /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075456002EC9A6E100C45739 /* QRScannerView.swift */; };
@@ -443,6 +444,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				073319122F19611700D6FE10 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

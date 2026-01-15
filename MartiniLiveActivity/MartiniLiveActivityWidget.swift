@@ -34,12 +34,12 @@ struct MartiniLiveActivityWidget: Widget {
                     LiveActivityProgressView(completed: context.state.completed, total: context.state.total)
                 }
             } compactLeading: {
-                Image("martini-logo-icon-only")
+                Image("MartiniLogoIconOnly")
                     .resizable()
                     .renderingMode(.template)
                     .scaledToFit()
-                    .frame(width: 22, height: 22)
-                    .foregroundColor(.white)
+                    .frame(width: 20, height: 20)
+                    .foregroundColor(.primary)
                 //LiveActivityCompactFrameBadge(label: "N", frame: context.state.currentFrame)
             } compactTrailing: {
                 LiveActivityFrameProgressBadge(
@@ -47,17 +47,17 @@ struct MartiniLiveActivityWidget: Widget {
                     nextFrame: context.state.nextFrame,
                     completed: context.state.completed,
                     total: context.state.total,
-                    size: 26
+                    size: 24
                 )
             } minimal: {
                 //LiveActivityMinimalBadge(frame: context.state.currentFrame ?? context.state.nextFrame)
-                Image("martini-logo-icon-only")
+                Image("MartiniLogoIconOnly")
                         .resizable()
                         .renderingMode(.template)
                         .scaledToFit()
                         .frame(width: 20, height: 20)
                         .padding(4)
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
             }
         }
     }
@@ -234,22 +234,23 @@ private struct LiveActivityFrameProgressBadge: View {
 
         ZStack {
             Circle()
-                .stroke(activeColor.opacity(0.2), lineWidth: size * 0.14)
+                .stroke(activeColor.opacity(0.15), lineWidth: size * 0.14)
 
             Circle()
                 .trim(from: 0, to: progress)
                 .stroke(
-                    activeColor,
+                    activeColor.opacity(1),
                     style: StrokeStyle(lineWidth: size * 0.14, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
 
             Text(frameNumber)
-                .font(.caption2.weight(.semibold))
-                .foregroundColor(.white)
+                .font(.system(size: 8, weight: .semibold))
+                .foregroundColor(activeColor)
                 .minimumScaleFactor(0.5)
         }
         .frame(width: size, height: size)
+        .padding(2)
     }
 
     private var frameNumber: String {

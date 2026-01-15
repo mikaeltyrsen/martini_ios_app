@@ -47,7 +47,7 @@ struct LoginView: View {
             VStack(spacing: 40) {
                 // Logo/Title area
                 VStack(spacing: 20) {
-                    Image("martini-logo")
+                    Image("MartiniLogo")
                         .resizable()
                         .renderingMode(.template)
                         .foregroundColor(.primary)
@@ -483,7 +483,7 @@ struct ProjectIdEntryView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 24) {
-                Image("martini-logo")
+                Image("MartiniLogo")
                     .resizable()
                     .renderingMode(.template)
                     .foregroundColor(.white)
