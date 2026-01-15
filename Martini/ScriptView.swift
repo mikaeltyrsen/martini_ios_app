@@ -161,7 +161,8 @@ struct ScriptView: View {
     @ViewBuilder
     private func scriptBlockView(_ block: ScriptBlock, multiplier: CGFloat) -> some View {
         let textView = Text(block.text)
-            .font(.system(size: baseFontSize * effectiveScale * multiplier))
+            .font(.system(size: baseFontSize * effectiveScale * multiplier,
+                          design: block.isDialog ? .monospaced : .default))
             .fontWeight(block.isDialog ? .bold : .regular)
             .foregroundStyle(block.isDialog ? Color.primary : Color.martiniDefaultDescriptionColor)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -169,10 +170,6 @@ struct ScriptView: View {
         if let dialogId = block.dialogId {
             textView
                 .id(dialogId)
-                .padding(.vertical, 2)
-                .padding(.horizontal, 6)
-                .background(Color.martiniDefaultColor.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 6))
         } else {
             textView
         }
