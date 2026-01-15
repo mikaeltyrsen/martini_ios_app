@@ -18,12 +18,6 @@
 		0730F4042F0ABFBB000B598F /* FramePagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4032F0ABFBB000B598F /* FramePagerView.swift */; };
 		0730F4072F0B6800000B598F /* FrameDescriptionEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4052F0B6800000B598F /* FrameDescriptionEditorSheet.swift */; };
 		0730F4082F0B6800000B598F /* RichTextEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4062F0B6800000B598F /* RichTextEditor.swift */; };
-		0A95C54C437E5685FC7524B3 /* MartiniLiveActivityModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2CD91F637EC3098B3B6F535 /* MartiniLiveActivityModels.swift */; };
-		56B2418AECFE0FB51954EC18 /* LiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE7ABC696B04ABA7B60E1719 /* LiveActivityManager.swift */; };
-		5C12D4A0EC26C233C269481D /* MartiniLiveActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19F1DEF3A6FA25EADC0FCA2A /* MartiniLiveActivityWidget.swift */; };
-		8F13E6B330B2DF25DCF56671 /* MartiniLiveActivityModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2CD91F637EC3098B3B6F535 /* MartiniLiveActivityModels.swift */; };
-		C18787E685A734C72BBBBCD7 /* MartiniLiveActivityBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81EDC5D2FABA5EED51C87010 /* MartiniLiveActivityBundle.swift */; };
-		C2C4BCF06C1B1FB64C54B065 /* MartiniLiveActivity.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = BF184DC5B58469B333F76681 /* MartiniLiveActivity.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0730F40A2F0B8736000B598F /* RichTextDisplayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4092F0B8736000B598F /* RichTextDisplayView.swift */; };
 		0730F40C2F0C6401000B598F /* FrameLineOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F40B2F0C6401000B598F /* FrameLineOverlayView.swift */; };
 		0730F4112F0C6F7D000B598F /* CachedVideoPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4102F0C6F7D000B598F /* CachedVideoPlayerView.swift */; };
@@ -63,6 +57,7 @@
 		07FFA27E2F129F45006BEAF4 /* ClipFilesViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07FFA27C2F129F45006BEAF4 /* ClipFilesViews.swift */; };
 		07FFA2802F1304F6006BEAF4 /* MarkupOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07FFA27F2F1304F6006BEAF4 /* MarkupOverlayView.swift */; };
 		08D1C0A32FFF111100000001 /* NearbySignInService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08D1C0A22FFF111100000001 /* NearbySignInService.swift */; };
+		0A95C54C437E5685FC7524B3 /* MartiniLiveActivityModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2CD91F637EC3098B3B6F535 /* MartiniLiveActivityModels.swift */; };
 		13952330E1EF424FADD563ED /* ScoutCamera/ScoutCameraLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F825837CC9D4A3C884F0F59 /* ScoutCamera/ScoutCameraLayout.swift */; };
 		1F7A3C5E4D1B4C3A8B9C0D1E /* ScoutCamera/ScoutCameraSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F7A3C5D4D1B4C3A8B9C0D1E /* ScoutCamera/ScoutCameraSettingsView.swift */; };
 		212769B0E99B412F8D9C27E8 /* ScoutCamera/ScoutCameraViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30240C00983A4B208F56B246 /* ScoutCamera/ScoutCameraViewModel.swift */; };
@@ -70,12 +65,15 @@
 		2C5B05456FA04ED5ACD63C85 /* ScoutCamera/FOV/FOVEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = C451CF6B5C97405C841E3067 /* ScoutCamera/FOV/FOVEngine.swift */; };
 		3953947E4AE944899289AFFB /* ScoutCamera/CameraKit/PhotoCaptureProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D1703649E3D46839E5BEC80 /* ScoutCamera/CameraKit/PhotoCaptureProcessor.swift */; };
 		4F6E5CDE7B934DF1A75F1C1F /* ScoutCamera/CameraKit/MotionHeadingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F6E5CDD7B934DF1A75F1C1F /* ScoutCamera/CameraKit/MotionHeadingManager.swift */; };
+		56B2418AECFE0FB51954EC18 /* LiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE7ABC696B04ABA7B60E1719 /* LiveActivityManager.swift */; };
 		57E214BA1EC84898ABC8A8A6 /* SchedulesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 477F863DD3304428A7C610C5 /* SchedulesView.swift */; };
+		5C12D4A0EC26C233C269481D /* MartiniLiveActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19F1DEF3A6FA25EADC0FCA2A /* MartiniLiveActivityWidget.swift */; };
 		5C6E43A1C4B1418B89DCD0E8 /* LocalData/LocalJSONStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C6E43A0C4B1418B89DCD0E8 /* LocalData/LocalJSONStore.swift */; };
 		64BD7D501E7D4DA38DFEBBC4 /* ProjectKit/ProjectKitSelectionViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2644D6ACDD4A4DC1A33D228A /* ProjectKit/ProjectKitSelectionViews.swift */; };
 		7F251D3597AB4FAA834B4741 /* LocalData/DBModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBF9DC5BE38645D481011359 /* LocalData/DBModels.swift */; };
 		835B9B20D9AC43568A59A541 /* ScoutCamera/FOV/IPhoneCameraModelResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ABA9E17746C42B581652DB2 /* ScoutCamera/FOV/IPhoneCameraModelResolver.swift */; };
 		853E13C7EDA840E285F30AE0 /* Networking/FrameUploadService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C15BCD3610C14777916BDDA9 /* Networking/FrameUploadService.swift */; };
+		8F13E6B330B2DF25DCF56671 /* MartiniLiveActivityModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2CD91F637EC3098B3B6F535 /* MartiniLiveActivityModels.swift */; };
 		971BF5F118754777A65B3907 /* ScoutCamera/Processing/PhotoProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 107AD8B89F4A441698E034E1 /* ScoutCamera/Processing/PhotoProcessor.swift */; };
 		A1B2C3D4E5F60718293A4B5C /* ScoutCamera/ScoutCameraPhotoLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F60718293A4B5CA1B2C3 /* ScoutCamera/ScoutCameraPhotoLayout.swift */; };
 		A1B2C3D4E5F60718293A4B5E /* ScoutCamera/Calibration/FOVCalibrationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5D /* ScoutCamera/Calibration/FOVCalibrationStore.swift */; };
@@ -83,7 +81,9 @@
 		B97E51D7EFDA491EBD6C974C /* ScoutCamera/CameraKit/CaptureSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B50BC0CE2AA4639AE6F9264 /* ScoutCamera/CameraKit/CaptureSessionManager.swift */; };
 		B9D8650A752F4255AD620B9B /* ScoutCamera/ScoutCameraReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0187390DAD5C4818AD9A0A1B /* ScoutCamera/ScoutCameraReviewView.swift */; };
 		C0E3AD0331584BB39C1BE6BA /* ScoutCamera/FOV/FOVMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10F9CB29EE71481EB424475E /* ScoutCamera/FOV/FOVMath.swift */; };
+		C18787E685A734C72BBBBCD7 /* MartiniLiveActivityBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81EDC5D2FABA5EED51C87010 /* MartiniLiveActivityBundle.swift */; };
 		C1D2E3F40516273849A5B6C8 /* ScoutCamera/Calibration/FOVCalibrationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D2E3F40516273849A5B6C7 /* ScoutCamera/Calibration/FOVCalibrationViewModel.swift */; };
+		C2C4BCF06C1B1FB64C54B065 /* MartiniLiveActivity.appex in CopyFiles */ = {isa = PBXBuildFile; fileRef = BF184DC5B58469B333F76681 /* MartiniLiveActivity.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		CB0A92282BEE469EB696343F /* ProjectKit/ProjectKitSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83E0E90984D6471FA90532C0 /* ProjectKit/ProjectKitSettingsView.swift */; };
 		DA0A67A443A94D11B57C5EC6 /* ProjectKit/ProjectKitStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 988E7BC68EFE4E89B6ADC548 /* ProjectKit/ProjectKitStore.swift */; };
 		DAB09D58B6A74211960FDCD9 /* LocalData/PackModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38B088F6DDD94E12A8B7997C /* LocalData/PackModels.swift */; };
@@ -91,6 +91,19 @@
 		F501C2E32028424CABAFBC56 /* ScheduleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60C91863CD124D159734FD1B /* ScheduleView.swift */; };
 		F8C07B4A4CB449BDB50BE3BB /* ScoutCamera/CameraKit/CameraDeviceSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20AFBDAA8904AB283618CF2 /* ScoutCamera/CameraKit/CameraDeviceSelector.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		DDEEF3D037C5DA48BDE6ACFE /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				C2C4BCF06C1B1FB64C54B065 /* MartiniLiveActivity.appex in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		0187390DAD5C4818AD9A0A1B /* ScoutCamera/ScoutCameraReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/ScoutCameraReviewView.swift; sourceTree = "<group>"; };
@@ -103,9 +116,6 @@
 		0730F3FA2F040379000B598F /* CommentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentsView.swift; sourceTree = "<group>"; };
 		0730F3FD2F0487F3000B598F /* ThemePreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemePreference.swift; sourceTree = "<group>"; };
 		0730F3FF2F070A2E000B598F /* ScriptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptView.swift; sourceTree = "<group>"; };
-		19F1DEF3A6FA25EADC0FCA2A /* MartiniLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MartiniLiveActivityWidget.swift; sourceTree = "<group>"; };
-		7401EDD1914E9B8D3128B7B3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		81EDC5D2FABA5EED51C87010 /* MartiniLiveActivityBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MartiniLiveActivityBundle.swift; sourceTree = "<group>"; };
 		0730F4032F0ABFBB000B598F /* FramePagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FramePagerView.swift; sourceTree = "<group>"; };
 		0730F4052F0B6800000B598F /* FrameDescriptionEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameDescriptionEditorSheet.swift; sourceTree = "<group>"; };
 		0730F4062F0B6800000B598F /* RichTextEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichTextEditor.swift; sourceTree = "<group>"; };
@@ -122,12 +132,9 @@
 		07A6A6822EC9A272002C8EB9 /* Martini.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Martini.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		07A6A6852EC9A272002C8EB9 /* MartiniApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MartiniApp.swift; sourceTree = "<group>"; };
 		07A6A6872EC9A272002C8EB9 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		AE7ABC696B04ABA7B60E1719 /* LiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityManager.swift; sourceTree = "<group>"; };
-		BF184DC5B58469B333F76681 /* MartiniLiveActivity.appex */ = {isa = PBXFileReference; explicitFileType = wrapper.app-extension; includeInIndex = 0; path = MartiniLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		07ACD0013127F1D000000001 /* Martini.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Martini.entitlements; sourceTree = "<group>"; };
 		07C904AE2EDA7A48004EDBFA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		07C904AF2EDA8665004EDBFA /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
-		F2CD91F637EC3098B3B6F535 /* MartiniLiveActivityModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MartiniLiveActivityModels.swift; sourceTree = "<group>"; };
 		07C904B12EDB92D8004EDBFA /* playground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = playground.swift; sourceTree = "<group>"; };
 		07C904B32EDB9F3D004EDBFA /* Uiplayground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Uiplayground.swift; sourceTree = "<group>"; };
 		07C904B52EDBAE73004EDBFA /* FrameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameView.swift; sourceTree = "<group>"; };
@@ -155,6 +162,7 @@
 		08D1C0A22FFF111100000001 /* NearbySignInService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbySignInService.swift; sourceTree = "<group>"; };
 		107AD8B89F4A441698E034E1 /* ScoutCamera/Processing/PhotoProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/Processing/PhotoProcessor.swift; sourceTree = "<group>"; };
 		10F9CB29EE71481EB424475E /* ScoutCamera/FOV/FOVMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/FOV/FOVMath.swift; sourceTree = "<group>"; };
+		19F1DEF3A6FA25EADC0FCA2A /* MartiniLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MartiniLiveActivityWidget.swift; sourceTree = "<group>"; };
 		1F7A3C5D4D1B4C3A8B9C0D1E /* ScoutCamera/ScoutCameraSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/ScoutCameraSettingsView.swift; sourceTree = "<group>"; };
 		2644D6ACDD4A4DC1A33D228A /* ProjectKit/ProjectKitSelectionViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectKit/ProjectKitSelectionViews.swift; sourceTree = "<group>"; };
 		2A4CC88B8D6C4B3EB1AF6B93 /* ProjectKit/ProjectKitSelectionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectKit/ProjectKitSelectionStore.swift; sourceTree = "<group>"; };
@@ -167,18 +175,23 @@
 		60C91863CD124D159734FD1B /* ScheduleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleView.swift; sourceTree = "<group>"; };
 		6B50BC0CE2AA4639AE6F9264 /* ScoutCamera/CameraKit/CaptureSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/CameraKit/CaptureSessionManager.swift; sourceTree = "<group>"; };
 		6D1703649E3D46839E5BEC80 /* ScoutCamera/CameraKit/PhotoCaptureProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/CameraKit/PhotoCaptureProcessor.swift; sourceTree = "<group>"; };
+		7401EDD1914E9B8D3128B7B3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		7ABA9E17746C42B581652DB2 /* ScoutCamera/FOV/IPhoneCameraModelResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/FOV/IPhoneCameraModelResolver.swift; sourceTree = "<group>"; };
+		81EDC5D2FABA5EED51C87010 /* MartiniLiveActivityBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MartiniLiveActivityBundle.swift; sourceTree = "<group>"; };
 		83E0E90984D6471FA90532C0 /* ProjectKit/ProjectKitSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectKit/ProjectKitSettingsView.swift; sourceTree = "<group>"; };
 		988E7BC68EFE4E89B6ADC548 /* ProjectKit/ProjectKitStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectKit/ProjectKitStore.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5D /* ScoutCamera/Calibration/FOVCalibrationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/Calibration/FOVCalibrationStore.swift; sourceTree = "<group>"; };
 		A20AFBDAA8904AB283618CF2 /* ScoutCamera/CameraKit/CameraDeviceSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/CameraKit/CameraDeviceSelector.swift; sourceTree = "<group>"; };
+		AE7ABC696B04ABA7B60E1719 /* LiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityManager.swift; sourceTree = "<group>"; };
 		B1C2D3E4F5061728394A5B6C /* ScoutCamera/Calibration/FOVCalibrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/Calibration/FOVCalibrationView.swift; sourceTree = "<group>"; };
 		B25D2D8C220E4A7CAE24D403 /* LocalData/Seed/martini_example_db.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = LocalData/Seed/martini_example_db.json; sourceTree = "<group>"; };
+		BF184DC5B58469B333F76681 /* MartiniLiveActivity.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MartiniLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		C15BCD3610C14777916BDDA9 /* Networking/FrameUploadService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Networking/FrameUploadService.swift; sourceTree = "<group>"; };
 		C1D2E3F40516273849A5B6C7 /* ScoutCamera/Calibration/FOVCalibrationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/Calibration/FOVCalibrationViewModel.swift; sourceTree = "<group>"; };
 		C451CF6B5C97405C841E3067 /* ScoutCamera/FOV/FOVEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/FOV/FOVEngine.swift; sourceTree = "<group>"; };
 		D4E5F60718293A4B5CA1B2C3 /* ScoutCamera/ScoutCameraPhotoLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/ScoutCameraPhotoLayout.swift; sourceTree = "<group>"; };
 		EBF9DC5BE38645D481011359 /* LocalData/DBModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalData/DBModels.swift; sourceTree = "<group>"; };
+		F2CD91F637EC3098B3B6F535 /* MartiniLiveActivityModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MartiniLiveActivityModels.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -216,17 +229,6 @@
 				60C91863CD124D159734FD1B /* ScheduleView.swift */,
 			);
 			path = Schedule;
-			sourceTree = "<group>";
-		};
-		0B3FA239EB796131485B0E3A /* MartiniLiveActivity */ = {
-			isa = PBXGroup;
-			children = (
-				81EDC5D2FABA5EED51C87010 /* MartiniLiveActivityBundle.swift */,
-				19F1DEF3A6FA25EADC0FCA2A /* MartiniLiveActivityWidget.swift */,
-				F2CD91F637EC3098B3B6F535 /* MartiniLiveActivityModels.swift */,
-				7401EDD1914E9B8D3128B7B3 /* Info.plist */,
-			);
-			path = MartiniLiveActivity;
 			sourceTree = "<group>";
 		};
 		07A6A6792EC9A272002C8EB9 = {
@@ -339,6 +341,17 @@
 			path = Schedule;
 			sourceTree = "<group>";
 		};
+		0B3FA239EB796131485B0E3A /* MartiniLiveActivity */ = {
+			isa = PBXGroup;
+			children = (
+				81EDC5D2FABA5EED51C87010 /* MartiniLiveActivityBundle.swift */,
+				19F1DEF3A6FA25EADC0FCA2A /* MartiniLiveActivityWidget.swift */,
+				F2CD91F637EC3098B3B6F535 /* MartiniLiveActivityModels.swift */,
+				7401EDD1914E9B8D3128B7B3 /* Info.plist */,
+			);
+			path = MartiniLiveActivity;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -349,7 +362,7 @@
 				07A6A67E2EC9A272002C8EB9 /* Sources */,
 				07A6A67F2EC9A272002C8EB9 /* Frameworks */,
 				07A6A6802EC9A272002C8EB9 /* Resources */,
-				DDEEF3D037C5DA48BDE6ACFE /* Embed App Extensions */,
+				DDEEF3D037C5DA48BDE6ACFE /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -434,19 +447,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		DDEEF3D037C5DA48BDE6ACFE /* Embed App Extensions */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 13;
-			files = (
-				C2C4BCF06C1B1FB64C54B065 /* MartiniLiveActivity.appex in Embed App Extensions */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		07A6A67E2EC9A272002C8EB9 /* Sources */ = {
@@ -544,44 +544,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		6B3D70FC65DFDB1B19E927F4 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 93K8M9XF5X;
-				INFOPLIST_FILE = MartiniLiveActivity/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.martini.martinilive.MartiniLiveActivity;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		88502B3C4E158E4FD0B071C2 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 93K8M9XF5X;
-				INFOPLIST_FILE = MartiniLiveActivity/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.martini.martinilive.MartiniLiveActivity;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
 		07A6A68E2EC9A272002C8EB9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -719,6 +681,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Martini/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Martini needs access to your camera in order to scan QR codes to access Martini projects.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Martini uses the local network to find nearby devices for sign-in.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Martini uses your location to tag scout photos and calculate sun position data.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Martini needs access to save clips to your Photos library.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -754,6 +718,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Martini/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Martini needs access to your camera in order to scan QR codes to access Martini projects.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Martini uses the local network to find nearby devices for sign-in.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Martini uses your location to tag scout photos and calculate sun position data.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Martini needs access to save clips to your Photos library.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -770,6 +736,44 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.martini.martinilive;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		6B3D70FC65DFDB1B19E927F4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 93K8M9XF5X;
+				INFOPLIST_FILE = MartiniLiveActivity/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.martini.martinilive.MartiniLiveActivity;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		88502B3C4E158E4FD0B071C2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 93K8M9XF5X;
+				INFOPLIST_FILE = MartiniLiveActivity/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.martini.martinilive.MartiniLiveActivity;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
