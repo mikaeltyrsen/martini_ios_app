@@ -122,6 +122,22 @@ enum LiveActivityManager {
     }
 
     private static func frameThumbnailUrl(for frame: Frame) -> String? {
+        let boardAsset = frame.availableAssets.first { $0.kind == .board }
+        if let thumbnailUrl = boardAsset?.thumbnailURL?.absoluteString {
+            return thumbnailUrl
+        }
+        if let url = boardAsset?.url?.absoluteString {
+            return url
+        }
+
+        let fallbackAsset = frame.availableAssets.first
+        if let thumbnailUrl = fallbackAsset?.thumbnailURL?.absoluteString {
+            return thumbnailUrl
+        }
+        if let url = fallbackAsset?.url?.absoluteString {
+            return url
+        }
+
         return frame.boardThumb
             ?? frame.previewThumb
             ?? frame.photoboardThumb
