@@ -27,13 +27,6 @@ struct ScriptView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 16) {
-                        if let creativeTitle = selectedCreativeTitle {
-                            Text(creativeTitle)
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                                .padding(.horizontal)
-                        }
-
                         ForEach(scriptFrames) { entry in
                             VStack(alignment: .leading, spacing: 12) {
                                 if showFrameDivider {
@@ -60,9 +53,20 @@ struct ScriptView: View {
                     }
                     .padding(.vertical, 16)
                 }
-                .navigationTitle("Script")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
+                    ToolbarItem(placement: .principal) {
+                        VStack(spacing: 2) {
+                            Text("Script")
+                                .font(.headline)
+                            if let creativeTitle = selectedCreativeTitle {
+                                Text(creativeTitle)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Menu {
                             creativeMenuContent
