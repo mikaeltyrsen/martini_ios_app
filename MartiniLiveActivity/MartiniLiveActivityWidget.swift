@@ -15,18 +15,18 @@ struct MartiniLiveActivityWidget: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    LiveActivityFrameLabel(
-                        label: "Now",
-                        frame: context.state.currentFrame,
-                        borderColor: .green
-                    )
+                    Image(systemName: "photo")
+                        .font(.title2.weight(.semibold))
+                        .foregroundColor(.white)
                 }
 
                 DynamicIslandExpandedRegion(.trailing) {
-                    LiveActivityFrameLabel(
-                        label: "Next",
-                        frame: context.state.nextFrame,
-                        borderColor: .orange
+                    LiveActivityFrameProgressBadge(
+                        currentFrame: context.state.currentFrame,
+                        nextFrame: context.state.nextFrame,
+                        completed: context.state.completed,
+                        total: context.state.total,
+                        size: 44
                     )
                 }
 
@@ -42,7 +42,13 @@ struct MartiniLiveActivityWidget: Widget {
                     .foregroundColor(.white)
                 //LiveActivityCompactFrameBadge(label: "N", frame: context.state.currentFrame)
             } compactTrailing: {
-                LiveActivityCompactFrameBadge(label: "X", frame: context.state.nextFrame)
+                LiveActivityFrameProgressBadge(
+                    currentFrame: context.state.currentFrame,
+                    nextFrame: context.state.nextFrame,
+                    completed: context.state.completed,
+                    total: context.state.total,
+                    size: 26
+                )
             } minimal: {
                 //LiveActivityMinimalBadge(frame: context.state.currentFrame ?? context.state.nextFrame)
                 Image("martini-logo-icon-only")
@@ -215,27 +221,54 @@ private struct LiveActivityFrameThumbnail: View {
 }
 
 @available(iOS 16.1, *)
-private struct LiveActivityCompactFrameBadge: View {
-    let label: String
-    let frame: MartiniLiveActivityFrame?
+private struct LiveActivityFrameProgressBadge: View {
+    let currentFrame: MartiniLiveActivityFrame?
+    let nextFrame: MartiniLiveActivityFrame?
+    let completed: Int
+    let total: Int
+    let size: CGFloat
 
     var body: some View {
-        Text(frameNumber)
-            .font(.caption.weight(.semibold))
-            .foregroundColor(.green)
-//        VStack(spacing: 2) {
-//            Text(label)
-//                .font(.caption2.weight(.semibold))
-//                .foregroundColor(.secondary)
-//
-//            Text(frameNumber)
-//                .font(.caption.weight(.semibold))
-//        }
+        let safeTotal = max(total, 1)
+        let progress = min(max(Double(completed) / Double(safeTotal), 0), 1)
+
+        ZStack {
+            Circle()
+                .stroke(activeColor.opacity(0.2), lineWidth: size * 0.14)
+
+            Circle()
+                .trim(from: 0, to: progress)
+                .stroke(
+                    activeColor,
+                    style: StrokeStyle(lineWidth: size * 0.14, lineCap: .round)
+                )
+                .rotationEffect(.degrees(-90))
+
+            Text(frameNumber)
+                .font(.caption2.weight(.semibold))
+                .foregroundColor(.white)
+                .minimumScaleFactor(0.5)
+        }
+        .frame(width: size, height: size)
     }
 
     private var frameNumber: String {
         guard let frame, frame.number > 0 else { return "-" }
         return String(frame.number)
+    }
+
+    private var activeColor: Color {
+        if currentFrame?.number ?? 0 > 0 {
+            return .green
+        }
+        if nextFrame?.number ?? 0 > 0 {
+            return .orange
+        }
+        return .gray
+    }
+
+    private var frame: MartiniLiveActivityFrame? {
+        currentFrame ?? nextFrame
     }
 }
 
