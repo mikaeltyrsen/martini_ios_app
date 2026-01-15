@@ -34,13 +34,16 @@ struct MartiniLiveActivityWidget: Widget {
                     LiveActivityProgressView(completed: context.state.completed, total: context.state.total)
                 }
             } compactLeading: {
-                Image("MartiniLogoIconOnly")
-                    .resizable()
-                    .renderingMode(.template)
-                    .scaledToFit()
-                    .frame(width: 20, height: 20)
-                    .foregroundColor(.primary)
-                //LiveActivityCompactFrameBadge(label: "N", frame: context.state.currentFrame)
+                ZStack {
+                        Color.clear // keeps layout stable
+                        Image("MartiniLogoIconOnly")
+                            .resizable()
+                            .renderingMode(.template)
+                            .scaledToFit()
+                            .frame(width: 20, height: 20)
+                            .foregroundStyle(.primary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             } compactTrailing: {
                 LiveActivityFrameProgressBadge(
                     currentFrame: context.state.currentFrame,
@@ -50,14 +53,16 @@ struct MartiniLiveActivityWidget: Widget {
                     size: 24
                 )
             } minimal: {
-                //LiveActivityMinimalBadge(frame: context.state.currentFrame ?? context.state.nextFrame)
-                Image("MartiniLogoIconOnly")
-                        .resizable()
-                        .renderingMode(.template)
-                        .scaledToFit()
-                        .frame(width: 20, height: 20)
-                        .padding(4)
-                        .foregroundColor(.primary)
+                ZStack {
+                        Color.clear // keeps layout stable
+                        Image("MartiniLogoIconOnly")
+                            .resizable()
+                            .renderingMode(.template)
+                            .scaledToFit()
+                            .frame(width: 20, height: 20)
+                            .foregroundStyle(.primary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             }
         }
     }
