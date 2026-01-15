@@ -34,11 +34,20 @@ struct MartiniLiveActivityWidget: Widget {
                     LiveActivityProgressView(completed: context.state.completed, total: context.state.total)
                 }
             } compactLeading: {
-                LiveActivityCompactFrameBadge(label: "N", frame: context.state.currentFrame)
+                Image("martini-logo-icon-only")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 22, height: 22)
+                //LiveActivityCompactFrameBadge(label: "N", frame: context.state.currentFrame)
             } compactTrailing: {
                 LiveActivityCompactFrameBadge(label: "X", frame: context.state.nextFrame)
             } minimal: {
-                LiveActivityMinimalBadge(frame: context.state.currentFrame ?? context.state.nextFrame)
+                //LiveActivityMinimalBadge(frame: context.state.currentFrame ?? context.state.nextFrame)
+                Image("martini-logo-icon-only")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 20, height: 20)
+                        .padding(4)
             }
         }
     }
@@ -207,14 +216,17 @@ private struct LiveActivityCompactFrameBadge: View {
     let frame: MartiniLiveActivityFrame?
 
     var body: some View {
-        VStack(spacing: 2) {
-            Text(label)
-                .font(.caption2.weight(.semibold))
-                .foregroundColor(.secondary)
-
-            Text(frameNumber)
-                .font(.caption.weight(.semibold))
-        }
+        Text(frameNumber)
+            .font(.caption.weight(.semibold))
+            .foregroundColor(.green)
+//        VStack(spacing: 2) {
+//            Text(label)
+//                .font(.caption2.weight(.semibold))
+//                .foregroundColor(.secondary)
+//
+//            Text(frameNumber)
+//                .font(.caption.weight(.semibold))
+//        }
     }
 
     private var frameNumber: String {
