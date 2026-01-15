@@ -15,11 +15,19 @@ struct MartiniLiveActivityWidget: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    LiveActivityFrameLabel(label: "Now", frame: context.state.currentFrame)
+                    LiveActivityFrameLabel(
+                        label: "Now",
+                        frame: context.state.currentFrame,
+                        borderColor: .green
+                    )
                 }
 
                 DynamicIslandExpandedRegion(.trailing) {
-                    LiveActivityFrameLabel(label: "Next", frame: context.state.nextFrame)
+                    LiveActivityFrameLabel(
+                        label: "Next",
+                        frame: context.state.nextFrame,
+                        borderColor: .orange
+                    )
                 }
 
                 DynamicIslandExpandedRegion(.bottom) {
@@ -47,8 +55,16 @@ private struct LiveActivityView: View {
                 .foregroundColor(.secondary)
 
             VStack(alignment: .leading, spacing: 6) {
-                LiveActivityFrameLabel(label: "Current", frame: context.state.currentFrame)
-                LiveActivityFrameLabel(label: "Next", frame: context.state.nextFrame)
+                LiveActivityFrameLabel(
+                    label: "Current",
+                    frame: context.state.currentFrame,
+                    borderColor: .green
+                )
+                LiveActivityFrameLabel(
+                    label: "Next",
+                    frame: context.state.nextFrame,
+                    borderColor: .orange
+                )
             }
 
             LiveActivityProgressView(completed: context.state.completed, total: context.state.total)
@@ -62,31 +78,21 @@ private struct LiveActivityView: View {
 private struct LiveActivityFrameLabel: View {
     let label: String
     let frame: MartiniLiveActivityFrame?
+    let borderColor: Color
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
+        HStack(alignment: .center, spacing: 8) {
             Text(label)
                 .font(.caption.weight(.semibold))
                 .foregroundColor(.secondary)
                 .frame(width: 54, alignment: .leading)
 
             if let frame {
-                Text(frameTitle(frame))
-                    .font(.subheadline.weight(.semibold))
-                    .lineLimit(1)
+                LiveActivityFrameThumbnail(frame: frame, borderColor: borderColor)
             } else {
-                Text("—")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.secondary)
+                LiveActivityFrameThumbnail(frame: nil, borderColor: borderColor)
             }
         }
-    }
-
-    private func frameTitle(_ frame: MartiniLiveActivityFrame) -> String {
-        if frame.number > 0 {
-            return "\(frame.number). \(frame.title)"
-        }
-        return frame.title
     }
 }
 
@@ -110,6 +116,88 @@ private struct LiveActivityProgressView: View {
                 .font(.caption.weight(.semibold))
                 .foregroundColor(.secondary)
         }
+    }
+}
+
+@available(iOS 16.1, *)
+private struct LiveActivityFrameThumbnail: View {
+    let frame: MartiniLiveActivityFrame?
+    let borderColor: Color
+
+    private let size = CGSize(width: 92, height: 52)
+    private let cornerRadius = 8.0
+    private let borderWidth = 2.0
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            thumbnailView
+                .frame(width: size.width, height: size.height)
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                .overlay(
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .stroke(borderColor, lineWidth: borderWidth)
+                )
+
+            if let numberText = frameNumberText {
+                Text(numberText)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundColor(.white)
+                    .padding(6)
+                    .background(Color.black.opacity(0.8))
+                    .clipShape(Circle())
+                    .padding(4)
+            }
+        }
+        .accessibilityLabel(accessibilityLabel)
+    }
+
+    @ViewBuilder
+    private var thumbnailView: some View {
+        if let url = thumbnailUrl {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                case .failure:
+                    placeholderView
+                case .empty:
+                    placeholderView
+                @unknown default:
+                    placeholderView
+                }
+            }
+        } else {
+            placeholderView
+        }
+    }
+
+    private var placeholderView: some View {
+        ZStack {
+            Color.secondary.opacity(0.2)
+            Image(systemName: "photo")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+    }
+
+    private var frameNumberText: String? {
+        guard let frame, frame.number > 0 else { return nil }
+        return String(frame.number)
+    }
+
+    private var thumbnailUrl: URL? {
+        guard let urlString = frame?.thumbnailUrl else { return nil }
+        return URL(string: urlString)
+    }
+
+    private var accessibilityLabel: String {
+        guard let frame else { return "No frame" }
+        if frame.number > 0 {
+            return "Frame \(frame.number), \(frame.title)"
+        }
+        return frame.title
     }
 }
 
