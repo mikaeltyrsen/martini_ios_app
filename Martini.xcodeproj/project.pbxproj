@@ -18,6 +18,12 @@
 		0730F4042F0ABFBB000B598F /* FramePagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4032F0ABFBB000B598F /* FramePagerView.swift */; };
 		0730F4072F0B6800000B598F /* FrameDescriptionEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4052F0B6800000B598F /* FrameDescriptionEditorSheet.swift */; };
 		0730F4082F0B6800000B598F /* RichTextEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4062F0B6800000B598F /* RichTextEditor.swift */; };
+		0A95C54C437E5685FC7524B3 /* MartiniLiveActivityModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2CD91F637EC3098B3B6F535 /* MartiniLiveActivityModels.swift */; };
+		56B2418AECFE0FB51954EC18 /* LiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE7ABC696B04ABA7B60E1719 /* LiveActivityManager.swift */; };
+		5C12D4A0EC26C233C269481D /* MartiniLiveActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19F1DEF3A6FA25EADC0FCA2A /* MartiniLiveActivityWidget.swift */; };
+		8F13E6B330B2DF25DCF56671 /* MartiniLiveActivityModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2CD91F637EC3098B3B6F535 /* MartiniLiveActivityModels.swift */; };
+		C18787E685A734C72BBBBCD7 /* MartiniLiveActivityBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81EDC5D2FABA5EED51C87010 /* MartiniLiveActivityBundle.swift */; };
+		C2C4BCF06C1B1FB64C54B065 /* MartiniLiveActivity.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = BF184DC5B58469B333F76681 /* MartiniLiveActivity.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0730F40A2F0B8736000B598F /* RichTextDisplayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4092F0B8736000B598F /* RichTextDisplayView.swift */; };
 		0730F40C2F0C6401000B598F /* FrameLineOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F40B2F0C6401000B598F /* FrameLineOverlayView.swift */; };
 		0730F4112F0C6F7D000B598F /* CachedVideoPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4102F0C6F7D000B598F /* CachedVideoPlayerView.swift */; };
@@ -97,6 +103,9 @@
 		0730F3FA2F040379000B598F /* CommentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentsView.swift; sourceTree = "<group>"; };
 		0730F3FD2F0487F3000B598F /* ThemePreference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemePreference.swift; sourceTree = "<group>"; };
 		0730F3FF2F070A2E000B598F /* ScriptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptView.swift; sourceTree = "<group>"; };
+		19F1DEF3A6FA25EADC0FCA2A /* MartiniLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MartiniLiveActivityWidget.swift; sourceTree = "<group>"; };
+		7401EDD1914E9B8D3128B7B3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		81EDC5D2FABA5EED51C87010 /* MartiniLiveActivityBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MartiniLiveActivityBundle.swift; sourceTree = "<group>"; };
 		0730F4032F0ABFBB000B598F /* FramePagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FramePagerView.swift; sourceTree = "<group>"; };
 		0730F4052F0B6800000B598F /* FrameDescriptionEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameDescriptionEditorSheet.swift; sourceTree = "<group>"; };
 		0730F4062F0B6800000B598F /* RichTextEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichTextEditor.swift; sourceTree = "<group>"; };
@@ -113,9 +122,12 @@
 		07A6A6822EC9A272002C8EB9 /* Martini.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Martini.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		07A6A6852EC9A272002C8EB9 /* MartiniApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MartiniApp.swift; sourceTree = "<group>"; };
 		07A6A6872EC9A272002C8EB9 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		AE7ABC696B04ABA7B60E1719 /* LiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityManager.swift; sourceTree = "<group>"; };
+		BF184DC5B58469B333F76681 /* MartiniLiveActivity.appex */ = {isa = PBXFileReference; explicitFileType = wrapper.app-extension; includeInIndex = 0; path = MartiniLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		07ACD0013127F1D000000001 /* Martini.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Martini.entitlements; sourceTree = "<group>"; };
 		07C904AE2EDA7A48004EDBFA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		07C904AF2EDA8665004EDBFA /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		F2CD91F637EC3098B3B6F535 /* MartiniLiveActivityModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MartiniLiveActivityModels.swift; sourceTree = "<group>"; };
 		07C904B12EDB92D8004EDBFA /* playground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = playground.swift; sourceTree = "<group>"; };
 		07C904B32EDB9F3D004EDBFA /* Uiplayground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Uiplayground.swift; sourceTree = "<group>"; };
 		07C904B52EDBAE73004EDBFA /* FrameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameView.swift; sourceTree = "<group>"; };
@@ -177,6 +189,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D8704F6F740CFA1CC8EB794C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -199,10 +218,22 @@
 			path = Schedule;
 			sourceTree = "<group>";
 		};
+		0B3FA239EB796131485B0E3A /* MartiniLiveActivity */ = {
+			isa = PBXGroup;
+			children = (
+				81EDC5D2FABA5EED51C87010 /* MartiniLiveActivityBundle.swift */,
+				19F1DEF3A6FA25EADC0FCA2A /* MartiniLiveActivityWidget.swift */,
+				F2CD91F637EC3098B3B6F535 /* MartiniLiveActivityModels.swift */,
+				7401EDD1914E9B8D3128B7B3 /* Info.plist */,
+			);
+			path = MartiniLiveActivity;
+			sourceTree = "<group>";
+		};
 		07A6A6792EC9A272002C8EB9 = {
 			isa = PBXGroup;
 			children = (
 				07A6A6842EC9A272002C8EB9 /* Martini */,
+				0B3FA239EB796131485B0E3A /* MartiniLiveActivity */,
 				07A6A6832EC9A272002C8EB9 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -211,6 +242,7 @@
 			isa = PBXGroup;
 			children = (
 				07A6A6822EC9A272002C8EB9 /* Martini.app */,
+				BF184DC5B58469B333F76681 /* MartiniLiveActivity.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -219,6 +251,7 @@
 			isa = PBXGroup;
 			children = (
 				0733190E2F17ED1800D6FE10 /* UIControlConfig.swift */,
+				AE7ABC696B04ABA7B60E1719 /* LiveActivityManager.swift */,
 				07FFA27F2F1304F6006BEAF4 /* MarkupOverlayView.swift */,
 				07FFA27B2F129F45006BEAF4 /* BoardAnnotationEditor.swift */,
 				07FFA27C2F129F45006BEAF4 /* ClipFilesViews.swift */,
@@ -316,6 +349,7 @@
 				07A6A67E2EC9A272002C8EB9 /* Sources */,
 				07A6A67F2EC9A272002C8EB9 /* Frameworks */,
 				07A6A6802EC9A272002C8EB9 /* Resources */,
+				DDEEF3D037C5DA48BDE6ACFE /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
@@ -325,6 +359,23 @@
 			productName = Martini;
 			productReference = 07A6A6822EC9A272002C8EB9 /* Martini.app */;
 			productType = "com.apple.product-type.application";
+		};
+		374752DF66BA21338C571997 /* MartiniLiveActivity */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5962734B7EFB18807CE415A5 /* Build configuration list for PBXNativeTarget "MartiniLiveActivity" */;
+			buildPhases = (
+				CA4594C24114A27357C144FA /* Sources */,
+				D8704F6F740CFA1CC8EB794C /* Frameworks */,
+				4095C807DA5AECDFC930ECDA /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MartiniLiveActivity;
+			productName = MartiniLiveActivity;
+			productReference = BF184DC5B58469B333F76681 /* MartiniLiveActivity.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -337,6 +388,9 @@
 				LastUpgradeCheck = 2610;
 				TargetAttributes = {
 					07A6A6812EC9A272002C8EB9 = {
+						CreatedOnToolsVersion = 15.4;
+					};
+					374752DF66BA21338C571997 = {
 						CreatedOnToolsVersion = 15.4;
 					};
 				};
@@ -355,6 +409,7 @@
 			projectRoot = "";
 			targets = (
 				07A6A6812EC9A272002C8EB9 /* Martini */,
+				374752DF66BA21338C571997 /* MartiniLiveActivity */,
 			);
 		};
 /* End PBXProject section */
@@ -371,13 +426,35 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4095C807DA5AECDFC930ECDA /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		DDEEF3D037C5DA48BDE6ACFE /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				C2C4BCF06C1B1FB64C54B065 /* MartiniLiveActivity.appex in Embed App Extensions */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		07A6A67E2EC9A272002C8EB9 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				56B2418AECFE0FB51954EC18 /* LiveActivityManager.swift in Sources */,
+				8F13E6B330B2DF25DCF56671 /* MartiniLiveActivityModels.swift in Sources */,
 				0730F3FB2F040379000B598F /* CommentsView.swift in Sources */,
 				0730F3FC2F040379000B598F /* CommentLayout.swift in Sources */,
 				07FFA2622F0F0183006BEAF4 /* ScoutLocationManager.swift in Sources */,
@@ -454,9 +531,57 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CA4594C24114A27357C144FA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C18787E685A734C72BBBBCD7 /* MartiniLiveActivityBundle.swift in Sources */,
+				5C12D4A0EC26C233C269481D /* MartiniLiveActivityWidget.swift in Sources */,
+				0A95C54C437E5685FC7524B3 /* MartiniLiveActivityModels.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		6B3D70FC65DFDB1B19E927F4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 93K8M9XF5X;
+				INFOPLIST_FILE = MartiniLiveActivity/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.martini.martinilive.MartiniLiveActivity;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		88502B3C4E158E4FD0B071C2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 93K8M9XF5X;
+				INFOPLIST_FILE = MartiniLiveActivity/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.martini.martinilive.MartiniLiveActivity;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		07A6A68E2EC9A272002C8EB9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -667,6 +792,15 @@
 			buildConfigurations = (
 				07A6A6912EC9A272002C8EB9 /* Debug */,
 				07A6A6922EC9A272002C8EB9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5962734B7EFB18807CE415A5 /* Build configuration list for PBXNativeTarget "MartiniLiveActivity" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6B3D70FC65DFDB1B19E927F4 /* Debug */,
+				88502B3C4E158E4FD0B071C2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

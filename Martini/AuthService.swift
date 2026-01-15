@@ -100,7 +100,11 @@ class AuthService: ObservableObject {
     @Published var projectDetails: ProjectDetails?
     @Published var cachedSchedule: ProjectSchedule?
     @Published var fetchedSchedules: [ProjectSchedule] = []
-    @Published var frames: [Frame] = []
+    @Published var frames: [Frame] = [] {
+        didSet {
+            LiveActivityManager.refresh(using: frames, projectTitle: projectTitle)
+        }
+    }
     @Published var tagGroups: [TagGroupDefinition] = []
     @Published var frameUpdateEvent: FrameUpdateEvent?
     @Published var scheduleUpdateEvent: ScheduleUpdateEvent?
