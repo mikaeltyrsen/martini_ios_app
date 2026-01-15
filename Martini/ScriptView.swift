@@ -27,6 +27,13 @@ struct ScriptView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 16) {
+                        if let creativeTitle = selectedCreativeTitle {
+                            Text(creativeTitle)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal)
+                        }
+
                         ForEach(scriptFrames) { entry in
                             VStack(alignment: .leading, spacing: 12) {
                                 if showFrameDivider {
@@ -157,6 +164,14 @@ struct ScriptView: View {
 
     private var hereFrameId: String? {
         authService.frames.first { $0.statusEnum == .here }?.id
+    }
+
+    private var selectedCreativeTitle: String? {
+        if let selectedCreativeId,
+           let creative = authService.creatives.first(where: { $0.id == selectedCreativeId }) {
+            return creative.title
+        }
+        return selectedCreativeId == nil ? "All Creatives" : nil
     }
 
     @ViewBuilder
