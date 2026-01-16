@@ -502,7 +502,7 @@ struct FrameView: View {
 
     private var baseContent: some View {
         contentView
-            .navigationTitle(frameTitle)
+            .navigationTitle(showsTopToolbar ? " " : frameTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if showsTopToolbar {
