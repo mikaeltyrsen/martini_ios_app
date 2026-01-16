@@ -55,7 +55,7 @@ extension Color {
     static func martiniCreativeColor(from rawValue: String?) -> Color {
         let cleaned = rawValue?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? ""
 
-        guard !cleaned.isEmpty else { return .martiniDefaultColor }
+        guard !cleaned.isEmpty else { return .black }
 
         if let resolved = martiniColorFromHex(cleaned) {
             return resolved
