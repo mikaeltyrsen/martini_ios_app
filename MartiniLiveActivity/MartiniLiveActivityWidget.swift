@@ -75,7 +75,7 @@ private struct LiveActivityView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack() {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 8) {
                     Image("MartiniLogo")
                         .resizable()
                         .renderingMode(.template)
@@ -86,6 +86,7 @@ private struct LiveActivityView: View {
                     Text(context.attributes.projectTitle)
                         .font(.system(size: 20, weight: .semibold, design: .default))
                         .foregroundColor(.primary)
+                        .lineLimit(nil)
                 }
                 
                 HStack(spacing: 10) {
@@ -107,7 +108,7 @@ private struct LiveActivityView: View {
             LiveActivityProgressView(completed: context.state.completed, total: context.state.total)
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.vertical, 20)
     }
 }
 
@@ -118,7 +119,7 @@ private struct LiveActivityFrameLabel: View {
     let borderColor: Color
     let iconName: String
 
-    private let thumbnailSize: CGFloat = 92
+    private let thumbnailSize: CGFloat = 86
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -147,7 +148,7 @@ private struct LiveActivityProgressView: View {
     let total: Int
 
     struct ThickProgressViewStyle: ProgressViewStyle {
-        var height: CGFloat = 20
+        var height: CGFloat = 14
         var cornerRadius: CGFloat = 100
         
         func makeBody(configuration: Configuration) -> some View {
@@ -170,15 +171,23 @@ private struct LiveActivityProgressView: View {
 
         HStack(spacing: 8) {
 
+            Image(systemName: "rectangle.slash")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.secondary)
+            
             Text("\(completed)")
                 .font(.caption.weight(.semibold))
                 .foregroundColor(.secondary)
                 .frame(height: 20)
 
             ProgressView(value: Double(completed), total: Double(safeTotal))
-                .progressViewStyle(ThickProgressViewStyle(height: 20))
+                .progressViewStyle(ThickProgressViewStyle(height: 14))
                 .frame(height: 20)
 
+            Image(systemName: "photo.stack.fill")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.secondary)
+            
             Text("\(total)")
                 .font(.caption.weight(.semibold))
                 .foregroundColor(.secondary)
