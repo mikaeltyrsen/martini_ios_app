@@ -78,15 +78,14 @@ private struct LiveActivityView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Image("MartiniLogo")
                         .resizable()
-                        .renderingMode(.template)
+                        .renderingMode(.original)
                         .scaledToFit()
                         .frame(width: 70, alignment: .leading)
-                        .foregroundStyle(.primary)
                     
                     Text(context.attributes.projectTitle)
                         .font(.system(size: 20, weight: .semibold, design: .default))
                         .foregroundColor(.primary)
-                        .lineLimit(3)
+                        .lineLimit(1)
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
                         .truncationMode(.tail)
@@ -239,9 +238,8 @@ private struct LiveActivityFrameThumbnail: View {
                 case .success(let image):
                     image
                         .resizable()
-                        .scaledToFill()
+                        .scaledToFit()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .clipped()
                 case .failure:
                     placeholderView
                 case .empty:
