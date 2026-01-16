@@ -86,7 +86,10 @@ private struct LiveActivityView: View {
                     Text(context.attributes.projectTitle)
                         .font(.system(size: 20, weight: .semibold, design: .default))
                         .foregroundColor(.primary)
-                        .lineLimit(nil)
+                        .lineLimit(3)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .truncationMode(.tail)
                 }
                 
                 HStack(spacing: 10) {
@@ -236,8 +239,9 @@ private struct LiveActivityFrameThumbnail: View {
                 case .success(let image):
                     image
                         .resizable()
-                        .scaledToFit()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                        .scaledToFill()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .clipped()
                 case .failure:
                     placeholderView
                 case .empty:
