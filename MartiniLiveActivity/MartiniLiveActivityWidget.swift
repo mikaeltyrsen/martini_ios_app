@@ -73,41 +73,51 @@ private struct LiveActivityView: View {
     let context: ActivityViewContext<MartiniLiveActivityAttributes>
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack() {
-                VStack(alignment: .leading, spacing: 8) {
-                    Image("MartiniLogo")
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top, spacing: 8) {
+                HStack(alignment: .top, spacing: 8) {
+                    Image("MartiniLogoIconOnly")
                         .resizable()
-                        .renderingMode(.original)
+                        .renderingMode(.template)
                         .scaledToFit()
-                        .frame(width: 70, alignment: .leading)
-                    
-                    Text(context.attributes.projectTitle)
-                        .font(.system(size: 20, weight: .semibold, design: .default))
-                        .foregroundColor(.primary)
-                        .lineLimit(1)
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .truncationMode(.tail)
+                        .frame(width: 20, height: 20)
+                        .foregroundStyle(.primary)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(context.attributes.projectTitle)
+                            .font(.system(size: 16, weight: .semibold, design: .default))
+                            .foregroundColor(.primary)
+                            .lineLimit(3)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .truncationMode(.tail)
+                    }
+                    .layoutPriority(1)
                 }
-                
-                HStack(spacing: 10) {
-                    LiveActivityFrameLabel(
-                        label: "Current",
-                        frame: context.state.currentFrame,
-                        borderColor: .green,
-                        iconName: "video.fill"
-                    )
-                    LiveActivityFrameLabel(
-                        label: "Next",
-                        frame: context.state.nextFrame,
-                        borderColor: .orange,
-                        iconName: "forward.fill"
-                    )
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                HStack(alignment: .top, spacing: 8) {
+                    if let currentFrame = context.state.currentFrame {
+                        LiveActivityFrameCard(
+                            label: "Here",
+                            frame: currentFrame,
+                            borderColor: .green,
+                            iconName: "video.fill"
+                        )
+                    }
+                    if let nextFrame = context.state.nextFrame {
+                        LiveActivityFrameCard(
+                            label: "Next",
+                            frame: nextFrame,
+                            borderColor: .orange,
+                            iconName: "forward.fill"
+                        )
+                    }
                 }
             }
 
             LiveActivityProgressView(completed: context.state.completed, total: context.state.total)
+                .frame(height: 20)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 20)
@@ -115,13 +125,14 @@ private struct LiveActivityView: View {
 }
 
 @available(iOS 16.1, *)
-private struct LiveActivityFrameLabel: View {
+private struct LiveActivityFrameCard: View {
     let label: String
     let frame: MartiniLiveActivityFrame?
     let borderColor: Color
     let iconName: String
 
-    private let thumbnailSize: CGFloat = 86
+    private let thumbnailMaxWidth: CGFloat = 100
+    private let thumbnailMaxHeight: CGFloat = 56
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -129,17 +140,25 @@ private struct LiveActivityFrameLabel: View {
                 Image(systemName: iconName)
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(borderColor)
-                
+
                 Text(label)
-                    .font(.caption.weight(.semibold))
+                    .font(.caption2.weight(.semibold))
                     .foregroundColor(borderColor)
             }
-            .frame(width: thumbnailSize, alignment: .leading)
-            if let frame {
-                LiveActivityFrameThumbnail(frame: frame, borderColor: borderColor, size: thumbnailSize)
-            } else {
-                LiveActivityFrameThumbnail(frame: nil, borderColor: borderColor, size: thumbnailSize)
-            }
+            .padding(.vertical, 2)
+            .padding(.horizontal, 6)
+            .background(
+                Capsule()
+                    .fill(borderColor.opacity(0.15))
+            )
+            .fixedSize(horizontal: true, vertical: true)
+
+            LiveActivityFrameThumbnail(
+                frame: frame,
+                borderColor: borderColor,
+                maxWidth: thumbnailMaxWidth,
+                maxHeight: thumbnailMaxHeight
+            )
         }
     }
 }
@@ -150,7 +169,7 @@ private struct LiveActivityProgressView: View {
     let total: Int
 
     struct ThickProgressViewStyle: ProgressViewStyle {
-        var height: CGFloat = 14
+        var height: CGFloat = 8
         var cornerRadius: CGFloat = 100
         
         func makeBody(configuration: Configuration) -> some View {
@@ -171,30 +190,9 @@ private struct LiveActivityProgressView: View {
     var body: some View {
         let safeTotal = max(total, 1)
 
-        HStack(spacing: 8) {
-
-            Image(systemName: "rectangle.slash")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(.secondary)
-            
-            Text("\(completed)")
-                .font(.caption.weight(.semibold))
-                .foregroundColor(.secondary)
-                .frame(height: 20)
-
-            ProgressView(value: Double(completed), total: Double(safeTotal))
-                .progressViewStyle(ThickProgressViewStyle(height: 14))
-                .frame(height: 20)
-
-            Image(systemName: "photo.stack.fill")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(.secondary)
-            
-            Text("\(total)")
-                .font(.caption.weight(.semibold))
-                .foregroundColor(.secondary)
-                .frame(height: 20)
-        }
+        ProgressView(value: Double(completed), total: Double(safeTotal))
+            .progressViewStyle(ThickProgressViewStyle(height: 8))
+            .frame(height: 20)
     }
 }
 
@@ -202,7 +200,8 @@ private struct LiveActivityProgressView: View {
 private struct LiveActivityFrameThumbnail: View {
     let frame: MartiniLiveActivityFrame?
     let borderColor: Color
-    let size: CGFloat
+    let maxWidth: CGFloat
+    let maxHeight: CGFloat
 
     private let cornerRadius = 8.0
     private let borderWidth = 2.0
@@ -210,7 +209,7 @@ private struct LiveActivityFrameThumbnail: View {
     var body: some View {
         ZStack(alignment: .topTrailing) {
             thumbnailView
-                .frame(width: size, height: size, alignment: .leading)
+                .frame(maxWidth: maxWidth, maxHeight: maxHeight, alignment: .leading)
                 .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                 .overlay(
                     RoundedRectangle(cornerRadius: cornerRadius)
