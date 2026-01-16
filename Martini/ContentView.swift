@@ -1371,6 +1371,7 @@ struct MainView: View {
                                         showFullDescriptions: effectiveShowFullDescriptions,
                                         showTags: effectiveShowGridTags,
                                         showFrameTimeOverlay: shouldShowFrameTimeOverlay,
+                                        showCreativeTitleOverlay: frameSortMode == .shoot,
                                         fontScale: fontScale,
                                         cornerRadius: CGFloat(gridCornerRadiusStep),
                                         boardSizing: boardSizingConfiguration,
@@ -2298,6 +2299,7 @@ struct CreativeGridSection: View {
     let showFullDescriptions: Bool
     let showTags: Bool
     let showFrameTimeOverlay: Bool
+    let showCreativeTitleOverlay: Bool
     let fontScale: CGFloat
     let cornerRadius: CGFloat
     let boardSizing: BoardSizingConfiguration
@@ -2318,6 +2320,7 @@ struct CreativeGridSection: View {
         showFullDescriptions: Bool,
         showTags: Bool,
         showFrameTimeOverlay: Bool,
+        showCreativeTitleOverlay: Bool,
         fontScale: CGFloat,
         cornerRadius: CGFloat,
         boardSizing: BoardSizingConfiguration,
@@ -2337,6 +2340,7 @@ struct CreativeGridSection: View {
         self.showFullDescriptions = showFullDescriptions
         self.showTags = showTags
         self.showFrameTimeOverlay = showFrameTimeOverlay
+        self.showCreativeTitleOverlay = showCreativeTitleOverlay
         self.fontScale = fontScale
         self.cornerRadius = cornerRadius
         self.boardSizing = boardSizing
@@ -2412,7 +2416,7 @@ struct CreativeGridSection: View {
                                     showFullDescription: showFullDescriptions,
                                     showTags: showTags,
                                     showFrameTimeOverlay: showFrameTimeOverlay,
-                                    showCreativeTitleOverlay: frameSortMode == .shoot,
+                                    showCreativeTitleOverlay: showCreativeTitleOverlay,
                                     fontScale: fontScale,
                                     cornerRadius: cornerRadius,
                                     boardSizing: boardSizing,
