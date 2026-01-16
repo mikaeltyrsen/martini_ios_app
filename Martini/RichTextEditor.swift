@@ -64,12 +64,18 @@ final class RichTextEditorState: ObservableObject {
             updatedStyle.paragraphSpacingBefore = 0
             updatedStyle.paragraphSpacing = 0
             mutableText.removeAttribute(dialogBlockquoteAttribute, range: paragraphRange)
+            updateFonts(in: paragraphRange, text: mutableText) { font in
+                standardFont(from: font)
+            }
         } else {
             updatedStyle.firstLineHeadIndent = 0
             updatedStyle.headIndent = 0
             updatedStyle.paragraphSpacingBefore = 4
             updatedStyle.paragraphSpacing = 8
             mutableText.addAttribute(dialogBlockquoteAttribute, value: true, range: paragraphRange)
+            updateFonts(in: paragraphRange, text: mutableText) { font in
+                monospacedFont(from: font)
+            }
         }
 
         mutableText.addAttribute(.paragraphStyle, value: updatedStyle, range: paragraphRange)
@@ -424,7 +430,22 @@ final class RichTextEditorState: ObservableObject {
     private func updateToolbarButton(_ button: UIButton, isActive: Bool) {
         let highlightColor = UIColor(named: "MartiniDefaultColor") ?? UIColor.systemBlue
         button.backgroundColor = isActive ? highlightColor : .clear
-        button.tintColor = isActive ? .white : .label
+        button.tintColor = isActive ? contrastTintColor(for: highlightColor, traitCollection: button.traitCollection) : .label
+    }
+
+    private func contrastTintColor(for backgroundColor: UIColor, traitCollection: UITraitCollection) -> UIColor {
+        let resolvedColor = backgroundColor.resolvedColor(with: traitCollection)
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+
+        guard resolvedColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha) else {
+            return .label
+        }
+
+        let luminance = (0.299 * red) + (0.587 * green) + (0.114 * blue)
+        return luminance > 0.6 ? .black : .white
     }
 
     private func currentAttributes(from textView: UITextView) -> [NSAttributedString.Key: Any] {
@@ -439,6 +460,29 @@ final class RichTextEditorState: ObservableObject {
         }
 
         return textView.attributedText.attributes(at: selectedRange.location, effectiveRange: nil)
+    }
+
+    private func updateFonts(
+        in range: NSRange,
+        text: NSMutableAttributedString,
+        transform: (UIFont) -> UIFont
+    ) {
+        text.enumerateAttribute(.font, in: range, options: []) { value, subrange, _ in
+            let font = (value as? UIFont) ?? baseFont
+            text.addAttribute(.font, value: transform(font), range: subrange)
+        }
+    }
+
+    private func monospacedFont(from font: UIFont) -> UIFont {
+        let baseDescriptor = font.fontDescriptor
+        let monospacedDescriptor = baseDescriptor.withDesign(.monospaced) ?? baseDescriptor
+        let traitDescriptor = monospacedDescriptor.withSymbolicTraits(baseDescriptor.symbolicTraits) ?? monospacedDescriptor
+        return UIFont(descriptor: traitDescriptor, size: font.pointSize)
+    }
+
+    private func standardFont(from font: UIFont) -> UIFont {
+        let baseDescriptor = baseFont.fontDescriptor.withSymbolicTraits(font.fontDescriptor.symbolicTraits) ?? baseFont.fontDescriptor
+        return UIFont(descriptor: baseDescriptor, size: font.pointSize)
     }
 
     private func colorsEqual(_ lhs: UIColor, _ rhs: UIColor, traitCollection: UITraitCollection) -> Bool {
@@ -560,14 +604,21 @@ struct RichTextEditorView: UIViewRepresentable {
             quote: quoteButton
         )
 
+        let leadingSpacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
+        leadingSpacer.width = 12
+        let trailingSpacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
+        trailingSpacer.width = 12
+
         toolbar.items = [
+            leadingSpacer,
             UIBarButtonItem(customView: boldButton),
             UIBarButtonItem(customView: italicButton),
             UIBarButtonItem(customView: underlineButton),
             UIBarButtonItem(customView: strikethroughButton),
             UIBarButtonItem(customView: colorButton),
             UIBarButtonItem(customView: alignmentButton),
-            UIBarButtonItem(customView: quoteButton)
+            UIBarButtonItem(customView: quoteButton),
+            trailingSpacer
         ]
         toolbar.sizeToFit()
         toolbar.backgroundColor = .clear
@@ -591,34 +642,36 @@ struct RichTextEditorView: UIViewRepresentable {
     }
 
     private func accessoryButton(systemName: String, action: @escaping () -> Void) -> UIButton {
+        let buttonSize: CGFloat = 36
         let button = UIButton(type: .system)
         button.setImage(UIImage(systemName: systemName), for: .normal)
         button.tintColor = .label
         button.backgroundColor = .clear
-        button.layer.cornerRadius = 8
-        button.contentEdgeInsets = .init(top: 6, left: 6, bottom: 6, right: 6)
+        button.layer.cornerRadius = buttonSize / 2
+        button.contentEdgeInsets = .init(top: 8, left: 8, bottom: 8, right: 8)
         button.addAction(UIAction { _ in action() }, for: .touchUpInside)
         button.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            button.heightAnchor.constraint(equalToConstant: 32),
-            button.widthAnchor.constraint(greaterThanOrEqualToConstant: 32)
+            button.heightAnchor.constraint(equalToConstant: buttonSize),
+            button.widthAnchor.constraint(equalToConstant: buttonSize)
         ])
         return button
     }
 
     private func accessoryMenuButton(systemName: String, menu: UIMenu) -> UIButton {
+        let buttonSize: CGFloat = 36
         let button = UIButton(type: .system)
         button.setImage(UIImage(systemName: systemName), for: .normal)
         button.tintColor = .label
         button.backgroundColor = .clear
-        button.layer.cornerRadius = 8
-        button.contentEdgeInsets = .init(top: 6, left: 6, bottom: 6, right: 6)
+        button.layer.cornerRadius = buttonSize / 2
+        button.contentEdgeInsets = .init(top: 8, left: 8, bottom: 8, right: 8)
         button.showsMenuAsPrimaryAction = true
         button.menu = menu
         button.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            button.heightAnchor.constraint(equalToConstant: 32),
-            button.widthAnchor.constraint(greaterThanOrEqualToConstant: 32)
+            button.heightAnchor.constraint(equalToConstant: buttonSize),
+            button.widthAnchor.constraint(equalToConstant: buttonSize)
         ])
         return button
     }
