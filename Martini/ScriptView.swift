@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct ScriptView: View {
     @EnvironmentObject private var authService: AuthService
@@ -12,6 +13,8 @@ struct ScriptView: View {
     @AppStorage("scriptShowBoard") private var showBoard: Bool = UIControlConfig.scriptShowBoardDefault
     @AppStorage("scriptShowFrameDivider") private var showFrameDivider: Bool = UIControlConfig.scriptShowFrameDividerDefault
     @AppStorage("scriptBoardScale") private var boardScale: Double = Double(UIControlConfig.scriptBoardScaleDefault)
+    @State private var editingFrame: Frame?
+    @State private var descriptionUpdateError: String?
 
     private let minFontScale: CGFloat = UIControlConfig.scriptFontScaleMin
     private let maxFontScale: CGFloat = UIControlConfig.scriptFontScaleMax
@@ -49,6 +52,20 @@ struct ScriptView: View {
                             .padding(.horizontal)
                             .padding(.vertical, 12)
                             .id(entry.frame.id)
+                            .contentShape(Rectangle())
+                            .contextMenu {
+                                Button {
+                                    copyDescription(for: entry.frame)
+                                } label: {
+                                    Label("Copy Description", systemImage: "doc.on.doc")
+                                }
+
+                                Button {
+                                    editingFrame = entry.frame
+                                } label: {
+                                    Label("Edit Description", systemImage: "pencil")
+                                }
+                            }
                         }
                     }
                     .padding(.vertical, 16)
@@ -115,6 +132,33 @@ struct ScriptView: View {
                 }
                 .onChange(of: authService.creatives.map(\.id)) { _ in
                     updateSelectedCreativeIfNeeded()
+                }
+                .alert(
+                    "Unable to Update Description",
+                    isPresented: Binding(
+                        get: { descriptionUpdateError != nil },
+                        set: { if !$0 { descriptionUpdateError = nil } }
+                    )
+                ) {
+                    Button("OK", role: .cancel) { descriptionUpdateError = nil }
+                } message: {
+                    Text(descriptionUpdateError ?? "An unknown error occurred.")
+                }
+                .sheet(item: $editingFrame) { frame in
+                    FrameDescriptionEditorSheet(
+                        title: "Edit Description",
+                        initialText: descriptionEditorText(for: frame),
+                        onSave: { description in
+                            _ = try await authService.updateFrameDescription(
+                                frameId: frame.id,
+                                creativeId: frame.creativeId,
+                                description: description
+                            )
+                        },
+                        onError: { error in
+                            descriptionUpdateError = error.localizedDescription
+                        }
+                    )
                 }
             }
         }
@@ -275,6 +319,22 @@ struct ScriptView: View {
         if selectedCreativeId == nil || !authService.creatives.contains(where: { $0.id == selectedCreativeId }) {
             selectedCreativeId = preferredCreativeId
         }
+    }
+
+    private func copyDescription(for frame: Frame) {
+        guard let description = frame.description, !description.isEmpty else { return }
+        UIPasteboard.general.string = plainTextFromHTML(description)
+    }
+
+    private func descriptionEditorText(for frame: Frame) -> NSAttributedString {
+        if let description = frame.description, !description.isEmpty,
+           let attributed = nsAttributedStringFromHTML(description) {
+            return attributed
+        } else if let description = frame.description, !description.isEmpty {
+            return NSAttributedString(string: plainTextFromHTML(description))
+        }
+
+        return NSAttributedString(string: "")
     }
 
     private func deviceScaleMultiplier(for size: CGSize) -> CGFloat {
