@@ -75,12 +75,12 @@ private struct LiveActivityView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack() {
-                VStack(spacing: 6) {
+                VStack(alignment: .leading, spacing: 6) {
                     Image("MartiniLogo")
                         .resizable()
                         .renderingMode(.template)
                         .scaledToFit()
-                        .frame(width: 70, height: 40)
+                        .frame(width: 70, alignment: .leading)
                         .foregroundStyle(.primary)
                     
                     Text(context.attributes.projectTitle)
@@ -92,12 +92,14 @@ private struct LiveActivityView: View {
                     LiveActivityFrameLabel(
                         label: "Current",
                         frame: context.state.currentFrame,
-                        borderColor: .green
+                        borderColor: .green,
+                        iconName: "video.fill"
                     )
                     LiveActivityFrameLabel(
                         label: "Next",
                         frame: context.state.nextFrame,
-                        borderColor: .orange
+                        borderColor: .orange,
+                        iconName: "forward.fill"
                     )
                 }
             }
@@ -114,27 +116,26 @@ private struct LiveActivityFrameLabel: View {
     let label: String
     let frame: MartiniLiveActivityFrame?
     let borderColor: Color
+    let iconName: String
+
+    private let thumbnailSize: CGFloat = 92
 
     var body: some View {
-        VStack(alignment: .center, spacing: 8) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 4) {
-                Image(systemName: "video.fill")
+                Image(systemName: iconName)
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(borderColor)
                 
                 Text(label)
                     .font(.caption.weight(.semibold))
                     .foregroundColor(borderColor)
-//                    .background(
-//                        Capsule()
-//                            .fill(borderColor)
-//                    )
-                Spacer()
             }
+            .frame(width: thumbnailSize, alignment: .leading)
             if let frame {
-                LiveActivityFrameThumbnail(frame: frame, borderColor: borderColor)
+                LiveActivityFrameThumbnail(frame: frame, borderColor: borderColor, size: thumbnailSize)
             } else {
-                LiveActivityFrameThumbnail(frame: nil, borderColor: borderColor)
+                LiveActivityFrameThumbnail(frame: nil, borderColor: borderColor, size: thumbnailSize)
             }
         }
     }
@@ -190,15 +191,15 @@ private struct LiveActivityProgressView: View {
 private struct LiveActivityFrameThumbnail: View {
     let frame: MartiniLiveActivityFrame?
     let borderColor: Color
+    let size: CGFloat
 
-    private let size = CGSize(width: 92, height: 52)
     private let cornerRadius = 8.0
     private let borderWidth = 2.0
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
             thumbnailView
-                .frame(width: size.width, height: size.height)
+                .frame(width: size, height: size, alignment: .leading)
                 .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                 .overlay(
                     RoundedRectangle(cornerRadius: cornerRadius)
@@ -226,7 +227,8 @@ private struct LiveActivityFrameThumbnail: View {
                 case .success(let image):
                     image
                         .resizable()
-                        .scaledToFill()
+                        .scaledToFit()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
                 case .failure:
                     placeholderView
                 case .empty:
@@ -247,6 +249,7 @@ private struct LiveActivityFrameThumbnail: View {
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     }
 
     private var frameNumberText: String? {
