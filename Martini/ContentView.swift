@@ -2466,6 +2466,7 @@ struct GridFrameCell: View {
                 primaryAsset: primaryAsset,
                 title: frame.caption,
                 showFrameTimeOverlay: showFrameTimeOverlay,
+                showCreativeTitleOverlay: showCreativeTitleOverlay,
                 showTextBlock: false,
                 cornerRadius: effectiveCornerRadius,
                 enablesFullScreen: false,
