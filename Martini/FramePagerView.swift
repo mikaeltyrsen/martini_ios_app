@@ -134,6 +134,34 @@ struct FramePagerView: View {
         return trimmed.isEmpty ? nil : trimmed
     }
 
+    @ViewBuilder
+    private func creativeTitleBadge(_ title: String) -> some View {
+        let creativeColor = selectedFrame?.creativeColor?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+        if !creativeColor.isEmpty {
+            creativeTitleCapsule(title, color: Color.martiniCreativeColor(from: creativeColor))
+        } else {
+            Text(title)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+        }
+    }
+
+    private func creativeTitleCapsule(_ title: String, color: Color) -> some View {
+        Text(title)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(.white)
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(
+                Capsule().fill(color)
+            )
+    }
+
     private func navigate(_ direction: FrameNavigationDirection) {
         guard let index = selectedIndex else { return }
         switch direction {
@@ -157,11 +185,7 @@ struct FramePagerView: View {
                 Text(frameTitle)
                     .font(.headline)
                 if let creativeTitle {
-                    Text(creativeTitle)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.75)
+                    creativeTitleBadge(creativeTitle)
                 }
             }
         }
