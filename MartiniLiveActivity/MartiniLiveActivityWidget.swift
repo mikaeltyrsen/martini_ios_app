@@ -74,32 +74,32 @@ private struct LiveActivityView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 6) {
-                Text(context.attributes.projectTitle)
-                    .font(.caption.weight(.semibold))
-                    .foregroundColor(.primary)
+            HStack() {
+                VStack(spacing: 6) {
+                    Image("MartiniLogo")
+                        .resizable()
+                        .renderingMode(.template)
+                        .scaledToFit()
+                        .frame(width: 70, height: 40)
+                        .foregroundStyle(.primary)
+                    
+                    Text(context.attributes.projectTitle)
+                        .font(.system(size: 20, weight: .semibold, design: .default))
+                        .foregroundColor(.primary)
+                }
                 
-                Spacer()
-                
-                Image("MartiniLogo")
-                    .resizable()
-                    .renderingMode(.template)
-                    .scaledToFit()
-                    .frame(width: 80, height: 40)
-                    .foregroundStyle(.primary)
-            }
-
-            HStack(spacing: 6) {
-                LiveActivityFrameLabel(
-                    label: "Current",
-                    frame: context.state.currentFrame,
-                    borderColor: .green
-                )
-                LiveActivityFrameLabel(
-                    label: "Next",
-                    frame: context.state.nextFrame,
-                    borderColor: .orange
-                )
+                HStack(spacing: 10) {
+                    LiveActivityFrameLabel(
+                        label: "Current",
+                        frame: context.state.currentFrame,
+                        borderColor: .green
+                    )
+                    LiveActivityFrameLabel(
+                        label: "Next",
+                        frame: context.state.nextFrame,
+                        borderColor: .orange
+                    )
+                }
             }
 
             LiveActivityProgressView(completed: context.state.completed, total: context.state.total)
@@ -116,12 +116,21 @@ private struct LiveActivityFrameLabel: View {
     let borderColor: Color
 
     var body: some View {
-        HStack(alignment: .center, spacing: 8) {
-            Text(label)
-                .font(.caption.weight(.semibold))
-                .foregroundColor(.secondary)
-                .frame(width: 54, alignment: .leading)
-
+        VStack(alignment: .center, spacing: 8) {
+            HStack(spacing: 4) {
+                Image(systemName: "video.fill")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(borderColor)
+                
+                Text(label)
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(borderColor)
+//                    .background(
+//                        Capsule()
+//                            .fill(borderColor)
+//                    )
+                Spacer()
+            }
             if let frame {
                 LiveActivityFrameThumbnail(frame: frame, borderColor: borderColor)
             } else {
@@ -137,8 +146,8 @@ private struct LiveActivityProgressView: View {
     let total: Int
 
     struct ThickProgressViewStyle: ProgressViewStyle {
-        var height: CGFloat = 8
-        var cornerRadius: CGFloat = 4
+        var height: CGFloat = 20
+        var cornerRadius: CGFloat = 100
         
         func makeBody(configuration: Configuration) -> some View {
             GeometryReader { geo in
@@ -158,17 +167,21 @@ private struct LiveActivityProgressView: View {
     var body: some View {
         let safeTotal = max(total, 1)
 
-        HStack(alignment: .center, spacing: 8) {
+        HStack(spacing: 8) {
+
             Text("\(completed)")
                 .font(.caption.weight(.semibold))
                 .foregroundColor(.secondary)
+                .frame(height: 20)
 
             ProgressView(value: Double(completed), total: Double(safeTotal))
-                .progressViewStyle(ThickProgressViewStyle(height: 10))
+                .progressViewStyle(ThickProgressViewStyle(height: 20))
+                .frame(height: 20)
 
             Text("\(total)")
                 .font(.caption.weight(.semibold))
                 .foregroundColor(.secondary)
+                .frame(height: 20)
         }
     }
 }
