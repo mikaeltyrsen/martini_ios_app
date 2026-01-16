@@ -110,6 +110,7 @@ struct FrameLayout: View {
     var showMetadataOverlay: Bool = false
     var metadataTapAction: (() -> Void)? = nil
     var showTextBlock: Bool = true
+    var showCreativeTitleOverlay: Bool = false
     var cornerRadius: CGFloat = 8
     var enablesFullScreen: Bool = true
     var doneCrossLineWidthOverride: Double? = nil
@@ -151,6 +152,11 @@ struct FrameLayout: View {
         }
 
         return nil
+    }
+
+    private var resolvedCreativeTitle: String? {
+        let trimmed = frame.creativeTitle?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? nil : trimmed
     }
 
     var body: some View {
@@ -199,6 +205,10 @@ struct FrameLayout: View {
 
             if showStatusBadge {
                 statusOverlay(for: frame.statusEnum)
+            }
+
+            if showCreativeTitleOverlay, let creativeTitle = resolvedCreativeTitle {
+                creativeTitleOverlay(creativeTitle)
             }
 
             if showFrameNumberOverlay {
@@ -335,6 +345,28 @@ struct FrameLayout: View {
                 }
         } else {
             animatedCard
+        }
+    }
+
+    private func creativeTitleOverlay(_ title: String) -> some View {
+        VStack {
+            HStack {
+                Spacer()
+                Text(title)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule().fill(Color.martiniCreativeColor(from: frame.creativeColor))
+                    )
+                    .shadow(color: Color.black.opacity(0.2), radius: 2, x: 0, y: 1)
+                Spacer()
+            }
+            .padding(.top, 8)
+            Spacer()
         }
     }
 
