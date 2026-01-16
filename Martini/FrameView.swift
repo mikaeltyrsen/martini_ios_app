@@ -560,8 +560,6 @@ struct FrameView: View {
             VStack(spacing: 4) {
                 Text(frameTitle)
                     .font(.headline)
-                Text("test")
-                    .font(.headline)
                 if let creativeTitleText {
                     creativeTitleCapsule(creativeTitleText)
                         .transition(.opacity.combined(with: .move(edge: .top)))
