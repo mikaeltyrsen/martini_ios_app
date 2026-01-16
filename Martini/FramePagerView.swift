@@ -116,6 +116,24 @@ struct FramePagerView: View {
         frames.firstIndex { $0.id == selection }
     }
 
+    private var selectedFrame: Frame? {
+        guard let index = selectedIndex else { return nil }
+        return frames[index]
+    }
+
+    private var frameTitle: String {
+        guard let frame = selectedFrame else { return "Frame" }
+        if frame.frameNumber > 0 {
+            return "Frame \(frame.frameNumber)"
+        }
+        return "Frame"
+    }
+
+    private var creativeTitle: String? {
+        let trimmed = selectedFrame?.creativeTitle?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
     private func navigate(_ direction: FrameNavigationDirection) {
         guard let index = selectedIndex else { return }
         switch direction {
@@ -134,6 +152,20 @@ struct FramePagerView: View {
 
     @ToolbarContentBuilder
     private var topToolbar: some ToolbarContent {
+        ToolbarItem(placement: .principal) {
+            VStack(spacing: 4) {
+                Text(frameTitle)
+                    .font(.headline)
+                if let creativeTitle {
+                    Text(creativeTitle)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                }
+            }
+        }
+
         if showsCloseButton {
             ToolbarItem(placement: .topBarLeading) {
                 Button {
