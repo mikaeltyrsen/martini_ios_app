@@ -2467,7 +2467,6 @@ struct GridFrameCell: View {
                 title: frame.caption,
                 showFrameTimeOverlay: showFrameTimeOverlay,
                 showTextBlock: false,
-                showCreativeTitleOverlay: showCreativeTitleOverlay,
                 cornerRadius: effectiveCornerRadius,
                 enablesFullScreen: false,
                 doneCrossLineWidthOverride: forceThinCrosses ? 1 : nil,
