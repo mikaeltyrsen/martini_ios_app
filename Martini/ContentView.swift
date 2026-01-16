@@ -2412,6 +2412,7 @@ struct CreativeGridSection: View {
                                     showFullDescription: showFullDescriptions,
                                     showTags: showTags,
                                     showFrameTimeOverlay: showFrameTimeOverlay,
+                                    showCreativeTitleOverlay: frameSortMode == .shoot,
                                     fontScale: fontScale,
                                     cornerRadius: cornerRadius,
                                     boardSizing: boardSizing,
@@ -2443,6 +2444,7 @@ struct GridFrameCell: View {
     var showFullDescription: Bool = false
     var showTags: Bool = false
     var showFrameTimeOverlay: Bool = true
+    var showCreativeTitleOverlay: Bool = false
     var fontScale: CGFloat
     var cornerRadius: CGFloat
     var boardSizing: BoardSizingConfiguration
@@ -2461,6 +2463,7 @@ struct GridFrameCell: View {
                 title: frame.caption,
                 showFrameTimeOverlay: showFrameTimeOverlay,
                 showTextBlock: false,
+                showCreativeTitleOverlay: showCreativeTitleOverlay,
                 cornerRadius: effectiveCornerRadius,
                 enablesFullScreen: false,
                 doneCrossLineWidthOverride: forceThinCrosses ? 1 : nil,

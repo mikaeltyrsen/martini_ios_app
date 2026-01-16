@@ -127,6 +127,11 @@ struct FrameView: View {
         return "Frame"
     }
 
+    private var creativeTitleText: String? {
+        let trimmed = frame.creativeTitle?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
     private var systemCameraBoardLabel: String {
         switch UIDevice.current.userInterfaceIdiom {
         case .pad:
@@ -552,9 +557,13 @@ struct FrameView: View {
     @ToolbarContentBuilder
     private var topToolbar: some ToolbarContent {
         ToolbarItem(placement: .principal) {
-            VStack(spacing: 2) {
+            VStack(spacing: 4) {
                 Text(frameTitle)
                     .font(.headline)
+                if let creativeTitleText {
+                    creativeTitleCapsule(creativeTitleText)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
                 if selectedStatus != .none {
                     Text(selectedStatus.displayName)
                         .font(.system(size: 11, weight: .semibold))
@@ -599,6 +608,19 @@ struct FrameView: View {
             .accessibilityLabel("Next frame")
             .disabled(!hasNextFrame)
         }
+    }
+
+    private func creativeTitleCapsule(_ title: String) -> some View {
+        Text(title)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(.white)
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(
+                Capsule().fill(Color.martiniCreativeColor(from: frame.creativeColor))
+            )
     }
 
     @ToolbarContentBuilder

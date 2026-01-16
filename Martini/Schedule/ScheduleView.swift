@@ -553,6 +553,7 @@ struct ScheduleView: View {
                             showStatusBadge: true,
                             showFrameTimeOverlay: false,
                             showTextBlock: false,
+                            showCreativeTitleOverlay: true,
                             enablesFullScreen: false,
                             usePinnedBoardMarkupFallback: true
                         )
