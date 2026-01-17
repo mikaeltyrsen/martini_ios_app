@@ -35,8 +35,16 @@ enum LiveActivityManager {
         let visibleFrames = sortedFrames.filter { !$0.isHidden }
         let statusCurrentFrame = sortedFrames.first { $0.statusEnum == .here && !$0.isHidden }
         let statusNextFrame = sortedFrames.first { $0.statusEnum == .next && !$0.isHidden }
-        let currentFrame = statusCurrentFrame ?? visibleFrames.first
-        let nextFrame = statusNextFrame ?? nextVisibleFrame(after: currentFrame, in: visibleFrames)
+        var currentFrame = statusCurrentFrame
+        var nextFrame = statusNextFrame
+
+        if currentFrame != nil && nextFrame == nil {
+            nextFrame = nextVisibleFrame(after: currentFrame, in: visibleFrames)
+        }
+
+        if currentFrame?.id == nextFrame?.id {
+            nextFrame = nil
+        }
 
         logDebugFrameSelection(
             totalFrames: frames.count,
