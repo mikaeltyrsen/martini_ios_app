@@ -73,10 +73,14 @@ enum LiveActivityManager {
 
         if let activity = Activity<MartiniLiveActivityAttributes>.activities.first {
             if activity.attributes.projectTitle == displayTitle {
+                logDebugActivityPush(action: "update", contentState: contentState)
                 await activity.update(using: contentState)
                 return
             }
 
+            if isDebugLoggingEnabled {
+                print("🧩 LiveActivity end: title mismatch existing=\(activity.attributes.projectTitle) new=\(displayTitle)")
+            }
             await activity.end(nil, dismissalPolicy: .immediate)
         }
 
@@ -84,6 +88,7 @@ enum LiveActivityManager {
 
         let attributes = MartiniLiveActivityAttributes(projectTitle: displayTitle)
         do {
+            logDebugActivityPush(action: "request", contentState: contentState)
             _ = try Activity.request(
                 attributes: attributes,
                 contentState: contentState,
@@ -211,6 +216,10 @@ enum LiveActivityManager {
         print("🧩 LiveActivity selection: total=\(totalFrames) visible=\(visibleFrames)")
         print("🧩 LiveActivity status current=\(statusCurrentFrame?.id ?? "nil") next=\(statusNextFrame?.id ?? "nil")")
         print("🧩 LiveActivity resolved current=\(currentFrame?.id ?? "nil") next=\(nextFrame?.id ?? "nil")")
+        logDebugFrameDetails(label: "statusCurrent", frame: statusCurrentFrame)
+        logDebugFrameDetails(label: "statusNext", frame: statusNextFrame)
+        logDebugFrameDetails(label: "current", frame: currentFrame)
+        logDebugFrameDetails(label: "next", frame: nextFrame)
     }
 
     private static func logDebugActivityState(
@@ -222,10 +231,69 @@ enum LiveActivityManager {
         let nextThumb = contentState.nextFrame?.thumbnailUrl ?? "nil"
         print("🧩 LiveActivity state: title=\(projectTitle) completed=\(contentState.completed) total=\(contentState.total)")
         print("🧩 LiveActivity thumbnails: current=\(currentThumb) next=\(nextThumb)")
+        print("🧩 LiveActivity currentFrame: \(activityFrameSummary(contentState.currentFrame))")
+        print("🧩 LiveActivity nextFrame: \(activityFrameSummary(contentState.nextFrame))")
     }
 
     private static func logDebugThumbnail(frame: Frame, source: String, url: String?) {
         guard isDebugLoggingEnabled else { return }
         print("🧩 LiveActivity thumbnail: frame=\(frame.id) source=\(source) url=\(url ?? "nil")")
+    }
+
+    private static func logDebugActivityPush(
+        action: String,
+        contentState: MartiniLiveActivityAttributes.ContentState
+    ) {
+        guard isDebugLoggingEnabled else { return }
+        print("🧩 LiveActivity push=\(action) current=\(activityFrameSummary(contentState.currentFrame)) next=\(activityFrameSummary(contentState.nextFrame))")
+    }
+
+    private static func logDebugFrameDetails(label: String, frame: Frame?) {
+        guard isDebugLoggingEnabled else { return }
+        guard let frame else {
+            print("🧩 LiveActivity \(label): nil")
+            return
+        }
+        print("🧩 LiveActivity \(label): id=\(frame.id) number=\(frame.frameNumber) status=\(frame.statusEnum.rawValue) hidden=\(frame.isHidden)")
+        print("🧩 LiveActivity \(label) assets: \(assetSummary(for: frame))")
+        let candidateSummary = imageCandidateSummary(for: frame)
+        print("🧩 LiveActivity \(label) images: \(candidateSummary)")
+    }
+
+    private static func activityFrameSummary(_ frame: MartiniLiveActivityFrame?) -> String {
+        guard let frame else { return "nil" }
+        let thumbnail = frame.thumbnailUrl ?? "nil"
+        return "id=\(frame.id) number=\(frame.number) title=\(frame.title) thumb=\(thumbnail)"
+    }
+
+    private static func assetSummary(for frame: Frame) -> String {
+        let assets = frame.availableAssets
+        guard !assets.isEmpty else { return "none" }
+        let limit = 3
+        let summaries = assets.prefix(limit).map { asset in
+            let url = asset.url?.absoluteString ?? "nil"
+            let thumb = asset.thumbnailURL?.absoluteString ?? "nil"
+            return "\(asset.kind.rawValue):url=\(url) thumb=\(thumb)"
+        }
+        let suffix = assets.count > limit ? " | +\(assets.count - limit) more" : ""
+        return summaries.joined(separator: " | ") + suffix
+    }
+
+    private static func imageCandidateSummary(for frame: Frame) -> String {
+        let candidates: [(String, String?)] = [
+            ("boardThumb", frame.boardThumb),
+            ("previewThumb", frame.previewThumb),
+            ("photoboardThumb", frame.photoboardThumb),
+            ("captureClipThumbnail", frame.captureClipThumbnail),
+            ("board", frame.board),
+            ("preview", frame.preview),
+            ("photoboard", frame.photoboard),
+            ("captureClip", frame.captureClip)
+        ]
+        let entries = candidates.compactMap { label, value -> String? in
+            guard let value, !value.isEmpty else { return nil }
+            return "\(label)=\(value)"
+        }
+        return entries.isEmpty ? "none" : entries.joined(separator: " | ")
     }
 }
