@@ -324,12 +324,23 @@ private struct LiveActivityFrameThumbnail: View {
         request.setValue("MartiniLiveActivity/1.0", forHTTPHeaderField: "User-Agent")
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
-            if let httpResponse = response as? HTTPURLResponse,
-               !(200...299).contains(httpResponse.statusCode) {
+            if let httpResponse = response as? HTTPURLResponse {
+                let contentType = httpResponse.value(forHTTPHeaderField: "Content-Type") ?? "unknown"
+                let contentLength = httpResponse.value(forHTTPHeaderField: "Content-Length") ?? "\(data.count)"
+                print("🧩 LiveActivity thumbnail response: status=\(httpResponse.statusCode) bytes=\(data.count) content-length=\(contentLength) content-type=\(contentType)")
+                if !(200...299).contains(httpResponse.statusCode) {
+                    return nil
+                }
+            } else {
+                print("🧩 LiveActivity thumbnail response: non-http-response bytes=\(data.count)")
+            }
+            if data.isEmpty {
+                print("🧩 LiveActivity thumbnail response: empty-body url=\(url.absoluteString)")
                 return nil
             }
             return UIImage(data: data)
         } catch {
+            print("🧩 LiveActivity thumbnail error: \(error.localizedDescription) url=\(url.absoluteString)")
             return nil
         }
     }
