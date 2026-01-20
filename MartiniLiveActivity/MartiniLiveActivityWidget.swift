@@ -6,6 +6,9 @@
 import ActivityKit
 import SwiftUI
 import WidgetKit
+#if canImport(UIKit)
+import UIKit
+#endif
 
 @available(iOS 16.1, *)
 struct MartiniLiveActivityWidget: Widget {
@@ -205,11 +208,15 @@ private struct LiveActivityFrameThumbnail: View {
 
     private let cornerRadius = 8.0
     private let borderWidth = 2.0
+    private let defaultAspectRatio: CGFloat = 16.0 / 9.0
+
+    @State private var displayImage: Image?
 
     var body: some View {
+        let thumbnailSize = fittedThumbnailSize
         ZStack(alignment: .topTrailing) {
             thumbnailView
-                .frame(maxWidth: maxWidth, maxHeight: maxHeight, alignment: .leading)
+                .frame(width: thumbnailSize.width, height: thumbnailSize.height, alignment: .leading)
                 .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
                 .overlay(
                     RoundedRectangle(cornerRadius: cornerRadius)
@@ -231,22 +238,17 @@ private struct LiveActivityFrameThumbnail: View {
 
     @ViewBuilder
     private var thumbnailView: some View {
-        if let url = thumbnailUrl {
-            AsyncImage(url: url) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                case .failure:
-                    placeholderView
-                case .empty:
-                    placeholderView
-                @unknown default:
-                    placeholderView
+        if let displayImage {
+            displayImage
+                .resizable()
+                .scaledToFill()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipped()
+        } else if thumbnailUrl != nil {
+            placeholderView
+                .task(id: taskIdentifier) {
+                    await loadImage()
                 }
-            }
         } else {
             placeholderView
         }
@@ -272,12 +274,182 @@ private struct LiveActivityFrameThumbnail: View {
         return URL(string: urlString)
     }
 
+    private var taskIdentifier: String {
+        let urlValue = frame?.thumbnailUrl ?? ""
+        return "\(urlValue)-\(frame?.crop ?? "")"
+    }
+
+    private var fittedThumbnailSize: CGSize {
+        let ratio = max(frameAspectRatio ?? defaultAspectRatio, 0.01)
+        let containerAspect = maxWidth / max(maxHeight, 1)
+        if containerAspect > ratio {
+            let height = maxHeight
+            return CGSize(width: height * ratio, height: height)
+        }
+        let width = maxWidth
+        return CGSize(width: width, height: width / ratio)
+    }
+
+    private var frameAspectRatio: CGFloat? {
+        parseAspectRatio(frame?.creativeAspectRatio)
+    }
+
+    private func loadImage() async {
+        guard let url = thumbnailUrl else {
+            await MainActor.run { displayImage = nil }
+            return
+        }
+        await MainActor.run { displayImage = nil }
+        guard let loadedImage = await loadUIImage(from: url) else {
+            await MainActor.run { displayImage = nil }
+            return
+        }
+
+        let croppedImage = cropImage(loadedImage, crop: frame?.crop) ?? loadedImage
+        await MainActor.run {
+            displayImage = Image(uiImage: croppedImage)
+        }
+    }
+
+    private func loadUIImage(from url: URL) async -> UIImage? {
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            return UIImage(data: data)
+        } catch {
+            return nil
+        }
+    }
+
+    private func cropImage(_ image: UIImage, crop: String?) -> UIImage? {
+        guard let cropRect = parseCrop(crop), let cgImage = image.cgImage else { return nil }
+        let imageWidth = CGFloat(cgImage.width)
+        let imageHeight = CGFloat(cgImage.height)
+        var rect = cropRect.rect(in: CGSize(width: imageWidth, height: imageHeight))
+        rect = rect.intersection(CGRect(x: 0, y: 0, width: imageWidth, height: imageHeight))
+        guard rect.width > 1, rect.height > 1 else { return nil }
+        guard let cropped = cgImage.cropping(to: rect.integral) else { return nil }
+        return UIImage(cgImage: cropped, scale: image.scale, orientation: image.imageOrientation)
+    }
+
+    private func parseCrop(_ value: String?) -> ReferenceImageCrop? {
+        guard let value, !value.isEmpty else { return nil }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        if let data = trimmed.data(using: .utf8),
+           let json = try? JSONSerialization.jsonObject(with: data) {
+            if let dict = json as? [String: Any] {
+                let x = number(from: dict["x"])
+                    ?? number(from: dict["left"])
+                    ?? number(from: dict["x1"])
+                let y = number(from: dict["y"])
+                    ?? number(from: dict["top"])
+                    ?? number(from: dict["y1"])
+                let right = number(from: dict["right"]) ?? number(from: dict["x2"])
+                let bottom = number(from: dict["bottom"]) ?? number(from: dict["y2"])
+                var width = number(from: dict["width"]) ?? number(from: dict["w"])
+                var height = number(from: dict["height"]) ?? number(from: dict["h"])
+                if width == nil, let right, let x {
+                    width = right - x
+                }
+                if height == nil, let bottom, let y {
+                    height = bottom - y
+                }
+                if let x, let y, let width, let height {
+                    return ReferenceImageCrop(x: x, y: y, width: width, height: height)
+                }
+            } else if let array = json as? [Any], array.count >= 4 {
+                let values = array.compactMap { number(from: $0) }
+                if values.count >= 4 {
+                    return ReferenceImageCrop(x: values[0], y: values[1], width: values[2], height: values[3])
+                }
+            }
+        }
+
+        let separators = CharacterSet(charactersIn: ",|:")
+        let parts = trimmed.components(separatedBy: separators).compactMap { Double($0.trimmingCharacters(in: .whitespacesAndNewlines)) }
+        if parts.count >= 4 {
+            return ReferenceImageCrop(x: parts[0], y: parts[1], width: parts[2], height: parts[3])
+        }
+
+        return nil
+    }
+
+    private func number(from value: Any?) -> CGFloat? {
+        switch value {
+        case let number as NSNumber:
+            return CGFloat(truncating: number)
+        case let string as String:
+            guard let value = Double(string.trimmingCharacters(in: .whitespacesAndNewlines)) else {
+                return nil
+            }
+            return CGFloat(value)
+        default:
+            return nil
+        }
+    }
+
+    private func parseAspectRatio(_ ratioString: String?) -> CGFloat? {
+        guard let ratioString else { return nil }
+        let trimmed = ratioString.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        if let ratio = Double(trimmed), ratio > 0 {
+            return CGFloat(ratio)
+        }
+
+        let separators = CharacterSet(charactersIn: "x:/")
+        let parts = trimmed.components(separatedBy: separators).compactMap { Double($0.trimmingCharacters(in: .whitespacesAndNewlines)) }
+        if parts.count >= 2, parts[0] > 0, parts[1] > 0 {
+            return CGFloat(parts[0] / parts[1])
+        }
+
+        return nil
+    }
+
     private var accessibilityLabel: String {
         guard let frame else { return "No frame" }
         if frame.number > 0 {
             return "Frame \(frame.number), \(frame.title)"
         }
         return frame.title
+    }
+}
+
+@available(iOS 16.1, *)
+private struct ReferenceImageCrop {
+    let x: CGFloat
+    let y: CGFloat
+    let width: CGFloat
+    let height: CGFloat
+
+    func rect(in size: CGSize) -> CGRect {
+        let imageWidth = max(size.width, 1)
+        let imageHeight = max(size.height, 1)
+
+        var cropX = x
+        var cropY = y
+        var cropWidth = width
+        var cropHeight = height
+
+        if cropWidth <= 1, cropHeight <= 1 {
+            cropX *= imageWidth
+            cropY *= imageHeight
+            cropWidth *= imageWidth
+            cropHeight *= imageHeight
+        } else if cropWidth <= 100, cropHeight <= 100 {
+            cropX = cropX / 100 * imageWidth
+            cropY = cropY / 100 * imageHeight
+            cropWidth = cropWidth / 100 * imageWidth
+            cropHeight = cropHeight / 100 * imageHeight
+        }
+
+        cropWidth = max(1, min(cropWidth, imageWidth))
+        cropHeight = max(1, min(cropHeight, imageHeight))
+        cropX = max(0, min(cropX, imageWidth - cropWidth))
+        cropY = max(0, min(cropY, imageHeight - cropHeight))
+
+        return CGRect(x: cropX, y: cropY, width: cropWidth, height: cropHeight)
     }
 }
 
@@ -390,13 +562,17 @@ private var previewContentState: MartiniLiveActivityAttributes.ContentState {
             id: "frame-12",
             title: "Storyboard",
             number: 12,
-            thumbnailUrl: nil
+            thumbnailUrl: nil,
+            creativeAspectRatio: "2.39",
+            crop: nil
         ),
         nextFrame: MartiniLiveActivityFrame(
             id: "frame-13",
             title: "Animatic",
             number: 13,
-            thumbnailUrl: nil
+            thumbnailUrl: nil,
+            creativeAspectRatio: "2.39",
+            crop: nil
         ),
         completed: 12,
         total: 48
