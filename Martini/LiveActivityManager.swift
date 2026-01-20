@@ -33,8 +33,8 @@ enum LiveActivityManager {
 
         let sortedFrames = frames.sorted(by: storyOrderSort)
         let visibleFrames = sortedFrames.filter { !$0.isHidden }
-        let statusCurrentFrame = sortedFrames.first { $0.statusEnum == .here && !$0.isHidden }
-        let statusNextFrame = sortedFrames.first { $0.statusEnum == .next && !$0.isHidden }
+        let statusCurrentFrame = sortedFrames.first { $0.statusEnum == .here }
+        let statusNextFrame = sortedFrames.first { $0.statusEnum == .next }
         var currentFrame = statusCurrentFrame
         var nextFrame = statusNextFrame
 
