@@ -257,6 +257,12 @@ struct MainView: View {
     @State private var projectFilesError: String?
     @State private var showingProjectFiles: Bool = false
     @State private var projectFilesSheetDetent: PresentationDetent = .medium
+    @State private var isShowingComments = false
+    @State private var isLoadingComments = false
+    @State private var comments: [Comment] = []
+    @State private var commentsError: String?
+    @State private var commentsFrame: Frame?
+    @State private var isCommentsVisible = false
 
     @AppStorage("showDescriptions") private var showDescriptions: Bool = UIControlConfig.showDescriptionsDefault
     @AppStorage("showFullDescriptions") private var showFullDescriptions: Bool = UIControlConfig.showFullDescriptionsDefault
@@ -289,6 +295,7 @@ struct MainView: View {
     @State private var gridUpdatingFrameIds: Set<String> = []
     @State private var isShowingFrameOrdering = false
     @State private var orderingFrames: [Frame] = []
+    @State private var scriptNavigationTarget: ScriptNavigationTarget?
 
     enum ViewMode {
         case list
@@ -303,6 +310,11 @@ struct MainView: View {
     enum ScheduleRoute: Hashable {
         case list(ProjectSchedule)
         case detail(ProjectSchedule, ProjectScheduleItem)
+    }
+
+    private struct ScriptNavigationTarget: Identifiable, Hashable {
+        let id = UUID()
+        let frameId: String?
     }
 
     private static let scheduleDateFormatter: DateFormatter = {
@@ -398,10 +410,6 @@ struct MainView: View {
 
     private var activeScheduleTitle: String {
         activeSchedule?.name ?? "Schedule"
-    }
-
-    private var shouldShowProjectFilesButton: Bool {
-        authService.projectId != nil
     }
 
     private var projectDisplayTitle: String {
@@ -655,6 +663,9 @@ struct MainView: View {
                     }
                 }
             }
+            .navigationDestination(item: $scriptNavigationTarget) { target in
+                ScriptView(targetDialogId: nil, targetFrameId: target.frameId)
+            }
     }
 
     private var mainContentWithNavigation: some View {
@@ -753,6 +764,20 @@ struct MainView: View {
                 )
                 .presentationDetents([.medium, .large], selection: $projectFilesSheetDetent)
                 .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $isShowingComments) {
+                if let frame = commentsFrame {
+                    NavigationStack {
+                        CommentsView(
+                            frameNumber: frame.frameNumber,
+                            comments: comments,
+                            isLoading: isLoadingComments,
+                            errorMessage: commentsError,
+                            isVisible: $isCommentsVisible,
+                            onReload: { await loadComments(for: frame, force: true) }
+                        )
+                    }
+                }
             }
             .onChange(of: showingProjectFiles) { isShowing in
                 if isShowing {
@@ -971,9 +996,6 @@ struct MainView: View {
             if shouldShowScheduleButton {
                 scheduleButton
             }
-            if shouldShowProjectFilesButton {
-                projectFilesButton
-            }
         }
 
         ToolbarItem(placement: .navigationBarLeading) {
@@ -982,16 +1004,39 @@ struct MainView: View {
 
         ToolbarItemGroup(placement: .bottomBar) {
 
-            Button(action: {
-                withAnimation(.easeInOut(duration: 0.12)) {
-                    viewMode = (viewMode == .grid) ? .list : .grid
+            Menu {
+                Button {
+                    toggleViewMode()
+                } label: {
+                    Label(viewMode == .grid ? "Close Overview" : "Open Overview", systemImage: viewMode == .grid ? "square.grid.4x3.fill" : "eye")
                 }
-            }) {
-                Label(viewMode == .grid ? "Close Overview" : "Open Overview", systemImage: viewMode == .grid ? "square.grid.4x3.fill" : "eye")
+
+                Divider()
+
+                Button {
+                    showingProjectFiles = true
+                } label: {
+                    Label("Files", systemImage: "folder")
+                }
+
+                Button {
+                    openComments()
+                } label: {
+                    Label("Comments", systemImage: "text.bubble")
+                }
+                .disabled(contextMenuFrame == nil)
+
+                Button {
+                    isShowingSettings = true
+                } label: {
+                    Label("Settings", systemImage: "switch.2")
+                }
+            } label: {
+                Label("More", systemImage: "ellipsis.circle")
                     .labelStyle(.titleAndIcon)
                     .font(.system(size: 17, weight: .semibold))
             }
-            .accessibilityLabel(viewMode == .grid ? "Close Overview" : "Open Overview")
+            .accessibilityLabel("More options")
 
             Spacer()
 
@@ -1005,11 +1050,12 @@ struct MainView: View {
             Spacer()
 
             Button {
-                isShowingSettings = true
+                openScriptView()
             } label: {
-                Label("Settings", systemImage: "switch.2")
+                Image(systemName: "list.bullet")
+                    .imageScale(.large)
             }
-            .accessibilityLabel("Open Settings")
+            .accessibilityLabel("Open Script")
         }
     }
 
@@ -1019,6 +1065,24 @@ struct MainView: View {
         Task {
             await loadSchedule(schedule)
         }
+    }
+
+    private func toggleViewMode() {
+        withAnimation(.easeInOut(duration: 0.12)) {
+            viewMode = (viewMode == .grid) ? .list : .grid
+        }
+    }
+
+    private func openComments() {
+        guard let frame = contextMenuFrame else { return }
+        commentsFrame = frame
+        comments = []
+        commentsError = nil
+        isShowingComments = true
+    }
+
+    private func openScriptView() {
+        scriptNavigationTarget = ScriptNavigationTarget(frameId: scriptTargetFrameId)
     }
 
     private func openProjectFilePreview(_ clip: Clip) {
@@ -1322,6 +1386,28 @@ struct MainView: View {
         }
     }
 
+    @MainActor
+    private func loadComments(for frame: Frame, force: Bool) async {
+        if isLoadingComments { return }
+        if !force && !comments.isEmpty { return }
+
+        isLoadingComments = true
+        defer { isLoadingComments = false }
+
+        do {
+            let response = try await authService.fetchComments(
+                creativeId: frame.creativeId,
+                frameId: frame.id
+            )
+            guard commentsFrame?.id == frame.id else { return }
+            comments = response.comments
+            commentsError = nil
+        } catch {
+            guard commentsFrame?.id == frame.id else { return }
+            commentsError = error.localizedDescription
+        }
+    }
+
     private func resetProjectFiles() {
         projectFiles = []
         projectFilesError = nil
@@ -1572,6 +1658,30 @@ struct MainView: View {
         isScrolledToTop ? projectDisplayTitle : currentCreativeTitle
     }
 
+    private var contextMenuFrame: Frame? {
+        if let selectedFrame {
+            return selectedFrame
+        }
+        if let hereFrame {
+            return hereFrame
+        }
+        if let currentCreativeId,
+           let creative = creativesToDisplay.first(where: { $0.id == currentCreativeId }),
+           let frame = frames(for: creative).first {
+            return frame
+        }
+        return displayedFramesInCurrentMode.first
+    }
+
+    private var scriptTargetFrameId: String? {
+        if let currentCreativeId,
+           let creative = creativesToDisplay.first(where: { $0.id == currentCreativeId }),
+           let frame = frames(for: creative).first {
+            return frame.id
+        }
+        return contextMenuFrame?.id
+    }
+
     private var shouldShowScheduleButton: Bool {
         guard authService.isScheduleActive else { return false }
         guard let entries = activeSchedule?.schedules else { return false }
@@ -1589,16 +1699,6 @@ struct MainView: View {
             }
         }
         .accessibilityLabel("Open Schedule")
-    }
-
-    private var projectFilesButton: some View {
-        Button {
-            showingProjectFiles = true
-        } label: {
-            Image(systemName: "folder")
-                .imageScale(.large)
-        }
-        .accessibilityLabel("Open Project Files")
     }
 
     @ViewBuilder
