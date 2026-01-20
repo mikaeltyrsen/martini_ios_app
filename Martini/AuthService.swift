@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import UIKit
 
 struct FrameUpdateEvent: Equatable {
     let frameId: String
@@ -85,6 +86,24 @@ protocol ConnectionMonitoring: AnyObject {
     var isOffline: Bool { get }
 }
 
+private struct PushRegistrationResponse: Decodable {
+    let success: Bool?
+    let pushDeviceId: String?
+    let deviceId: String?
+    let deviceToken: String?
+    let platform: String?
+    let error: String?
+
+    enum CodingKeys: String, CodingKey {
+        case success
+        case pushDeviceId = "push_device_id"
+        case deviceId = "device_id"
+        case deviceToken = "device_token"
+        case platform
+        case error
+    }
+}
+
 @MainActor
 class AuthService: ObservableObject {
     @Published var isAuthenticated: Bool = false
@@ -127,6 +146,7 @@ class AuthService: ObservableObject {
     private let savedProjectsKey = "martini_saved_projects"
     private let cachedCreativesKeyPrefix = "martini_cached_creatives_"
     private let cachedFramesKeyPrefix = "martini_cached_frames_"
+    private let deviceIdKey = "martini_device_id"
     private let baseScriptsURL = "https://dev.staging.trymartini.com/scripts/"
     private let scheduleCache = ScheduleCache.shared
     private var creativesFetchTask: Task<Void, Error>?
@@ -141,6 +161,7 @@ class AuthService: ObservableObject {
 
     private enum APIEndpoint: String {
         case authLive = "auth/live.php"
+        case pushRegister = "push/register.php"
         case project = "projects/get_project.php"
         case creatives = "creatives/get_creatives.php"
         case frames = "frames/get.php"
@@ -160,6 +181,81 @@ class AuthService: ObservableObject {
             throw AuthError.invalidURL
         }
         return url
+    }
+
+    private func resolveDeviceId() -> String {
+        if let identifier = UIDevice.current.identifierForVendor?.uuidString {
+            return identifier
+        }
+
+        if let storedId = UserDefaults.standard.string(forKey: deviceIdKey) {
+            return storedId
+        }
+
+        let newId = UUID().uuidString
+        UserDefaults.standard.set(newId, forKey: deviceIdKey)
+        return newId
+    }
+
+    private func registerPushDevice(deviceId: String, deviceToken: String?, platform: String) async -> String? {
+        let url: URL
+        do {
+            url = try url(for: .pushRegister)
+        } catch {
+            print("❌ Failed to build push registration URL: \(error.localizedDescription)")
+            return nil
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body: [String: String] = [
+            "deviceId": deviceId,
+            "deviceToken": deviceToken ?? "",
+            "platform": platform
+        ]
+
+        do {
+            request.httpBody = try JSONEncoder().encode(body)
+        } catch {
+            print("❌ Failed to encode push registration body: \(error.localizedDescription)")
+            return nil
+        }
+
+        let data: Data
+        let response: URLResponse
+
+        do {
+            (data, response) = try await performRequest(request)
+        } catch {
+            print("❌ Push registration failed: \(error.localizedDescription)")
+            return nil
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            print("❌ Push registration returned invalid response.")
+            return nil
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            print("❌ Push registration failed with status: \(httpResponse.statusCode)")
+            return nil
+        }
+
+        guard let registration = try? JSONDecoder().decode(PushRegistrationResponse.self, from: data) else {
+            print("❌ Unable to decode push registration response.")
+            return nil
+        }
+
+        guard registration.success == true else {
+            if let errorMessage = registration.error {
+                print("❌ Push registration failed: \(errorMessage)")
+            }
+            return nil
+        }
+
+        return registration.pushDeviceId
     }
 
     func currentBearerToken() -> String? {
@@ -419,6 +515,14 @@ class AuthService: ObservableObject {
             print("🔍 No access code provided")
             throw AuthError.missingAccessCode
         }
+
+        let deviceId = resolveDeviceId()
+        let deviceToken = UserDefaults.standard.string(forKey: PushNotificationManager.deviceTokenStorageKey)
+        let pushDeviceId = await registerPushDevice(
+            deviceId: deviceId,
+            deviceToken: deviceToken,
+            platform: "ios"
+        )
         
         // Send authentication request to PHP endpoint
         let url = try url(for: .authLive)
@@ -427,10 +531,13 @@ class AuthService: ObservableObject {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        let body: [String: String] = [
+        var body: [String: String] = [
             "projectId": projectId,
             "accessCode": accessCode
         ]
+        if let pushDeviceId {
+            body["pushDeviceId"] = pushDeviceId
+        }
         request.httpBody = try JSONEncoder().encode(body)
         
         // DEBUG: Store request info
