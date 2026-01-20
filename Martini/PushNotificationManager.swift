@@ -16,11 +16,11 @@ extension Notification.Name {
 
 final class PushNotificationManager: NSObject, ObservableObject {
     static let shared = PushNotificationManager()
+    static let deviceTokenStorageKey = "martini_apns_device_token"
 
     @Published private(set) var authorizationStatus: UNAuthorizationStatus = .notDetermined
     @Published private(set) var deviceToken: String?
 
-    private let deviceTokenKey = "martini_apns_device_token"
     private let notificationCenter = UNUserNotificationCenter.current()
 
     func configure() {
@@ -42,7 +42,7 @@ final class PushNotificationManager: NSObject, ObservableObject {
             }
         }
 
-        if let cachedToken = UserDefaults.standard.string(forKey: deviceTokenKey) {
+        if let cachedToken = UserDefaults.standard.string(forKey: Self.deviceTokenStorageKey) {
             deviceToken = cachedToken
         }
     }
@@ -71,7 +71,7 @@ final class PushNotificationManager: NSObject, ObservableObject {
 
     func updateDeviceToken(_ tokenData: Data) {
         let token = tokenData.map { String(format: "%02.2hhx", $0) }.joined()
-        UserDefaults.standard.set(token, forKey: deviceTokenKey)
+        UserDefaults.standard.set(token, forKey: Self.deviceTokenStorageKey)
         DispatchQueue.main.async { [weak self] in
             self?.deviceToken = token
         }
