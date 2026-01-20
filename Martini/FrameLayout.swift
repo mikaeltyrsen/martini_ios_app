@@ -547,11 +547,12 @@ struct FrameLayout: View {
     }
 
     private var frameNumberLabel: String? {
-        frame.frameNumber > 0 ? "Frame #\(frame.frameNumber)" : nil
+        guard let displayOrder = frame.displayOrder else { return nil }
+        return "Frame #\(displayOrder)"
     }
 
     private var frameNumberText: String {
-        frame.frameNumber > 0 ? "\(frame.frameNumber)" : "--"
+        frame.displayOrder ?? "--"
     }
 
     private var frameStartTimeText: String? { frame.formattedStartTime }

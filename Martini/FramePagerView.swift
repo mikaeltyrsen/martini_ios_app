@@ -123,10 +123,7 @@ struct FramePagerView: View {
 
     private var frameTitle: String {
         guard let frame = selectedFrame else { return "Frame" }
-        if frame.frameNumber > 0 {
-            return "Frame \(frame.frameNumber)"
-        }
-        return "Frame"
+        return frame.displayOrderTitle
     }
 
     private var creativeTitle: String? {

@@ -1079,6 +1079,54 @@ struct FrameBoard: Codable, Identifiable, Hashable {
 
 // MARK: - Frame Model
 
+struct FrameOrderKey: Comparable {
+    let number: Int
+    let suffix: String
+    let raw: String
+
+    static func from(_ value: String?) -> FrameOrderKey {
+        let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !trimmed.isEmpty else {
+            return FrameOrderKey(number: Int.max, suffix: "", raw: "")
+        }
+
+        var digits = ""
+        var suffix = ""
+        var isParsingNumber = true
+        for char in trimmed {
+            if isParsingNumber, char.isNumber {
+                digits.append(char)
+            } else {
+                isParsingNumber = false
+                suffix.append(char)
+            }
+        }
+
+        let normalizedSuffix = suffix.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        guard !digits.isEmpty, let number = Int(digits) else {
+            return FrameOrderKey(number: Int.max, suffix: normalizedSuffix, raw: trimmed.uppercased())
+        }
+
+        return FrameOrderKey(number: number, suffix: normalizedSuffix, raw: trimmed.uppercased())
+    }
+
+    static func < (lhs: FrameOrderKey, rhs: FrameOrderKey) -> Bool {
+        if lhs.number != rhs.number {
+            return lhs.number < rhs.number
+        }
+
+        if lhs.suffix.isEmpty != rhs.suffix.isEmpty {
+            return lhs.suffix.isEmpty
+        }
+
+        if lhs.suffix != rhs.suffix {
+            return lhs.suffix.localizedStandardCompare(rhs.suffix) == .orderedAscending
+        }
+
+        return lhs.raw.localizedStandardCompare(rhs.raw) == .orderedAscending
+    }
+}
+
 struct Frame: Codable, Identifiable {
     let id: String
     let creativeId: String
@@ -1334,6 +1382,18 @@ struct Frame: Codable, Identifiable {
             return value
         }
         return 0
+    }
+
+    var displayOrder: String? {
+        let order = frameOrder?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !order.isEmpty { return order }
+        let shootOrder = frameShootOrder?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return shootOrder.isEmpty ? nil : shootOrder
+    }
+
+    var displayOrderTitle: String {
+        guard let displayOrder else { return "Frame" }
+        return "Frame \(displayOrder)"
     }
 
     var statusEnum: FrameStatus {

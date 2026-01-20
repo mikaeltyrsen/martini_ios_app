@@ -769,7 +769,7 @@ struct MainView: View {
                 if let frame = commentsFrame {
                     NavigationStack {
                         CommentsView(
-                            frameNumber: frame.frameNumber,
+                            frameTitle: frame.displayOrderTitle,
                             comments: comments,
                             isLoading: isLoadingComments,
                             errorMessage: commentsError,
@@ -1448,8 +1448,7 @@ struct MainView: View {
         if let caption = frame.caption, !caption.isEmpty {
             return caption
         }
-        let number = frame.frameNumber
-        return number > 0 ? "Frame \(number)" : "Frame"
+        return frame.displayOrderTitle
     }
     
     private var showCreativeHeaders: Bool { frameSortMode == .story }
@@ -1882,22 +1881,17 @@ struct MainView: View {
 }
 
 private extension MainView {
-    func sortingTuple(for frame: Frame, mode: FrameSortMode) -> (Int, Int) {
-        let storyOrder = intValue(from: frame.frameOrder)
-        let shootOrder = intValue(from: frame.frameShootOrder)
+    func sortingTuple(for frame: Frame, mode: FrameSortMode) -> (FrameOrderKey, FrameOrderKey) {
+        let storyOrder = FrameOrderKey.from(frame.frameOrder)
+        let shootOrder = FrameOrderKey.from(frame.frameShootOrder)
 
         switch mode {
         case .story:
-            return (storyOrder ?? Int.max, shootOrder ?? Int.max)
+            return (storyOrder, shootOrder)
         case .shoot:
             // Frames without a shoot order are sent to the end
-            return (shootOrder ?? Int.max, storyOrder ?? Int.max)
+            return (shootOrder, storyOrder)
         }
-    }
-
-    func intValue(from value: String?) -> Int? {
-        guard let value, let intValue = Int(value) else { return nil }
-        return intValue
     }
 
     var hereFrame: Frame? {
