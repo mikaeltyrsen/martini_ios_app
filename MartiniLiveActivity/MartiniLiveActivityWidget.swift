@@ -212,8 +212,6 @@ private struct LiveActivityFrameThumbnail: View {
 
     @State private var displayImage: Image?
 
-    private static let hardcodedThumbnailUrl = URL(string: "https://martini.sfo3.cdn.digitaloceanspaces.com/frames/019b330d-7a70-7176-a548-b122a0555d06/019ba2d4-08b6-747f-833d-815f0831463c_thumb.jpg")
-
     private static let imageSession: URLSession = {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.requestCachePolicy = .returnCacheDataElseLoad
@@ -249,7 +247,13 @@ private struct LiveActivityFrameThumbnail: View {
 
     @ViewBuilder
     private var thumbnailView: some View {
-        if let displayImage {
+        if let localImage {
+            localImage
+                .resizable()
+                .scaledToFill()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipped()
+        } else if let displayImage {
             displayImage
                 .resizable()
                 .scaledToFill()
@@ -281,9 +285,6 @@ private struct LiveActivityFrameThumbnail: View {
     }
 
     private var thumbnailUrl: URL? {
-        if let hardcoded = Self.hardcodedThumbnailUrl {
-            return hardcoded
-        }
         guard let urlString = frame?.thumbnailUrl else { return nil }
         if let url = URL(string: urlString) {
             return url
@@ -292,6 +293,24 @@ private struct LiveActivityFrameThumbnail: View {
             return URL(string: encoded)
         }
         return nil
+    }
+
+    private var localThumbnailURL: URL? {
+        guard let filename = frame?.localThumbnailFilename else { return nil }
+        guard let containerURL = FileManager.default.containerURL(
+            forSecurityApplicationGroupIdentifier: MartiniLiveActivityShared.appGroupIdentifier
+        ) else {
+            return nil
+        }
+        return containerURL
+            .appendingPathComponent(MartiniLiveActivityShared.thumbnailDirectoryName, isDirectory: true)
+            .appendingPathComponent(filename)
+    }
+
+    private var localImage: Image? {
+        guard let localThumbnailURL else { return nil }
+        guard let image = UIImage(contentsOfFile: localThumbnailURL.path) else { return nil }
+        return Image(uiImage: image)
     }
 
     private var taskIdentifier: String {
@@ -315,6 +334,10 @@ private struct LiveActivityFrameThumbnail: View {
     }
 
     private func loadImage() async {
+        if localImage != nil {
+            await MainActor.run { displayImage = nil }
+            return
+        }
         guard let url = thumbnailUrl else {
             await MainActor.run { displayImage = nil }
             return
@@ -604,6 +627,7 @@ private var previewContentState: MartiniLiveActivityAttributes.ContentState {
             title: "Storyboard",
             number: 12,
             thumbnailUrl: nil,
+            localThumbnailFilename: nil,
             creativeAspectRatio: "2.39",
             crop: nil
         ),
@@ -612,6 +636,7 @@ private var previewContentState: MartiniLiveActivityAttributes.ContentState {
             title: "Animatic",
             number: 13,
             thumbnailUrl: nil,
+            localThumbnailFilename: nil,
             creativeAspectRatio: "2.39",
             crop: nil
         ),

@@ -3,6 +3,7 @@
 //  Martini
 //
 
+import CryptoKit
 import Foundation
 
 #if canImport(ActivityKit)
@@ -63,9 +64,23 @@ enum LiveActivityManager {
         let displayTitle = (resolvedTitle?.isEmpty == false) ? resolvedTitle! : "Martini"
 
         let progress = progressCounts(for: frames)
+        let currentActivityFrame: MartiniLiveActivityFrame?
+        if let currentFrame {
+            currentActivityFrame = await activityFrame(from: currentFrame)
+        } else {
+            currentActivityFrame = nil
+        }
+
+        let nextActivityFrame: MartiniLiveActivityFrame?
+        if let nextFrame {
+            nextActivityFrame = await activityFrame(from: nextFrame)
+        } else {
+            nextActivityFrame = nil
+        }
+
         let contentState = MartiniLiveActivityAttributes.ContentState(
-            currentFrame: currentFrame.map(activityFrame(from:)),
-            nextFrame: nextFrame.map(activityFrame(from:)),
+            currentFrame: currentActivityFrame,
+            nextFrame: nextActivityFrame,
             completed: progress.completed,
             total: progress.total
         )
@@ -133,7 +148,8 @@ enum LiveActivityManager {
         }
     }
 
-    private static func activityFrame(from frame: Frame) -> MartiniLiveActivityFrame {
+    @available(iOS 16.1, *)
+    private static func activityFrame(from frame: Frame) async -> MartiniLiveActivityFrame {
         let displayTitle: String
         if let caption = frame.caption, !caption.isEmpty {
             displayTitle = caption
@@ -146,15 +162,69 @@ enum LiveActivityManager {
         }
 
         let thumbnailSelection = frameThumbnailSelection(for: frame)
+        let cachedThumbnailFilename = await cacheThumbnailIfNeeded(from: thumbnailSelection.url)
 
         return MartiniLiveActivityFrame(
             id: frame.id,
             title: displayTitle,
             number: frame.frameNumber,
             thumbnailUrl: thumbnailSelection.url,
+            localThumbnailFilename: cachedThumbnailFilename,
             creativeAspectRatio: frame.creativeAspectRatio,
             crop: thumbnailSelection.crop
         )
+    }
+
+    @available(iOS 16.1, *)
+    private static func cacheThumbnailIfNeeded(from urlString: String?) async -> String? {
+        guard let urlString, let url = URL(string: urlString) else { return nil }
+        guard let cacheDirectory = thumbnailCacheDirectory() else { return nil }
+
+        let filename = cacheFilename(for: url)
+        let destinationURL = cacheDirectory.appendingPathComponent(filename)
+
+        if FileManager.default.fileExists(atPath: destinationURL.path) {
+            return filename
+        }
+
+        do {
+            let (data, response) = try await URLSession.shared.data(from: url)
+            if let httpResponse = response as? HTTPURLResponse,
+               !(200...299).contains(httpResponse.statusCode) {
+                return nil
+            }
+            guard !data.isEmpty else { return nil }
+            try data.write(to: destinationURL, options: .atomic)
+            return filename
+        } catch {
+            return nil
+        }
+    }
+
+    @available(iOS 16.1, *)
+    private static func thumbnailCacheDirectory() -> URL? {
+        guard let container = FileManager.default.containerURL(
+            forSecurityApplicationGroupIdentifier: MartiniLiveActivityShared.appGroupIdentifier
+        ) else {
+            return nil
+        }
+        let directory = container.appendingPathComponent(
+            MartiniLiveActivityShared.thumbnailDirectoryName,
+            isDirectory: true
+        )
+        if !FileManager.default.fileExists(atPath: directory.path) {
+            try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        }
+        return directory
+    }
+
+    @available(iOS 16.1, *)
+    private static func cacheFilename(for url: URL) -> String {
+        let hashed = SHA256.hash(data: Data(url.absoluteString.utf8))
+            .compactMap { String(format: "%02x", $0) }
+            .joined()
+        let pathExtension = url.pathExtension.isEmpty ? "jpg" : url.pathExtension
+        return "\(hashed).\(pathExtension)"
     }
 
     private static func storyOrderSort(_ lhs: Frame, _ rhs: Frame) -> Bool {
@@ -326,7 +396,8 @@ enum LiveActivityManager {
     private static func activityFrameSummary(_ frame: MartiniLiveActivityFrame?) -> String {
         guard let frame else { return "nil" }
         let thumbnail = frame.thumbnailUrl ?? "nil"
-        return "id=\(frame.id) number=\(frame.number) title=\(frame.title) thumb=\(thumbnail)"
+        let localThumbnail = frame.localThumbnailFilename ?? "nil"
+        return "id=\(frame.id) number=\(frame.number) title=\(frame.title) thumb=\(thumbnail) local=\(localThumbnail)"
     }
 
     private static func assetSummary(for frame: Frame) -> String {
