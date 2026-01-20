@@ -287,6 +287,8 @@ struct MainView: View {
     @State private var gridMagnification: CGFloat = 1.0
     @State private var isGridPinching: Bool = false
     @State private var gridUpdatingFrameIds: Set<String> = []
+    @State private var isShowingFrameOrdering = false
+    @State private var orderingFrames: [Frame] = []
 
     enum ViewMode {
         case list
@@ -1324,6 +1326,44 @@ struct MainView: View {
         projectFiles = []
         projectFilesError = nil
     }
+
+    private var frameOrderingSheet: some View {
+        NavigationStack {
+            List {
+                ForEach(orderingFrames) { frame in
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(frameOrderingTitle(for: frame))
+                            .font(.body)
+                        if let creativeTitle = frame.creativeTitle, !creativeTitle.isEmpty {
+                            Text(creativeTitle)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+                .onMove(perform: moveOrderedFrames)
+            }
+            .listStyle(.plain)
+            .environment(\.editMode, .constant(.active))
+            .navigationTitle("Sort Frames")
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        isShowingFrameOrdering = false
+                    }
+                }
+            }
+        }
+    }
+
+    private func frameOrderingTitle(for frame: Frame) -> String {
+        if let caption = frame.caption, !caption.isEmpty {
+            return caption
+        }
+        let number = frame.frameNumber
+        return number > 0 ? "Frame \(number)" : "Frame"
+    }
     
     private var showCreativeHeaders: Bool { frameSortMode == .story }
 
@@ -1380,6 +1420,9 @@ struct MainView: View {
                                         primaryAsset: { primaryAsset(for: $0) },
                                         onStatusSelected: { frame, status in
                                             updateFrameStatus(frame, to: status)
+                                        },
+                                        onSortFrames: {
+                                            beginFrameOrdering()
                                         },
                                         showSkeleton: shouldShowFrameSkeleton && section.frames.isEmpty,
                                         isPinching: isGridPinching,
@@ -1451,6 +1494,9 @@ struct MainView: View {
                 }
             }
         }
+        .sheet(isPresented: $isShowingFrameOrdering) {
+            frameOrderingSheet
+        }
     }
 
     private var currentCreativeTitle: String {
@@ -1481,6 +1527,15 @@ struct MainView: View {
     private func adjustGridSize(increase: Bool) {
         let newValue = gridSizeStep + (increase ? 1 : -1)
         gridSizeStep = min(max(newValue, 1), 4)
+    }
+
+    private func beginFrameOrdering() {
+        orderingFrames = displayedFramesInCurrentMode
+        isShowingFrameOrdering = true
+    }
+
+    private func moveOrderedFrames(from source: IndexSet, to destination: Int) {
+        orderingFrames.move(fromOffsets: source, toOffset: destination)
     }
 
     private func synchronizeCreativeSelection() {
@@ -2307,6 +2362,7 @@ struct CreativeGridSection: View {
     let viewportHeight: CGFloat
     let primaryAsset: (Frame) -> FrameAssetItem?
     let onStatusSelected: (Frame, FrameStatus) -> Void
+    let onSortFrames: () -> Void
     let showSkeleton: Bool
     let isPinching: Bool
     let updatingFrameIds: Set<String>
@@ -2328,6 +2384,7 @@ struct CreativeGridSection: View {
         viewportHeight: CGFloat,
         primaryAsset: @escaping (Frame) -> FrameAssetItem?,
         onStatusSelected: @escaping (Frame, FrameStatus) -> Void,
+        onSortFrames: @escaping () -> Void,
         showSkeleton: Bool,
         isPinching: Bool,
         updatingFrameIds: Set<String>
@@ -2348,6 +2405,7 @@ struct CreativeGridSection: View {
         self.viewportHeight = viewportHeight
         self.primaryAsset = primaryAsset
         self.onStatusSelected = onStatusSelected
+        self.onSortFrames = onSortFrames
         self.showSkeleton = showSkeleton
         self.isPinching = isPinching
         self.updatingFrameIds = updatingFrameIds
@@ -2425,7 +2483,8 @@ struct CreativeGridSection: View {
                                     isUpdating: updatingFrameIds.contains(frame.id),
                                     onStatusSelected: { status in
                                         onStatusSelected(frame, status)
-                                    }
+                                    },
+                                    onSortFrames: onSortFrames
                             )
                         }
                         .id(frame.id)
@@ -2456,6 +2515,7 @@ struct GridFrameCell: View {
     let viewportHeight: CGFloat
     var isUpdating: Bool = false
     var onStatusSelected: (FrameStatus) -> Void
+    var onSortFrames: () -> Void
     @EnvironmentObject private var authService: AuthService
     @State private var resolvedCornerRadius: CGFloat = 0
 
@@ -2499,7 +2559,16 @@ struct GridFrameCell: View {
                 }
             }
             .contextMenu {
-                statusMenu
+                Section {
+                    statusMenu
+                }
+                Section("Edit") {
+                    Button {
+                        onSortFrames()
+                    } label: {
+                        Label("Sort frames", systemImage: "arrow.up.arrow.down")
+                    }
+                }
             }
             if showDescription, let desc = frame.description, !desc.isEmpty {
                 let baseFontSize = 12 * fontScale
