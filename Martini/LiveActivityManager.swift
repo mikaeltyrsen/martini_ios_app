@@ -139,8 +139,8 @@ enum LiveActivityManager {
             displayTitle = caption
         } else if let description = frame.description, !description.isEmpty {
             displayTitle = description
-        } else if frame.frameNumber > 0 {
-            displayTitle = "Frame \(frame.frameNumber)"
+        } else if let displayOrder = frame.displayOrder, !displayOrder.isEmpty {
+            displayTitle = "Frame \(displayOrder)"
         } else {
             displayTitle = "Frame"
         }
@@ -158,19 +158,12 @@ enum LiveActivityManager {
     }
 
     private static func storyOrderSort(_ lhs: Frame, _ rhs: Frame) -> Bool {
-        let leftOrder = storyOrderValue(for: lhs)
-        let rightOrder = storyOrderValue(for: rhs)
+        let leftOrder = FrameOrderKey.from(lhs.frameOrder)
+        let rightOrder = FrameOrderKey.from(rhs.frameOrder)
         if leftOrder != rightOrder {
             return leftOrder < rightOrder
         }
-        return lhs.frameNumber < rhs.frameNumber
-    }
-
-    private static func storyOrderValue(for frame: Frame) -> Int {
-        if let order = frame.frameOrder, let value = Int(order) {
-            return value
-        }
-        return Int.max
+        return FrameOrderKey.from(lhs.frameShootOrder) < FrameOrderKey.from(rhs.frameShootOrder)
     }
 
     private struct ThumbnailSelection {

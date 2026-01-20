@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct CommentsView: View {
-    let frameNumber: Int
+    let frameTitle: String
     let comments: [Comment]
     let isLoading: Bool
     let errorMessage: String?
@@ -43,7 +43,7 @@ struct CommentsView: View {
                 }
             }
         }
-        .navigationTitle("Comments for Frame \(frameNumber)")
+        .navigationTitle("Comments for \(frameTitle)")
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await onReload()
@@ -104,7 +104,7 @@ struct CommentsView: View {
 }
 
 private struct CommentsSheet: View {
-    let frameNumber: Int
+    let frameTitle: String
 
     @State private var newCommentText: String = ""
     @FocusState private var composeFieldFocused: Bool
@@ -122,7 +122,7 @@ private struct CommentsSheet: View {
                                 Spacer()
                                 Text("2h ago").font(.caption).foregroundStyle(.secondary)
                             }
-                            Text("This is a placeholder comment for frame \(frameNumber). It can wrap across multiple lines to demonstrate scrolling.")
+                            Text("This is a placeholder comment for \(frameTitle). It can wrap across multiple lines to demonstrate scrolling.")
                                 .font(.body)
                             Divider()
                         }

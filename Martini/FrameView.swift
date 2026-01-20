@@ -121,10 +121,7 @@ struct FrameView: View {
     }
 
     private var frameTitle: String {
-        if frame.frameNumber > 0 {
-            return "Frame \(frame.frameNumber)"
-        }
-        return "Frame"
+        frame.displayOrderTitle
     }
 
     private var creativeTitleText: String? {
@@ -357,7 +354,7 @@ struct FrameView: View {
         boardActionContent
             .sheet(isPresented: $showingFiles) {
                 FilesSheet(
-                    title: "Files for Frame \(frame.frameNumber)",
+                    title: "Files for \(frame.displayOrderTitle)",
                     clips: $clips,
                     isLoading: $isLoadingClips,
                     errorMessage: $clipsError,
@@ -656,7 +653,7 @@ struct FrameView: View {
 
             NavigationLink {
                 CommentsView(
-                    frameNumber: frame.frameNumber,
+                    frameTitle: frame.displayOrderTitle,
                     comments: comments,
                     isLoading: isLoadingComments,
                     errorMessage: commentsError,

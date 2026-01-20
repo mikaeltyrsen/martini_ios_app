@@ -185,13 +185,13 @@ struct ScriptView: View {
 
     private var scriptFrames: [ScriptFrameEntry] {
         let sortedFrames = authService.frames.sorted { lhs, rhs in
-            let lhsOrder = Int(lhs.frameOrder ?? "") ?? Int.max
-            let rhsOrder = Int(rhs.frameOrder ?? "") ?? Int.max
+            let lhsOrder = FrameOrderKey.from(lhs.frameOrder)
+            let rhsOrder = FrameOrderKey.from(rhs.frameOrder)
             if lhsOrder != rhsOrder {
                 return lhsOrder < rhsOrder
             }
-            let lhsShoot = Int(lhs.frameShootOrder ?? "") ?? Int.max
-            let rhsShoot = Int(rhs.frameShootOrder ?? "") ?? Int.max
+            let lhsShoot = FrameOrderKey.from(lhs.frameShootOrder)
+            let rhsShoot = FrameOrderKey.from(rhs.frameShootOrder)
             return lhsShoot < rhsShoot
         }
 
@@ -225,7 +225,7 @@ struct ScriptView: View {
     @ViewBuilder
     private func frameDivider(for frame: Frame) -> some View {
         HStack(spacing: 12) {
-            Text(frame.frameNumber > 0 ? "Frame \(frame.frameNumber)" : "Frame")
+            Text(frame.displayOrderTitle)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
 
