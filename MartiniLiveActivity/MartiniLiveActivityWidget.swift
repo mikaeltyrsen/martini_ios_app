@@ -212,6 +212,8 @@ private struct LiveActivityFrameThumbnail: View {
 
     @State private var displayImage: Image?
 
+    private static let hardcodedThumbnailUrl = URL(string: "https://martini.sfo3.cdn.digitaloceanspaces.com/frames/019b330d-7a70-7176-a548-b122a0555d06/019ba2d4-08b6-747f-833d-815f0831463c_thumb.jpg")
+
     private static let imageSession: URLSession = {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.requestCachePolicy = .returnCacheDataElseLoad
@@ -279,6 +281,9 @@ private struct LiveActivityFrameThumbnail: View {
     }
 
     private var thumbnailUrl: URL? {
+        if let hardcoded = Self.hardcodedThumbnailUrl {
+            return hardcoded
+        }
         guard let urlString = frame?.thumbnailUrl else { return nil }
         if let url = URL(string: urlString) {
             return url
