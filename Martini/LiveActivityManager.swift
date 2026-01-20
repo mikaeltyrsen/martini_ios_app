@@ -42,6 +42,10 @@ enum LiveActivityManager {
             nextFrame = nextVisibleFrame(after: currentFrame, in: visibleFrames)
         }
 
+        if currentFrame == nil && nextFrame == nil {
+            nextFrame = nextVisibleFrame(after: nil, in: visibleFrames)
+        }
+
         if currentFrame?.id == nextFrame?.id {
             nextFrame = nil
         }
@@ -101,10 +105,10 @@ enum LiveActivityManager {
 
     private static func nextVisibleFrame(after currentFrame: Frame?, in frames: [Frame]) -> Frame? {
         guard let currentFrame else {
-            return frames.count > 1 ? frames[1] : frames.first
+            return frames.first
         }
         guard let currentIndex = frames.firstIndex(where: { $0.id == currentFrame.id }) else {
-            return frames.count > 1 ? frames[1] : frames.first
+            return frames.first
         }
         let nextIndex = frames.index(after: currentIndex)
         guard nextIndex < frames.endIndex else { return nil }
