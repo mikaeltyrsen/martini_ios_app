@@ -212,6 +212,15 @@ private struct LiveActivityFrameThumbnail: View {
 
     @State private var displayImage: Image?
 
+    private static let imageSession: URLSession = {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.requestCachePolicy = .returnCacheDataElseLoad
+        configuration.waitsForConnectivity = true
+        configuration.allowsConstrainedNetworkAccess = true
+        configuration.allowsExpensiveNetworkAccess = true
+        return URLSession(configuration: configuration)
+    }()
+
     var body: some View {
         let thumbnailSize = fittedThumbnailSize
         ZStack(alignment: .topTrailing) {
@@ -320,10 +329,12 @@ private struct LiveActivityFrameThumbnail: View {
     private func loadUIImage(from url: URL) async -> UIImage? {
         var request = URLRequest(url: url)
         request.cachePolicy = .returnCacheDataElseLoad
+        request.allowsConstrainedNetworkAccess = true
+        request.allowsExpensiveNetworkAccess = true
         request.setValue("image/*", forHTTPHeaderField: "Accept")
         request.setValue("MartiniLiveActivity/1.0", forHTTPHeaderField: "User-Agent")
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await Self.imageSession.data(for: request)
             if let httpResponse = response as? HTTPURLResponse {
                 let contentType = httpResponse.value(forHTTPHeaderField: "Content-Type") ?? "unknown"
                 let contentLength = httpResponse.value(forHTTPHeaderField: "Content-Length") ?? "\(data.count)"
