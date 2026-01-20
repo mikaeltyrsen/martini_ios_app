@@ -842,6 +842,10 @@ struct MainView: View {
             //.navigationTitle(displayedNavigationTitle)
             .toolbar { toolbarContent }
             .navigationBarTitleDisplayMode(.inline)
+            .overlay(alignment: .leading) {
+                filterSidebar
+                    .zIndex(1)
+            }
     }
 
     private var dataErrorIsPresented: Binding<Bool> {
@@ -954,9 +958,6 @@ struct MainView: View {
     private var contentStack: some View {
         ZStack(alignment: .bottom) {
             gridView
-                .overlay(alignment: .leading) {
-                    filterSidebar
-                }
 
             if isHereShortcutVisible {
                 Button(action: scrollToHereFrame) {
