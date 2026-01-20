@@ -134,6 +134,7 @@
 		07A6A6852EC9A272002C8EB9 /* MartiniApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MartiniApp.swift; sourceTree = "<group>"; };
 		07A6A6872EC9A272002C8EB9 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		07ACD0013127F1D000000001 /* Martini.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Martini.entitlements; sourceTree = "<group>"; };
+		91B5D191ED814B42B2A549C2 /* MartiniLiveActivity.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MartiniLiveActivity.entitlements; sourceTree = "<group>"; };
 		07C904AE2EDA7A48004EDBFA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		07C904AF2EDA8665004EDBFA /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		07C904B12EDB92D8004EDBFA /* playground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = playground.swift; sourceTree = "<group>"; };
@@ -348,6 +349,7 @@
 				81EDC5D2FABA5EED51C87010 /* MartiniLiveActivityBundle.swift */,
 				19F1DEF3A6FA25EADC0FCA2A /* MartiniLiveActivityWidget.swift */,
 				F2CD91F637EC3098B3B6F535 /* MartiniLiveActivityModels.swift */,
+				91B5D191ED814B42B2A549C2 /* MartiniLiveActivity.entitlements */,
 				7401EDD1914E9B8D3128B7B3 /* Info.plist */,
 			);
 			path = MartiniLiveActivity;
@@ -746,6 +748,7 @@
 		6B3D70FC65DFDB1B19E927F4 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = MartiniLiveActivity/MartiniLiveActivity.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 93K8M9XF5X;
@@ -767,6 +770,7 @@
 		88502B3C4E158E4FD0B071C2 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = MartiniLiveActivity/MartiniLiveActivity.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 93K8M9XF5X;
