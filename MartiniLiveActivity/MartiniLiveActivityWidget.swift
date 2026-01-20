@@ -271,7 +271,13 @@ private struct LiveActivityFrameThumbnail: View {
 
     private var thumbnailUrl: URL? {
         guard let urlString = frame?.thumbnailUrl else { return nil }
-        return URL(string: urlString)
+        if let url = URL(string: urlString) {
+            return url
+        }
+        if let encoded = urlString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
+            return URL(string: encoded)
+        }
+        return nil
     }
 
     private var taskIdentifier: String {
@@ -312,8 +318,16 @@ private struct LiveActivityFrameThumbnail: View {
     }
 
     private func loadUIImage(from url: URL) async -> UIImage? {
+        var request = URLRequest(url: url)
+        request.cachePolicy = .returnCacheDataElseLoad
+        request.setValue("image/*", forHTTPHeaderField: "Accept")
+        request.setValue("MartiniLiveActivity/1.0", forHTTPHeaderField: "User-Agent")
         do {
-            let (data, _) = try await URLSession.shared.data(from: url)
+            let (data, response) = try await URLSession.shared.data(for: request)
+            if let httpResponse = response as? HTTPURLResponse,
+               !(200...299).contains(httpResponse.statusCode) {
+                return nil
+            }
             return UIImage(data: data)
         } catch {
             return nil
