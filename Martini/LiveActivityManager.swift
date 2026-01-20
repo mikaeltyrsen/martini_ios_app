@@ -145,11 +145,15 @@ enum LiveActivityManager {
             displayTitle = "Frame"
         }
 
+        let thumbnailSelection = frameThumbnailSelection(for: frame)
+
         return MartiniLiveActivityFrame(
             id: frame.id,
             title: displayTitle,
             number: frame.frameNumber,
-            thumbnailUrl: frameThumbnailUrl(for: frame)
+            thumbnailUrl: thumbnailSelection.url,
+            creativeAspectRatio: frame.creativeAspectRatio,
+            crop: thumbnailSelection.crop
         )
     }
 
@@ -169,25 +173,47 @@ enum LiveActivityManager {
         return Int.max
     }
 
-    private static func frameThumbnailUrl(for frame: Frame) -> String? {
+    private struct ThumbnailSelection {
+        let url: String?
+        let crop: String?
+        let source: String
+    }
+
+    private static func frameThumbnailSelection(for frame: Frame) -> ThumbnailSelection {
         let boardAsset = frame.availableAssets.first { $0.kind == .board }
         if let thumbnailUrl = boardAsset?.thumbnailURL?.absoluteString {
             logDebugThumbnail(frame: frame, source: "boardAsset.thumbnailURL", url: thumbnailUrl)
-            return thumbnailUrl
+            return ThumbnailSelection(
+                url: thumbnailUrl,
+                crop: cropValue(for: boardAsset, in: frame),
+                source: "boardAsset.thumbnailURL"
+            )
         }
         if let url = boardAsset?.url?.absoluteString {
             logDebugThumbnail(frame: frame, source: "boardAsset.url", url: url)
-            return url
+            return ThumbnailSelection(
+                url: url,
+                crop: cropValue(for: boardAsset, in: frame),
+                source: "boardAsset.url"
+            )
         }
 
         let fallbackAsset = frame.availableAssets.first
         if let thumbnailUrl = fallbackAsset?.thumbnailURL?.absoluteString {
             logDebugThumbnail(frame: frame, source: "fallbackAsset.thumbnailURL", url: thumbnailUrl)
-            return thumbnailUrl
+            return ThumbnailSelection(
+                url: thumbnailUrl,
+                crop: cropValue(for: fallbackAsset, in: frame),
+                source: "fallbackAsset.thumbnailURL"
+            )
         }
         if let url = fallbackAsset?.url?.absoluteString {
             logDebugThumbnail(frame: frame, source: "fallbackAsset.url", url: url)
-            return url
+            return ThumbnailSelection(
+                url: url,
+                crop: cropValue(for: fallbackAsset, in: frame),
+                source: "fallbackAsset.url"
+            )
         }
 
         let fallbackUrl = frame.boardThumb
@@ -201,11 +227,51 @@ enum LiveActivityManager {
 
         if let fallbackUrl {
             logDebugThumbnail(frame: frame, source: "frame.fallback", url: fallbackUrl)
-        } else {
-            logDebugThumbnail(frame: frame, source: "frame.fallback", url: nil)
+            return ThumbnailSelection(
+                url: fallbackUrl,
+                crop: frameFallbackCrop(for: frame),
+                source: "frame.fallback"
+            )
         }
+        logDebugThumbnail(frame: frame, source: "frame.fallback", url: nil)
 
-        return fallbackUrl
+        return ThumbnailSelection(url: nil, crop: nil, source: "frame.fallback")
+    }
+
+    private static func cropValue(for asset: FrameAssetItem?, in frame: Frame) -> String? {
+        guard let asset else { return nil }
+        switch asset.id {
+        case "photoboard":
+            return frame.photoboardCrop ?? frame.crop
+        case "preview":
+            return frame.previewCrop ?? frame.crop
+        case "captureClip":
+            return frame.captureClipCrop ?? frame.crop
+        case "board-main":
+            return frame.crop
+        default:
+            if asset.kind == .board {
+                let boardCrop = frame.boards?.first(where: { $0.id == asset.id })?.fileCrop
+                return boardCrop ?? frame.crop
+            }
+        }
+        return frame.crop
+    }
+
+    private static func frameFallbackCrop(for frame: Frame) -> String? {
+        if frame.boardThumb != nil || frame.board != nil {
+            return frame.crop
+        }
+        if frame.previewThumb != nil || frame.preview != nil {
+            return frame.previewCrop ?? frame.crop
+        }
+        if frame.photoboardThumb != nil || frame.photoboard != nil {
+            return frame.photoboardCrop ?? frame.crop
+        }
+        if frame.captureClipThumbnail != nil || frame.captureClip != nil {
+            return frame.captureClipCrop ?? frame.crop
+        }
+        return frame.crop
     }
 
     private static func logDebugFrameSelection(

@@ -14,6 +14,8 @@ struct MartiniLiveActivityFrame: Codable, Hashable {
     let title: String
     let number: Int
     let thumbnailUrl: String?
+    let creativeAspectRatio: String?
+    let crop: String?
 }
 
 #if canImport(ActivityKit)
