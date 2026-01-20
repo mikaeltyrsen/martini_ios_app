@@ -315,9 +315,6 @@ private struct LiveActivityFrameProgressBadge: View {
     }
 
     private var progressLabel: String {
-        if completed > 0 {
-            return String(completed)
-        }
         guard let frame, frame.number > 0 else { return "-" }
         return String(frame.number)
     }
