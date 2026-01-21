@@ -135,6 +135,8 @@ final class WebsocketCalls {
                 notifyFrameUpdate(id: frameId, eventName: name)
             }
             return
+        default:
+            break
         }
 
         try? await authService.fetchFrames()
