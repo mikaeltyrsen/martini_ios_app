@@ -11,11 +11,20 @@ import UIKit
 struct FrameUpdateEvent: Equatable {
     let frameId: String
     let context: FrameUpdateContext
+    let commentId: String?
+    let commentStatus: Int?
 
     private let identifier = UUID()
 
     static func == (lhs: FrameUpdateEvent, rhs: FrameUpdateEvent) -> Bool {
         lhs.identifier == rhs.identifier
+    }
+
+    init(frameId: String, context: FrameUpdateContext, commentId: String? = nil, commentStatus: Int? = nil) {
+        self.frameId = frameId
+        self.context = context
+        self.commentId = commentId
+        self.commentStatus = commentStatus
     }
 }
 
@@ -172,6 +181,7 @@ class AuthService: ObservableObject {
         case schedule = "schedules/fetch.php"
         case clips = "clips/fetch.php"
         case comments = "comments/get_comments.php"
+        case updateCommentStatus = "comments/update_status.php"
 
         var path: String { rawValue }
     }
@@ -1028,6 +1038,49 @@ class AuthService: ObservableObject {
         return commentsResponse
     }
 
+    func updateCommentStatus(commentId: String, status: Int) async throws {
+        let body: [String: Any] = [
+            "commentId": commentId,
+            "status": status
+        ]
+
+        var request = try authorizedRequest(for: .updateCommentStatus, body: body)
+
+        let requestJSON = String(data: request.httpBody ?? Data(), encoding: .utf8) ?? "Unable to encode"
+        print("📤 Updating comment status...")
+        print("🔗 URL: \(request.url?.absoluteString ?? "unknown")")
+        print("📝 Request body: \(requestJSON)")
+
+        let (data, response) = try await performRequest(request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw AuthError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let errorBody = String(data: data, encoding: .utf8) ?? "No response body"
+            print("❌ Failed to update comment status - Status: \(httpResponse.statusCode)")
+            print("📝 Response: \(errorBody)")
+            if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
+                logout()
+                throw AuthError.unauthorized
+            }
+            throw AuthError.requestFailed(statusCode: httpResponse.statusCode)
+        }
+
+        let responseJSON = String(data: data, encoding: .utf8) ?? "Unable to decode"
+        print("📥 Comment status response received (\(httpResponse.statusCode)):")
+        print(responseJSON)
+
+        let decoder = JSONDecoder()
+        let statusResponse = try decoder.decode(CommentStatusUpdateResponse.self, from: data)
+
+        guard statusResponse.success else {
+            print("❌ Comment status response failed: \(statusResponse.error ?? "Unknown error")")
+            throw AuthError.authenticationFailedWithMessage(statusResponse.error ?? "Failed to update comment status")
+        }
+    }
+
     func fetchProjectDetails() async throws {
         guard let projectId = projectId else {
             throw AuthError.noAuth
@@ -1105,8 +1158,13 @@ class AuthService: ObservableObject {
         }
     }
 
-    func publishFrameUpdate(frameId: String, context: FrameUpdateContext) {
-        frameUpdateEvent = FrameUpdateEvent(frameId: frameId, context: context)
+    func publishFrameUpdate(frameId: String, context: FrameUpdateContext, commentId: String? = nil, commentStatus: Int? = nil) {
+        frameUpdateEvent = FrameUpdateEvent(
+            frameId: frameId,
+            context: context,
+            commentId: commentId,
+            commentStatus: commentStatus
+        )
     }
 
     func publishScheduleUpdate(eventName: String) {

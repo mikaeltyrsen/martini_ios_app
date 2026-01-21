@@ -7,6 +7,8 @@ final class WebsocketCalls {
 
     private let frameEvents: Set<String> = [
         "comment-added",
+        "comment-deleted",
+        "comment-status-updated",
         "frame-status-updated",
         "frame-order-updated",
         "frame-image-updated",
@@ -117,8 +119,22 @@ final class WebsocketCalls {
             notifyFrameUpdate(id: frameId, eventName: name)
             return
 
-        default:
-            break
+        case "comment-deleted":
+            notifyFrameUpdate(id: frameId, eventName: name)
+            return
+
+        case "comment-status-updated":
+            if let update = CommentStatusUpdate.parse(dataString: dataString) {
+                notifyFrameUpdate(
+                    id: update.resolvedFrameId ?? frameId,
+                    eventName: name,
+                    commentId: update.resolvedCommentId,
+                    commentStatus: update.status
+                )
+            } else {
+                notifyFrameUpdate(id: frameId, eventName: name)
+            }
+            return
         }
 
         try? await authService.fetchFrames()
@@ -198,9 +214,14 @@ final class WebsocketCalls {
         notifyFrameUpdate(id: frameId, eventName: "frame-board-metadata-updated")
     }
 
-    private func notifyFrameUpdate(id: String?, eventName: String) {
+    private func notifyFrameUpdate(id: String?, eventName: String, commentId: String? = nil, commentStatus: Int? = nil) {
         guard let id else { return }
-        authService.publishFrameUpdate(frameId: id, context: .websocket(event: eventName))
+        authService.publishFrameUpdate(
+            frameId: id,
+            context: .websocket(event: eventName),
+            commentId: commentId,
+            commentStatus: commentStatus
+        )
     }
 
     private func frameIdentifier(from dataString: String) -> String? {
@@ -324,6 +345,24 @@ private struct FrameIdentifierPayload: Decodable {
 
     var resolvedId: String? {
         id ?? frameId ?? frameID ?? frame_id
+    }
+}
+
+private struct CommentStatusUpdate: Decodable {
+    let frameId: String?
+    let frameID: String?
+    let frame_id: String?
+    let commentId: String?
+    let commentID: String?
+    let comment_id: String?
+    @SafeOptionalInt var status: Int?
+
+    var resolvedFrameId: String? { frameId ?? frameID ?? frame_id }
+    var resolvedCommentId: String? { commentId ?? commentID ?? comment_id }
+
+    static func parse(dataString: String) -> CommentStatusUpdate? {
+        guard let data = dataString.data(using: .utf8) else { return nil }
+        return try? JSONDecoder().decode(CommentStatusUpdate.self, from: data)
     }
 }
 

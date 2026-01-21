@@ -2001,6 +2001,57 @@ struct CommentsResponse: Codable {
     }
 }
 
+struct CommentStatusUpdateResponse: Codable {
+    @SafeBool var success: Bool
+    let error: String?
+
+    enum CodingKeys: String, CodingKey {
+        case success
+        case error
+    }
+}
+
+extension Comment {
+    var statusValue: Int? {
+        guard let status, let value = Int(status) else { return nil }
+        return value
+    }
+
+    func updatingStatus(_ status: Int?) -> Comment {
+        Comment(
+            id: id,
+            userId: userId,
+            guestName: guestName,
+            comment: comment,
+            marker: marker,
+            status: status.map(String.init),
+            frameId: frameId,
+            frameOrder: frameOrder,
+            lastUpdated: lastUpdated,
+            name: name,
+            replies: replies,
+            frameThumb: frameThumb
+        )
+    }
+
+    func updatingReplies(_ replies: [Comment]) -> Comment {
+        Comment(
+            id: id,
+            userId: userId,
+            guestName: guestName,
+            comment: comment,
+            marker: marker,
+            status: status,
+            frameId: frameId,
+            frameOrder: frameOrder,
+            lastUpdated: lastUpdated,
+            name: name,
+            replies: replies,
+            frameThumb: frameThumb
+        )
+    }
+}
+
 // MARK: - Frame Assets
 
 enum FrameAssetKind: String, CaseIterable, Hashable {

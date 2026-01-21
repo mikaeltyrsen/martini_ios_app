@@ -3,6 +3,7 @@ import SwiftUI
 struct CommentLayout: View {
     let comment: Comment
     let isReply: Bool
+    let onToggleStatus: (Comment) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -18,6 +19,22 @@ struct CommentLayout: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+
+                Spacer()
+
+                Button {
+                    onToggleStatus(comment)
+                } label: {
+                    ZStack {
+                        Circle()
+                            .fill(statusColor)
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(statusIconColor)
+                    }
+                }
+                .frame(width: isReply ? 22 : 26, height: isReply ? 22 : 26)
+                .buttonStyle(.plain)
             }
 
             if let body = comment.comment, !body.isEmpty {
@@ -35,14 +52,26 @@ struct CommentLayout: View {
     private var displayName: String {
         comment.name ?? comment.guestName ?? "Unknown"
     }
+
+    private var isStatusComplete: Bool {
+        (comment.statusValue ?? 0) == 1
+    }
+
+    private var statusColor: Color {
+        isStatusComplete ? .martiniDefaultColor : Color.secondary.opacity(0.25)
+    }
+
+    private var statusIconColor: Color {
+        isStatusComplete ? .white : .secondary
+    }
 }
 
 #if DEBUG
 struct CommentLayout_Previews: PreviewProvider {
     static var previews: some View {
         VStack(spacing: 16) {
-            CommentLayout(comment: sampleComment, isReply: false)
-            CommentLayout(comment: sampleReply, isReply: true)
+            CommentLayout(comment: sampleComment, isReply: false, onToggleStatus: { _ in })
+            CommentLayout(comment: sampleReply, isReply: true, onToggleStatus: { _ in })
         }
         .padding()
         .previewLayout(.sizeThatFits)

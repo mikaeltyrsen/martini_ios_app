@@ -721,6 +721,9 @@ struct MainView: View {
             .onChange(of: authService.frameUpdateEvent) { event in
                 guard let event else { return }
                 handleFrameUpdateEvent(event)
+                Task {
+                    await handleCommentUpdateEvent(event)
+                }
             }
             .onChange(of: authService.frames.map(\.id)) { _ in
                 pruneFilterSelectionsIfNeeded()
@@ -770,7 +773,7 @@ struct MainView: View {
                     NavigationStack {
                         CommentsView(
                             frameTitle: frame.displayOrderTitle,
-                            comments: comments,
+                            comments: $comments,
                             isLoading: isLoadingComments,
                             errorMessage: commentsError,
                             isVisible: $isCommentsVisible,
@@ -1950,6 +1953,49 @@ private extension MainView {
     private func handleFrameUpdateEvent(_ event: FrameUpdateEvent) {
         guard shouldScrollToHereFrame(for: event) else { return }
         scrollFrameIntoGridIfAvailable(frameId: event.frameId)
+    }
+
+    @MainActor
+    private func handleCommentUpdateEvent(_ event: FrameUpdateEvent) async {
+        guard case .websocket(let eventName) = event.context else { return }
+        guard isCommentsVisible, let frame = commentsFrame, frame.id == event.frameId else { return }
+
+        switch eventName {
+        case "comment-added", "comment-deleted":
+            await loadComments(for: frame, force: true)
+        case "comment-status-updated":
+            guard let commentId = event.commentId else {
+                await loadComments(for: frame, force: true)
+                return
+            }
+            if let status = event.commentStatus {
+                updateCommentStatus(commentId: commentId, status: status)
+            } else {
+                await loadComments(for: frame, force: true)
+            }
+        default:
+            break
+        }
+    }
+
+    @MainActor
+    private func updateCommentStatus(commentId: String, status: Int) {
+        comments = updatedComments(comments, commentId: commentId, status: status)
+    }
+
+    private func updatedComments(_ comments: [Comment], commentId: String, status: Int) -> [Comment] {
+        comments.map { comment in
+            if comment.id == commentId {
+                return comment.updatingStatus(status)
+            }
+
+            let updatedReplies = updatedComments(comment.replies, commentId: commentId, status: status)
+            if updatedReplies != comment.replies {
+                return comment.updatingReplies(updatedReplies)
+            }
+
+            return comment
+        }
     }
 
     private func shouldScrollToHereFrame(for event: FrameUpdateEvent) -> Bool {
