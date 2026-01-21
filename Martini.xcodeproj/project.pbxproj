@@ -25,6 +25,7 @@
 		0730F41C2F0CE88E000B598F /* CreativeAspectRatioConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F41B2F0CE88E000B598F /* CreativeAspectRatioConfig.swift */; };
 		0733190F2F17ED1800D6FE10 /* UIControlConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0733190E2F17ED1800D6FE10 /* UIControlConfig.swift */; };
 		073319122F19611700D6FE10 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 075456072EC9AA2100C45739 /* Assets.xcassets */; };
+		0746C3DF2F2056C500898C7A /* PushNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0746C3DE2F2056C500898C7A /* PushNotificationManager.swift */; };
 		075456022EC9A6E200C45739 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075455FE2EC9A6E100C45739 /* AuthService.swift */; };
 		075456032EC9A6E200C45739 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075455FF2EC9A6E100C45739 /* LoginView.swift */; };
 		075456042EC9A6E200C45739 /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075456002EC9A6E100C45739 /* QRScannerView.swift */; };
@@ -126,6 +127,7 @@
 		0730F4102F0C6F7D000B598F /* CachedVideoPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedVideoPlayerView.swift; sourceTree = "<group>"; };
 		0730F41B2F0CE88E000B598F /* CreativeAspectRatioConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreativeAspectRatioConfig.swift; sourceTree = "<group>"; };
 		0733190E2F17ED1800D6FE10 /* UIControlConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIControlConfig.swift; sourceTree = "<group>"; };
+		0746C3DE2F2056C500898C7A /* PushNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PushNotificationManager.swift; sourceTree = "<group>"; };
 		075455FE2EC9A6E100C45739 /* AuthService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		075455FF2EC9A6E100C45739 /* LoginView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		075456002EC9A6E100C45739 /* QRScannerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
@@ -134,7 +136,6 @@
 		07A6A6852EC9A272002C8EB9 /* MartiniApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MartiniApp.swift; sourceTree = "<group>"; };
 		07A6A6872EC9A272002C8EB9 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		07ACD0013127F1D000000001 /* Martini.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Martini.entitlements; sourceTree = "<group>"; };
-		91B5D191ED814B42B2A549C2 /* MartiniLiveActivity.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MartiniLiveActivity.entitlements; sourceTree = "<group>"; };
 		07C904AE2EDA7A48004EDBFA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		07C904AF2EDA8665004EDBFA /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		07C904B12EDB92D8004EDBFA /* playground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = playground.swift; sourceTree = "<group>"; };
@@ -181,6 +182,7 @@
 		7ABA9E17746C42B581652DB2 /* ScoutCamera/FOV/IPhoneCameraModelResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/FOV/IPhoneCameraModelResolver.swift; sourceTree = "<group>"; };
 		81EDC5D2FABA5EED51C87010 /* MartiniLiveActivityBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MartiniLiveActivityBundle.swift; sourceTree = "<group>"; };
 		83E0E90984D6471FA90532C0 /* ProjectKit/ProjectKitSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectKit/ProjectKitSettingsView.swift; sourceTree = "<group>"; };
+		91B5D191ED814B42B2A549C2 /* MartiniLiveActivity.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MartiniLiveActivity.entitlements; sourceTree = "<group>"; };
 		988E7BC68EFE4E89B6ADC548 /* ProjectKit/ProjectKitStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectKit/ProjectKitStore.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5D /* ScoutCamera/Calibration/FOVCalibrationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/Calibration/FOVCalibrationStore.swift; sourceTree = "<group>"; };
 		A20AFBDAA8904AB283618CF2 /* ScoutCamera/CameraKit/CameraDeviceSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/CameraKit/CameraDeviceSelector.swift; sourceTree = "<group>"; };
@@ -254,6 +256,7 @@
 		07A6A6842EC9A272002C8EB9 /* Martini */ = {
 			isa = PBXGroup;
 			children = (
+				0746C3DE2F2056C500898C7A /* PushNotificationManager.swift */,
 				0733190E2F17ED1800D6FE10 /* UIControlConfig.swift */,
 				AE7ABC696B04ABA7B60E1719 /* LiveActivityManager.swift */,
 				07FFA27F2F1304F6006BEAF4 /* MarkupOverlayView.swift */,
@@ -527,6 +530,7 @@
 				971BF5F118754777A65B3907 /* ScoutCamera/Processing/PhotoProcessor.swift in Sources */,
 				7F251D3597AB4FAA834B4741 /* LocalData/DBModels.swift in Sources */,
 				5C6E43A1C4B1418B89DCD0E8 /* LocalData/LocalJSONStore.swift in Sources */,
+				0746C3DF2F2056C500898C7A /* PushNotificationManager.swift in Sources */,
 				0730F3FE2F0487F3000B598F /* ThemePreference.swift in Sources */,
 				CB0A92282BEE469EB696343F /* ProjectKit/ProjectKitSettingsView.swift in Sources */,
 				DA0A67A443A94D11B57C5EC6 /* ProjectKit/ProjectKitStore.swift in Sources */,
