@@ -176,7 +176,7 @@ class AuthService: ObservableObject {
         var path: String { rawValue }
     }
 
-    private func url(for endpoint: APIEndpoint) throws -> URL {
+    private func endpointURL(for endpoint: APIEndpoint) throws -> URL {
         guard let url = URL(string: "\(baseScriptsURL)\(endpoint.path)") else {
             throw AuthError.invalidURL
         }
@@ -200,7 +200,7 @@ class AuthService: ObservableObject {
     private func registerPushDevice(deviceId: String, deviceToken: String?, platform: String) async -> String? {
         let url: URL
         do {
-            url = try url(for: .pushRegister)
+            url = try endpointURL(for: .pushRegister)
         } catch {
             print("❌ Failed to build push registration URL: \(error.localizedDescription)")
             return nil
@@ -359,7 +359,7 @@ class AuthService: ObservableObject {
             throw AuthError.noAuth
         }
 
-        let url = try url(for: endpoint)
+        let url = try endpointURL(for: endpoint)
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -525,7 +525,7 @@ class AuthService: ObservableObject {
         )
         
         // Send authentication request to PHP endpoint
-        let url = try url(for: .authLive)
+        let url = try endpointURL(for: .authLive)
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
