@@ -54,7 +54,7 @@ struct CommentLayout: View {
     }
 
     private var isStatusComplete: Bool {
-        (comment.statusValue ?? 0) == 1
+        (comment.statusValue ?? 0) == 2
     }
 
     private var statusColor: Color {

@@ -10,6 +10,11 @@ struct CommentsView: View {
     @State private var newCommentText: String = ""
     @FocusState private var composeFieldFocused: Bool
     @EnvironmentObject private var authService: AuthService
+    @State private var isAtBottom: Bool = true
+    @State private var scrollViewHeight: CGFloat = 0
+    @State private var bottomMarkerOffset: CGFloat = 0
+
+    private let bottomAnchorId = "comments-bottom-anchor"
 
     var body: some View {
         Group {
@@ -31,19 +36,54 @@ struct CommentsView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        ForEach(comments) { comment in
-                            CommentThreadView(comment: comment, onToggleStatus: toggleStatus)
-                                .padding(.bottom, 4)
-                                .transition(.move(edge: .bottom).combined(with: .opacity))
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 16) {
+                            ForEach(comments) { comment in
+                                CommentThreadView(comment: comment, onToggleStatus: toggleStatus)
+                                    .padding(.bottom, 4)
+                                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                            }
+
+                            Color.clear
+                                .frame(height: 1)
+                                .id(bottomAnchorId)
+                                .background(
+                                    GeometryReader { proxy in
+                                        Color.clear.preference(
+                                            key: BottomMarkerOffsetKey.self,
+                                            value: proxy.frame(in: .named("comments-scroll")).maxY
+                                        )
+                                    }
+                                )
                         }
+                        .padding(.horizontal)
+                        .padding(.top)
+                        .padding(.bottom, 24)
                     }
-                    .padding(.horizontal)
-                    .padding(.top)
-                    .padding(.bottom, 24)
+                    .coordinateSpace(name: "comments-scroll")
+                    .background(
+                        GeometryReader { proxy in
+                            Color.clear.preference(key: ScrollViewHeightKey.self, value: proxy.size.height)
+                        }
+                    )
+                    .onAppear {
+                        scrollToBottom(using: proxy, animated: false)
+                    }
+                    .onChange(of: totalCommentCount(in: comments)) { _ in
+                        guard isAtBottom else { return }
+                        scrollToBottom(using: proxy, animated: true)
+                    }
+                    .onPreferenceChange(ScrollViewHeightKey.self) { newValue in
+                        scrollViewHeight = newValue
+                        updateIsAtBottom()
+                    }
+                    .onPreferenceChange(BottomMarkerOffsetKey.self) { newValue in
+                        bottomMarkerOffset = newValue
+                        updateIsAtBottom()
+                    }
+                    .animation(.spring(response: 0.35, dampingFraction: 0.85), value: comments)
                 }
-                .animation(.spring(response: 0.35, dampingFraction: 0.85), value: comments)
             }
         }
         .navigationTitle("Comments for \(frameTitle)")
@@ -77,7 +117,7 @@ struct CommentsView: View {
 
     private func toggleStatus(for comment: Comment) {
         let currentStatus = comment.statusValue ?? 0
-        let newStatus = currentStatus == 1 ? 0 : 1
+        let newStatus = currentStatus == 2 ? 0 : 2
         Task {
             await updateCommentStatus(commentId: comment.id, status: newStatus)
         }
@@ -136,6 +176,43 @@ struct CommentsView: View {
                 .buttonStyle(.borderedProminent)
             }
         }
+    }
+
+    private func scrollToBottom(using proxy: ScrollViewProxy, animated: Bool) {
+        if animated {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                proxy.scrollTo(bottomAnchorId, anchor: .bottom)
+            }
+        } else {
+            proxy.scrollTo(bottomAnchorId, anchor: .bottom)
+        }
+    }
+
+    private func totalCommentCount(in comments: [Comment]) -> Int {
+        comments.reduce(0) { partial, comment in
+            partial + 1 + totalCommentCount(in: comment.replies)
+        }
+    }
+
+    private func updateIsAtBottom() {
+        let threshold: CGFloat = 12
+        isAtBottom = bottomMarkerOffset <= scrollViewHeight + threshold
+    }
+}
+
+private struct ScrollViewHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
+private struct BottomMarkerOffsetKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }
 
