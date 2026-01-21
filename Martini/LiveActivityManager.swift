@@ -15,9 +15,16 @@ import UIKit
 
 enum LiveActivityManager {
     private static let isDebugLoggingEnabled = true
+    private static let isLiveActivityEnabled = false
 
     static func refresh(using frames: [Frame], projectTitle: String?, isInProject: Bool) {
         guard #available(iOS 16.1, *) else { return }
+        guard isLiveActivityEnabled else {
+            Task {
+                await endActivitiesIfNeeded()
+            }
+            return
+        }
         Task {
             await refreshActivity(using: frames, projectTitle: projectTitle, isInProject: isInProject)
         }
@@ -25,6 +32,7 @@ enum LiveActivityManager {
 
     @available(iOS 16.1, *)
     private static func refreshActivity(using frames: [Frame], projectTitle: String?, isInProject: Bool) async {
+        guard isLiveActivityEnabled else { return }
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
 
         guard isInProject else {
