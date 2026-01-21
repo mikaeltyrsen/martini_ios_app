@@ -2,13 +2,14 @@ import SwiftUI
 
 struct CommentsView: View {
     let frameTitle: String
-    let comments: [Comment]
+    @Binding var comments: [Comment]
     let isLoading: Bool
     let errorMessage: String?
     @Binding var isVisible: Bool
     let onReload: () async -> Void
     @State private var newCommentText: String = ""
     @FocusState private var composeFieldFocused: Bool
+    @EnvironmentObject private var authService: AuthService
 
     var body: some View {
         Group {
@@ -33,14 +34,16 @@ struct CommentsView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
                         ForEach(comments) { comment in
-                            CommentThreadView(comment: comment)
+                            CommentThreadView(comment: comment, onToggleStatus: toggleStatus)
                                 .padding(.bottom, 4)
+                                .transition(.move(edge: .bottom).combined(with: .opacity))
                         }
                     }
                     .padding(.horizontal)
                     .padding(.top)
                     .padding(.bottom, 24)
                 }
+                .animation(.spring(response: 0.35, dampingFraction: 0.85), value: comments)
             }
         }
         .navigationTitle("Comments for \(frameTitle)")
@@ -69,6 +72,39 @@ struct CommentsView: View {
         withAnimation(.default) {
             newCommentText = ""
             composeFieldFocused = false
+        }
+    }
+
+    private func toggleStatus(for comment: Comment) {
+        let currentStatus = comment.statusValue ?? 0
+        let newStatus = currentStatus == 1 ? 0 : 1
+        Task {
+            await updateCommentStatus(commentId: comment.id, status: newStatus)
+        }
+    }
+
+    @MainActor
+    private func updateCommentStatus(commentId: String, status: Int) async {
+        do {
+            try await authService.updateCommentStatus(commentId: commentId, status: status)
+            comments = updatedComments(comments, commentId: commentId, status: status)
+        } catch {
+            print("❌ Failed to update comment status: \(error.localizedDescription)")
+        }
+    }
+
+    private func updatedComments(_ comments: [Comment], commentId: String, status: Int) -> [Comment] {
+        comments.map { comment in
+            if comment.id == commentId {
+                return comment.updatingStatus(status)
+            }
+
+            let updatedReplies = updatedComments(comment.replies, commentId: commentId, status: status)
+            if updatedReplies != comment.replies {
+                return comment.updatingReplies(updatedReplies)
+            }
+
+            return comment
         }
     }
 
@@ -179,15 +215,16 @@ private struct CommentsSheet: View {
 
 private struct CommentThreadView: View {
     let comment: Comment
+    let onToggleStatus: (Comment) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            CommentLayout(comment: comment, isReply: false)
+            CommentLayout(comment: comment, isReply: false, onToggleStatus: onToggleStatus)
 
             if !comment.replies.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(comment.replies) { reply in
-                        CommentLayout(comment: reply, isReply: true)
+                        CommentLayout(comment: reply, isReply: true, onToggleStatus: onToggleStatus)
                     }
                 }
                 .padding(.leading, 24)

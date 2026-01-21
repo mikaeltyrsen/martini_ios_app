@@ -298,11 +298,15 @@ struct FrameView: View {
                     Task {
                         await loadClips(force: true)
                     }
-                case "comment-added":
+                case "comment-added", "comment-deleted":
                     guard isFrameVisible || isCommentsVisible else { return }
                     Task {
                         await loadComments(force: true)
                     }
+                case "comment-status-updated":
+                    guard isCommentsVisible else { return }
+                    guard let commentId = event.commentId, let status = event.commentStatus else { return }
+                    comments = updatedComments(comments, commentId: commentId, status: status)
                 default:
                     break
                 }
@@ -654,7 +658,7 @@ struct FrameView: View {
             NavigationLink {
                 CommentsView(
                     frameTitle: frame.displayOrderTitle,
-                    comments: comments,
+                    comments: $comments,
                     isLoading: isLoadingComments,
                     errorMessage: commentsError,
                     isVisible: $isCommentsVisible,
@@ -1657,6 +1661,21 @@ struct FrameView: View {
             return
         } catch {
             commentsError = error.localizedDescription
+        }
+    }
+
+    private func updatedComments(_ comments: [Comment], commentId: String, status: Int) -> [Comment] {
+        comments.map { comment in
+            if comment.id == commentId {
+                return comment.updatingStatus(status)
+            }
+
+            let updatedReplies = updatedComments(comment.replies, commentId: commentId, status: status)
+            if updatedReplies != comment.replies {
+                return comment.updatingReplies(updatedReplies)
+            }
+
+            return comment
         }
     }
 
