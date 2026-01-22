@@ -18,6 +18,7 @@ struct CommentsView: View {
     @State private var isSendingComment = false
     @State private var sendErrorMessage: String?
     private let bottomAnchorId = "comments-bottom-anchor"
+    private var allowsComposing: Bool { frameId != nil }
 
     var body: some View {
         Group {
@@ -77,7 +78,7 @@ struct CommentsView: View {
                     if isLoading {
                         ProgressView()
                     }
-                    Text(isLoading ? "Loading comments" : "Comments for \(frameTitle)")
+                    Text(navigationTitle)
                         .font(.headline)
                 }
             }
@@ -93,10 +94,17 @@ struct CommentsView: View {
             isVisible = false
         }
         .safeAreaInset(edge: .bottom) {
-            commentComposer
-                .padding(.horizontal)
-                .padding(.vertical, 10)
-                .background(.ultraThinMaterial)
+            if allowsComposing {
+                commentComposer
+                    .padding(.horizontal)
+                    .padding(.vertical, 10)
+                    .background(.ultraThinMaterial)
+            } else {
+                commentAccessNote
+                    .padding(.horizontal)
+                    .padding(.vertical, 10)
+                    .background(.ultraThinMaterial)
+            }
         }
         .alert("Unable to post comment", isPresented: hasSendErrorBinding) {
             Button("OK", role: .cancel) {}
@@ -127,7 +135,7 @@ struct CommentsView: View {
             return
         }
         guard let frameId else {
-            sendErrorMessage = "Missing frame information."
+            sendErrorMessage = "Select a frame to add a comment."
             return
         }
 
@@ -233,6 +241,27 @@ struct CommentsView: View {
         }
     }
 
+    private var commentAccessNote: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "info.circle")
+                .foregroundStyle(.secondary)
+            Text("Select a frame to add a comment.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+    }
+
+    private var navigationTitle: String {
+        if isLoading {
+            return "Loading comments"
+        }
+        if frameTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return "Comments"
+        }
+        return "Comments for \(frameTitle)"
+    }
+
     private func scrollToBottom(using proxy: ScrollViewProxy, animated: Bool) {
         if animated {
             withAnimation(.easeInOut(duration: 0.25)) {
@@ -311,11 +340,11 @@ private struct CommentsSheet: View {
                             Capsule().stroke(Color.secondary.opacity(0.22), lineWidth: 1)
                         )
 
-                        if !newCommentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                            Button(action: sendComment) {
-                                Image(systemName: "paperplane.fill")
-                                    .font(.system(size: 16, weight: .semibold))
-                            }
+            if !newCommentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Button(action: sendComment) {
+                    Image(systemName: "paperplane.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                }
                             .buttonStyle(.borderedProminent)
                         }
                     }

@@ -19,7 +19,7 @@ private struct ClipActivityView: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
-struct FilesSheet: View {
+struct FilesView: View {
     let title: String
     @Binding var clips: [Clip]
     @Binding var isLoading: Bool
@@ -29,22 +29,20 @@ struct FilesSheet: View {
     @State private var selectedClip: Clip?
 
     var body: some View {
-        NavigationStack {
-            content
-                .navigationTitle(title)
-                .navigationBarTitleDisplayMode(.inline)
-                .task {
-                    await onReload()
-                }
-                .alert("Error", isPresented: Binding(
-                    get: { errorMessage != nil },
-                    set: { if !$0 { errorMessage = nil } }
-                )) {
-                    Button("OK", role: .cancel) { errorMessage = nil }
-                } message: {
-                    Text(errorMessage ?? "Unknown error")
-                }
-        }
+        content
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .task {
+                await onReload()
+            }
+            .alert("Error", isPresented: Binding(
+                get: { errorMessage != nil },
+                set: { if !$0 { errorMessage = nil } }
+            )) {
+                Button("OK", role: .cancel) { errorMessage = nil }
+            } message: {
+                Text(errorMessage ?? "Unknown error")
+            }
     }
 
     private var content: some View {

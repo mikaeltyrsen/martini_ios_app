@@ -23,8 +23,6 @@ struct FrameView: View {
     @State private var selectedStatus: FrameStatus
     @State private var assetStack: [FrameAssetItem]
     @State private var visibleAssetID: FrameAssetItem.ID?
-    @State private var showingFiles: Bool = false
-    @State private var filesSheetDetent: PresentationDetent = .medium
     @State private var clips: [Clip] = []
     @State private var isLoadingClips: Bool = false
     @State private var clipsError: String?
@@ -345,7 +343,7 @@ struct FrameView: View {
     }
 
     private var assetOrderContent: some View {
-        filesSheetContent
+        boardActionContent
             .onChange(of: assetOrder) { (newOrder: [FrameAssetKind]) in
                 let newStack: [FrameAssetItem] = FrameView.orderedAssets(for: frame, order: newOrder)
                 assetStack = newStack
@@ -358,29 +356,6 @@ struct FrameView: View {
                     visibleAssetID = newStack.first?.id
                 } else if visibleAssetID == nil, let first: FrameAssetItem.ID = newStack.first?.id {
                     visibleAssetID = first
-                }
-            }
-    }
-
-    private var filesSheetContent: some View {
-        boardActionContent
-            .sheet(isPresented: $showingFiles) {
-                FilesSheet(
-                    title: "Files for \(frame.displayOrderTitle)",
-                    clips: $clips,
-                    isLoading: $isLoadingClips,
-                    errorMessage: $clipsError,
-                    onReload: { await loadClips(force: true) },
-                    onMediaPreview: { clip in
-                        openClipPreview(clip)
-                    }
-                )
-                .presentationDetents([.medium, .large], selection: $filesSheetDetent)
-                .presentationDragIndicator(.visible)
-            }
-            .onChange(of: showingFiles) { isShowing in
-                if isShowing {
-                    filesSheetDetent = .medium
                 }
             }
     }
@@ -650,8 +625,17 @@ struct FrameView: View {
     @ToolbarContentBuilder
     private var bottomToolbar: some ToolbarContent {
         ToolbarItemGroup(placement: .bottomBar) {
-            Button {
-                showingFiles = true
+            NavigationLink {
+                FilesView(
+                    title: "Files for \(frame.displayOrderTitle)",
+                    clips: $clips,
+                    isLoading: $isLoadingClips,
+                    errorMessage: $clipsError,
+                    onReload: { await loadClips(force: true) },
+                    onMediaPreview: { clip in
+                        openClipPreview(clip)
+                    }
+                )
             } label: {
                 toolbarIconBadge(title: "Files", systemName: "folder", count: filesBadgeCount)
             }
