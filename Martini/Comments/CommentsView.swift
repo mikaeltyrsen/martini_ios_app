@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct CommentsView: View {
     let frameTitle: String
@@ -10,6 +11,7 @@ struct CommentsView: View {
     @State private var newCommentText: String = ""
     @FocusState private var composeFieldFocused: Bool
     @EnvironmentObject private var authService: AuthService
+    @State private var keyboardHeight: CGFloat = 0
     private let bottomAnchorId = "comments-bottom-anchor"
 
     var body: some View {
@@ -42,12 +44,18 @@ struct CommentsView: View {
                         .padding(.top)
                         .padding(.bottom, 24)
                     }
+                    .padding(.bottom, keyboardHeight)
                     .coordinateSpace(name: "comments-scroll")
                     .onAppear {
                         scrollToBottom(using: proxy, animated: false)
                     }
                     .onChange(of: totalCommentCount(in: comments)) { _ in
                         scrollToBottom(using: proxy, animated: true)
+                    }
+                    .onChange(of: keyboardHeight) { height in
+                        if height > 0 {
+                            scrollToBottom(using: proxy, animated: true)
+                        }
                     }
                     .animation(.spring(response: 0.35, dampingFraction: 0.85), value: comments)
                 }
@@ -79,6 +87,15 @@ struct CommentsView: View {
                 .padding(.horizontal)
                 .padding(.vertical, 10)
                 .background(.ultraThinMaterial)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
+            guard let frame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else {
+                return
+            }
+            keyboardHeight = frame.height
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            keyboardHeight = 0
         }
     }
 
