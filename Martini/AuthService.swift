@@ -181,6 +181,7 @@ class AuthService: ObservableObject {
         case schedule = "schedules/fetch.php"
         case clips = "clips/fetch.php"
         case comments = "comments/get_comments.php"
+        case addComment = "comments/add.php"
         case updateCommentStatus = "comments/update_status.php"
 
         var path: String { rawValue }
@@ -1084,6 +1085,57 @@ class AuthService: ObservableObject {
             print("❌ Comment status response failed: \(statusResponse.error ?? "Unknown error")")
             throw AuthError.authenticationFailedWithMessage(statusResponse.error ?? "Failed to update comment status")
         }
+    }
+
+    func addComment(projectId: String, creativeId: String, comment: String, guestName: String) async throws -> String {
+        let body: [String: Any] = [
+            "projectId": projectId,
+            "creativeId": creativeId,
+            "comment": comment,
+            "guestName": guestName
+        ]
+
+        var request = try authorizedRequest(for: .addComment, body: body)
+
+        let requestJSON = String(data: request.httpBody ?? Data(), encoding: .utf8) ?? "Unable to encode"
+        print("📤 Adding comment...")
+        print("🔗 URL: \(request.url?.absoluteString ?? "unknown")")
+        print("📝 Request body: \(requestJSON)")
+
+        let (data, response) = try await performRequest(request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw AuthError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            let errorBody = String(data: data, encoding: .utf8) ?? "No response body"
+            print("❌ Failed to add comment - Status: \(httpResponse.statusCode)")
+            print("📝 Response: \(errorBody)")
+            if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
+                logout()
+                throw AuthError.unauthorized
+            }
+            throw AuthError.requestFailed(statusCode: httpResponse.statusCode)
+        }
+
+        let responseJSON = String(data: data, encoding: .utf8) ?? "Unable to decode"
+        print("📥 Add comment response received (\(httpResponse.statusCode)):")
+        print(responseJSON)
+
+        let decoder = JSONDecoder()
+        let commentResponse = try decoder.decode(AddCommentResponse.self, from: data)
+
+        guard commentResponse.success else {
+            print("❌ Add comment response failed: \(commentResponse.error ?? "Unknown error")")
+            throw AuthError.authenticationFailedWithMessage(commentResponse.error ?? "Failed to add comment")
+        }
+
+        guard let commentId = commentResponse.commentId, !commentId.isEmpty else {
+            throw AuthError.authenticationFailedWithMessage("Missing comment ID")
+        }
+
+        return commentId
     }
 
     func fetchProjectDetails() async throws {

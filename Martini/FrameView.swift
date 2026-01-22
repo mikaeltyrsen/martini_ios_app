@@ -298,7 +298,15 @@ struct FrameView: View {
                     Task {
                         await loadClips(force: true)
                     }
-                case "comment-added", "comment-deleted":
+                case "comment-added":
+                    guard isFrameVisible || isCommentsVisible else { return }
+                    if let commentId = event.commentId, containsComment(comments, commentId: commentId) {
+                        return
+                    }
+                    Task {
+                        await loadComments(force: true)
+                    }
+                case "comment-deleted":
                     guard isFrameVisible || isCommentsVisible else { return }
                     Task {
                         await loadComments(force: true)
@@ -658,6 +666,8 @@ struct FrameView: View {
             NavigationLink {
                 CommentsView(
                     frameTitle: frame.displayOrderTitle,
+                    frameId: frame.id,
+                    creativeId: frame.creativeId,
                     comments: $comments,
                     isLoading: isLoadingComments,
                     errorMessage: commentsError,
@@ -2135,6 +2145,15 @@ private extension FrameView {
     private func totalCommentCount(in comments: [Comment]) -> Int {
         comments.reduce(0) { partial, comment in
             partial + 1 + totalCommentCount(in: comment.replies)
+        }
+    }
+
+    private func containsComment(_ comments: [Comment], commentId: String) -> Bool {
+        comments.contains { comment in
+            if comment.id == commentId {
+                return true
+            }
+            return containsComment(comment.replies, commentId: commentId)
         }
     }
 
