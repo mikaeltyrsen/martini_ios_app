@@ -44,17 +44,22 @@ struct CommentsView: View {
                         .padding(.top)
                         .padding(.bottom, 24)
                     }
-                    .padding(.bottom, keyboardHeight)
                     .coordinateSpace(name: "comments-scroll")
                     .onAppear {
-                        scrollToBottom(using: proxy, animated: false)
+                        DispatchQueue.main.async {
+                            scrollToBottom(using: proxy, animated: false)
+                        }
                     }
                     .onChange(of: totalCommentCount(in: comments)) { _ in
-                        scrollToBottom(using: proxy, animated: true)
+                        DispatchQueue.main.async {
+                            scrollToBottom(using: proxy, animated: true)
+                        }
                     }
                     .onChange(of: keyboardHeight) { height in
                         if height > 0 {
-                            scrollToBottom(using: proxy, animated: true)
+                            DispatchQueue.main.async {
+                                scrollToBottom(using: proxy, animated: true)
+                            }
                         }
                     }
                     .animation(.spring(response: 0.35, dampingFraction: 0.85), value: comments)
