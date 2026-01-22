@@ -126,6 +126,10 @@ struct CommentsView: View {
             sendErrorMessage = "Missing project information."
             return
         }
+        guard let frameId else {
+            sendErrorMessage = "Missing frame information."
+            return
+        }
 
         isSendingComment = true
         Task {
@@ -133,6 +137,7 @@ struct CommentsView: View {
                 let commentId = try await authService.addComment(
                     projectId: projectId,
                     creativeId: creativeId,
+                    frameId: frameId,
                     comment: trimmed,
                     guestName: name
                 )
