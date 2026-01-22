@@ -2019,9 +2019,7 @@ private extension MainView {
             return event.frameId == targetFrameId
         }
 
-        guard let eventFrameId = event.frameId else {
-            return true
-        }
+        let eventFrameId = event.frameId
 
         if let frame = authService.frames.first(where: { $0.id == eventFrameId }) {
             return frame.creativeId == target.creativeId
