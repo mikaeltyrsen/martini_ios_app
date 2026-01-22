@@ -260,6 +260,7 @@ struct MainView: View {
     @State private var isShowingComments = false
     @State private var isLoadingComments = false
     @State private var comments: [Comment] = []
+    @State private var commentsCache: [String: [Comment]] = [:]
     @State private var commentsError: String?
     @State private var commentsFrame: Frame?
     @State private var isCommentsVisible = false
@@ -1080,7 +1081,11 @@ struct MainView: View {
     private func openComments() {
         guard let frame = contextMenuFrame else { return }
         commentsFrame = frame
-        comments = []
+        if let cached = commentsCache[frame.id] {
+            comments = cached
+        } else {
+            comments = []
+        }
         commentsError = nil
         isShowingComments = true
     }
@@ -1405,6 +1410,7 @@ struct MainView: View {
             )
             guard commentsFrame?.id == frame.id else { return }
             comments = response.comments
+            commentsCache[frame.id] = response.comments
             commentsError = nil
         } catch {
             guard commentsFrame?.id == frame.id else { return }
@@ -1981,6 +1987,9 @@ private extension MainView {
     @MainActor
     private func updateCommentStatus(commentId: String, status: Int) {
         comments = updatedComments(comments, commentId: commentId, status: status)
+        if let frameId = commentsFrame?.id {
+            commentsCache[frameId] = comments
+        }
     }
 
     private func updatedComments(_ comments: [Comment], commentId: String, status: Int) -> [Comment] {
