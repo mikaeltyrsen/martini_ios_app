@@ -1087,10 +1087,11 @@ class AuthService: ObservableObject {
         }
     }
 
-    func addComment(projectId: String, creativeId: String, comment: String, guestName: String) async throws -> String {
+    func addComment(projectId: String, creativeId: String, frameId: String, comment: String, guestName: String) async throws -> String {
         let body: [String: Any] = [
             "projectId": projectId,
             "creativeId": creativeId,
+            "frameId": frameId,
             "comment": comment,
             "guestName": guestName
         ]
