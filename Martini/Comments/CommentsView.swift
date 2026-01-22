@@ -3,6 +3,8 @@ import UIKit
 
 struct CommentsView: View {
     let frameTitle: String
+    let frameId: String?
+    let creativeId: String
     @Binding var comments: [Comment]
     let isLoading: Bool
     let errorMessage: String?
@@ -11,7 +13,10 @@ struct CommentsView: View {
     @State private var newCommentText: String = ""
     @FocusState private var composeFieldFocused: Bool
     @EnvironmentObject private var authService: AuthService
+    @AppStorage("guestName") private var guestName: String = ""
     @State private var keyboardHeight: CGFloat = 0
+    @State private var isSendingComment = false
+    @State private var sendErrorMessage: String?
     private let bottomAnchorId = "comments-bottom-anchor"
 
     var body: some View {
@@ -93,6 +98,11 @@ struct CommentsView: View {
                 .padding(.vertical, 10)
                 .background(.ultraThinMaterial)
         }
+        .alert("Unable to post comment", isPresented: hasSendErrorBinding) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(sendErrorMessage ?? "Please try again.")
+        }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
             guard let frame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else {
                 return
@@ -106,11 +116,47 @@ struct CommentsView: View {
 
     private func sendComment() {
         let trimmed = newCommentText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        // TODO: Hook into your real comment-posting logic.
-        withAnimation(.default) {
-            newCommentText = ""
-            composeFieldFocused = false
+        let name = guestName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, !isSendingComment else { return }
+        guard !name.isEmpty else {
+            sendErrorMessage = "Please add your name in Settings before posting a comment."
+            return
+        }
+        guard let projectId = authService.projectId else {
+            sendErrorMessage = "Missing project information."
+            return
+        }
+
+        isSendingComment = true
+        Task {
+            do {
+                let commentId = try await authService.addComment(
+                    projectId: projectId,
+                    creativeId: creativeId,
+                    comment: trimmed,
+                    guestName: name
+                )
+                let newComment = Comment(
+                    id: commentId,
+                    guestName: name,
+                    comment: trimmed,
+                    frameId: frameId
+                )
+                await MainActor.run {
+                    withAnimation(.default) {
+                        comments.append(newComment)
+                        newCommentText = ""
+                        composeFieldFocused = false
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    sendErrorMessage = error.localizedDescription
+                }
+            }
+            await MainActor.run {
+                isSendingComment = false
+            }
         }
     }
 
@@ -169,10 +215,15 @@ struct CommentsView: View {
 
             if !newCommentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 Button(action: sendComment) {
-                    Image(systemName: "paperplane.fill")
-                        .font(.system(size: 16, weight: .semibold))
+                    if isSendingComment {
+                        ProgressView()
+                    } else {
+                        Image(systemName: "paperplane.fill")
+                            .font(.system(size: 16, weight: .semibold))
+                    }
                 }
                 .buttonStyle(.borderedProminent)
+                .disabled(isSendingComment)
             }
         }
     }
@@ -191,6 +242,17 @@ struct CommentsView: View {
         comments.reduce(0) { partial, comment in
             partial + 1 + totalCommentCount(in: comment.replies)
         }
+    }
+
+    private var hasSendErrorBinding: Binding<Bool> {
+        Binding(
+            get: { sendErrorMessage != nil },
+            set: { newValue in
+                if !newValue {
+                    sendErrorMessage = nil
+                }
+            }
+        )
     }
 }
 

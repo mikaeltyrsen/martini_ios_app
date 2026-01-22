@@ -2011,6 +2011,35 @@ struct CommentStatusUpdateResponse: Codable {
     }
 }
 
+struct AddCommentResponse: Codable {
+    @SafeBool var success: Bool
+    let commentId: String?
+    let error: String?
+
+    enum CodingKeys: String, CodingKey {
+        case success
+        case commentId
+        case commentID
+        case comment_id
+        case error
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        _success = try container.decodeIfPresent(SafeBool.self, forKey: .success) ?? SafeBool()
+        if let commentId = try container.decodeIfPresent(String.self, forKey: .commentId) {
+            self.commentId = commentId
+        } else if let commentId = try container.decodeIfPresent(String.self, forKey: .commentID) {
+            self.commentId = commentId
+        } else if let commentId = try container.decodeIfPresent(String.self, forKey: .comment_id) {
+            self.commentId = commentId
+        } else {
+            commentId = nil
+        }
+        error = try container.decodeIfPresent(String.self, forKey: .error)
+    }
+}
+
 extension Comment {
     var statusValue: Int? {
         guard let status, let value = Int(status) else { return nil }

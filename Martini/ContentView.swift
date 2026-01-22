@@ -774,6 +774,8 @@ struct MainView: View {
                     NavigationStack {
                         CommentsView(
                             frameTitle: frame.displayOrderTitle,
+                            frameId: frame.id,
+                            creativeId: frame.creativeId,
                             comments: $comments,
                             isLoading: isLoadingComments,
                             errorMessage: commentsError,
@@ -781,6 +783,11 @@ struct MainView: View {
                             onReload: { await loadComments(for: frame, force: true) }
                         )
                     }
+                }
+            }
+            .onChange(of: comments) { newComments in
+                if let frameId = commentsFrame?.id {
+                    commentsCache[frameId] = newComments
                 }
             }
             .onChange(of: showingProjectFiles) { isShowing in
@@ -1967,7 +1974,12 @@ private extension MainView {
         guard isCommentsVisible, let frame = commentsFrame, frame.id == event.frameId else { return }
 
         switch eventName {
-        case "comment-added", "comment-deleted":
+        case "comment-added":
+            if let commentId = event.commentId, containsComment(comments, commentId: commentId) {
+                return
+            }
+            await loadComments(for: frame, force: true)
+        case "comment-deleted":
             await loadComments(for: frame, force: true)
         case "comment-status-updated":
             guard let commentId = event.commentId else {
@@ -2004,6 +2016,15 @@ private extension MainView {
             }
 
             return comment
+        }
+    }
+
+    private func containsComment(_ comments: [Comment], commentId: String) -> Bool {
+        comments.contains { comment in
+            if comment.id == commentId {
+                return true
+            }
+            return containsComment(comment.replies, commentId: commentId)
         }
     }
 
@@ -3166,7 +3187,11 @@ struct SettingsView: View {
     @EnvironmentObject var authService: AuthService
     @Environment(\.dismiss) private var dismiss
     @AppStorage("themePreference") private var themePreferenceRawValue = ThemePreference.system.rawValue
+    @AppStorage("guestName") private var guestName: String = ""
     @State private var showingRestoreAlert = false
+    @State private var guestNameDraft: String = ""
+    @State private var showGuestNameError = false
+    @State private var lastValidGuestName: String = ""
     @Binding var showDescriptions: Bool
     @Binding var showFullDescriptions: Bool
     @Binding var showGridTags: Bool
@@ -3186,6 +3211,32 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section("Name") {
+                    TextField("Your name", text: $guestNameDraft)
+                        .textInputAutocapitalization(.words)
+                        .autocorrectionDisabled()
+                        .onChange(of: guestNameDraft) { newValue in
+                            let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                            showGuestNameError = trimmed.isEmpty
+                            if !trimmed.isEmpty {
+                                guestName = newValue
+                                lastValidGuestName = newValue
+                            }
+                        }
+                        .onSubmit {
+                            if guestNameDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                guestNameDraft = lastValidGuestName
+                                showGuestNameError = guestNameDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                            }
+                        }
+
+                    if showGuestNameError {
+                        Text("Name is required.")
+                            .font(.footnote)
+                            .foregroundStyle(.red)
+                    }
+                }
+
                 Section("Grid") {
                     Toggle("Show Descriptions", isOn: $showDescriptions)
 
@@ -3355,6 +3406,16 @@ struct SettingsView: View {
                 Button("Cancel", role: .cancel) {}
             } message: {
                 Text("Are you sure you wanna restore all settings?")
+            }
+            .onAppear {
+                guestNameDraft = guestName
+                lastValidGuestName = guestName
+                showGuestNameError = guestNameDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            }
+            .onDisappear {
+                if guestNameDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    guestNameDraft = lastValidGuestName
+                }
             }
 //            .toolbar {
 //                ToolbarItem(placement: .topBarLeading) {

@@ -11,11 +11,14 @@ struct LoginView: View {
     @EnvironmentObject var authService: AuthService
     @EnvironmentObject var nearbySignInService: NearbySignInService
     @Environment(\.colorScheme) private var colorScheme
+    @AppStorage("guestName") private var guestName: String = ""
     @State private var showScanner = false
     @State private var isAuthenticating = false
     @State private var scannedQRCode = ""
     @State private var showSavedProjects = false
     @State private var showSignInFailureAlert = false
+    @State private var showGuestNamePrompt = false
+    @State private var pendingAuthRequest: PendingAuthRequest?
 
     private var gradientColor: Color {
         colorScheme == .dark ? .black : .white
@@ -144,6 +147,15 @@ struct LoginView: View {
         .alert("Sign in failed", isPresented: $showSignInFailureAlert) {
             Button("OK", role: .cancel) {}
         }
+        .sheet(isPresented: $showGuestNamePrompt) {
+            GuestNamePromptSheet(
+                currentName: guestName,
+                onContinue: { name in
+                    guestName = name
+                    resumePendingAuthentication()
+                }
+            )
+        }
         .onAppear {
             processPendingDeepLinkIfNeeded()
             nearbySignInService.startBrowsing()
@@ -179,23 +191,7 @@ struct LoginView: View {
         showSavedProjects = false
         scannedQRCode = "\(project.projectId)-\(project.accessCode)"
         isAuthenticating = true
-
-        Task {
-            do {
-                try await authService.authenticate(withQRCode: scannedQRCode)
-            } catch {
-                await MainActor.run {
-                    isAuthenticating = false
-                    showSignInFailureAlert = true
-                }
-
-                if shouldMarkProjectExpired(for: error) {
-                    await MainActor.run {
-                        authService.markStoredProjectExpired(projectId: project.projectId)
-                    }
-                }
-            }
-        }
+        ensureGuestNameThenAuthenticate(qrCode: scannedQRCode, accessCode: nil, project: project)
     }
 
     private func processPendingDeepLinkIfNeeded() {
@@ -215,7 +211,7 @@ struct LoginView: View {
                 showSignInFailureAlert = true
             } else {
                 // Already have access code, proceed
-                proceedWithAuthentication(accessCode: nil)
+                ensureGuestNameThenAuthenticate(qrCode: scannedQRCode, accessCode: nil, project: nil)
             }
         } catch {
             isAuthenticating = false
@@ -236,15 +232,21 @@ struct LoginView: View {
         startAuthenticationFlow(with: syntheticQRCode)
     }
 
-    private func proceedWithAuthentication(accessCode: String?) {
+    private func proceedWithAuthentication(qrCode: String, accessCode: String?, project: StoredProject?) {
         Task {
             do {
-                try await authService.authenticate(withQRCode: scannedQRCode, manualAccessCode: accessCode)
+                try await authService.authenticate(withQRCode: qrCode, manualAccessCode: accessCode)
                 // Authentication successful - authService.isAuthenticated will trigger view change
             } catch {
                 await MainActor.run {
                     isAuthenticating = false
                     showSignInFailureAlert = true
+                }
+
+                if let project, shouldMarkProjectExpired(for: error) {
+                    await MainActor.run {
+                        authService.markStoredProjectExpired(projectId: project.projectId)
+                    }
                 }
             }
         }
@@ -261,6 +263,88 @@ struct LoginView: View {
         default:
             return false
         }
+    }
+
+    private func ensureGuestNameThenAuthenticate(qrCode: String, accessCode: String?, project: StoredProject?) {
+        let trimmed = guestName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            isAuthenticating = false
+            pendingAuthRequest = PendingAuthRequest(qrCode: qrCode, accessCode: accessCode, project: project)
+            showGuestNamePrompt = true
+            return
+        }
+
+        proceedWithAuthentication(qrCode: qrCode, accessCode: accessCode, project: project)
+    }
+
+    private func resumePendingAuthentication() {
+        guard let pending = pendingAuthRequest else { return }
+        pendingAuthRequest = nil
+        isAuthenticating = true
+        proceedWithAuthentication(qrCode: pending.qrCode, accessCode: pending.accessCode, project: pending.project)
+    }
+}
+
+private struct PendingAuthRequest {
+    let qrCode: String
+    let accessCode: String?
+    let project: StoredProject?
+}
+
+private struct GuestNamePromptSheet: View {
+    let currentName: String
+    let onContinue: (String) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var name: String = ""
+    @FocusState private var isFocused: Bool
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("What's your name?")
+                    .font(.title2.weight(.semibold))
+
+                Text("Please enter a name to continue. This will be used when you add comments.")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+
+                TextField("Your name", text: $name)
+                    .textInputAutocapitalization(.words)
+                    .autocorrectionDisabled()
+                    .focused($isFocused)
+                    .submitLabel(.continue)
+                    .onSubmit(submit)
+                    .padding(12)
+                    .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10))
+
+                Spacer()
+            }
+            .padding()
+            .navigationTitle("Name Required")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Continue") {
+                        submit()
+                    }
+                    .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+        }
+        .interactiveDismissDisabled()
+        .onAppear {
+            name = currentName
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                isFocused = true
+            }
+        }
+    }
+
+    private func submit() {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        onContinue(trimmed)
+        dismiss()
     }
 }
 

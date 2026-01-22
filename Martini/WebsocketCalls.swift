@@ -116,11 +116,27 @@ final class WebsocketCalls {
             return
 
         case "comment-added":
-            notifyFrameUpdate(id: frameId, eventName: name)
+            if let update = CommentUpdate.parse(dataString: dataString) {
+                notifyFrameUpdate(
+                    id: update.resolvedFrameId ?? frameId,
+                    eventName: name,
+                    commentId: update.resolvedCommentId
+                )
+            } else {
+                notifyFrameUpdate(id: frameId, eventName: name)
+            }
             return
 
         case "comment-deleted":
-            notifyFrameUpdate(id: frameId, eventName: name)
+            if let update = CommentUpdate.parse(dataString: dataString) {
+                notifyFrameUpdate(
+                    id: update.resolvedFrameId ?? frameId,
+                    eventName: name,
+                    commentId: update.resolvedCommentId
+                )
+            } else {
+                notifyFrameUpdate(id: frameId, eventName: name)
+            }
             return
 
         case "comment-status-updated":
@@ -365,6 +381,23 @@ private struct CommentStatusUpdate: Decodable {
     static func parse(dataString: String) -> CommentStatusUpdate? {
         guard let data = dataString.data(using: .utf8) else { return nil }
         return try? JSONDecoder().decode(CommentStatusUpdate.self, from: data)
+    }
+}
+
+private struct CommentUpdate: Decodable {
+    let frameId: String?
+    let frameID: String?
+    let frame_id: String?
+    let commentId: String?
+    let commentID: String?
+    let comment_id: String?
+
+    var resolvedFrameId: String? { frameId ?? frameID ?? frame_id }
+    var resolvedCommentId: String? { commentId ?? commentID ?? comment_id }
+
+    static func parse(dataString: String) -> CommentUpdate? {
+        guard let data = dataString.data(using: .utf8) else { return nil }
+        return try? JSONDecoder().decode(CommentUpdate.self, from: data)
     }
 }
 
