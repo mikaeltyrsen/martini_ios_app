@@ -6,41 +6,43 @@ struct CommentLayout: View {
     let onToggleStatus: (Comment) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
-                Circle()
-                    .fill(Color.martiniDefaultColor.opacity(isReply ? 1 : 1))
-                    .frame(width: isReply ? 22 : 28, height: isReply ? 22 : 28)
-                Text(displayName)
-                    .font(.system(size: 14, weight: .semibold))
+        HStack(alignment: .top, spacing: 12) {
+            Circle()
+                .fill(Color.accentColor)
+                .frame(width: isReply ? 22 : 28, height: isReply ? 22 : 28)
 
-                if let lastUpdated = comment.lastUpdated, !lastUpdated.isEmpty {
-                    Text(lastUpdated)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                Button {
-                    onToggleStatus(comment)
-                } label: {
-                    ZStack {
-                        Circle()
-                            .fill(statusColor)
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(statusIconColor)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 8) {
+                    Text(displayName)
+                        .font(.system(size: 14, weight: .semibold))
+                    if let lastUpdated = comment.lastUpdated, !lastUpdated.isEmpty {
+                        Text(lastUpdated)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
-                .frame(width: isReply ? 22 : 26, height: isReply ? 22 : 26)
-                .buttonStyle(.plain)
+
+                if let body = comment.comment, !body.isEmpty {
+                    Text(body)
+                        .font(isReply ? .subheadline : .body)
+                }
             }
 
-            if let body = comment.comment, !body.isEmpty {
-                Text(body)
-                    .font(isReply ? .subheadline : .body)
+            Spacer(minLength: 8)
+
+            Button {
+                onToggleStatus(comment)
+            } label: {
+                ZStack {
+                    Circle()
+                        .fill(statusColor)
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(statusIconColor)
+                }
             }
+            .frame(width: isReply ? 22 : 26, height: isReply ? 22 : 26)
+            .buttonStyle(.plain)
         }
         .padding(18) // ⬅️ padding FIRST
         .background(
@@ -58,7 +60,7 @@ struct CommentLayout: View {
     }
 
     private var statusColor: Color {
-        isStatusComplete ? .martiniDefaultColor : Color.secondary.opacity(0.25)
+        isStatusComplete ? .green : Color.secondary.opacity(0.25)
     }
 
     private var statusIconColor: Color {

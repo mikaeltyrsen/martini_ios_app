@@ -1039,7 +1039,12 @@ class AuthService: ObservableObject {
     }
 
     func updateCommentStatus(commentId: String, status: Int) async throws {
+        guard let projectId = projectId else {
+            throw AuthError.noAuth
+        }
+
         let body: [String: Any] = [
+            "projectId": projectId,
             "commentId": commentId,
             "status": status
         ]
