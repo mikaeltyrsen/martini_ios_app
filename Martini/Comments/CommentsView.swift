@@ -10,6 +10,7 @@ struct CommentsView: View {
     let errorMessage: String?
     @Binding var isVisible: Bool
     let onReload: () async -> Void
+    let showsNavigationTitle: Bool
     @State private var newCommentText: String = ""
     @FocusState private var composeFieldFocused: Bool
     @EnvironmentObject private var authService: AuthService
@@ -20,8 +21,71 @@ struct CommentsView: View {
     private let bottomAnchorId = "comments-bottom-anchor"
     private var allowsComposing: Bool { frameId != nil }
 
+    init(
+        frameTitle: String,
+        frameId: String?,
+        creativeId: String,
+        comments: Binding<[Comment]>,
+        isLoading: Bool,
+        errorMessage: String?,
+        isVisible: Binding<Bool>,
+        onReload: @escaping () async -> Void,
+        showsNavigationTitle: Bool = true
+    ) {
+        self.frameTitle = frameTitle
+        self.frameId = frameId
+        self.creativeId = creativeId
+        _comments = comments
+        self.isLoading = isLoading
+        self.errorMessage = errorMessage
+        _isVisible = isVisible
+        self.onReload = onReload
+        self.showsNavigationTitle = showsNavigationTitle
+    }
+
     var body: some View {
-        Group {
+        contentWithNavigation
+        .task {
+            await onReload()
+        }
+        .onAppear {
+            isVisible = true
+        }
+        .onDisappear {
+            isVisible = false
+        }
+        .safeAreaInset(edge: .bottom) {
+            if allowsComposing {
+                commentComposer
+                    .padding(.horizontal)
+                    .padding(.vertical, 10)
+                    .background(.ultraThinMaterial)
+            } else {
+                commentAccessNote
+                    .padding(.horizontal)
+                    .padding(.vertical, 10)
+                    .background(.ultraThinMaterial)
+            }
+        }
+        .alert("Unable to post comment", isPresented: hasSendErrorBinding) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(sendErrorMessage ?? "Please try again.")
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
+            guard let frame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else {
+                return
+            }
+            keyboardHeight = frame.height
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            keyboardHeight = 0
+        }
+    }
+
+    @ViewBuilder
+    private var contentWithNavigation: some View {
+        let baseContent = Group {
             if comments.isEmpty {
                 VStack(spacing: 12) {
                     Image(systemName: "text.bubble")
@@ -72,53 +136,23 @@ struct CommentsView: View {
                 }
             }
         }
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                HStack(spacing: 8) {
-                    if isLoading {
-                        ProgressView()
+
+        if showsNavigationTitle {
+            baseContent
+                .toolbar {
+                    ToolbarItem(placement: .principal) {
+                        HStack(spacing: 8) {
+                            if isLoading {
+                                ProgressView()
+                            }
+                            Text(navigationTitle)
+                                .font(.headline)
+                        }
                     }
-                    Text(navigationTitle)
-                        .font(.headline)
                 }
-            }
-        }
-        .navigationBarTitleDisplayMode(.inline)
-        .task {
-            await onReload()
-        }
-        .onAppear {
-            isVisible = true
-        }
-        .onDisappear {
-            isVisible = false
-        }
-        .safeAreaInset(edge: .bottom) {
-            if allowsComposing {
-                commentComposer
-                    .padding(.horizontal)
-                    .padding(.vertical, 10)
-                    .background(.ultraThinMaterial)
-            } else {
-                commentAccessNote
-                    .padding(.horizontal)
-                    .padding(.vertical, 10)
-                    .background(.ultraThinMaterial)
-            }
-        }
-        .alert("Unable to post comment", isPresented: hasSendErrorBinding) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(sendErrorMessage ?? "Please try again.")
-        }
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
-            guard let frame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else {
-                return
-            }
-            keyboardHeight = frame.height
-        }
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
-            keyboardHeight = 0
+                .navigationBarTitleDisplayMode(.inline)
+        } else {
+            baseContent
         }
     }
 

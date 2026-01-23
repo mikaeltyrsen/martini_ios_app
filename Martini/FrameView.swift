@@ -50,6 +50,9 @@ struct FrameView: View {
     @State private var showingSystemCamera: Bool = false
     @State private var showingUploadPicker: Bool = false
     @State private var capturedPhoto: CapturedPhoto?
+    @State private var isInspectorVisible: Bool = true
+    @State private var inspectorTab: InspectorTab = .files
+    @State private var layoutSize: CGSize = .zero
     @State private var showingBoardRenameAlert: Bool = false
     @State private var boardRenameText: String = ""
     @State private var boardRenameTarget: FrameAssetItem?
@@ -83,6 +86,7 @@ struct FrameView: View {
     private let dataStore = LocalJSONStore.shared
     private let scriptPreviewFontSize = UIFont.preferredFont(forTextStyle: .body).pointSize
     private let uploadService = FrameUploadService()
+    private let inspectorWidth: CGFloat = 320
 
     init(
         frame: Frame,
@@ -492,7 +496,7 @@ struct FrameView: View {
                 if showsTopToolbar {
                     topToolbar
                 }
-                if shouldShowBottomToolbar {
+                if shouldShowBottomToolbar && !(isPadLandscape && isInspectorVisible) {
                     bottomToolbar
                 }
             }
@@ -529,6 +533,14 @@ struct FrameView: View {
     private var shouldShowBottomToolbar: Bool {
         guard let activeFrameID else { return true }
         return activeFrameID == frame.id
+    }
+
+    private var isPadLandscape: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad && layoutSize.width > layoutSize.height
+    }
+
+    private var inspectorToggleIconName: String {
+        isInspectorVisible ? "rectangle.split.3x1.fill" : "rectangle.split.3x1"
     }
 
     private var statusUpdateAlertBinding: Binding<Bool> {
@@ -591,6 +603,15 @@ struct FrameView: View {
             }
             .accessibilityLabel("Next frame")
             .disabled(!hasNextFrame)
+
+            if isPadLandscape {
+                Button {
+                    isInspectorVisible.toggle()
+                } label: {
+                    Image(systemName: inspectorToggleIconName)
+                }
+                .accessibilityLabel(isInspectorVisible ? "Hide inspector" : "Show inspector")
+            }
         }
     }
 
@@ -625,44 +646,47 @@ struct FrameView: View {
     @ToolbarContentBuilder
     private var bottomToolbar: some ToolbarContent {
         ToolbarItemGroup(placement: .bottomBar) {
-            NavigationLink {
-                FilesView(
-                    title: "Files for \(frame.displayOrderTitle)",
-                    clips: $clips,
-                    isLoading: $isLoadingClips,
-                    errorMessage: $clipsError,
-                    onReload: { await loadClips(force: true) },
-                    onMediaPreview: { clip in
-                        openClipPreview(clip)
-                    }
-                )
-            } label: {
-                toolbarIconBadge(title: "Files", systemName: "folder", count: filesBadgeCount)
+            if isPadLandscape {
+                Spacer()
+                markerButton
+                Spacer()
+            } else {
+                NavigationLink {
+                    FilesView(
+                        title: "Files for \(frame.displayOrderTitle)",
+                        clips: $clips,
+                        isLoading: $isLoadingClips,
+                        errorMessage: $clipsError,
+                        onReload: { await loadClips(force: true) },
+                        onMediaPreview: { clip in
+                            openClipPreview(clip)
+                        }
+                    )
+                } label: {
+                    toolbarIconBadge(title: "Files", systemName: "folder", count: filesBadgeCount)
+                }
+
+                Spacer()
+
+                markerButton
+
+                Spacer()
+
+                NavigationLink {
+                    CommentsView(
+                        frameTitle: frame.displayOrderTitle,
+                        frameId: frame.id,
+                        creativeId: frame.creativeId,
+                        comments: $comments,
+                        isLoading: isLoadingComments,
+                        errorMessage: commentsError,
+                        isVisible: $isCommentsVisible,
+                        onReload: { await loadComments(force: true) }
+                    )
+                } label: {
+                    toolbarIconBadge(title: "Comments", systemName: "text.bubble", count: commentsBadgeCount)
+                }
             }
-
-
-            Spacer()
-
-            markerButton
-            
-            Spacer()
-
-            NavigationLink {
-                CommentsView(
-                    frameTitle: frame.displayOrderTitle,
-                    frameId: frame.id,
-                    creativeId: frame.creativeId,
-                    comments: $comments,
-                    isLoading: isLoadingComments,
-                    errorMessage: commentsError,
-                    isVisible: $isCommentsVisible,
-                    onReload: { await loadComments(force: true) }
-                )
-            } label: {
-                toolbarIconBadge(title: "Comments", systemName: "text.bubble", count: commentsBadgeCount)
-            }
-            
-            
         }
     }
 
@@ -727,6 +751,68 @@ struct FrameView: View {
         }
     }
 
+    private var frameInspectorView: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Inspector")
+                .font(.headline)
+
+            Picker("Inspector Tab", selection: $inspectorTab) {
+                Text(inspectorFilesTitle).tag(InspectorTab.files)
+                Text(inspectorCommentsTitle).tag(InspectorTab.comments)
+            }
+            .pickerStyle(.segmented)
+
+            Divider()
+
+            Group {
+                switch inspectorTab {
+                case .files:
+                    FilesView(
+                        title: "Files for \(frame.displayOrderTitle)",
+                        clips: $clips,
+                        isLoading: $isLoadingClips,
+                        errorMessage: $clipsError,
+                        onReload: { await loadClips(force: true) },
+                        onMediaPreview: { clip in
+                            openClipPreview(clip)
+                        },
+                        showsNavigationTitle: false
+                    )
+                case .comments:
+                    CommentsView(
+                        frameTitle: frame.displayOrderTitle,
+                        frameId: frame.id,
+                        creativeId: frame.creativeId,
+                        comments: $comments,
+                        isLoading: isLoadingComments,
+                        errorMessage: commentsError,
+                        isVisible: $isCommentsVisible,
+                        onReload: { await loadComments(force: true) },
+                        showsNavigationTitle: false
+                    )
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .padding()
+        .frame(maxHeight: .infinity, alignment: .top)
+        .background(.ultraThinMaterial)
+    }
+
+    private var inspectorFilesTitle: String {
+        if let count = filesBadgeCount, count > 0 {
+            return "Files (\(count))"
+        }
+        return "Files"
+    }
+
+    private var inspectorCommentsTitle: String {
+        if let count = commentsBadgeCount, count > 0 {
+            return "Comments (\(count))"
+        }
+        return "Comments"
+    }
+
     @ViewBuilder
     private var contentView: some View {
         if assetStack.isEmpty {
@@ -751,6 +837,10 @@ struct FrameView: View {
     private var mainContent: some View {
         GeometryReader { proxy in
             let isLandscape: Bool = proxy.size.width > proxy.size.height
+            let isPadLandscape: Bool = UIDevice.current.userInterfaceIdiom == .pad && isLandscape
+            let landscapeWidth = isPadLandscape && isInspectorVisible
+                ? max(0, proxy.size.width - inspectorWidth)
+                : proxy.size.width
             let overlayHeight: CGFloat = proxy.size.height * descriptionHeightRatio
             let portraitBoardsHeight: CGFloat = max(0, proxy.size.height - overlayHeight)
             let descriptionProgress: CGFloat = max(
@@ -766,18 +856,39 @@ struct FrameView: View {
 
             Group {
                 if isLandscape {
-                    HStack(spacing: 0) {
+                    let canvas = HStack(spacing: 0) {
                         boardsSection(height: proxy.size.height)
-                            .frame(width: proxy.size.width * 0.6, alignment: .top)
+                            .frame(width: landscapeWidth * 0.6, alignment: .top)
 
                         descriptionOverlay(
                             containerHeight: proxy.size.height,
                             overlayHeight: proxy.size.height,
                             allowsExpansion: false
                         )
-                        .frame(width: proxy.size.width * 0.4, height: proxy.size.height)
+                        .frame(width: landscapeWidth * 0.4, height: proxy.size.height)
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .frame(maxHeight: .infinity, alignment: .topLeading)
+                    .safeAreaInset(edge: .bottom) {
+                        if isPadLandscape && isInspectorVisible {
+                            frameCanvasBottomBar
+                        }
+                    }
+
+                    if isPadLandscape {
+                        let canvasWidth = landscapeWidth
+                        HStack(spacing: 0) {
+                            canvas
+                                .frame(width: canvasWidth, alignment: .topLeading)
+                            if isInspectorVisible {
+                                frameInspectorView
+                                    .frame(width: inspectorWidth, height: proxy.size.height)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    } else {
+                        canvas
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    }
                 } else {
                     ZStack(alignment: .bottom) {
                         boardsSection(height: portraitBoardsHeight)
@@ -809,7 +920,24 @@ struct FrameView: View {
                     portraitBoardsHeight: portraitBoardsHeight
                 )
             }
+            .onAppear {
+                layoutSize = proxy.size
+            }
+            .onChange(of: proxy.size) { newValue in
+                layoutSize = newValue
+            }
         }
+    }
+
+    private var frameCanvasBottomBar: some View {
+        HStack {
+            Spacer()
+            markerButton
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.ultraThinMaterial)
     }
 
     private var statusSheetOverlay: some View {
@@ -927,6 +1055,11 @@ struct FrameView: View {
     private var primaryText: String? {
         if let caption: String = frame.caption, !caption.isEmpty { return caption }
         return nil
+    }
+
+    private enum InspectorTab: String, CaseIterable {
+        case files
+        case comments
     }
 
     @ViewBuilder

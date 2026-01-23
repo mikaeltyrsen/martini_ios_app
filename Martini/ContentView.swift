@@ -262,6 +262,9 @@ struct MainView: View {
     @State private var commentsError: String?
     @State private var commentsTarget: CommentsTarget?
     @State private var isCommentsVisible = false
+    @State private var isInspectorVisible: Bool = true
+    @State private var inspectorTab: InspectorTab = .files
+    @State private var containerSize: CGSize = .zero
 
     @AppStorage("showDescriptions") private var showDescriptions: Bool = UIControlConfig.showDescriptionsDefault
     @AppStorage("showFullDescriptions") private var showFullDescriptions: Bool = UIControlConfig.showFullDescriptionsDefault
@@ -309,6 +312,11 @@ struct MainView: View {
     enum ScheduleRoute: Hashable {
         case list(ProjectSchedule)
         case detail(ProjectSchedule, ProjectScheduleItem)
+    }
+
+    private enum InspectorTab: String, CaseIterable {
+        case files
+        case comments
     }
 
     private struct ScriptNavigationTarget: Identifiable, Hashable {
@@ -962,24 +970,50 @@ struct MainView: View {
     }
 
     private var contentStack: some View {
-        ZStack(alignment: .bottom) {
-            gridView
+        GeometryReader { proxy in
+            let isLandscapePad = UIDevice.current.userInterfaceIdiom == .pad && proxy.size.width > proxy.size.height
+            let inspectorWidth: CGFloat = min(360, proxy.size.width * 0.35)
+            let canvasWidth = isLandscapePad && isInspectorVisible ? max(0, proxy.size.width - inspectorWidth) : proxy.size.width
 
-            if isHereShortcutVisible {
-                Button(action: scrollToHereFrame) {
-                    HStack(spacing: 8) {
-                        Image(systemName: hereShortcutIconName)
-                        Text("Jump to Here")
-                            .font(.system(size: 15, weight: .semibold))
+            HStack(spacing: 0) {
+                ZStack(alignment: .bottom) {
+                    gridView
+                        .safeAreaInset(edge: .bottom) {
+                            if isLandscapePad && isInspectorVisible {
+                                gridCanvasBottomBar
+                            }
+                        }
+
+                    if isHereShortcutVisible {
+                        Button(action: scrollToHereFrame) {
+                            HStack(spacing: 8) {
+                                Image(systemName: hereShortcutIconName)
+                                Text("Jump to Here")
+                                    .font(.system(size: 15, weight: .semibold))
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
+                            .background(.ultraThickMaterial, in: Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .shadow(radius: 3, y: 2)
+                        .padding(.bottom, 12)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(.ultraThickMaterial, in: Capsule())
                 }
-                .buttonStyle(.plain)
-                .shadow(radius: 3, y: 2)
-                .padding(.bottom, 12)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .frame(width: canvasWidth, height: proxy.size.height)
+
+                if isLandscapePad && isInspectorVisible {
+                    gridInspectorView
+                        .frame(width: inspectorWidth, height: proxy.size.height)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .onAppear {
+                containerSize = proxy.size
+            }
+            .onChange(of: proxy.size) { newValue in
+                containerSize = newValue
             }
         }
     }
@@ -1003,6 +1037,14 @@ struct MainView: View {
             if shouldShowScheduleButton {
                 scheduleButton
             }
+            if isPadLandscape {
+                Button {
+                    isInspectorVisible.toggle()
+                } label: {
+                    Image(systemName: inspectorToggleIconName)
+                }
+                .accessibilityLabel(isInspectorVisible ? "Hide inspector" : "Show inspector")
+            }
         }
 
         ToolbarItem(placement: .navigationBarLeading) {
@@ -1010,7 +1052,78 @@ struct MainView: View {
         }
 
         ToolbarItemGroup(placement: .bottomBar) {
+            if isPadLandscape && isInspectorVisible {
+                EmptyView()
+            } else {
 
+                Menu {
+                    Button {
+                        toggleViewMode()
+                    } label: {
+                        Label(viewMode == .grid ? "Close Overview" : "Open Overview", systemImage: viewMode == .grid ? "square.grid.4x3.fill" : "eye")
+                    }
+
+                    Divider()
+
+                    if !isPadLandscape {
+                        Button {
+                            showingProjectFiles = true
+                        } label: {
+                            Label("Files", systemImage: "folder")
+                        }
+
+                        Button {
+                            openComments()
+                        } label: {
+                            Label("Comments", systemImage: "text.bubble")
+                        }
+                        .disabled(!canOpenComments)
+                    }
+
+                    Button {
+                        isShowingSettings = true
+                    } label: {
+                        Label("Settings", systemImage: "switch.2")
+                    }
+                } label: {
+                    Label("More", systemImage: "ellipsis.circle")
+                        .labelStyle(.titleAndIcon)
+                        .font(.system(size: 17, weight: .semibold))
+                }
+                .accessibilityLabel("More options")
+
+                Spacer()
+
+                Picker("Sort order", selection: $frameSortMode) {
+                    Text("Story").tag(FrameSortMode.story)
+                    Text("Shoot").tag(FrameSortMode.shoot)
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 200)
+
+                Spacer()
+
+                Button {
+                    openScriptView()
+                } label: {
+                    Image(systemName: "list.bullet")
+                        .imageScale(.large)
+                }
+                .accessibilityLabel("Open Script")
+            }
+        }
+    }
+
+    private var isPadLandscape: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad && containerSize.width > containerSize.height
+    }
+
+    private var inspectorToggleIconName: String {
+        isInspectorVisible ? "rectangle.split.3x1.fill" : "rectangle.split.3x1"
+    }
+
+    private var gridCanvasBottomBar: some View {
+        HStack {
             Menu {
                 Button {
                     toggleViewMode()
@@ -1019,19 +1132,6 @@ struct MainView: View {
                 }
 
                 Divider()
-
-                Button {
-                    showingProjectFiles = true
-                } label: {
-                    Label("Files", systemImage: "folder")
-                }
-
-                Button {
-                    openComments()
-                } label: {
-                    Label("Comments", systemImage: "text.bubble")
-                }
-                .disabled(!canOpenComments)
 
                 Button {
                     isShowingSettings = true
@@ -1064,6 +1164,9 @@ struct MainView: View {
             }
             .accessibilityLabel("Open Script")
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.ultraThinMaterial)
     }
 
     private func openSchedule() {
@@ -1102,6 +1205,115 @@ struct MainView: View {
 
     private func openScriptView() {
         scriptNavigationTarget = ScriptNavigationTarget(frameId: scriptTargetFrameId)
+    }
+
+    private var gridInspectorView: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Inspector")
+                .font(.headline)
+
+            Picker("Inspector Tab", selection: $inspectorTab) {
+                Text(inspectorFilesTitle).tag(InspectorTab.files)
+                Text(inspectorCommentsTitle).tag(InspectorTab.comments)
+            }
+            .pickerStyle(.segmented)
+
+            Divider()
+
+            Group {
+                switch inspectorTab {
+                case .files:
+                    FilesView(
+                        title: "Project Files",
+                        clips: $projectFiles,
+                        isLoading: $isLoadingProjectFiles,
+                        errorMessage: $projectFilesError,
+                        onReload: { await loadProjectFiles(force: true) },
+                        onMediaPreview: { clip in
+                            openProjectFilePreview(clip)
+                        },
+                        showsNavigationTitle: false
+                    )
+                case .comments:
+                    if let target = commentsTarget {
+                        CommentsView(
+                            frameTitle: target.title,
+                            frameId: target.frameId,
+                            creativeId: target.creativeId,
+                            comments: $comments,
+                            isLoading: isLoadingComments,
+                            errorMessage: commentsError,
+                            isVisible: $isCommentsVisible,
+                            onReload: { await loadComments(for: target, force: true) },
+                            showsNavigationTitle: false
+                        )
+                    } else {
+                        VStack(spacing: 12) {
+                            Image(systemName: "text.bubble")
+                                .font(.system(size: 40))
+                                .foregroundStyle(.tertiary)
+                            Text("Select a creative to view comments.")
+                                .font(.headline)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .padding()
+        .frame(maxHeight: .infinity, alignment: .top)
+        .background(.ultraThinMaterial)
+        .onAppear {
+            if inspectorTab == .comments {
+                updateInspectorCommentsTarget()
+            }
+        }
+        .onChange(of: inspectorTab) { newValue in
+            if newValue == .comments {
+                updateInspectorCommentsTarget()
+            }
+        }
+        .onChange(of: currentCreativeId) { _ in
+            if inspectorTab == .comments {
+                updateInspectorCommentsTarget()
+            }
+        }
+    }
+
+    private var inspectorFilesTitle: String {
+        if projectFiles.count > 0 {
+            return "Files (\(projectFiles.count))"
+        }
+        return "Files"
+    }
+
+    private var inspectorCommentsTitle: String {
+        if comments.count > 0 {
+            return "Comments (\(comments.count))"
+        }
+        return "Comments"
+    }
+
+    private func updateInspectorCommentsTarget() {
+        guard let creativeId = currentCreativeId ?? creativesToDisplay.first?.id else {
+            commentsTarget = nil
+            return
+        }
+
+        let title = "All Frames • \(currentCreativeTitle)"
+        let target = CommentsTarget(
+            title: title,
+            creativeId: creativeId,
+            frameId: nil,
+            cacheKey: "creative:\(creativeId)"
+        )
+
+        guard commentsTarget?.cacheKey != target.cacheKey else { return }
+        commentsTarget = target
+        comments = commentsCache[target.cacheKey] ?? []
+        commentsError = nil
     }
 
     private func openProjectFilePreview(_ clip: Clip) {
