@@ -10,7 +10,7 @@ struct CommentsView: View {
     let errorMessage: String?
     @Binding var isVisible: Bool
     let onReload: () async -> Void
-    let showsNavigationTitle: Bool = true
+    let showsNavigationTitle: Bool
     @State private var newCommentText: String = ""
     @FocusState private var composeFieldFocused: Bool
     @EnvironmentObject private var authService: AuthService
@@ -20,6 +20,28 @@ struct CommentsView: View {
     @State private var sendErrorMessage: String?
     private let bottomAnchorId = "comments-bottom-anchor"
     private var allowsComposing: Bool { frameId != nil }
+
+    init(
+        frameTitle: String,
+        frameId: String?,
+        creativeId: String,
+        comments: Binding<[Comment]>,
+        isLoading: Bool,
+        errorMessage: String?,
+        isVisible: Binding<Bool>,
+        onReload: @escaping () async -> Void,
+        showsNavigationTitle: Bool = true
+    ) {
+        self.frameTitle = frameTitle
+        self.frameId = frameId
+        self.creativeId = creativeId
+        _comments = comments
+        self.isLoading = isLoading
+        self.errorMessage = errorMessage
+        _isVisible = isVisible
+        self.onReload = onReload
+        self.showsNavigationTitle = showsNavigationTitle
+    }
 
     var body: some View {
         contentWithNavigation
