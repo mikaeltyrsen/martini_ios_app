@@ -37,7 +37,11 @@ struct CommentsView: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 16) {
                             ForEach(comments) { comment in
-                                CommentThreadView(comment: comment, onToggleStatus: toggleStatus)
+                                CommentThreadView(
+                                    comment: comment,
+                                    frameThumbnailURL: frameThumbnailURL(for: comment),
+                                    onToggleStatus: toggleStatus
+                                )
                                     .padding(.bottom, 4)
                                     .transition(.move(edge: .bottom).combined(with: .opacity))
                             }
@@ -278,6 +282,27 @@ struct CommentsView: View {
         }
     }
 
+    private func frameThumbnailURL(for comment: Comment) -> URL? {
+        guard frameId == nil else { return nil }
+        guard let commentFrameId = comment.frameId else {
+            return comment.frameThumb.flatMap { URL(string: $0) }
+        }
+
+        if let frame = authService.frames.first(where: { $0.id == commentFrameId }) {
+            let boardAsset = frame.availableAssets.first { $0.kind == .board }
+            if let url = boardAsset?.thumbnailURL ?? boardAsset?.url {
+                return url
+            }
+
+            let fallbackAsset = frame.availableAssets.first
+            if let url = fallbackAsset?.thumbnailURL ?? fallbackAsset?.url {
+                return url
+            }
+        }
+
+        return comment.frameThumb.flatMap { URL(string: $0) }
+    }
+
     private var hasSendErrorBinding: Binding<Bool> {
         Binding(
             get: { sendErrorMessage != nil },
@@ -366,16 +391,27 @@ private struct CommentsSheet: View {
 
 private struct CommentThreadView: View {
     let comment: Comment
+    let frameThumbnailURL: URL?
     let onToggleStatus: (Comment) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            CommentLayout(comment: comment, isReply: false, onToggleStatus: onToggleStatus)
+            CommentLayout(
+                comment: comment,
+                isReply: false,
+                frameThumbnailURL: frameThumbnailURL,
+                onToggleStatus: onToggleStatus
+            )
 
             if !comment.replies.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(comment.replies) { reply in
-                        CommentLayout(comment: reply, isReply: true, onToggleStatus: onToggleStatus)
+                        CommentLayout(
+                            comment: reply,
+                            isReply: true,
+                            frameThumbnailURL: nil,
+                            onToggleStatus: onToggleStatus
+                        )
                     }
                 }
                 .padding(.leading, 24)
