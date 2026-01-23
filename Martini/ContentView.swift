@@ -256,13 +256,11 @@ struct MainView: View {
     @State private var isLoadingProjectFiles: Bool = false
     @State private var projectFilesError: String?
     @State private var showingProjectFiles: Bool = false
-    @State private var projectFilesSheetDetent: PresentationDetent = .medium
-    @State private var isShowingComments = false
     @State private var isLoadingComments = false
     @State private var comments: [Comment] = []
     @State private var commentsCache: [String: [Comment]] = [:]
     @State private var commentsError: String?
-    @State private var commentsFrame: Frame?
+    @State private var commentsTarget: CommentsTarget?
     @State private var isCommentsVisible = false
 
     @AppStorage("showDescriptions") private var showDescriptions: Bool = UIControlConfig.showDescriptionsDefault
@@ -316,6 +314,14 @@ struct MainView: View {
     private struct ScriptNavigationTarget: Identifiable, Hashable {
         let id = UUID()
         let frameId: String?
+    }
+
+    private struct CommentsTarget: Identifiable, Hashable {
+        let id = UUID()
+        let title: String
+        let creativeId: String
+        let frameId: String?
+        let cacheKey: String
     }
 
     private static let scheduleDateFormatter: DateFormatter = {
@@ -755,8 +761,8 @@ struct MainView: View {
             .fullScreenCover(isPresented: selectedFrameIsPresented) {
                 framePagerSheet
             }
-            .sheet(isPresented: $showingProjectFiles) {
-                FilesSheet(
+            .navigationDestination(isPresented: $showingProjectFiles) {
+                FilesView(
                     title: "Project Files",
                     clips: $projectFiles,
                     isLoading: $isLoadingProjectFiles,
@@ -766,33 +772,22 @@ struct MainView: View {
                         openProjectFilePreview(clip)
                     }
                 )
-                .presentationDetents([.medium, .large], selection: $projectFilesSheetDetent)
-                .presentationDragIndicator(.visible)
             }
-            .sheet(isPresented: $isShowingComments) {
-                if let frame = commentsFrame {
-                    NavigationStack {
-                        CommentsView(
-                            frameTitle: frame.displayOrderTitle,
-                            frameId: frame.id,
-                            creativeId: frame.creativeId,
-                            comments: $comments,
-                            isLoading: isLoadingComments,
-                            errorMessage: commentsError,
-                            isVisible: $isCommentsVisible,
-                            onReload: { await loadComments(for: frame, force: true) }
-                        )
-                    }
-                }
+            .navigationDestination(item: $commentsTarget) { target in
+                CommentsView(
+                    frameTitle: target.title,
+                    frameId: target.frameId,
+                    creativeId: target.creativeId,
+                    comments: $comments,
+                    isLoading: isLoadingComments,
+                    errorMessage: commentsError,
+                    isVisible: $isCommentsVisible,
+                    onReload: { await loadComments(for: target, force: true) }
+                )
             }
             .onChange(of: comments) { newComments in
-                if let frameId = commentsFrame?.id {
-                    commentsCache[frameId] = newComments
-                }
-            }
-            .onChange(of: showingProjectFiles) { isShowing in
-                if isShowing {
-                    projectFilesSheetDetent = .medium
+                if let cacheKey = commentsTarget?.cacheKey {
+                    commentsCache[cacheKey] = newComments
                 }
             }
             .sheet(isPresented: $isShowingSettings) {
@@ -1036,7 +1031,7 @@ struct MainView: View {
                 } label: {
                     Label("Comments", systemImage: "text.bubble")
                 }
-                .disabled(contextMenuFrame == nil)
+                .disabled(!canOpenComments)
 
                 Button {
                     isShowingSettings = true
@@ -1086,15 +1081,23 @@ struct MainView: View {
     }
 
     private func openComments() {
-        guard let frame = contextMenuFrame else { return }
-        commentsFrame = frame
-        if let cached = commentsCache[frame.id] {
+        guard let creativeId = currentCreativeId
+            ?? contextMenuFrame?.creativeId
+            ?? creativesToDisplay.first?.id else { return }
+        let title = "All Frames • \(currentCreativeTitle)"
+        let target = CommentsTarget(
+            title: title,
+            creativeId: creativeId,
+            frameId: nil,
+            cacheKey: "creative:\(creativeId)"
+        )
+        commentsTarget = target
+        if let cached = commentsCache[target.cacheKey] {
             comments = cached
         } else {
             comments = []
         }
         commentsError = nil
-        isShowingComments = true
     }
 
     private func openScriptView() {
@@ -1403,7 +1406,7 @@ struct MainView: View {
     }
 
     @MainActor
-    private func loadComments(for frame: Frame, force: Bool) async {
+    private func loadComments(for target: CommentsTarget, force: Bool) async {
         if isLoadingComments { return }
         if !force && !comments.isEmpty { return }
 
@@ -1412,15 +1415,15 @@ struct MainView: View {
 
         do {
             let response = try await authService.fetchComments(
-                creativeId: frame.creativeId,
-                frameId: frame.id
+                creativeId: target.creativeId,
+                frameId: target.frameId
             )
-            guard commentsFrame?.id == frame.id else { return }
+            guard commentsTarget?.id == target.id else { return }
             comments = response.comments
-            commentsCache[frame.id] = response.comments
+            commentsCache[target.cacheKey] = response.comments
             commentsError = nil
         } catch {
-            guard commentsFrame?.id == frame.id else { return }
+            guard commentsTarget?.id == target.id else { return }
             commentsError = error.localizedDescription
         }
     }
@@ -1687,6 +1690,12 @@ struct MainView: View {
             return frame
         }
         return displayedFramesInCurrentMode.first
+    }
+
+    private var canOpenComments: Bool {
+        currentCreativeId != nil
+            || contextMenuFrame?.creativeId != nil
+            || creativesToDisplay.first?.id != nil
     }
 
     private var scriptTargetFrameId: String? {
@@ -1971,25 +1980,26 @@ private extension MainView {
     @MainActor
     private func handleCommentUpdateEvent(_ event: FrameUpdateEvent) async {
         guard case .websocket(let eventName) = event.context else { return }
-        guard isCommentsVisible, let frame = commentsFrame, frame.id == event.frameId else { return }
+        guard isCommentsVisible, let target = commentsTarget else { return }
+        guard shouldHandleCommentEvent(event, target: target) else { return }
 
         switch eventName {
         case "comment-added":
             if let commentId = event.commentId, containsComment(comments, commentId: commentId) {
                 return
             }
-            await loadComments(for: frame, force: true)
+            await loadComments(for: target, force: true)
         case "comment-deleted":
-            await loadComments(for: frame, force: true)
+            await loadComments(for: target, force: true)
         case "comment-status-updated":
             guard let commentId = event.commentId else {
-                await loadComments(for: frame, force: true)
+                await loadComments(for: target, force: true)
                 return
             }
             if let status = event.commentStatus {
                 updateCommentStatus(commentId: commentId, status: status)
             } else {
-                await loadComments(for: frame, force: true)
+                await loadComments(for: target, force: true)
             }
         default:
             break
@@ -1999,9 +2009,27 @@ private extension MainView {
     @MainActor
     private func updateCommentStatus(commentId: String, status: Int) {
         comments = updatedComments(comments, commentId: commentId, status: status)
-        if let frameId = commentsFrame?.id {
-            commentsCache[frameId] = comments
+        if let cacheKey = commentsTarget?.cacheKey {
+            commentsCache[cacheKey] = comments
         }
+    }
+
+    private func shouldHandleCommentEvent(_ event: FrameUpdateEvent, target: CommentsTarget) -> Bool {
+        if let targetFrameId = target.frameId {
+            return event.frameId == targetFrameId
+        }
+
+        let eventFrameId = event.frameId
+
+        if let frame = authService.frames.first(where: { $0.id == eventFrameId }) {
+            return frame.creativeId == target.creativeId
+        }
+
+        if let frame = displayedFramesInCurrentMode.first(where: { $0.id == eventFrameId }) {
+            return frame.creativeId == target.creativeId
+        }
+
+        return false
     }
 
     private func updatedComments(_ comments: [Comment], commentId: String, status: Int) -> [Comment] {
