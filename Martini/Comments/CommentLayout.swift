@@ -3,6 +3,7 @@ import SwiftUI
 struct CommentLayout: View {
     let comment: Comment
     let isReply: Bool
+    let frameThumbnailURL: URL?
     let onToggleStatus: (Comment) -> Void
 
     var body: some View {
@@ -26,6 +27,10 @@ struct CommentLayout: View {
                     Text(body)
                         .font(isReply ? .subheadline : .body)
                 }
+            }
+
+            if let frameThumbnailURL, !isReply {
+                frameThumbnailView(url: frameThumbnailURL)
             }
 
             Spacer(minLength: 8)
@@ -66,14 +71,42 @@ struct CommentLayout: View {
     private var statusIconColor: Color {
         isStatusComplete ? .white : .secondary
     }
+
+    private func frameThumbnailView(url: URL) -> some View {
+        CachedAsyncImage(url: url) { phase in
+            switch phase {
+            case let .success(image):
+                image
+                    .resizable()
+                    .scaledToFill()
+            case .empty:
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(Color.secondary.opacity(0.15))
+                    ProgressView()
+                }
+            case .failure:
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(Color.secondary.opacity(0.12))
+                    Image(systemName: "photo")
+                        .foregroundStyle(.secondary)
+                }
+            @unknown default:
+                EmptyView()
+            }
+        }
+        .frame(width: 52, height: 52)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
 }
 
 #if DEBUG
 struct CommentLayout_Previews: PreviewProvider {
     static var previews: some View {
         VStack(spacing: 16) {
-            CommentLayout(comment: sampleComment, isReply: false, onToggleStatus: { _ in })
-            CommentLayout(comment: sampleReply, isReply: true, onToggleStatus: { _ in })
+            CommentLayout(comment: sampleComment, isReply: false, frameThumbnailURL: nil, onToggleStatus: { _ in })
+            CommentLayout(comment: sampleReply, isReply: true, frameThumbnailURL: nil, onToggleStatus: { _ in })
         }
         .padding()
         .previewLayout(.sizeThatFits)
