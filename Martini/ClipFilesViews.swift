@@ -26,12 +26,11 @@ struct FilesView: View {
     @Binding var errorMessage: String?
     let onReload: () async -> Void
     let onMediaPreview: (Clip) -> Void
+    let showsNavigationTitle: Bool = true
     @State private var selectedClip: Clip?
 
     var body: some View {
-        content
-            .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.inline)
+        contentWithNavigation
             .task {
                 await onReload()
             }
@@ -43,6 +42,17 @@ struct FilesView: View {
             } message: {
                 Text(errorMessage ?? "Unknown error")
             }
+    }
+
+    @ViewBuilder
+    private var contentWithNavigation: some View {
+        if showsNavigationTitle {
+            content
+                .navigationTitle(title)
+                .navigationBarTitleDisplayMode(.inline)
+        } else {
+            content
+        }
     }
 
     private var content: some View {
