@@ -496,7 +496,7 @@ struct FrameView: View {
                 if showsTopToolbar {
                     topToolbar
                 }
-                if shouldShowBottomToolbar {
+                if shouldShowBottomToolbar && !(isPadLandscape && isInspectorVisible) {
                     bottomToolbar
                 }
             }
@@ -868,6 +868,11 @@ struct FrameView: View {
                         .frame(width: landscapeWidth * 0.4, height: proxy.size.height)
                     }
                     .frame(maxHeight: .infinity, alignment: .topLeading)
+                    .safeAreaInset(edge: .bottom) {
+                        if isPadLandscape && isInspectorVisible {
+                            frameCanvasBottomBar
+                        }
+                    }
 
                     if isPadLandscape {
                         let canvasWidth = landscapeWidth
@@ -922,6 +927,17 @@ struct FrameView: View {
                 layoutSize = newValue
             }
         }
+    }
+
+    private var frameCanvasBottomBar: some View {
+        HStack {
+            Spacer()
+            markerButton
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.ultraThinMaterial)
     }
 
     private var statusSheetOverlay: some View {

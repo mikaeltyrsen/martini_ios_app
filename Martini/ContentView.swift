@@ -978,6 +978,11 @@ struct MainView: View {
             HStack(spacing: 0) {
                 ZStack(alignment: .bottom) {
                     gridView
+                        .safeAreaInset(edge: .bottom) {
+                            if isLandscapePad && isInspectorVisible {
+                                gridCanvasBottomBar
+                            }
+                        }
 
                     if isHereShortcutVisible {
                         Button(action: scrollToHereFrame) {
@@ -1047,7 +1052,78 @@ struct MainView: View {
         }
 
         ToolbarItemGroup(placement: .bottomBar) {
+            if isPadLandscape && isInspectorVisible {
+                EmptyView()
+            } else {
 
+                Menu {
+                    Button {
+                        toggleViewMode()
+                    } label: {
+                        Label(viewMode == .grid ? "Close Overview" : "Open Overview", systemImage: viewMode == .grid ? "square.grid.4x3.fill" : "eye")
+                    }
+
+                    Divider()
+
+                    if !isPadLandscape {
+                        Button {
+                            showingProjectFiles = true
+                        } label: {
+                            Label("Files", systemImage: "folder")
+                        }
+
+                        Button {
+                            openComments()
+                        } label: {
+                            Label("Comments", systemImage: "text.bubble")
+                        }
+                        .disabled(!canOpenComments)
+                    }
+
+                    Button {
+                        isShowingSettings = true
+                    } label: {
+                        Label("Settings", systemImage: "switch.2")
+                    }
+                } label: {
+                    Label("More", systemImage: "ellipsis.circle")
+                        .labelStyle(.titleAndIcon)
+                        .font(.system(size: 17, weight: .semibold))
+                }
+                .accessibilityLabel("More options")
+
+                Spacer()
+
+                Picker("Sort order", selection: $frameSortMode) {
+                    Text("Story").tag(FrameSortMode.story)
+                    Text("Shoot").tag(FrameSortMode.shoot)
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 200)
+
+                Spacer()
+
+                Button {
+                    openScriptView()
+                } label: {
+                    Image(systemName: "list.bullet")
+                        .imageScale(.large)
+                }
+                .accessibilityLabel("Open Script")
+            }
+        }
+    }
+
+    private var isPadLandscape: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad && containerSize.width > containerSize.height
+    }
+
+    private var inspectorToggleIconName: String {
+        isInspectorVisible ? "rectangle.split.3x1.fill" : "rectangle.split.3x1"
+    }
+
+    private var gridCanvasBottomBar: some View {
+        HStack {
             Menu {
                 Button {
                     toggleViewMode()
@@ -1056,21 +1132,6 @@ struct MainView: View {
                 }
 
                 Divider()
-
-                if !isPadLandscape {
-                    Button {
-                        showingProjectFiles = true
-                    } label: {
-                        Label("Files", systemImage: "folder")
-                    }
-
-                    Button {
-                        openComments()
-                    } label: {
-                        Label("Comments", systemImage: "text.bubble")
-                    }
-                    .disabled(!canOpenComments)
-                }
 
                 Button {
                     isShowingSettings = true
@@ -1103,14 +1164,9 @@ struct MainView: View {
             }
             .accessibilityLabel("Open Script")
         }
-    }
-
-    private var isPadLandscape: Bool {
-        UIDevice.current.userInterfaceIdiom == .pad && containerSize.width > containerSize.height
-    }
-
-    private var inspectorToggleIconName: String {
-        isInspectorVisible ? "rectangle.split.3x1.fill" : "rectangle.split.3x1"
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.ultraThinMaterial)
     }
 
     private func openSchedule() {
