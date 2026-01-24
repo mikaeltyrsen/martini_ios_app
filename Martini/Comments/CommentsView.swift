@@ -21,112 +21,138 @@ struct CommentsView: View {
     private var allowsComposing: Bool { frameId != nil }
 
     var body: some View {
-        Group {
-            if comments.isEmpty {
-                VStack(spacing: 12) {
-                    Image(systemName: "text.bubble")
-                        .font(.system(size: 40))
-                        .foregroundStyle(.tertiary)
-                    Text(errorMessage ?? "No comments yet.")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 16) {
-                            ForEach(comments) { comment in
-                                CommentThreadView(
-                                    comment: comment,
-                                    onToggleStatus: toggleStatus,
-                                    onReply: handleReply,
-                                    onCopyComment: copyComment
-                                )
+        
+        ZStack(alignment: .bottom) {
+            
+            // Bottom gradient layer (goes through home indicator)
+//                LinearGradient(
+//                    colors: [Color.black.opacity(1), Color.black.opacity(0)],
+//                    startPoint: .bottom,
+//                    endPoint: .top
+//                )
+//                .frame(height: 120)
+//                .ignoresSafeArea(edges: .bottom)
+//                .allowsHitTesting(false)
+            
+            Group {
+                if comments.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "text.bubble")
+                            .font(.system(size: 40))
+                            .foregroundStyle(.tertiary)
+                        Text(errorMessage ?? "No comments yet.")
+                            .font(.headline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ScrollViewReader { proxy in
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 16) {
+                                ForEach(comments) { comment in
+                                    CommentThreadView(
+                                        comment: comment,
+                                        onToggleStatus: toggleStatus,
+                                        onReply: handleReply,
+                                        onCopyComment: copyComment
+                                    )
                                     .padding(.bottom, 4)
                                     .transition(.move(edge: .bottom).combined(with: .opacity))
+                                }
+                                
+                                Color.clear
+                                    .frame(height: 1)
+                                    .id(bottomAnchorId)
                             }
-
-                            Color.clear
-                                .frame(height: 1)
-                                .id(bottomAnchorId)
+                            .padding(.horizontal)
+                            .padding(.top)
+                            .padding(.bottom, 24)
                         }
-                        .padding(.horizontal)
-                        .padding(.top)
-                        .padding(.bottom, 24)
-                    }
-                    .coordinateSpace(name: "comments-scroll")
-                    .onAppear {
-                        DispatchQueue.main.async {
-                            scrollToBottom(using: proxy, animated: false)
+                        .coordinateSpace(name: "comments-scroll")
+                        .onAppear {
+                            DispatchQueue.main.async {
+                                scrollToBottom(using: proxy, animated: false)
+                            }
                         }
-                    }
-                    .onChange(of: totalCommentCount(in: comments)) { _ in
-                        DispatchQueue.main.async {
-                            scrollToBottom(using: proxy, animated: true)
-                        }
-                    }
-                    .onChange(of: keyboardHeight) { height in
-                        if height > 0 {
+                        .onChange(of: totalCommentCount(in: comments)) { _ in
                             DispatchQueue.main.async {
                                 scrollToBottom(using: proxy, animated: true)
                             }
                         }
+                        .onChange(of: keyboardHeight) { height in
+                            if height > 0 {
+                                DispatchQueue.main.async {
+                                    scrollToBottom(using: proxy, animated: true)
+                                }
+                            }
+                        }
+                        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: comments)
                     }
-                    .animation(.spring(response: 0.35, dampingFraction: 0.85), value: comments)
                 }
             }
-        }
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                HStack(spacing: 8) {
-                    if isLoading {
-                        ProgressView()
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    HStack(spacing: 8) {
+                        if isLoading {
+                            ProgressView()
+                        }
+                        Text(navigationTitle)
+                            .font(.headline)
                     }
-                    Text(navigationTitle)
-                        .font(.headline)
                 }
             }
-        }
-        .navigationBarTitleDisplayMode(.inline)
-        .task {
-            await onReload()
-        }
-        .onAppear {
-            isVisible = true
-        }
-        .onDisappear {
-            isVisible = false
-        }
-        .safeAreaInset(edge: .bottom) {
-            VStack(spacing: 0) {
-                Divider()
-                if allowsComposing {
-                    commentComposer
-                        .padding(.vertical, 6)
-                } else {
-                    commentAccessNote
-                        .padding(.vertical, 6)
+            .navigationBarTitleDisplayMode(.inline)
+            .task {
+                await onReload()
+            }
+            .onAppear {
+                isVisible = true
+            }
+            .onDisappear {
+                isVisible = false
+            }
+            .safeAreaInset(edge: .bottom) {
+                
+                VStack(spacing: 0) {
+                    if allowsComposing {
+                        commentComposer
+                    } else {
+                        commentAccessNote
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.top, 6)
+                .background {
+                    // Background for the inset area
+                    LinearGradient(
+                        colors: [
+                            Color.systemBackground.opacity(1.0), // bottom
+                            Color.systemBackground.opacity(0.0)  // top
+                        ],
+                        startPoint: .bottom,
+                        endPoint: .top
+                    )
+                    .ignoresSafeArea(edges: .bottom) // make sure it fills the home-indicator area
                 }
             }
-            .padding(.horizontal)
-            .padding(.top, 6)
-            .background(.ultraThinMaterial)
-        }
-        .alert("Unable to post comment", isPresented: hasSendErrorBinding) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(sendErrorMessage ?? "Please try again.")
-        }
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
-            guard let frame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else {
-                return
+            //.background(Color.clear)
+            .alert("Unable to post comment", isPresented: hasSendErrorBinding) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(sendErrorMessage ?? "Please try again.")
             }
-            keyboardHeight = frame.height
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
+                guard let frame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else {
+                    return
+                }
+                keyboardHeight = frame.height
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+                keyboardHeight = 0
+            }
         }
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
-            keyboardHeight = 0
-        }
+
+        
     }
 
     private func sendComment() {
@@ -233,9 +259,10 @@ struct CommentsView: View {
                 .foregroundStyle(.primary)
                 .textFieldStyle(.plain)
                 .tint(.primary)
-                .padding(.horizontal, 4)
+                .padding(.horizontal, 10)
                 .padding(.vertical, 10)
         }
+        .glassEffect()
     }
 
     private var commentAccessNote: some View {
@@ -361,8 +388,6 @@ private struct CommentThreadView: View {
             CommentRow(comment: comment, isReply: false, onToggleStatus: onToggleStatus)
 
             if !comment.replies.isEmpty {
-                Divider()
-                    .padding(.leading, 36)
                 VStack(alignment: .leading, spacing: 12) {
                     ForEach(comment.replies) { reply in
                         CommentRow(comment: reply, isReply: true, onToggleStatus: onToggleStatus)
