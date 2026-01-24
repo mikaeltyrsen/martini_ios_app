@@ -143,8 +143,8 @@ struct CommentsView: View {
             // Background for the inset area
             LinearGradient(
                 colors: [
-                    Color.systemBackground.opacity(1.0), // bottom
-                    Color.systemBackground.opacity(0.0)  // top
+                    Color(uiColor: .systemBackground).opacity(1.0), // bottom
+                    Color(uiColor: .systemBackground).opacity(0.0)  // top
                 ],
                 startPoint: .bottom,
                 endPoint: .top
@@ -254,7 +254,7 @@ struct CommentsView: View {
 
     private var commentComposer: some View {
         HStack(spacing: 8) {
-            TextField("Comment", text: $newCommentText)
+            TextField("Add Comment", text: $newCommentText)
                 .focused($composeFieldFocused)
                 .submitLabel(.send)
                 .onTapGesture { composeFieldFocused = true }
@@ -426,7 +426,6 @@ private struct CommentThreadView: View {
                         CommentRow(comment: reply, isReply: true, onToggleStatus: onToggleStatus)
                     }
                 }
-                .padding(.leading, 36)
             }
         }
         .padding(18)

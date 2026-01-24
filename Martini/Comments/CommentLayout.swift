@@ -23,7 +23,7 @@ struct CommentRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             avatarView
-                .frame(width: isReply ? 22 : 28, height: isReply ? 22 : 28)
+                .frame(width: isReply ? 28 : 28, height: isReply ? 28 : 28)
 
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 8) {
@@ -90,7 +90,7 @@ struct CommentRow: View {
     private var avatarView: some View {
         ZStack {
             Circle()
-                .fill(Color.accentColor.opacity(0.2))
+                .fill(Color.martiniAccentColor)
 
             if let avatarUrlString = comment.userAvatar?.trimmingCharacters(in: .whitespacesAndNewlines),
                !avatarUrlString.isEmpty,
