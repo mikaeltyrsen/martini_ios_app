@@ -17,6 +17,8 @@ struct CommentsView: View {
     @State private var keyboardHeight: CGFloat = 0
     @State private var isSendingComment = false
     @State private var sendErrorMessage: String?
+    @State private var replyMentionUserId: String?
+    @State private var replyMentionName: String?
     private let bottomAnchorId = "comments-bottom-anchor"
     private var allowsComposing: Bool { frameId != nil }
 
@@ -169,19 +171,20 @@ struct CommentsView: View {
         }
 
         isSendingComment = true
+        let resolvedComment = resolvedCommentBody(from: trimmed)
         Task {
             do {
                 let commentId = try await authService.addComment(
                     projectId: projectId,
                     creativeId: creativeId,
                     frameId: frameId,
-                    comment: trimmed,
+                    comment: resolvedComment,
                     guestName: name
                 )
                 let newComment = Comment(
                     id: commentId,
                     guestName: name,
-                    comment: trimmed,
+                    comment: resolvedComment,
                     frameId: frameId
                 )
                 await MainActor.run {
@@ -189,6 +192,8 @@ struct CommentsView: View {
                         comments.append(newComment)
                         newCommentText = ""
                         composeFieldFocused = false
+                        replyMentionUserId = nil
+                        replyMentionName = nil
                     }
                 }
             } catch {
@@ -213,6 +218,8 @@ struct CommentsView: View {
     private func handleReply(to comment: Comment) {
         let name = displayName(for: comment)
         newCommentText = "@\(name) "
+        replyMentionUserId = comment.userId
+        replyMentionName = name
         composeFieldFocused = true
     }
 
@@ -252,6 +259,14 @@ struct CommentsView: View {
                 .submitLabel(.send)
                 .onTapGesture { composeFieldFocused = true }
                 .onSubmit(sendComment)
+                .onChange(of: newCommentText) { newValue in
+                    guard let mentionName = replyMentionName else { return }
+                    let prefix = "@\(mentionName)"
+                    if !newValue.hasPrefix(prefix) {
+                        replyMentionUserId = nil
+                        replyMentionName = nil
+                    }
+                }
                 .foregroundStyle(.primary)
                 .textFieldStyle(.plain)
                 .tint(.primary)
@@ -274,6 +289,28 @@ struct CommentsView: View {
 
     private func displayName(for comment: Comment) -> String {
         comment.name ?? comment.guestName ?? "Unknown"
+    }
+
+    private func resolvedCommentBody(from body: String) -> String {
+        guard let mentionUserId = replyMentionUserId,
+              let mentionName = replyMentionName,
+              !mentionUserId.isEmpty
+        else {
+            return body
+        }
+
+        let mentionPrefix = "@\(mentionName)"
+        guard body.hasPrefix(mentionPrefix) else { return body }
+
+        let remainder = body.dropFirst(mentionPrefix.count)
+        let trimmedRemainder = remainder.trimmingCharacters(in: .whitespacesAndNewlines)
+        let mentionSpan = "<span class=\"mention\" contenteditable=\"false\" data-user-id=\"\(mentionUserId)\">@\(mentionName)</span>&nbsp;"
+
+        if trimmedRemainder.isEmpty {
+            return mentionSpan
+        }
+
+        return mentionSpan + trimmedRemainder
     }
 
     private var navigationTitle: String {

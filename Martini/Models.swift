@@ -1899,6 +1899,7 @@ struct ClipsResponse: Codable {
 struct Comment: Codable, Identifiable, Hashable {
     @SafeString var id: String
     @SafeOptionalString var userId: String?
+    @SafeOptionalString var userAvatar: String?
     let guestName: String?
     let comment: String?
     @SafeOptionalString var marker: String?
@@ -1913,6 +1914,7 @@ struct Comment: Codable, Identifiable, Hashable {
     enum CodingKeys: String, CodingKey {
         case id
         case userId = "user_id"
+        case userAvatar = "user_avatar"
         case guestName = "guest_name"
         case comment
         case marker
@@ -1928,6 +1930,7 @@ struct Comment: Codable, Identifiable, Hashable {
     init(
         id: String,
         userId: String? = nil,
+        userAvatar: String? = nil,
         guestName: String? = nil,
         comment: String? = nil,
         marker: String? = nil,
@@ -1941,6 +1944,7 @@ struct Comment: Codable, Identifiable, Hashable {
     ) {
         _id = SafeString(wrappedValue: id)
         _userId = SafeOptionalString(wrappedValue: userId)
+        _userAvatar = SafeOptionalString(wrappedValue: userAvatar)
         self.guestName = guestName
         self.comment = comment
         _marker = SafeOptionalString(wrappedValue: marker)
@@ -1957,6 +1961,7 @@ struct Comment: Codable, Identifiable, Hashable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         _id = try container.decode(SafeString.self, forKey: .id)
         _userId = try container.decodeIfPresent(SafeOptionalString.self, forKey: .userId) ?? SafeOptionalString()
+        _userAvatar = try container.decodeIfPresent(SafeOptionalString.self, forKey: .userAvatar) ?? SafeOptionalString()
         guestName = try container.decodeIfPresent(String.self, forKey: .guestName)
         comment = try container.decodeIfPresent(String.self, forKey: .comment)
         _marker = try container.decodeIfPresent(SafeOptionalString.self, forKey: .marker) ?? SafeOptionalString()
