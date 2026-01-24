@@ -37,7 +37,16 @@ struct CommentsView: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 16) {
                             ForEach(comments) { comment in
-                                CommentThreadView(comment: comment, onToggleStatus: toggleStatus)
+                                CommentThreadView(
+                                    comment: comment,
+                                    onToggleStatus: toggleStatus,
+                                    onToggleGroupStatus: { replies, shouldMarkComplete in
+                                        toggleStatus(for: replies, shouldMarkComplete: shouldMarkComplete)
+                                    },
+                                    onReply: handleReply,
+                                    onCopyComment: copyComment,
+                                    onCopyComments: copyComments
+                                )
                                     .padding(.bottom, 4)
                                     .transition(.move(edge: .bottom).combined(with: .opacity))
                             }
@@ -93,17 +102,15 @@ struct CommentsView: View {
         .onDisappear {
             isVisible = false
         }
-        .safeAreaInset(edge: .bottom) {
-            if allowsComposing {
-                commentComposer
-                    .padding(.horizontal)
-                    .padding(.vertical, 10)
-                    .background(.ultraThinMaterial)
-            } else {
-                commentAccessNote
-                    .padding(.horizontal)
-                    .padding(.vertical, 10)
-                    .background(.ultraThinMaterial)
+        .toolbar {
+            ToolbarItem(placement: .bottomBar) {
+                if allowsComposing {
+                    commentComposer
+                        .padding(.vertical, 6)
+                } else {
+                    commentAccessNote
+                        .padding(.vertical, 6)
+                }
             }
         }
         .alert("Unable to post comment", isPresented: hasSendErrorBinding) {
@@ -181,6 +188,30 @@ struct CommentsView: View {
         }
     }
 
+    private func toggleStatus(for comments: [Comment], shouldMarkComplete: Bool) {
+        let newStatus = shouldMarkComplete ? 2 : 0
+        Task {
+            for comment in comments {
+                await updateCommentStatus(commentId: comment.id, status: newStatus)
+            }
+        }
+    }
+
+    private func handleReply(to comment: Comment) {
+        let name = displayName(for: comment)
+        newCommentText = "@\(name) "
+        composeFieldFocused = true
+    }
+
+    private func copyComment(_ comment: Comment) {
+        UIPasteboard.general.string = comment.comment ?? ""
+    }
+
+    private func copyComments(_ comments: [Comment]) {
+        let combined = comments.compactMap(\.comment).joined(separator: "\n")
+        UIPasteboard.general.string = combined
+    }
+
     @MainActor
     private func updateCommentStatus(commentId: String, status: Int) async {
         do {
@@ -250,6 +281,10 @@ struct CommentsView: View {
                 .foregroundStyle(.secondary)
             Spacer()
         }
+    }
+
+    private func displayName(for comment: Comment) -> String {
+        comment.name ?? comment.guestName ?? "Unknown"
     }
 
     private var navigationTitle: String {
@@ -367,19 +402,62 @@ private struct CommentsSheet: View {
 private struct CommentThreadView: View {
     let comment: Comment
     let onToggleStatus: (Comment) -> Void
+    let onToggleGroupStatus: ([Comment], Bool) -> Void
+    let onReply: (Comment) -> Void
+    let onCopyComment: (Comment) -> Void
+    let onCopyComments: ([Comment]) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             CommentLayout(comment: comment, isReply: false, onToggleStatus: onToggleStatus)
+                .contextMenu {
+                    Button("Reply to comment") {
+                        onReply(comment)
+                    }
+                    Button(commentStatusLabel(for: comment)) {
+                        onToggleStatus(comment)
+                    }
+                    Button("Copy comment") {
+                        onCopyComment(comment)
+                    }
+                }
 
             if !comment.replies.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 12) {
                     ForEach(comment.replies) { reply in
-                        CommentLayout(comment: reply, isReply: true, onToggleStatus: onToggleStatus)
+                        CommentRow(comment: reply, isReply: true, onToggleStatus: onToggleStatus)
+                    }
+                }
+                .padding(16)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color.commentBackground.opacity(1))
+                )
+                .contextMenu {
+                    Button("Add reply") {
+                        onReply(comment)
+                    }
+                    Button(groupStatusLabel) {
+                        onToggleGroupStatus(comment.replies, !isGroupComplete)
+                    }
+                    Button("Copy comment") {
+                        onCopyComments(comment.replies)
                     }
                 }
                 .padding(.leading, 24)
             }
         }
+    }
+
+    private var isGroupComplete: Bool {
+        comment.replies.allSatisfy { ($0.statusValue ?? 0) == 2 }
+    }
+
+    private var groupStatusLabel: String {
+        isGroupComplete ? "Mark as undone" : "Mark as done"
+    }
+
+    private func commentStatusLabel(for comment: Comment) -> String {
+        (comment.statusValue ?? 0) == 2 ? "Mark as undone" : "Mark as done"
     }
 }

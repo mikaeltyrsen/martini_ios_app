@@ -6,6 +6,21 @@ struct CommentLayout: View {
     let onToggleStatus: (Comment) -> Void
 
     var body: some View {
+        CommentRow(comment: comment, isReply: isReply, onToggleStatus: onToggleStatus)
+            .padding(18) // ⬅️ padding FIRST
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.commentBackground.opacity(1))
+        )
+    }
+}
+
+struct CommentRow: View {
+    let comment: Comment
+    let isReply: Bool
+    let onToggleStatus: (Comment) -> Void
+
+    var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Circle()
                 .fill(Color.accentColor)
@@ -30,25 +45,22 @@ struct CommentLayout: View {
 
             Spacer(minLength: 8)
 
-            Button {
-                onToggleStatus(comment)
-            } label: {
-                ZStack {
-                    Circle()
-                        .fill(statusColor)
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(statusIconColor)
+            if isStatusComplete {
+                Button {
+                    onToggleStatus(comment)
+                } label: {
+                    ZStack {
+                        Circle()
+                            .fill(statusColor)
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(statusIconColor)
+                    }
                 }
+                .frame(width: isReply ? 22 : 26, height: isReply ? 22 : 26)
+                .buttonStyle(.plain)
             }
-            .frame(width: isReply ? 22 : 26, height: isReply ? 22 : 26)
-            .buttonStyle(.plain)
         }
-        .padding(18) // ⬅️ padding FIRST
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.commentBackground.opacity(1))
-        )
     }
 
     private var displayName: String {
