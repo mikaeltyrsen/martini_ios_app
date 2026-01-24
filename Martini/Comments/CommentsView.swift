@@ -21,86 +21,13 @@ struct CommentsView: View {
     private var allowsComposing: Bool { frameId != nil }
 
     var body: some View {
-        
         ZStack(alignment: .bottom) {
-            
-            // Bottom gradient layer (goes through home indicator)
-//                LinearGradient(
-//                    colors: [Color.black.opacity(1), Color.black.opacity(0)],
-//                    startPoint: .bottom,
-//                    endPoint: .top
-//                )
-//                .frame(height: 120)
-//                .ignoresSafeArea(edges: .bottom)
-//                .allowsHitTesting(false)
-            
-            Group {
-                if comments.isEmpty {
-                    VStack(spacing: 12) {
-                        Image(systemName: "text.bubble")
-                            .font(.system(size: 40))
-                            .foregroundStyle(.tertiary)
-                        Text(errorMessage ?? "No comments yet.")
-                            .font(.headline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    ScrollViewReader { proxy in
-                        ScrollView {
-                            VStack(alignment: .leading, spacing: 16) {
-                                ForEach(comments) { comment in
-                                    CommentThreadView(
-                                        comment: comment,
-                                        onToggleStatus: toggleStatus,
-                                        onReply: handleReply,
-                                        onCopyComment: copyComment
-                                    )
-                                    .padding(.bottom, 4)
-                                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                                }
-                                
-                                Color.clear
-                                    .frame(height: 1)
-                                    .id(bottomAnchorId)
-                            }
-                            .padding(.horizontal)
-                            .padding(.top)
-                            .padding(.bottom, 24)
-                        }
-                        .coordinateSpace(name: "comments-scroll")
-                        .onAppear {
-                            DispatchQueue.main.async {
-                                scrollToBottom(using: proxy, animated: false)
-                            }
-                        }
-                        .onChange(of: totalCommentCount(in: comments)) { _ in
-                            DispatchQueue.main.async {
-                                scrollToBottom(using: proxy, animated: true)
-                            }
-                        }
-                        .onChange(of: keyboardHeight) { height in
-                            if height > 0 {
-                                DispatchQueue.main.async {
-                                    scrollToBottom(using: proxy, animated: true)
-                                }
-                            }
-                        }
-                        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: comments)
+            commentsContent
+                .toolbar {
+                    ToolbarItem(placement: .principal) {
+                        toolbarContent
                     }
                 }
-            }
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    HStack(spacing: 8) {
-                        if isLoading {
-                            ProgressView()
-                        }
-                        Text(navigationTitle)
-                            .font(.headline)
-                    }
-                }
-            }
             .navigationBarTitleDisplayMode(.inline)
             .task {
                 await onReload()
@@ -112,28 +39,7 @@ struct CommentsView: View {
                 isVisible = false
             }
             .safeAreaInset(edge: .bottom) {
-                
-                VStack(spacing: 0) {
-                    if allowsComposing {
-                        commentComposer
-                    } else {
-                        commentAccessNote
-                    }
-                }
-                .padding(.horizontal)
-                .padding(.top, 6)
-                .background {
-                    // Background for the inset area
-                    LinearGradient(
-                        colors: [
-                            Color.systemBackground.opacity(1.0), // bottom
-                            Color.systemBackground.opacity(0.0)  // top
-                        ],
-                        startPoint: .bottom,
-                        endPoint: .top
-                    )
-                    .ignoresSafeArea(edges: .bottom) // make sure it fills the home-indicator area
-                }
+                bottomInsetContent
             }
             //.background(Color.clear)
             .alert("Unable to post comment", isPresented: hasSendErrorBinding) {
@@ -151,8 +57,98 @@ struct CommentsView: View {
                 keyboardHeight = 0
             }
         }
+    }
 
-        
+    @ViewBuilder
+    private var commentsContent: some View {
+        if comments.isEmpty {
+            VStack(spacing: 12) {
+                Image(systemName: "text.bubble")
+                    .font(.system(size: 40))
+                    .foregroundStyle(.tertiary)
+                Text(errorMessage ?? "No comments yet.")
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        ForEach(comments) { comment in
+                            CommentThreadView(
+                                comment: comment,
+                                onToggleStatus: toggleStatus,
+                                onReply: handleReply,
+                                onCopyComment: copyComment
+                            )
+                            .padding(.bottom, 4)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                        }
+
+                        Color.clear
+                            .frame(height: 1)
+                            .id(bottomAnchorId)
+                    }
+                    .padding(.horizontal)
+                    .padding(.top)
+                    .padding(.bottom, 24)
+                }
+                .coordinateSpace(name: "comments-scroll")
+                .onAppear {
+                    DispatchQueue.main.async {
+                        scrollToBottom(using: proxy, animated: false)
+                    }
+                }
+                .onChange(of: totalCommentCount(in: comments)) { _ in
+                    DispatchQueue.main.async {
+                        scrollToBottom(using: proxy, animated: true)
+                    }
+                }
+                .onChange(of: keyboardHeight) { height in
+                    if height > 0 {
+                        DispatchQueue.main.async {
+                            scrollToBottom(using: proxy, animated: true)
+                        }
+                    }
+                }
+                .animation(.spring(response: 0.35, dampingFraction: 0.85), value: comments)
+            }
+        }
+    }
+
+    private var toolbarContent: some View {
+        HStack(spacing: 8) {
+            if isLoading {
+                ProgressView()
+            }
+            Text(navigationTitle)
+                .font(.headline)
+        }
+    }
+
+    private var bottomInsetContent: some View {
+        VStack(spacing: 0) {
+            if allowsComposing {
+                commentComposer
+            } else {
+                commentAccessNote
+            }
+        }
+        .padding(.horizontal)
+        .padding(.top, 6)
+        .background {
+            // Background for the inset area
+            LinearGradient(
+                colors: [
+                    Color.systemBackground.opacity(1.0), // bottom
+                    Color.systemBackground.opacity(0.0)  // top
+                ],
+                startPoint: .bottom,
+                endPoint: .top
+            )
+            .ignoresSafeArea(edges: .bottom) // make sure it fills the home-indicator area
+        }
     }
 
     private func sendComment() {
