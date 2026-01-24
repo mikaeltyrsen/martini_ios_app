@@ -1010,12 +1010,6 @@ struct MainView: View {
         }
 
         ToolbarItemGroup(placement: .bottomBar) {
-            Button {
-                toggleViewMode()
-            } label: {
-                Label(viewMode == .grid ? "Close Overview" : "Open Overview", systemImage: viewMode == .grid ? "square.grid.4x3.fill" : "eye")
-            }
-            .accessibilityLabel(viewMode == .grid ? "Close Overview" : "Open Overview")
 
             Menu {
                 Button {
@@ -1041,6 +1035,13 @@ struct MainView: View {
             Spacer()
 
             Button {
+                toggleViewMode()
+            } label: {
+                Label(viewMode == .grid ? "Close Overview" : "Open Overview", systemImage: viewMode == .grid ? "square.grid.4x3.fill" : "eye")
+            }
+            .accessibilityLabel(viewMode == .grid ? "Close Overview" : "Open Overview")
+            
+            Button {
                 frameSortMode = frameSortMode == .story ? .shoot : .story
             } label: {
                 Image(systemName: "arrow.up.arrow.down")
@@ -1048,8 +1049,6 @@ struct MainView: View {
             }
             .accessibilityLabel("Toggle sort order")
             .accessibilityValue(frameSortMode == .story ? "Story" : "Shoot")
-
-            Spacer()
 
             Button {
                 openScriptView()
@@ -1059,6 +1058,8 @@ struct MainView: View {
             }
             .accessibilityLabel("Open Script")
 
+            Spacer()
+            
             Button {
                 isShowingSettings = true
             } label: {
