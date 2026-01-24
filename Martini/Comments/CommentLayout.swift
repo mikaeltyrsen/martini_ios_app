@@ -22,14 +22,18 @@ struct CommentRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            Circle()
-                .fill(Color.accentColor)
+            avatarView
                 .frame(width: isReply ? 22 : 28, height: isReply ? 22 : 28)
 
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 8) {
                     Text(displayName)
                         .font(.system(size: 14, weight: .semibold))
+                    if isGuest {
+                        Text("(guest)")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.secondary)
+                    }
                     if let lastUpdated = comment.lastUpdated, !lastUpdated.isEmpty {
                         Text(formattedRelativeTimestamp(from: lastUpdated))
                             .font(.caption)
@@ -38,8 +42,7 @@ struct CommentRow: View {
                 }
 
                 if let body = comment.comment, !body.isEmpty {
-                    Text(body)
-                        .font(isReply ? .subheadline : .body)
+                    Text(attributedComment(from: body))
                 }
             }
 
@@ -67,6 +70,11 @@ struct CommentRow: View {
         comment.name ?? comment.guestName ?? "Unknown"
     }
 
+    private var isGuest: Bool {
+        guard comment.guestName != nil else { return false }
+        return (comment.userId ?? "").isEmpty
+    }
+
     private var isStatusComplete: Bool {
         (comment.statusValue ?? 0) == 2
     }
@@ -77,6 +85,110 @@ struct CommentRow: View {
 
     private var statusIconColor: Color {
         isStatusComplete ? .white : .secondary
+    }
+
+    private var avatarView: some View {
+        ZStack {
+            Circle()
+                .fill(Color.accentColor.opacity(0.2))
+
+            if let avatarUrlString = comment.userAvatar?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !avatarUrlString.isEmpty,
+               let avatarUrl = URL(string: avatarUrlString) {
+                AsyncImage(url: avatarUrl) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    case .failure:
+                        initialsView
+                    default:
+                        initialsView
+                    }
+                }
+                .clipShape(Circle())
+            } else if isGuest {
+                Image(systemName: "iphone.smartbatterycase.gen2")
+                    .font(.system(size: isReply ? 10 : 12, weight: .semibold))
+                    .foregroundStyle(.secondary)
+            } else {
+                initialsView
+            }
+        }
+    }
+
+    private var initialsView: some View {
+        Text(initials(from: displayName))
+            .font(.system(size: isReply ? 10 : 12, weight: .semibold))
+            .foregroundStyle(.primary)
+    }
+
+    private func initials(from name: String) -> String {
+        let components = name
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .split(separator: " ")
+            .filter { !$0.isEmpty }
+        guard let first = components.first else { return "" }
+        var initials = String(first.prefix(1))
+        if components.count > 1, let last = components.last {
+            initials.append(String(last.prefix(1)))
+        }
+        return String(initials.prefix(2)).uppercased()
+    }
+
+    private func attributedComment(from body: String) -> AttributedString {
+        let baseFont: Font = isReply ? .subheadline : .body
+        var baseAttributes = AttributeContainer()
+        baseAttributes.font = baseFont
+        baseAttributes.foregroundColor = .primary
+        var result = AttributedString()
+
+        let pattern = "<span[^>]*class=\\\"mention\\\"[^>]*>(.*?)</span>\\s*&nbsp;?"
+        let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive, .dotMatchesLineSeparators])
+        let nsBody = body as NSString
+        var currentLocation = 0
+
+        regex?.enumerateMatches(in: body, options: [], range: NSRange(location: 0, length: nsBody.length)) { match, _, _ in
+            guard let match else { return }
+
+            let range = match.range
+            if range.location > currentLocation {
+                let text = nsBody.substring(with: NSRange(location: currentLocation, length: range.location - currentLocation))
+                var attributed = AttributedString(decodedHTMLEntities(text))
+                attributed.mergeAttributes(baseAttributes)
+                result.append(attributed)
+            }
+
+            if match.numberOfRanges > 1, let mentionRange = Range(match.range(at: 1), in: body) {
+                let mentionText = decodedHTMLEntities(String(body[mentionRange]))
+                var mentionAttributed = AttributedString(mentionText)
+                mentionAttributed.font = baseFont.weight(.semibold)
+                mentionAttributed.foregroundColor = .martiniAccentColor
+                result.append(mentionAttributed)
+            }
+
+            currentLocation = range.location + range.length
+        }
+
+        if currentLocation < nsBody.length {
+            let text = nsBody.substring(with: NSRange(location: currentLocation, length: nsBody.length - currentLocation))
+            var attributed = AttributedString(decodedHTMLEntities(text))
+            attributed.mergeAttributes(baseAttributes)
+            result.append(attributed)
+        }
+
+        if result.characters.isEmpty {
+            var attributed = AttributedString(decodedHTMLEntities(body))
+            attributed.mergeAttributes(baseAttributes)
+            return attributed
+        }
+
+        return result
+    }
+
+    private func decodedHTMLEntities(_ text: String) -> String {
+        text.replacingOccurrences(of: "&nbsp;", with: " ")
     }
 }
 
