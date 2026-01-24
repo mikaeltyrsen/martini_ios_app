@@ -1040,20 +1040,35 @@ struct MainView: View {
                 Label(viewMode == .grid ? "Close Overview" : "Open Overview", systemImage: viewMode == .grid ? "square.grid.4x3.fill" : "eye")
             }
             .accessibilityLabel(viewMode == .grid ? "Close Overview" : "Open Overview")
+            //.symbolEffect(.drawOn)
             
             Button {
-                frameSortMode = frameSortMode == .story ? .shoot : .story
+                frameSortMode = (frameSortMode == .story ? .shoot : .story)
+
             } label: {
-                Image(systemName: "arrow.up.arrow.down")
-                    .imageScale(.large)
+                HStack(spacing: 6) {
+                    Text(frameSortMode == .story ? "Story" : "Shoot")
+                        .font(.system(size: 15, weight: .semibold))   // thicker text
+
+                    Image(systemName: "arrow.up.arrow.down")
+                        .font(.system(size: 12))                       // smaller icon
+                        .symbolRenderingMode(.hierarchical)            // optional, nicer
+                        .symbolEffect(.wiggle, value: frameSortMode)
+                }
             }
+//            Button {
+//                frameSortMode = (frameSortMode == .story ? .shoot : .story)
+//            } label: {
+//                Label(frameSortMode == .story ? "Story" : "Shoot",
+//                      systemImage: "arrow.up.arrow.down")
+//            }
             .accessibilityLabel("Toggle sort order")
             .accessibilityValue(frameSortMode == .story ? "Story" : "Shoot")
 
             Button {
                 openScriptView()
             } label: {
-                Image(systemName: "list.bullet")
+                Image(systemName: "square.fill.text.grid.1x2")
                     .imageScale(.large)
             }
             .accessibilityLabel("Open Script")

@@ -1350,9 +1350,9 @@ struct FrameView: View {
                     Button {
                         scriptNavigationTarget = target
                     } label: {
-                        Image(systemName: "doc.text")
+                        Image(systemName: "square.fill.text.grid.1x2")
                             .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(Color.martiniAccentColor)
                             .padding(10)
                             .background(.ultraThinMaterial, in: Circle())
                     }

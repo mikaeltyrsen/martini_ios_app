@@ -107,7 +107,7 @@ struct ScriptView: View {
                         Button {
                             isShowingSettings = true
                         } label: {
-                            Image(systemName: "slider.horizontal.3")
+                            Image(systemName: "switch.2")
                         }
                         .accessibilityLabel("Script settings")
                     }
