@@ -31,7 +31,7 @@ struct CommentRow: View {
                     Text(displayName)
                         .font(.system(size: 14, weight: .semibold))
                     if let lastUpdated = comment.lastUpdated, !lastUpdated.isEmpty {
-                        Text(lastUpdated)
+                        Text(formattedRelativeTimestamp(from: lastUpdated))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
