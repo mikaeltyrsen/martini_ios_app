@@ -40,12 +40,8 @@ struct CommentsView: View {
                                 CommentThreadView(
                                     comment: comment,
                                     onToggleStatus: toggleStatus,
-                                    onToggleGroupStatus: { replies, shouldMarkComplete in
-                                        toggleStatus(for: replies, shouldMarkComplete: shouldMarkComplete)
-                                    },
                                     onReply: handleReply,
-                                    onCopyComment: copyComment,
-                                    onCopyComments: copyComments
+                                    onCopyComment: copyComment
                                 )
                                     .padding(.bottom, 4)
                                     .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -188,15 +184,6 @@ struct CommentsView: View {
         }
     }
 
-    private func toggleStatus(for comments: [Comment], shouldMarkComplete: Bool) {
-        let newStatus = shouldMarkComplete ? 2 : 0
-        Task {
-            for comment in comments {
-                await updateCommentStatus(commentId: comment.id, status: newStatus)
-            }
-        }
-    }
-
     private func handleReply(to comment: Comment) {
         let name = displayName(for: comment)
         newCommentText = "@\(name) "
@@ -205,11 +192,6 @@ struct CommentsView: View {
 
     private func copyComment(_ comment: Comment) {
         UIPasteboard.general.string = comment.comment ?? ""
-    }
-
-    private func copyComments(_ comments: [Comment]) {
-        let combined = comments.compactMap(\.comment).joined(separator: "\n")
-        UIPasteboard.general.string = combined
     }
 
     @MainActor
@@ -239,36 +221,16 @@ struct CommentsView: View {
 
     private var commentComposer: some View {
         HStack(spacing: 8) {
-            HStack {
-                Image(systemName: "text.bubble")
-                    .foregroundStyle(.secondary)
-                TextField("Comment", text: $newCommentText)
-                    .focused($composeFieldFocused)
-                    .submitLabel(.send)
-                    .onTapGesture { composeFieldFocused = true }
-                    .onSubmit(sendComment)
-                    .foregroundStyle(.primary)
-            }
-            .tint(.primary)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(Color.clear, in: Capsule())
-            .overlay(
-                Capsule().stroke(Color.secondary.opacity(0.22), lineWidth: 1)
-            )
-
-            if !newCommentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                Button(action: sendComment) {
-                    if isSendingComment {
-                        ProgressView()
-                    } else {
-                        Image(systemName: "paperplane.fill")
-                            .font(.system(size: 16, weight: .semibold))
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(isSendingComment)
-            }
+            TextField("Comment", text: $newCommentText)
+                .focused($composeFieldFocused)
+                .submitLabel(.send)
+                .onTapGesture { composeFieldFocused = true }
+                .onSubmit(sendComment)
+                .foregroundStyle(.primary)
+                .textFieldStyle(.plain)
+                .tint(.primary)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 10)
         }
     }
 
@@ -357,31 +319,16 @@ private struct CommentsSheet: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: 8) {
-                        HStack {
-                            Image(systemName: "text.bubble")
-                                .foregroundStyle(.secondary)
-                            TextField("Comment", text: $newCommentText)
-                                .focused($composeFieldFocused)
-                                .submitLabel(.send)
-                                .onTapGesture { composeFieldFocused = true }
-                                .onSubmit(sendComment)
-                                .foregroundStyle(.primary)
-                        }
-                        .tint(.primary)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 10)
-                        .background(Color.clear, in: Capsule())
-                        .overlay(
-                            Capsule().stroke(Color.secondary.opacity(0.22), lineWidth: 1)
-                        )
-
-            if !newCommentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                Button(action: sendComment) {
-                    Image(systemName: "paperplane.fill")
-                        .font(.system(size: 16, weight: .semibold))
-                }
-                            .buttonStyle(.borderedProminent)
-                        }
+                        TextField("Comment", text: $newCommentText)
+                            .focused($composeFieldFocused)
+                            .submitLabel(.send)
+                            .onTapGesture { composeFieldFocused = true }
+                            .onSubmit(sendComment)
+                            .foregroundStyle(.primary)
+                            .textFieldStyle(.plain)
+                            .tint(.primary)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 10)
                     }
                 }
             }
@@ -402,59 +349,40 @@ private struct CommentsSheet: View {
 private struct CommentThreadView: View {
     let comment: Comment
     let onToggleStatus: (Comment) -> Void
-    let onToggleGroupStatus: ([Comment], Bool) -> Void
     let onReply: (Comment) -> Void
     let onCopyComment: (Comment) -> Void
-    let onCopyComments: ([Comment]) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            CommentLayout(comment: comment, isReply: false, onToggleStatus: onToggleStatus)
-                .contextMenu {
-                    Button("Reply to comment") {
-                        onReply(comment)
-                    }
-                    Button(commentStatusLabel(for: comment)) {
-                        onToggleStatus(comment)
-                    }
-                    Button("Copy comment") {
-                        onCopyComment(comment)
-                    }
-                }
+            CommentRow(comment: comment, isReply: false, onToggleStatus: onToggleStatus)
 
             if !comment.replies.isEmpty {
+                Divider()
+                    .padding(.leading, 36)
                 VStack(alignment: .leading, spacing: 12) {
                     ForEach(comment.replies) { reply in
                         CommentRow(comment: reply, isReply: true, onToggleStatus: onToggleStatus)
                     }
                 }
-                .padding(16)
-                .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color.commentBackground.opacity(1))
-                )
-                .contextMenu {
-                    Button("Add reply") {
-                        onReply(comment)
-                    }
-                    Button(groupStatusLabel) {
-                        onToggleGroupStatus(comment.replies, !isGroupComplete)
-                    }
-                    Button("Copy comment") {
-                        onCopyComments(comment.replies)
-                    }
-                }
-                .padding(.leading, 24)
+                .padding(.leading, 36)
             }
         }
-    }
-
-    private var isGroupComplete: Bool {
-        comment.replies.allSatisfy { ($0.statusValue ?? 0) == 2 }
-    }
-
-    private var groupStatusLabel: String {
-        isGroupComplete ? "Mark as undone" : "Mark as done"
+        .padding(18)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.commentBackground.opacity(1))
+        )
+        .contextMenu {
+            Button("Reply to comment") {
+                onReply(comment)
+            }
+            Button(commentStatusLabel(for: comment)) {
+                onToggleStatus(comment)
+            }
+            Button("Copy comment") {
+                onCopyComment(comment)
+            }
+        }
     }
 
     private func commentStatusLabel(for comment: Comment) -> String {

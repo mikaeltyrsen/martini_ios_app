@@ -55,6 +55,66 @@ public func formattedTimeFrom24Hour(_ timeString: String) -> String {
     return outputFormatter.string(from: date)
 }
 
+public func formattedRelativeTimestamp(from dateString: String, now: Date = Date()) -> String {
+    guard let date = parseRelativeTimestamp(dateString) else {
+        return dateString
+    }
+
+    let elapsedSeconds = max(Int(now.timeIntervalSince(date)), 0)
+    if elapsedSeconds < 60 {
+        return "\(max(elapsedSeconds, 1))s ago"
+    }
+
+    let minutes = elapsedSeconds / 60
+    if minutes < 60 {
+        return "\(minutes)m ago"
+    }
+
+    let hours = minutes / 60
+    if hours < 12 {
+        return "\(hours)h ago"
+    }
+    if hours < 24 {
+        return "Today"
+    }
+
+    let days = hours / 24
+    if days == 1 {
+        return "Yesterday"
+    }
+    if days < 30 {
+        return "\(days) days ago"
+    }
+
+    let months = days / 30
+    if months < 12 {
+        return months == 1 ? "1 month ago" : "\(months) months ago"
+    }
+
+    let years = max(days / 365, 1)
+    return years == 1 ? "1 year ago" : "\(years) years ago"
+}
+
+private func parseRelativeTimestamp(_ dateString: String) -> Date? {
+    let isoFormatter = ISO8601DateFormatter()
+    isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    if let date = isoFormatter.date(from: dateString) {
+        return date
+    }
+
+    let basicISOFormatter = ISO8601DateFormatter()
+    basicISOFormatter.formatOptions = [.withInternetDateTime]
+    if let date = basicISOFormatter.date(from: dateString) {
+        return date
+    }
+
+    let dateFormatter = DateFormatter()
+    dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+    dateFormatter.timeZone = .autoupdatingCurrent
+    dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+    return dateFormatter.date(from: dateString)
+}
+
 public func attributedStringFromHTML(
     _ html: String,
     defaultColor: UIColor? = nil,
