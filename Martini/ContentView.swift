@@ -1010,16 +1010,14 @@ struct MainView: View {
         }
 
         ToolbarItemGroup(placement: .bottomBar) {
+            Button {
+                toggleViewMode()
+            } label: {
+                Label(viewMode == .grid ? "Close Overview" : "Open Overview", systemImage: viewMode == .grid ? "square.grid.4x3.fill" : "eye")
+            }
+            .accessibilityLabel(viewMode == .grid ? "Close Overview" : "Open Overview")
 
             Menu {
-                Button {
-                    toggleViewMode()
-                } label: {
-                    Label(viewMode == .grid ? "Close Overview" : "Open Overview", systemImage: viewMode == .grid ? "square.grid.4x3.fill" : "eye")
-                }
-
-                Divider()
-
                 Button {
                     showingProjectFiles = true
                 } label: {
@@ -1033,11 +1031,6 @@ struct MainView: View {
                 }
                 .disabled(!canOpenComments)
 
-                Button {
-                    isShowingSettings = true
-                } label: {
-                    Label("Settings", systemImage: "switch.2")
-                }
             } label: {
                 Label("More", systemImage: "ellipsis.circle")
                     .labelStyle(.titleAndIcon)
@@ -1047,12 +1040,14 @@ struct MainView: View {
 
             Spacer()
 
-            Picker("Sort order", selection: $frameSortMode) {
-                Text("Story").tag(FrameSortMode.story)
-                Text("Shoot").tag(FrameSortMode.shoot)
+            Button {
+                frameSortMode = frameSortMode == .story ? .shoot : .story
+            } label: {
+                Image(systemName: "arrow.up.arrow.down")
+                    .imageScale(.large)
             }
-            .pickerStyle(.segmented)
-            .frame(width: 200)
+            .accessibilityLabel("Toggle sort order")
+            .accessibilityValue(frameSortMode == .story ? "Story" : "Shoot")
 
             Spacer()
 
@@ -1063,6 +1058,14 @@ struct MainView: View {
                     .imageScale(.large)
             }
             .accessibilityLabel("Open Script")
+
+            Button {
+                isShowingSettings = true
+            } label: {
+                Image(systemName: "switch.2")
+                    .imageScale(.large)
+            }
+            .accessibilityLabel("Settings")
         }
     }
 
