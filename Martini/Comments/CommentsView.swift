@@ -98,8 +98,9 @@ struct CommentsView: View {
         .onDisappear {
             isVisible = false
         }
-        .toolbar {
-            ToolbarItem(placement: .bottomBar) {
+        .safeAreaInset(edge: .bottom) {
+            VStack(spacing: 0) {
+                Divider()
                 if allowsComposing {
                     commentComposer
                         .padding(.vertical, 6)
@@ -108,6 +109,9 @@ struct CommentsView: View {
                         .padding(.vertical, 6)
                 }
             }
+            .padding(.horizontal)
+            .padding(.top, 6)
+            .background(.ultraThinMaterial)
         }
         .alert("Unable to post comment", isPresented: hasSendErrorBinding) {
             Button("OK", role: .cancel) {}
