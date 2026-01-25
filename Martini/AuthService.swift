@@ -1087,14 +1087,17 @@ class AuthService: ObservableObject {
         }
     }
 
-    func addComment(projectId: String, creativeId: String, frameId: String, comment: String, guestName: String) async throws -> String {
-        let body: [String: Any] = [
+    func addComment(projectId: String, creativeId: String, frameId: String, comment: String, guestName: String, commentId: String? = nil) async throws -> String {
+        var body: [String: Any] = [
             "projectId": projectId,
             "creativeId": creativeId,
             "frameId": frameId,
             "comment": comment,
             "guestName": guestName
         ]
+        if let commentId, !commentId.isEmpty {
+            body["commentId"] = commentId
+        }
 
         var request = try authorizedRequest(for: .addComment, body: body)
 
