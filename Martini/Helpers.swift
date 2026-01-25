@@ -61,6 +61,10 @@ public func formattedRelativeTimestamp(from dateString: String, now: Date = Date
     }
 
     let elapsedSeconds = max(Int(now.timeIntervalSince(date)), 0)
+    
+    if elapsedSeconds < 30 {
+        return "\(max(elapsedSeconds, 1))s ago"
+    }
     if elapsedSeconds < 60 {
         return "\(max(elapsedSeconds, 1))s ago"
     }
