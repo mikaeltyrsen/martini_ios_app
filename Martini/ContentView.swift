@@ -2777,14 +2777,16 @@ struct GridFrameCell: View {
                 }
             }
             .contextMenu {
-                Section {
-                    statusMenu
-                }
-                Section("Edit") {
-                    Button {
-                        onSortFrames()
-                    } label: {
-                        Label("Sort frames", systemImage: "arrow.up.arrow.down")
+                if authService.allowEdit {
+                    Section {
+                        statusMenu
+                    }
+                    Section("Edit") {
+                        Button {
+                            onSortFrames()
+                        } label: {
+                            Label("Sort frames", systemImage: "arrow.up.arrow.down")
+                        }
                     }
                 }
             }

@@ -120,6 +120,7 @@ class AuthService: ObservableObject {
     @Published var projectTitle: String?
     @Published var accessCode: String?
     @Published var token: String?
+    @Published var allowEdit: Bool = false
     //@Published var bearerTokenOverride: String? = "d9c4dafc0eaa40b5d0025ef0a622a5bff35ebd2ccf06a4f66d99d62602405ed2853732f5b2acc2350f447f8083178c58105b2b79a1c559a67b1bfaa5c7c7d04d"
     @Published var bearerTokenOverride: String?
     @Published var debugInfo: DebugInfo?
@@ -152,6 +153,7 @@ class AuthService: ObservableObject {
     private let projectIdKey = "martini_project_id"
     private let projectTitleKey = "martini_project_title"
     private let accessCodeKey = "martini_access_code"
+    private let allowEditKey = "martini_allow_edit"
     private let savedProjectsKey = "martini_saved_projects"
     private let cachedCreativesKeyPrefix = "martini_cached_creatives_"
     private let cachedFramesKeyPrefix = "martini_cached_frames_"
@@ -390,6 +392,7 @@ class AuthService: ObservableObject {
             self.projectId = projectId
             self.accessCode = UserDefaults.standard.string(forKey: accessCodeKey)
             self.projectTitle = UserDefaults.standard.string(forKey: projectTitleKey)
+            self.allowEdit = UserDefaults.standard.bool(forKey: allowEditKey)
             self.token = token
             self.isAuthenticated = true
             loadCachedProjectData(for: projectId)
@@ -402,14 +405,22 @@ class AuthService: ObservableObject {
     }
 
     // Save auth data to UserDefaults
-    private func saveAuthData(projectId: String, projectTitle: String?, accessCode: String, token: String) {
+    private func saveAuthData(
+        projectId: String,
+        projectTitle: String?,
+        accessCode: String,
+        token: String,
+        allowEdit: Bool
+    ) {
         UserDefaults.standard.set(projectId, forKey: projectIdKey)
         UserDefaults.standard.set(projectTitle, forKey: projectTitleKey)
         UserDefaults.standard.set(accessCode, forKey: accessCodeKey)
         UserDefaults.standard.set(token, forKey: tokenHashKey)
+        UserDefaults.standard.set(allowEdit, forKey: allowEditKey)
         self.projectId = projectId
         self.projectTitle = projectTitle
         self.accessCode = accessCode
+        self.allowEdit = allowEdit
         self.token = token
         self.isAuthenticated = true
         recordSuccessfulSignIn(projectId: projectId, projectName: projectTitle, accessCode: accessCode)
@@ -631,7 +642,8 @@ class AuthService: ObservableObject {
             projectId: projectId,
             projectTitle: authResponse.projectTitle,
             accessCode: accessCode,
-            token: token
+            token: token,
+            allowEdit: authResponse.allowEdit
         )
         
         print("💾 Saved auth data - projectId: \(projectId)")
@@ -1652,6 +1664,7 @@ class AuthService: ObservableObject {
         UserDefaults.standard.removeObject(forKey: projectTitleKey)
         UserDefaults.standard.removeObject(forKey: accessCodeKey)
         UserDefaults.standard.removeObject(forKey: tokenHashKey)
+        UserDefaults.standard.removeObject(forKey: allowEditKey)
         if let cachedProjectId {
             UserDefaults.standard.removeObject(forKey: cachedCreativesKey(for: cachedProjectId))
             UserDefaults.standard.removeObject(forKey: cachedFramesKey(for: cachedProjectId))
@@ -1660,6 +1673,7 @@ class AuthService: ObservableObject {
         self.projectTitle = nil
         self.accessCode = nil
         self.token = nil
+        self.allowEdit = false
         self.isAuthenticated = false
         self.creatives = []
         self.projectDetails = nil
@@ -1909,6 +1923,7 @@ struct AuthResponse: Codable {
     let error: String?
     let token: String?
     let projectTitle: String?
+    @SafeBool var allowEdit: Bool
 
     enum CodingKeys: String, CodingKey {
         case success
@@ -1916,6 +1931,17 @@ struct AuthResponse: Codable {
         case error
         case token = "token"
         case projectTitle = "project_title"
+        case allowEdit = "allow_edit"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        _success = try container.decode(SafeBool.self, forKey: .success)
+        message = try container.decodeIfPresent(String.self, forKey: .message)
+        error = try container.decodeIfPresent(String.self, forKey: .error)
+        token = try container.decodeIfPresent(String.self, forKey: .token)
+        projectTitle = try container.decodeIfPresent(String.self, forKey: .projectTitle)
+        _allowEdit = try container.decodeIfPresent(SafeBool.self, forKey: .allowEdit) ?? SafeBool()
     }
 }
 
