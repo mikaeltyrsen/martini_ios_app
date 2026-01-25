@@ -19,6 +19,7 @@ struct CommentsView: View {
     @State private var sendErrorMessage: String?
     @State private var replyMentionUserId: String?
     @State private var replyMentionName: String?
+    @State private var replyToCommentId: String?
     private let bottomAnchorId = "comments-bottom-anchor"
     private var allowsComposing: Bool { frameId != nil }
 
@@ -179,7 +180,8 @@ struct CommentsView: View {
                     creativeId: creativeId,
                     frameId: frameId,
                     comment: resolvedComment,
-                    guestName: name
+                    guestName: name,
+                    commentId: replyToCommentId
                 )
                 let newComment = Comment(
                     id: commentId,
@@ -189,11 +191,16 @@ struct CommentsView: View {
                 )
                 await MainActor.run {
                     withAnimation(.default) {
-                        comments.append(newComment)
+                        if let replyToCommentId {
+                            comments = insertingReply(into: comments, replyToId: replyToCommentId, reply: newComment)
+                        } else {
+                            comments.append(newComment)
+                        }
                         newCommentText = ""
                         composeFieldFocused = false
                         replyMentionUserId = nil
                         replyMentionName = nil
+                        replyToCommentId = nil
                     }
                 }
             } catch {
@@ -220,6 +227,7 @@ struct CommentsView: View {
         newCommentText = "@\(name) "
         replyMentionUserId = comment.userId
         replyMentionName = name
+        replyToCommentId = comment.id
         composeFieldFocused = true
     }
 
@@ -252,6 +260,21 @@ struct CommentsView: View {
         }
     }
 
+    private func insertingReply(into comments: [Comment], replyToId: String, reply: Comment) -> [Comment] {
+        comments.map { comment in
+            if comment.id == replyToId {
+                return comment.updatingReplies(comment.replies + [reply])
+            }
+
+            let updatedReplies = insertingReply(into: comment.replies, replyToId: replyToId, reply: reply)
+            if updatedReplies != comment.replies {
+                return comment.updatingReplies(updatedReplies)
+            }
+
+            return comment
+        }
+    }
+
     private var commentComposer: some View {
         HStack(spacing: 8) {
             TextField("Add Comment", text: $newCommentText)
@@ -265,6 +288,7 @@ struct CommentsView: View {
                     if !newValue.hasPrefix(prefix) {
                         replyMentionUserId = nil
                         replyMentionName = nil
+                        replyToCommentId = nil
                     }
                 }
                 .foregroundStyle(.primary)
