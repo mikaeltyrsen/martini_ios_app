@@ -676,37 +676,40 @@ struct FrameView: View {
         .padding(.bottom, 6)
     }
 
+    @ViewBuilder
     private var markerButton: some View {
-        Button {
-            openStatusSheet()
-        } label: {
-            let labelColor: Color = selectedStatus == .none ? .primary : selectedStatus.markerBackgroundColor
-            let statusLabel: String = {
-                if isUpdatingStatus { return "Updating Status" }
-                return selectedStatus == .none ? "Mark Frame" : selectedStatus.displayName
-            }()
-            Label {
-                Text(statusLabel)
-                    .font(.system(size: 14, weight: .semibold))
-                    .lineLimit(1)
-            } icon: {
-                if isUpdatingStatus {
-                    ProgressView()
-                        .tint(.white)
-                } else {
-                    Image(systemName: selectedStatus == .none ? "pencil.tip" : selectedStatus.systemImageName)
+        if authService.allowEdit || selectedStatus != .none {
+            Button {
+                openStatusSheet()
+            } label: {
+                let labelColor: Color = selectedStatus == .none ? .primary : selectedStatus.markerBackgroundColor
+                let statusLabel: String = {
+                    if isUpdatingStatus { return "Updating Status" }
+                    return selectedStatus == .none ? "Mark Frame" : selectedStatus.displayName
+                }()
+                Label {
+                    Text(statusLabel)
+                        .font(.system(size: 14, weight: .semibold))
+                        .lineLimit(1)
+                } icon: {
+                    if isUpdatingStatus {
+                        ProgressView()
+                            .tint(.white)
+                    } else {
+                        Image(systemName: selectedStatus == .none ? "pencil.tip" : selectedStatus.systemImageName)
+                    }
                 }
+                .labelStyle(.titleAndIcon)
+                .foregroundStyle(labelColor)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .fixedSize(horizontal: true, vertical: false)
+                .layoutPriority(1)
             }
-            .labelStyle(.titleAndIcon)
-            .foregroundStyle(labelColor)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-            .fixedSize(horizontal: true, vertical: false)
-            .layoutPriority(1)
+            .buttonStyle(.plain)
+            .disabled(isUpdatingStatus || !authService.allowEdit)
+            .glassEffect(.regular.tint(selectedStatus.markerBackgroundColor.opacity(0.3)))
         }
-        .buttonStyle(.plain)
-        .disabled(isUpdatingStatus)
-        .glassEffect(.regular.tint(selectedStatus.markerBackgroundColor.opacity(0.3)))
     }
 
     @ViewBuilder
@@ -895,9 +898,9 @@ struct FrameView: View {
                 visibleAssetID: $visibleAssetID,
                 primaryText: primaryText,
                 takePictureID: takePictureCardID,
-                takePictureAction: {
+                takePictureAction: authService.allowEdit ? {
                     showingAddBoardOptions = true
-                },
+                } : nil,
                 onAssetTap: { asset in
                     guard asset.kind == .board else { return }
                     openBoardPreview(asset)
@@ -933,29 +936,32 @@ struct FrameView: View {
     private func boardContextMenu(for asset: FrameAssetItem) -> some View {
         if asset.kind == .board {
             let isBoardEntry = boardEntry(for: asset) != nil
+            let canEdit = authService.allowEdit
             if isBoardEntry {
-                Button {
-                    openAnnotationEditor(for: asset)
-                } label: {
-                    Label("Markup", systemImage: "pencil.and.scribble")
-                }
-                Button {
-                    boardRenameTarget = asset
-                    boardRenameText = asset.displayLabel
-                    isRenamingBoard = false
-                    showingBoardRenameAlert = true
-                } label: {
-                    Label("Rename", systemImage: "character.cursor.ibeam")
-                }
-                Button {
-                    enterBoardReorderMode()
-                } label: {
-                    Label("Reorder", systemImage: "arrow.left.arrow.right")
-                }
-                Button {
-                    pinBoard(asset)
-                } label: {
-                    Label("Pin board", systemImage: "pin.fill")
+                if canEdit {
+                    Button {
+                        openAnnotationEditor(for: asset)
+                    } label: {
+                        Label("Markup", systemImage: "pencil.and.scribble")
+                    }
+                    Button {
+                        boardRenameTarget = asset
+                        boardRenameText = asset.displayLabel
+                        isRenamingBoard = false
+                        showingBoardRenameAlert = true
+                    } label: {
+                        Label("Rename", systemImage: "character.cursor.ibeam")
+                    }
+                    Button {
+                        enterBoardReorderMode()
+                    } label: {
+                        Label("Reorder", systemImage: "arrow.left.arrow.right")
+                    }
+                    Button {
+                        pinBoard(asset)
+                    } label: {
+                        Label("Pin board", systemImage: "pin.fill")
+                    }
                 }
                 if asset.url != nil {
                     Button {
@@ -964,11 +970,13 @@ struct FrameView: View {
                         Label(asset.isVideo ? "Download Video" : "Download Image", systemImage: "square.and.arrow.down")
                     }
                 }
-                Button(role: .destructive) {
-                    boardDeleteTarget = asset
-                    showingBoardDeleteAlert = true
-                } label: {
-                    Label("Delete", systemImage: "trash.fill")
+                if canEdit {
+                    Button(role: .destructive) {
+                        boardDeleteTarget = asset
+                        showingBoardDeleteAlert = true
+                    } label: {
+                        Label("Delete", systemImage: "trash.fill")
+                    }
                 }
             } else {
                 if asset.url != nil {
@@ -978,11 +986,13 @@ struct FrameView: View {
                         Label(asset.isVideo ? "Download Video" : "Download Image", systemImage: "square.and.arrow.down")
                     }
                 }
-                Button(role: .destructive) {
-                    boardDeleteTarget = asset
-                    showingBoardDeleteAlert = true
-                } label: {
-                    Label("Delete", systemImage: "trash.fill")
+                if canEdit {
+                    Button(role: .destructive) {
+                        boardDeleteTarget = asset
+                        showingBoardDeleteAlert = true
+                    } label: {
+                        Label("Delete", systemImage: "trash.fill")
+                    }
                 }
             }
         } else {
@@ -1082,10 +1092,12 @@ struct FrameView: View {
             .frame(maxWidth: .infinity, minHeight: 140, alignment: .center)
             .padding(.top, 20)
             .contextMenu {
-                Button {
-                    openDescriptionEditor()
-                } label: {
-                    Label("Edit Description", systemImage: "pencil")
+                if authService.allowEdit {
+                    Button {
+                        openDescriptionEditor()
+                    } label: {
+                        Label("Edit Description", systemImage: "pencil")
+                    }
                 }
             }
         }
@@ -1366,10 +1378,12 @@ struct FrameView: View {
                 } label: {
                     Label("Copy Description", systemImage: "doc.on.doc")
                 }
-                Button {
-                    openDescriptionEditor()
-                } label: {
-                    Label("Edit Description", systemImage: "pencil")
+                if authService.allowEdit {
+                    Button {
+                        openDescriptionEditor()
+                    } label: {
+                        Label("Edit Description", systemImage: "pencil")
+                    }
                 }
             }
         }
@@ -1496,20 +1510,22 @@ struct FrameView: View {
                                     .id(asset.id)
                                 }
 
-                                Button {
-                                    showingAddBoardOptions = true
-                                } label: {
-                                    Image(systemName: "plus")
-                                        .font(.system(size: 16, weight: .semibold))
-                                        .foregroundStyle(.primary)
-                                        .padding(10)
-                                        .background(
-                                            Capsule()
-                                                .fill(Color.secondary.opacity(0.15))
-                                        )
+                                if authService.allowEdit {
+                                    Button {
+                                        showingAddBoardOptions = true
+                                    } label: {
+                                        Image(systemName: "plus")
+                                            .font(.system(size: 16, weight: .semibold))
+                                            .foregroundStyle(.primary)
+                                            .padding(10)
+                                            .background(
+                                                Capsule()
+                                                    .fill(Color.secondary.opacity(0.15))
+                                            )
+                                    }
+                                    .buttonStyle(.plain)
+                                    .id(takePictureCardID)
                                 }
-                                .buttonStyle(.plain)
-                                .id(takePictureCardID)
                             }
                         }
 

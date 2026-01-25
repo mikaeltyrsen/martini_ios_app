@@ -53,6 +53,7 @@ struct FullscreenMediaViewer: View {
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @EnvironmentObject private var authService: AuthService
 
     @State private var isVisible: Bool = false
     @State private var isToolbarVisible: Bool
@@ -121,12 +122,12 @@ struct FullscreenMediaViewer: View {
                     mediaView
                         .frame(width: mediaSize.width, height: mediaSize.height)
 
-                    if canMarkup, hasMarkup, showMarkupOverlay, !isMarkupMode {
+                    if canShowMarkupOverlay, hasMarkup, showMarkupOverlay, !isMarkupMode {
                         MarkupOverlayView(drawing: markupDrawing, canvasSize: markupCanvasSize)
                             .frame(width: mediaSize.width, height: mediaSize.height)
                     }
 
-                    if canMarkup {
+                    if canEditMarkup {
                         PencilCanvasView(drawing: $markupDrawing, showsToolPicker: isToolPickerVisible)
                             .frame(width: mediaSize.width, height: mediaSize.height)
                             .opacity(isMarkupMode ? 1 : 0)
@@ -206,6 +207,12 @@ struct FullscreenMediaViewer: View {
                     }
                 }
             }
+            .onChange(of: canEditMarkup) { _, canEdit in
+                if !canEdit {
+                    isMarkupMode = false
+                    isToolPickerVisible = false
+                }
+            }
         }
         .task(id: media.url) {
             await updateMediaAspectRatio()
@@ -229,7 +236,7 @@ struct FullscreenMediaViewer: View {
                     .accessibilityLabel("Close fullscreen")
                 }
             }
-            if config.showsTopToolbar, canMarkup {
+            if config.showsTopToolbar, canEditMarkup {
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: 4) {
                         if isMarkupMode {
@@ -270,7 +277,7 @@ struct FullscreenMediaViewer: View {
             }
         }
         .overlay(alignment: .bottomTrailing) {
-            if isMarkupMode, canMarkup {
+            if isMarkupMode, canEditMarkup {
                 Button {
                     isToolPickerVisible.toggle()
                 } label: {
@@ -377,8 +384,12 @@ struct FullscreenMediaViewer: View {
         true
     }
 
-    private var canMarkup: Bool {
+    private var canShowMarkupOverlay: Bool {
         markupConfiguration != nil && !media.isVideo
+    }
+
+    private var canEditMarkup: Bool {
+        authService.allowEdit && canShowMarkupOverlay
     }
 
     private var hasMarkup: Bool {
@@ -425,7 +436,7 @@ struct FullscreenMediaViewer: View {
                 if !metadata.frameLines.isEmpty {
                     overlayToggles
                 }
-                if canMarkup, hasMarkup {
+                if canShowMarkupOverlay, hasMarkup {
                     markupToggle
                 }
             }

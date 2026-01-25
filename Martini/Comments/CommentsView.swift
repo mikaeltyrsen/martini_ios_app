@@ -21,7 +21,7 @@ struct CommentsView: View {
     @State private var replyMentionName: String?
     @State private var replyToCommentId: String?
     private let bottomAnchorId = "comments-bottom-anchor"
-    private var allowsComposing: Bool { frameId != nil }
+    private var allowsComposing: Bool { frameId != nil && authService.allowEdit }
 
     var body: some View {
         ZStack(alignment: .bottom) {
