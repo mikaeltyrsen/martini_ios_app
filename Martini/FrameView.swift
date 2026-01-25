@@ -937,7 +937,7 @@ struct FrameView: View {
                 Button {
                     openAnnotationEditor(for: asset)
                 } label: {
-                    Label("Edit", systemImage: "pencil")
+                    Label("Markup", systemImage: "pencil.and.scribble")
                 }
                 Button {
                     boardRenameTarget = asset
