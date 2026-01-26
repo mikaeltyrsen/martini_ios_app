@@ -900,7 +900,7 @@ class AuthService: ObservableObject {
     }
 
     // Fetch frames for the current project
-    func fetchFrames() async throws {
+    func fetchFrames(source: String? = nil) async throws {
         guard let projectId = projectId else {
             throw AuthError.noAuth
         }
@@ -916,6 +916,9 @@ class AuthService: ObservableObject {
 
         let requestJSON = String(data: request.httpBody ?? Data(), encoding: .utf8) ?? "Unable to encode"
         print("📤 Fetching frames...")
+        if let source {
+            print("🔄 Frames refresh source: \(source)")
+        }
         print("🔗 URL: \(request.url?.absoluteString ?? "unknown")")
         print("📝 Request body: \(requestJSON)")
 

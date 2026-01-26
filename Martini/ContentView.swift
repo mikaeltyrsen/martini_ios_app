@@ -1406,7 +1406,7 @@ struct MainView: View {
         guard !useMockData else { return }
 
         do {
-            try await authService.fetchFrames()
+            try await authService.fetchFrames(source: "pull-to-refresh")
             hasLoadedFrames = true
         } catch {
             dataError = error.localizedDescription
