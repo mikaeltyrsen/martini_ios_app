@@ -1401,6 +1401,19 @@ struct MainView: View {
         }
     }
 
+    @MainActor
+    private func refreshFrames() async {
+        guard !useMockData else { return }
+
+        do {
+            try await authService.fetchFrames()
+            hasLoadedFrames = true
+        } catch {
+            dataError = error.localizedDescription
+            print("❌ Failed to refresh frames: \(error)")
+        }
+    }
+
     private func loadProjectFilesIfNeeded() async {
         guard !useMockData else { return }
         guard authService.projectId != nil else { return }
@@ -1563,6 +1576,9 @@ struct MainView: View {
                         }
                         .padding(.vertical)
                         .padding(.bottom, 0)
+                    }
+                    .refreshable {
+                        await refreshFrames()
                     }
                     .simultaneousGesture(
                         MagnificationGesture()
