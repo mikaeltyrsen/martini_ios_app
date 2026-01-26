@@ -21,7 +21,7 @@ struct CommentsView: View {
     @State private var replyMentionName: String?
     @State private var replyToCommentId: String?
     private let bottomAnchorId = "comments-bottom-anchor"
-    private var allowsComposing: Bool { frameId != nil && authService.allowEdit }
+    private var allowsComposing: Bool { authService.allowEdit }
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -166,11 +166,6 @@ struct CommentsView: View {
             sendErrorMessage = "Missing project information."
             return
         }
-        guard let frameId else {
-            sendErrorMessage = "Select a frame to add a comment."
-            return
-        }
-
         isSendingComment = true
         let resolvedComment = resolvedCommentBody(from: trimmed)
         Task {
@@ -304,7 +299,7 @@ struct CommentsView: View {
         HStack(spacing: 8) {
             Image(systemName: "info.circle")
                 .foregroundStyle(.secondary)
-            Text("Select a frame to add a comment.")
+            Text("You do not have permission to add comments.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             Spacer()
