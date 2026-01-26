@@ -172,6 +172,7 @@ class AuthService: ObservableObject {
 
     private enum APIEndpoint: String {
         case authLive = "auth/live.php"
+        case authLiveSignout = "auth/live_signout.php"
         case pushRegister = "push/register.php"
         case project = "projects/get_project.php"
         case creatives = "creatives/get_creatives.php"
@@ -187,6 +188,44 @@ class AuthService: ObservableObject {
         case updateCommentStatus = "comments/update_status.php"
 
         var path: String { rawValue }
+    }
+
+    func signOutFromLive() async {
+        guard let projectId else { return }
+
+        let body: [String: Any] = [
+            "projectId": projectId
+        ]
+
+        do {
+            var request = try authorizedRequest(for: .authLiveSignout, body: body)
+            let requestJSON = String(data: request.httpBody ?? Data(), encoding: .utf8) ?? "Unable to encode"
+            print("📤 Signing out of live auth...")
+            print("🔗 URL: \(request.url?.absoluteString ?? "unknown")")
+            print("📝 Request body: \(requestJSON)")
+
+            let (data, response) = try await performRequest(request)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw AuthError.invalidResponse
+            }
+
+            let responseJSON = String(data: data, encoding: .utf8) ?? "Unable to decode"
+            print("📥 Live sign out response received (\(httpResponse.statusCode)):")
+            print(responseJSON)
+
+            guard httpResponse.statusCode == 200 else {
+                print("❌ Live sign out failed - Status: \(httpResponse.statusCode)")
+                return
+            }
+
+            let signoutResponse = try JSONDecoder().decode(BasicResponse.self, from: data)
+            guard signoutResponse.success else {
+                print("❌ Live sign out response failed: \(signoutResponse.error ?? "Unknown error")")
+                return
+            }
+        } catch {
+            print("❌ Live sign out failed: \(error.localizedDescription)")
+        }
     }
 
     private func endpointURL(for endpoint: APIEndpoint) throws -> URL {
@@ -358,9 +397,16 @@ class AuthService: ObservableObject {
     }
 
     func confirmPendingProjectSwitch(_ pendingLink: PendingDeepLink) {
-        pendingProjectSwitch = nil
-        logout()
-        processDeepLink(pendingLink, bypassSwitchPrompt: true)
+        Task {
+            await MainActor.run {
+                pendingProjectSwitch = nil
+            }
+            await signOutFromLive()
+            await MainActor.run {
+                logout()
+                processDeepLink(pendingLink, bypassSwitchPrompt: true)
+            }
+        }
     }
 
     func cancelPendingProjectSwitch() {

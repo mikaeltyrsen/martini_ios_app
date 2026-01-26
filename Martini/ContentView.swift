@@ -3422,8 +3422,13 @@ struct SettingsView: View {
 
                 Section("Account") {
                     Button(role: .destructive) {
-                        authService.logout()
-                        dismiss()
+                        Task {
+                            await authService.signOutFromLive()
+                            await MainActor.run {
+                                authService.logout()
+                                dismiss()
+                            }
+                        }
                     } label: {
                         Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
                     }
