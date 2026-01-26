@@ -1409,6 +1409,12 @@ struct MainView: View {
             try await authService.fetchFrames(source: "pull-to-refresh")
             hasLoadedFrames = true
         } catch {
+            if error is CancellationError {
+                return
+            }
+            if let urlError = error as? URLError, urlError.code == .cancelled {
+                return
+            }
             dataError = error.localizedDescription
             print("❌ Failed to refresh frames: \(error)")
         }
