@@ -46,6 +46,9 @@ struct ContentView: View {
         .onChange(of: authService.accessCode) { _ in
             updateNearbyHosting()
         }
+        .onChange(of: authService.allowEdit) { _ in
+            updateNearbyHosting()
+        }
         .onChange(of: authService.projectDetails?.activeSchedule?.id) { newId in
             authService.clearCachedSchedules(keeping: newId)
         }
@@ -117,7 +120,9 @@ struct ContentView: View {
     }
 
     private func updateNearbyHosting() {
+        nearbySignInService.updateHostPermission(authService.allowEdit)
         guard authService.isAuthenticated,
+              authService.allowEdit,
               let projectId = authService.projectId,
               let projectCode = authService.accessCode else {
             nearbySignInService.stopHosting()

@@ -38,6 +38,7 @@ final class NearbySignInService: NSObject, ObservableObject {
     @Published var guestStatus: String = "Looking for nearby sign-in…"
     @Published var pendingRequest: NearbySignInRequest?
     @Published var approval: NearbySignInApproval?
+    @Published private(set) var canHostSignInRequests: Bool = false
 
     private enum MessageType: String, Codable {
         case pairRequest
@@ -72,6 +73,10 @@ final class NearbySignInService: NSObject, ObservableObject {
     }
 
     func startHosting(projectId: String, projectCode: String) {
+        guard canHostSignInRequests else {
+            log("Hosting blocked (no edit access)")
+            return
+        }
         hostProjectId = projectId
         hostProjectCode = projectCode
         guard role != .host else { return }
@@ -91,6 +96,15 @@ final class NearbySignInService: NSObject, ObservableObject {
             role = .none
         }
         log("Hosting stopped")
+    }
+
+    func updateHostPermission(_ isAllowed: Bool) {
+        guard canHostSignInRequests != isAllowed else { return }
+        canHostSignInRequests = isAllowed
+        if !isAllowed {
+            pendingRequest = nil
+            stopHosting()
+        }
     }
 
     func startBrowsing() {
@@ -235,6 +249,12 @@ extension NearbySignInService: MCSessionDelegate {
                 switch message.type {
                 case .pairRequest:
                     guard role == .host else { return }
+                    guard canHostSignInRequests else {
+                        let message = Message(type: .denied, projectId: nil, projectCode: nil)
+                        send(message, to: peerID)
+                        log("Denied pair request from \(peerID.displayName) (no edit access)")
+                        return
+                    }
                     pendingRequest = NearbySignInRequest(peerID: peerID)
                     log("Received pair request from \(peerID.displayName)")
                 case .approved:
