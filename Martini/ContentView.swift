@@ -3462,9 +3462,16 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            .navigationTitle("Settings")
+            .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Image("MartiniLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 24)
+                        .accessibilityLabel("Martini")
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showingRestoreAlert = true
