@@ -63,9 +63,15 @@ final class ScoutCameraViewModel: ObservableObject {
         self.frameId = frameId
         self.creativeId = creativeId
         self.targetAspectRatio = targetAspectRatio
-        self.showCrosshair = UserDefaults.standard.bool(forKey: preferenceKey(PreferenceKey.showCrosshair))
-        self.showGrid = UserDefaults.standard.bool(forKey: preferenceKey(PreferenceKey.showGrid))
-        self.showFrameShading = UserDefaults.standard.bool(forKey: preferenceKey(PreferenceKey.showFrameShading))
+        self.showCrosshair = UserDefaults.standard.bool(
+            forKey: Self.preferenceKey(PreferenceKey.showCrosshair, projectId: projectId)
+        )
+        self.showGrid = UserDefaults.standard.bool(
+            forKey: Self.preferenceKey(PreferenceKey.showGrid, projectId: projectId)
+        )
+        self.showFrameShading = UserDefaults.standard.bool(
+            forKey: Self.preferenceKey(PreferenceKey.showFrameShading, projectId: projectId)
+        )
         self.frameLineConfigurations = Self.loadFrameLineConfigurations(projectId: projectId)
         loadData()
     }
