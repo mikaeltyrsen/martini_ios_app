@@ -397,9 +397,16 @@ class AuthService: ObservableObject {
     }
 
     func confirmPendingProjectSwitch(_ pendingLink: PendingDeepLink) {
-        pendingProjectSwitch = nil
-        logout()
-        processDeepLink(pendingLink, bypassSwitchPrompt: true)
+        Task {
+            await MainActor.run {
+                pendingProjectSwitch = nil
+            }
+            await signOutFromLive()
+            await MainActor.run {
+                logout()
+                processDeepLink(pendingLink, bypassSwitchPrompt: true)
+            }
+        }
     }
 
     func cancelPendingProjectSwitch() {
