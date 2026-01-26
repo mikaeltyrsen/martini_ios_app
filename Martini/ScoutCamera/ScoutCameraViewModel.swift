@@ -29,13 +29,13 @@ final class ScoutCameraViewModel: ObservableObject {
         }
     }
     @Published var showCrosshair: Bool {
-        didSet { UserDefaults.standard.set(showCrosshair, forKey: PreferenceKey.showCrosshair) }
+        didSet { UserDefaults.standard.set(showCrosshair, forKey: preferenceKey(PreferenceKey.showCrosshair)) }
     }
     @Published var showGrid: Bool {
-        didSet { UserDefaults.standard.set(showGrid, forKey: PreferenceKey.showGrid) }
+        didSet { UserDefaults.standard.set(showGrid, forKey: preferenceKey(PreferenceKey.showGrid)) }
     }
     @Published var showFrameShading: Bool {
-        didSet { UserDefaults.standard.set(showFrameShading, forKey: PreferenceKey.showFrameShading) }
+        didSet { UserDefaults.standard.set(showFrameShading, forKey: preferenceKey(PreferenceKey.showFrameShading)) }
     }
 
     @Published var matchResult: FOVMatchResult?
@@ -63,10 +63,10 @@ final class ScoutCameraViewModel: ObservableObject {
         self.frameId = frameId
         self.creativeId = creativeId
         self.targetAspectRatio = targetAspectRatio
-        self.showCrosshair = UserDefaults.standard.bool(forKey: PreferenceKey.showCrosshair)
-        self.showGrid = UserDefaults.standard.bool(forKey: PreferenceKey.showGrid)
-        self.showFrameShading = UserDefaults.standard.bool(forKey: PreferenceKey.showFrameShading)
-        self.frameLineConfigurations = Self.loadFrameLineConfigurations()
+        self.showCrosshair = UserDefaults.standard.bool(forKey: preferenceKey(PreferenceKey.showCrosshair))
+        self.showGrid = UserDefaults.standard.bool(forKey: preferenceKey(PreferenceKey.showGrid))
+        self.showFrameShading = UserDefaults.standard.bool(forKey: preferenceKey(PreferenceKey.showFrameShading))
+        self.frameLineConfigurations = Self.loadFrameLineConfigurations(projectId: projectId)
         loadData()
     }
 
@@ -511,26 +511,39 @@ final class ScoutCameraViewModel: ObservableObject {
     private func saveFrameLineConfigurations() {
         let encoder = JSONEncoder()
         if let data = try? encoder.encode(frameLineConfigurations) {
-            UserDefaults.standard.set(data, forKey: PreferenceKey.frameLineConfigurations)
+            UserDefaults.standard.set(data, forKey: preferenceKey(PreferenceKey.frameLineConfigurations))
         }
     }
 
-    private static func loadFrameLineConfigurations() -> [FrameLineConfiguration] {
+    private static func loadFrameLineConfigurations(projectId: String) -> [FrameLineConfiguration] {
         let decoder = JSONDecoder()
-        if let data = UserDefaults.standard.data(forKey: PreferenceKey.frameLineConfigurations),
+        let scopedFrameLineKey = preferenceKey(PreferenceKey.frameLineConfigurations, projectId: projectId)
+        if let data = UserDefaults.standard.data(forKey: scopedFrameLineKey),
            let decoded = try? decoder.decode([FrameLineConfiguration].self, from: data) {
             return decoded
         }
-        if let savedRawValues = UserDefaults.standard.stringArray(forKey: PreferenceKey.selectedFrameLines) {
+        if let savedRawValues = UserDefaults.standard.stringArray(
+            forKey: preferenceKey(PreferenceKey.selectedFrameLines, projectId: projectId)
+        ) {
             let savedOptions = savedRawValues.compactMap(FrameLineOption.init(rawValue:))
             return savedOptions.filter { $0 != .none }.map { FrameLineConfiguration(option: $0) }
         }
-        if let rawValue = UserDefaults.standard.string(forKey: PreferenceKey.selectedFrameLine),
+        if let rawValue = UserDefaults.standard.string(
+            forKey: preferenceKey(PreferenceKey.selectedFrameLine, projectId: projectId)
+        ),
            let savedOption = FrameLineOption(rawValue: rawValue),
            savedOption != .none {
             return [FrameLineConfiguration(option: savedOption)]
         }
         return []
+    }
+
+    private func preferenceKey(_ key: String) -> String {
+        Self.preferenceKey(key, projectId: projectId)
+    }
+
+    private static func preferenceKey(_ key: String, projectId: String) -> String {
+        "\(key)_\(projectId)"
     }
 
     private func effectiveSqueeze(mode: DBCameraMode, lens: DBLens) -> Double {
