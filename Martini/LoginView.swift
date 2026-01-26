@@ -57,7 +57,7 @@ struct LoginView: View {
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 240, height: 120)
                     
-                    Text("Digital Storyboarding")
+                    Text("Storyboards, perfected.")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
