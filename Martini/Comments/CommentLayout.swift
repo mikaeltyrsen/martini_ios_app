@@ -45,8 +45,12 @@ struct CommentRow: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                    if showFrameBadge, let frameBadgeNumber {
-                        frameBadgeView(frameBadgeNumber)
+                    if showFrameBadge {
+                        if let frameThumbnailURL {
+                            frameThumbnailView(url: frameThumbnailURL, badgeText: frameBadgeNumber)
+                        } else if let frameBadgeNumber {
+                            frameBadgeView(frameBadgeNumber)
+                        }
                     }
                 }
 
@@ -151,6 +155,15 @@ struct CommentRow: View {
         return String(frameOrder)
     }
 
+    private var frameThumbnailURL: URL? {
+        guard let thumb = comment.frameThumb?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !thumb.isEmpty
+        else {
+            return nil
+        }
+        return URL(string: thumb)
+    }
+
     @ViewBuilder
     private func frameBadgeView(_ text: String) -> some View {
         Text(text)
@@ -162,6 +175,41 @@ struct CommentRow: View {
                 Capsule(style: .continuous)
                     .fill(Color.black.opacity(0.8))
             )
+    }
+
+    @ViewBuilder
+    private func frameThumbnailView(url: URL, badgeText: String?) -> some View {
+        ZStack(alignment: .topTrailing) {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                case .failure:
+                    frameThumbnailPlaceholder
+                default:
+                    frameThumbnailPlaceholder
+                }
+            }
+            .frame(width: 48, height: 30)
+            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+
+            if let badgeText {
+                frameBadgeView(badgeText)
+                    .offset(x: 6, y: -6)
+            }
+        }
+    }
+
+    private var frameThumbnailPlaceholder: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(Color.black.opacity(0.15))
+            Image(systemName: "photo")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.secondary)
+        }
     }
 
     private func attributedComment(from body: String) -> AttributedString {
