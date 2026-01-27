@@ -6,7 +6,12 @@ struct CommentLayout: View {
     let onToggleStatus: (Comment) -> Void
 
     var body: some View {
-        CommentRow(comment: comment, isReply: isReply, onToggleStatus: onToggleStatus)
+        CommentRow(
+            comment: comment,
+            isReply: isReply,
+            showFrameBadge: true,
+            onToggleStatus: onToggleStatus
+        )
             .padding(18) // ⬅️ padding FIRST
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -18,6 +23,7 @@ struct CommentLayout: View {
 struct CommentRow: View {
     let comment: Comment
     let isReply: Bool
+    let showFrameBadge: Bool
     let onToggleStatus: (Comment) -> Void
 
     var body: some View {
@@ -39,16 +45,8 @@ struct CommentRow: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                    if let boardLabel {
-                        Text(boardLabel)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(
-                                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                    .fill(Color.secondary.opacity(0.15))
-                            )
+                    if showFrameBadge, let frameBadgeNumber {
+                        frameBadgeView(frameBadgeNumber)
                     }
                 }
 
@@ -148,9 +146,22 @@ struct CommentRow: View {
         return String(initials.prefix(2)).uppercased()
     }
 
-    private var boardLabel: String? {
+    private var frameBadgeNumber: String? {
         guard let frameOrder = comment.frameOrder, frameOrder > 0 else { return nil }
-        return "Board \(frameOrder)"
+        return String(frameOrder)
+    }
+
+    @ViewBuilder
+    private func frameBadgeView(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(Color.black.opacity(0.8))
+            )
     }
 
     private func attributedComment(from body: String) -> AttributedString {
