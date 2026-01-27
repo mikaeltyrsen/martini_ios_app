@@ -181,20 +181,22 @@ struct CommentRow: View {
     @ViewBuilder
     private func frameThumbnailView(url: URL, badgeText: String?) -> some View {
         ZStack(alignment: .topTrailing) {
-            AsyncImage(url: url) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFill()
-                case .failure:
-                    frameThumbnailPlaceholder
-                default:
-                    frameThumbnailPlaceholder
-                }
-            }
-            .frame(width: 152, height: 90)
-            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            FrameLayout(
+                frame: commentFrame(for: url),
+                title: nil,
+                subtitle: nil,
+                showStatusBadge: false,
+                showFrameNumberOverlay: false,
+                showFrameTimeOverlay: false,
+                showPinnedBoardOverlay: false,
+                showMetadataOverlay: false,
+                showTextBlock: false,
+                showCreativeTitleOverlay: false,
+                cornerRadius: 6,
+                enablesFullScreen: false,
+                usePinnedBoardMarkupFallback: true
+            )
+            .frame(maxWidth: 150, maxHeight: 150)
             .padding(.vertical, 8)
 
             if let badgeText {
@@ -202,6 +204,57 @@ struct CommentRow: View {
                     .offset(x: 6, y: -6)
             }
         }
+    }
+
+    private func commentFrame(for url: URL) -> Frame {
+        Frame(
+            id: comment.frameId ?? comment.id,
+            creativeId: comment.frameId ?? "comment",
+            creativeTitle: nil,
+            creativeColor: nil,
+            creativeAspectRatio: nil,
+            boards: nil,
+            mainBoardType: nil,
+            board: nil,
+            boardThumb: url.absoluteString,
+            boardFileName: nil,
+            boardFileType: nil,
+            boardFileSize: nil,
+            photoboard: nil,
+            photoboardThumb: nil,
+            photoboardFileName: nil,
+            photoboardFileType: nil,
+            photoboardFileSize: nil,
+            photoboardCrop: nil,
+            preview: nil,
+            previewThumb: url.absoluteString,
+            previewFileName: nil,
+            previewFileType: nil,
+            previewFileSize: nil,
+            previewCrop: nil,
+            captureClipId: nil,
+            captureClip: nil,
+            captureClipThumbnail: nil,
+            captureClipFileName: nil,
+            captureClipFileType: nil,
+            captureClipFileSize: nil,
+            captureClipCrop: nil,
+            description: nil,
+            caption: nil,
+            notes: nil,
+            crop: nil,
+            status: nil,
+            statusUpdated: nil,
+            isArchived: nil,
+            createdAt: nil,
+            lastUpdated: nil,
+            frameOrder: frameBadgeNumber,
+            frameShootOrder: nil,
+            schedule: nil,
+            frameStartTime: nil,
+            frameHide: nil,
+            tags: []
+        )
     }
 
     private var frameThumbnailPlaceholder: some View {
