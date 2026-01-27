@@ -796,6 +796,7 @@ struct ScheduleView: View {
             .fixedSize()
         }
         .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .center)
         .accessibilityLabel("Weather at \(ScheduleView.hourlyWeatherTimeFormatter.string(from: entry.date))")
         .contextMenu {
             let timeText = ScheduleView.hourlyWeatherTimeFormatter.string(from: entry.date)
