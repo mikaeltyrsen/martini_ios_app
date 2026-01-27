@@ -450,7 +450,7 @@ struct ScheduleView: View {
                     }
             }
             if isPortraitPhone {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 12) {
                     if let entry = hourlyWeatherEntry(for: block) {
                         scheduleRowWeatherBadge(entry)
                             .frame(maxWidth: .infinity, alignment: .center)
@@ -467,7 +467,7 @@ struct ScheduleView: View {
                     blockView(for: block, showsWeather: weatherEntry != nil)
                         .compositingGroup()
                         .opacity(shouldFadeBlock(block, context: context) ? 0.5 : 1)
-                        .frame(maxWidth: rowContentWidth ?? .infinity, alignment: .leading)
+                        .frame(width: rowContentWidth, alignment: .leading)
 
                     if let entry = weatherEntry {
                         VStack {
@@ -475,7 +475,7 @@ struct ScheduleView: View {
                             scheduleRowWeatherBadge(entry)
                             Spacer(minLength: 0)
                         }
-                        .frame(width: weatherColumnWidth, alignment: .center)
+                        .frame(maxWidth: .infinity, alignment: .center)
                     }
                 }
             }
