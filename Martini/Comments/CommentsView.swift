@@ -285,7 +285,6 @@ struct CommentsView: View {
 
     private func handleReply(to comment: Comment) {
         let name = displayName(for: comment)
-        newCommentText = "@\(name) "
         replyMentionUserId = comment.userId
         replyMentionName = name
         replyToCommentId = comment.id
@@ -338,20 +337,14 @@ struct CommentsView: View {
 
     private var commentComposer: some View {
         HStack(spacing: 8) {
+            if let replyMentionName {
+                replyToken(for: replyMentionName)
+            }
             TextField("Add Comment", text: $newCommentText)
                 .focused($composeFieldFocused)
                 .submitLabel(.send)
                 .onTapGesture { composeFieldFocused = true }
                 .onSubmit(sendComment)
-                .onChange(of: newCommentText) { newValue in
-                    guard let mentionName = replyMentionName else { return }
-                    let prefix = "@\(mentionName)"
-                    if !newValue.hasPrefix(prefix) {
-                        replyMentionUserId = nil
-                        replyMentionName = nil
-                        replyToCommentId = nil
-                    }
-                }
                 .foregroundStyle(.primary)
                 .textFieldStyle(.plain)
                 .tint(.primary)
@@ -359,6 +352,31 @@ struct CommentsView: View {
                 .padding(.vertical, 12)
         }
         .glassEffect()
+    }
+
+    private func replyToken(for name: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: "arrowshape.turn.up.left.fill")
+                .font(.system(size: 12, weight: .semibold))
+            Text(name)
+                .font(.system(size: 13, weight: .semibold))
+                .lineLimit(1)
+            Button {
+                clearReplyContext()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 14))
+            }
+            .buttonStyle(.plain)
+        }
+        .foregroundStyle(.primary)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(
+            Capsule(style: .continuous)
+                .fill(Color.martiniAccentColor.opacity(0.2))
+        )
+        .accessibilityLabel("Replying to \(name)")
     }
 
     private var commentAccessNote: some View {
@@ -384,18 +402,20 @@ struct CommentsView: View {
             return body
         }
 
-        let mentionPrefix = "@\(mentionName)"
-        guard body.hasPrefix(mentionPrefix) else { return body }
-
-        let remainder = body.dropFirst(mentionPrefix.count)
-        let trimmedRemainder = remainder.trimmingCharacters(in: .whitespacesAndNewlines)
         let mentionSpan = "<span class=\"mention\" contenteditable=\"false\" data-user-id=\"\(mentionUserId)\">@\(mentionName)</span>&nbsp;"
+        let trimmedBody = body.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        if trimmedRemainder.isEmpty {
+        if trimmedBody.isEmpty {
             return mentionSpan
         }
 
-        return mentionSpan + trimmedRemainder
+        return mentionSpan + trimmedBody
+    }
+
+    private func clearReplyContext() {
+        replyMentionUserId = nil
+        replyMentionName = nil
+        replyToCommentId = nil
     }
 
     private var navigationTitle: String {
