@@ -83,9 +83,6 @@ struct CommentsView: View {
     private var commentsContent: some View {
         if comments.isEmpty {
             VStack(spacing: 16) {
-                if showsHeader {
-                    commentsHeader
-                }
                 Image(systemName: "text.bubble")
                     .font(.system(size: 40))
                     .foregroundStyle(.tertiary)
@@ -99,12 +96,10 @@ struct CommentsView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
-                        if showsHeader {
-                            commentsHeader
-                        }
                         ForEach(comments) { comment in
                             CommentThreadView(
                                 comment: comment,
+                                showFrameBadge: showsHeader,
                                 onToggleStatus: toggleStatus,
                                 onReply: handleReply,
                                 onCopyComment: copyComment
@@ -149,10 +144,10 @@ struct CommentsView: View {
             if isLoading {
                 ProgressView()
             }
-            if !showsHeader {
-                VStack(spacing: 2) {
-                    Text("Comments")
-                        .font(.system(size: 20, weight: .semibold))
+            VStack(spacing: 2) {
+                Text("Comments")
+                    .font(.system(size: 20, weight: .semibold))
+                if !showsHeader {
                     Text(frameSubtitle)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -196,19 +191,6 @@ struct CommentsView: View {
         .accessibilityLabel("Filter comments by creative")
     }
 
-    private var commentsHeader: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Comments")
-                .font(.system(size: 28, weight: .bold))
-            if let creativeTitle, !creativeTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                Text(creativeTitle)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
     private var bottomInsetContent: some View {
         VStack(spacing: 0) {
             if allowsComposing {
@@ -219,6 +201,7 @@ struct CommentsView: View {
         }
         .padding(.horizontal)
         .padding(.top, 6)
+        .padding(.bottom, 8)
         .background {
             // Background for the inset area
             LinearGradient(
@@ -372,8 +355,8 @@ struct CommentsView: View {
                 .foregroundStyle(.primary)
                 .textFieldStyle(.plain)
                 .tint(.primary)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 10)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 12)
         }
         .glassEffect()
     }
@@ -524,18 +507,29 @@ private struct CommentsSheet: View {
 
 private struct CommentThreadView: View {
     let comment: Comment
+    let showFrameBadge: Bool
     let onToggleStatus: (Comment) -> Void
     let onReply: (Comment) -> Void
     let onCopyComment: (Comment) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            CommentRow(comment: comment, isReply: false, onToggleStatus: onToggleStatus)
+            CommentRow(
+                comment: comment,
+                isReply: false,
+                showFrameBadge: showFrameBadge,
+                onToggleStatus: onToggleStatus
+            )
 
             if !comment.replies.isEmpty {
                 VStack(alignment: .leading, spacing: 12) {
                     ForEach(comment.replies) { reply in
-                        CommentRow(comment: reply, isReply: true, onToggleStatus: onToggleStatus)
+                        CommentRow(
+                            comment: reply,
+                            isReply: true,
+                            showFrameBadge: showFrameBadge,
+                            onToggleStatus: onToggleStatus
+                        )
                     }
                 }
             }
@@ -546,14 +540,20 @@ private struct CommentThreadView: View {
                 .fill(Color.commentBackground.opacity(1))
         )
         .contextMenu {
-            Button("Reply to comment") {
+            Button {
                 onReply(comment)
+            } label: {
+                Label("Reply to comment", systemImage: "arrowshape.turn.up.left.fill")
             }
-            Button(commentStatusLabel(for: comment)) {
+            Button {
                 onToggleStatus(comment)
+            } label: {
+                Label(commentStatusLabel(for: comment), systemImage: "checkmark.circle.fill")
             }
-            Button("Copy comment") {
+            Button {
                 onCopyComment(comment)
+            } label: {
+                Label("Copy comment", systemImage: "document.on.document.fill")
             }
         }
     }
