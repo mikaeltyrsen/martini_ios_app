@@ -432,19 +432,24 @@ struct ScheduleView: View {
 
     @ViewBuilder
     private func blockRow(for block: ScheduleBlock, context: TimelineContext) -> some View {
-        HStack(alignment: .center, spacing: 12) {
+        HStack(alignment: .top, spacing: 12) {
             if timelineIsVisible {
                 timelineIndicator(for: block, context: context)
                     .anchorPreference(key: TimelineRowAnchorKey.self, value: .bounds) { anchor in
                         [block.id: anchor]
                     }
             }
-            blockView(for: block)
-                .compositingGroup()
-                .opacity(shouldFadeBlock(block, context: context) ? 0.5 : 1)
-            if let entry = hourlyWeatherEntry(for: block) {
-                scheduleRowWeatherBadge(entry)
-                    .layoutPriority(1)
+            VStack(alignment: .leading, spacing: 6) {
+                blockView(for: block)
+                    .compositingGroup()
+                    .opacity(shouldFadeBlock(block, context: context) ? 0.5 : 1)
+
+                if let entry = hourlyWeatherEntry(for: block) {
+                    HStack {
+                        Spacer(minLength: 0)
+                        scheduleRowWeatherBadge(entry)
+                    }
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
