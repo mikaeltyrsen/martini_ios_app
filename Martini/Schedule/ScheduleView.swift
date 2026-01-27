@@ -543,7 +543,7 @@ struct ScheduleView: View {
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         } else {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 12)], spacing: 12) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: 12)], spacing: 12) {
                 ForEach(frames) { frame in
                     Button {
                         selectedFrame = frame
