@@ -334,32 +334,20 @@ struct ScheduleView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             if formattedDate != nil || formattedStartTime != nil || scheduleDuration != nil || scheduleWeather?.header != nil {
-                HStack(alignment: .center, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        if let date = formattedDate {
-                            Text(date)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        if let startTime = formattedStartTime {
-                            Label("Start: \(startTime)", systemImage: "clock")
-                                .foregroundStyle(.secondary)
-                        }
-
-                        if let duration = scheduleDuration {
-                            Label("Duration: \(formattedDuration(fromMinutes: duration))", systemImage: "timer")
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    Spacer(minLength: 8)
-
+                Group {
                     if let weatherHeader = scheduleWeather?.header {
-                        scheduleWeatherHeader(weatherHeader)
+                        HStack(alignment: .center, spacing: 12) {
+                            scheduleDetailSummary
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
+                            scheduleWeatherHeader(weatherHeader)
+                                .fixedSize(horizontal: true, vertical: false)
+                        }
+                    } else {
+                        scheduleDetailSummary
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(12)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
@@ -426,6 +414,26 @@ struct ScheduleView: View {
                         context: timelineContext
                     )
                 }
+            }
+        }
+    }
+
+    private var scheduleDetailSummary: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            if let date = formattedDate {
+                Text(date)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let startTime = formattedStartTime {
+                Label("Start: \(startTime)", systemImage: "clock")
+                    .foregroundStyle(.secondary)
+            }
+
+            if let duration = scheduleDuration {
+                Label("Duration: \(formattedDuration(fromMinutes: duration))", systemImage: "timer")
+                    .foregroundStyle(.secondary)
             }
         }
     }
