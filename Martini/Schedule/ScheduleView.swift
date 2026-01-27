@@ -336,23 +336,12 @@ struct ScheduleView: View {
             if formattedDate != nil || formattedStartTime != nil || scheduleDuration != nil || scheduleWeather?.header != nil {
                 Group {
                     if let weatherHeader = scheduleWeather?.header {
-                        if isPortraitPhone {
-                            VStack(alignment: .center, spacing: 10) {
-                                scheduleWeatherHeader(weatherHeader)
-                                    .fixedSize(horizontal: true, vertical: false)
-                                    .frame(maxWidth: .infinity, alignment: .center)
+                        HStack(alignment: .center, spacing: 12) {
+                            scheduleDetailSummary
+                                .frame(maxWidth: .infinity, alignment: .leading)
 
-                                scheduleDetailSummary
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                        } else {
-                            HStack(alignment: .center, spacing: 12) {
-                                scheduleDetailSummary
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                                scheduleWeatherHeader(weatherHeader)
-                                    .fixedSize(horizontal: true, vertical: false)
-                            }
+                            scheduleWeatherHeader(weatherHeader)
+                                .fixedSize(horizontal: true, vertical: false)
                         }
                     } else {
                         scheduleDetailSummary
@@ -458,14 +447,25 @@ struct ScheduleView: View {
                         [block.id: anchor]
                     }
             }
-            VStack(alignment: .leading, spacing: 6) {
-                blockView(for: block)
-                    .compositingGroup()
-                    .opacity(shouldFadeBlock(block, context: context) ? 0.5 : 1)
+            if isPortraitPhone {
+                VStack(alignment: .leading, spacing: 6) {
+                    if let entry = hourlyWeatherEntry(for: block) {
+                        scheduleRowWeatherBadge(entry)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                    }
 
-                if let entry = hourlyWeatherEntry(for: block) {
-                    HStack {
-                        Spacer(minLength: 0)
+                    blockView(for: block)
+                        .compositingGroup()
+                        .opacity(shouldFadeBlock(block, context: context) ? 0.5 : 1)
+                }
+            } else {
+                HStack(alignment: .top, spacing: wideColumnSpacing) {
+                    blockView(for: block)
+                        .compositingGroup()
+                        .opacity(shouldFadeBlock(block, context: context) ? 0.5 : 1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    if let entry = hourlyWeatherEntry(for: block) {
                         scheduleRowWeatherBadge(entry)
                     }
                 }
