@@ -353,7 +353,7 @@ struct CommentsView: View {
             Button(action: sendComment) {
                 Image(systemName: "paperplane.fill")
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(canSendComment ? .martiniAccentColor : .secondary)
+                    .foregroundStyle(canSendComment ? Color.martiniAccentColor : Color.secondary)
             }
             .buttonStyle(.plain)
             .disabled(!canSendComment)
@@ -522,7 +522,7 @@ private struct CommentsSheet: View {
                         Button(action: sendComment) {
                             Image(systemName: "paperplane.fill")
                                 .font(.system(size: 15, weight: .semibold))
-                                .foregroundStyle(canSendComment ? .martiniAccentColor : .secondary)
+                                .foregroundStyle(canSendComment ? Color.martiniAccentColor : Color.secondary)
                         }
                         .buttonStyle(.plain)
                         .disabled(!canSendComment)
