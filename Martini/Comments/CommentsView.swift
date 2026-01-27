@@ -350,7 +350,15 @@ struct CommentsView: View {
                 .tint(.primary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 12)
+            Button(action: sendComment) {
+                Image(systemName: "paperplane.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(canSendComment ? .martiniAccentColor : .secondary)
+            }
+            .buttonStyle(.plain)
+            .disabled(!canSendComment)
         }
+        .padding(.horizontal, 8)
         .glassEffect()
     }
 
@@ -395,14 +403,13 @@ struct CommentsView: View {
     }
 
     private func resolvedCommentBody(from body: String) -> String {
-        guard let mentionUserId = replyMentionUserId,
-              let mentionName = replyMentionName,
-              !mentionUserId.isEmpty
+        guard let mentionName = replyMentionName,
+              !mentionName.isEmpty
         else {
             return body
         }
 
-        let mentionSpan = "<span class=\"mention\" contenteditable=\"false\" data-user-id=\"\(mentionUserId)\">@\(mentionName)</span>&nbsp;"
+        let mentionSpan = "<span class=\"mention\">@\(mentionName)</span>&nbsp;"
         let trimmedBody = body.trimmingCharacters(in: .whitespacesAndNewlines)
 
         if trimmedBody.isEmpty {
@@ -416,6 +423,10 @@ struct CommentsView: View {
         replyMentionUserId = nil
         replyMentionName = nil
         replyToCommentId = nil
+    }
+
+    private var canSendComment: Bool {
+        !newCommentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isSendingComment
     }
 
     private var navigationTitle: String {
@@ -508,7 +519,15 @@ private struct CommentsSheet: View {
                             .tint(.primary)
                             .padding(.horizontal, 4)
                             .padding(.vertical, 10)
+                        Button(action: sendComment) {
+                            Image(systemName: "paperplane.fill")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(canSendComment ? .martiniAccentColor : .secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(!canSendComment)
                     }
+                    .padding(.horizontal, 6)
                 }
             }
         }
@@ -522,6 +541,10 @@ private struct CommentsSheet: View {
             newCommentText = ""
             composeFieldFocused = false
         }
+    }
+
+    private var canSendComment: Bool {
+        !newCommentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 }
 
