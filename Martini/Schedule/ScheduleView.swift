@@ -442,9 +442,9 @@ struct ScheduleView: View {
             blockView(for: block)
                 .compositingGroup()
                 .opacity(shouldFadeBlock(block, context: context) ? 0.5 : 1)
-                .layoutPriority(1)
             if let entry = hourlyWeatherEntry(for: block) {
                 scheduleRowWeatherBadge(entry)
+                    .layoutPriority(1)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
