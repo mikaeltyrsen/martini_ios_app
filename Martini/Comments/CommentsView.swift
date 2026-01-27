@@ -511,6 +511,9 @@ private struct CommentThreadView: View {
     let onToggleStatus: (Comment) -> Void
     let onReply: (Comment) -> Void
     let onCopyComment: (Comment) -> Void
+    private let threadPadding: CGFloat = 18
+    private let avatarSize: CGFloat = 28
+    private let connectorWidth: CGFloat = 4
 
     var body: some View {
         VStack(alignment: .leading, spacing: 30) {
@@ -534,11 +537,25 @@ private struct CommentThreadView: View {
                 }
             }
         }
-        .padding(18)
+        .padding(threadPadding)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(Color.commentBackground.opacity(1))
         )
+        .overlay(alignment: .topLeading) {
+            if !comment.replies.isEmpty {
+                GeometryReader { proxy in
+                    let lineHeight = max(0, proxy.size.height - (threadPadding * 2) - avatarSize)
+                    Rectangle()
+                        .fill(Color.martiniAccentColor)
+                        .frame(width: connectorWidth, height: lineHeight)
+                        .offset(
+                            x: threadPadding + (avatarSize - connectorWidth) / 2,
+                            y: threadPadding + avatarSize / 2
+                        )
+                }
+            }
+        }
         .contextMenu {
             Button {
                 onReply(comment)
