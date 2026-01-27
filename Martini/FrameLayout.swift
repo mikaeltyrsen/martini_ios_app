@@ -349,24 +349,32 @@ struct FrameLayout: View {
     }
 
     private func creativeTitleOverlay(_ title: String) -> some View {
-        VStack {
-            HStack {
-                Spacer()
-                Text(title)
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(
-                        Capsule().fill(Color.martiniCreativeColor(from: frame.creativeColor))
-                    )
-                    .shadow(color: Color.black.opacity(0.2), radius: 2, x: 0, y: 1)
+        GeometryReader { geo in
+            let minDimension = min(geo.size.width, geo.size.height)
+            let badgeHeight = max(18, minDimension * 0.12)
+            let fontSize = badgeHeight * 0.42
+            let horizontalPadding = badgeHeight * 0.35
+            let verticalPadding = badgeHeight * 0.25
+
+            VStack {
+                HStack {
+                    Spacer()
+                    Text(title)
+                        .font(.system(size: fontSize, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                        .padding(.horizontal, horizontalPadding)
+                        .padding(.vertical, verticalPadding)
+                        .background(
+                            Capsule().fill(Color.martiniCreativeColor(from: frame.creativeColor))
+                        )
+                        .shadow(color: Color.black.opacity(0.2), radius: 2, x: 0, y: 1)
+                    Spacer()
+                }
+                .padding(.top, 8)
                 Spacer()
             }
-            .padding(.top, 8)
-            Spacer()
         }
     }
 
