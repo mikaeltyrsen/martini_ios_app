@@ -336,12 +336,23 @@ struct ScheduleView: View {
             if formattedDate != nil || formattedStartTime != nil || scheduleDuration != nil || scheduleWeather?.header != nil {
                 Group {
                     if let weatherHeader = scheduleWeather?.header {
-                        HStack(alignment: .center, spacing: 12) {
-                            scheduleDetailSummary
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                        if isPortraitPhone {
+                            VStack(alignment: .center, spacing: 10) {
+                                scheduleWeatherHeader(weatherHeader)
+                                    .fixedSize(horizontal: true, vertical: false)
+                                    .frame(maxWidth: .infinity, alignment: .center)
 
-                            scheduleWeatherHeader(weatherHeader)
-                                .fixedSize(horizontal: true, vertical: false)
+                                scheduleDetailSummary
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                        } else {
+                            HStack(alignment: .center, spacing: 12) {
+                                scheduleDetailSummary
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                                scheduleWeatherHeader(weatherHeader)
+                                    .fixedSize(horizontal: true, vertical: false)
+                            }
                         }
                     } else {
                         scheduleDetailSummary
