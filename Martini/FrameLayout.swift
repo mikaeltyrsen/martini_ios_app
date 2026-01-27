@@ -418,10 +418,14 @@ struct FrameLayout: View {
                     Text(attributedSubtitle)
                         .font(.system(size: subtitleSize, weight: .semibold))
                         .foregroundColor(descriptionColor)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity, alignment: .center)
                 } else {
                     Text(resolvedSubtitle)
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(descriptionColor)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity, alignment: .center)
                         //.lineLimit(2)
                 }
             }
