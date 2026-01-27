@@ -267,6 +267,7 @@ struct MainView: View {
     @State private var commentsError: String?
     @State private var commentsTarget: CommentsTarget?
     @State private var isCommentsVisible = false
+    @State private var commentsCreativeFilterId: String?
 
     @AppStorage("showDescriptions") private var showDescriptions: Bool = UIControlConfig.showDescriptionsDefault
     @AppStorage("showFullDescriptions") private var showFullDescriptions: Bool = UIControlConfig.showFullDescriptionsDefault
@@ -323,10 +324,12 @@ struct MainView: View {
 
     private struct CommentsTarget: Identifiable, Hashable {
         let id = UUID()
-        let title: String
-        let creativeId: String
+        let frameTitle: String
+        let creativeId: String?
+        let creativeTitle: String?
         let frameId: String?
         let cacheKey: String
+        let isFromGrid: Bool
     }
 
     private static let scheduleDateFormatter: DateFormatter = {
@@ -780,9 +783,16 @@ struct MainView: View {
             }
             .navigationDestination(item: $commentsTarget) { target in
                 CommentsView(
-                    frameTitle: target.title,
+                    frameTitle: target.frameTitle,
                     frameId: target.frameId,
-                    creativeId: target.creativeId,
+                    creativeId: composeCreativeId(for: target),
+                    creativeTitle: commentsHeaderSubtitle(for: target),
+                    showsCreativeFilter: target.isFromGrid,
+                    creativeFilterOptions: creativeFilterOptions,
+                    selectedCreativeFilterId: commentsCreativeFilterId,
+                    onSelectCreativeFilter: { selection in
+                        selectCommentsCreativeFilter(selection, target: target)
+                    },
                     comments: $comments,
                     isLoading: isLoadingComments,
                     errorMessage: commentsError,
@@ -791,8 +801,8 @@ struct MainView: View {
                 )
             }
             .onChange(of: comments) { newComments in
-                if let cacheKey = commentsTarget?.cacheKey {
-                    commentsCache[cacheKey] = newComments
+                if let target = commentsTarget {
+                    commentsCache[commentsCacheKey(for: target)] = newComments
                 }
             }
             .sheet(isPresented: $isShowingSettings) {
@@ -1108,20 +1118,72 @@ struct MainView: View {
         guard let creativeId = currentCreativeId
             ?? contextMenuFrame?.creativeId
             ?? creativesToDisplay.first?.id else { return }
-        let title = "All Frames • \(currentCreativeTitle)"
+        let creativeTitle = currentCreativeTitle
+        let isFromGrid = viewMode == .grid
+        commentsCreativeFilterId = isFromGrid ? nil : creativeId
         let target = CommentsTarget(
-            title: title,
-            creativeId: creativeId,
+            frameTitle: "",
+            creativeId: isFromGrid ? nil : creativeId,
+            creativeTitle: creativeTitle,
             frameId: nil,
-            cacheKey: "creative:\(creativeId)"
+            cacheKey: "creative:\(creativeId)",
+            isFromGrid: isFromGrid
         )
         commentsTarget = target
-        if let cached = commentsCache[target.cacheKey] {
-            comments = cached
-        } else {
-            comments = []
-        }
+        let cacheKey = commentsCacheKey(for: target)
+        comments = commentsCache[cacheKey] ?? []
         commentsError = nil
+    }
+
+    private func composeCreativeId(for target: CommentsTarget) -> String? {
+        if target.frameId != nil {
+            return target.creativeId
+        }
+        if target.isFromGrid {
+            return commentsCreativeFilterId
+        }
+        return target.creativeId
+    }
+
+    private func commentsHeaderSubtitle(for target: CommentsTarget) -> String? {
+        if target.frameId != nil {
+            return nil
+        }
+        if target.isFromGrid {
+            return commentsCreativeFilterTitle
+        }
+        return target.creativeTitle
+    }
+
+    private var commentsCreativeFilterTitle: String {
+        if let selectedCreativeId = commentsCreativeFilterId,
+           let creative = creativesToDisplay.first(where: { $0.id == selectedCreativeId }) {
+            return creative.title
+        }
+        return "All creatives"
+    }
+
+    private var creativeFilterOptions: [CreativeFilterOption] {
+        creativesToDisplay.map { creative in
+            CreativeFilterOption(id: creative.id, creativeId: creative.id, title: creative.title)
+        }
+    }
+
+    private func selectCommentsCreativeFilter(_ creativeId: String?, target: CommentsTarget) {
+        commentsCreativeFilterId = creativeId
+        commentsError = nil
+        comments = commentsCache[commentsCacheKey(for: target)] ?? []
+        Task {
+            await loadComments(for: target, force: true)
+        }
+    }
+
+    private func commentsCacheKey(for target: CommentsTarget) -> String {
+        if target.isFromGrid {
+            let creativeKey = commentsCreativeFilterId ?? "all"
+            return "creative:\(creativeKey)"
+        }
+        return target.cacheKey
     }
 
     private func openScriptView() {
@@ -1451,24 +1513,60 @@ struct MainView: View {
     @MainActor
     private func loadComments(for target: CommentsTarget, force: Bool) async {
         if isLoadingComments { return }
-        if !force && !comments.isEmpty { return }
+        let cacheKey = commentsCacheKey(for: target)
+        if !force {
+            if let cached = commentsCache[cacheKey], !cached.isEmpty {
+                comments = cached
+                commentsError = nil
+                return
+            }
+            if !comments.isEmpty { return }
+        }
 
         isLoadingComments = true
         defer { isLoadingComments = false }
 
         do {
-            let response = try await authService.fetchComments(
-                creativeId: target.creativeId,
-                frameId: target.frameId
-            )
+            let responseComments: [Comment]
+            if target.isFromGrid, let selectedCreativeId = commentsCreativeFilterId {
+                let response = try await authService.fetchComments(
+                    creativeId: selectedCreativeId,
+                    frameId: target.frameId
+                )
+                responseComments = response.comments
+                commentsCache["creative:\(selectedCreativeId)"] = response.comments
+            } else if target.isFromGrid {
+                responseComments = try await fetchAllCreativeComments()
+                commentsCache["creative:all"] = responseComments
+            } else if let creativeId = target.creativeId {
+                let response = try await authService.fetchComments(
+                    creativeId: creativeId,
+                    frameId: target.frameId
+                )
+                responseComments = response.comments
+                commentsCache[cacheKey] = response.comments
+            } else {
+                responseComments = []
+            }
             guard commentsTarget?.id == target.id else { return }
-            comments = response.comments
-            commentsCache[target.cacheKey] = response.comments
+            comments = responseComments
+            commentsCache[cacheKey] = responseComments
             commentsError = nil
         } catch {
             guard commentsTarget?.id == target.id else { return }
             commentsError = error.localizedDescription
         }
+    }
+
+    private func fetchAllCreativeComments() async throws -> [Comment] {
+        var aggregated: [Comment] = []
+        let creativeIds = creativesToDisplay.map(\.id)
+        for creativeId in creativeIds {
+            let response = try await authService.fetchComments(creativeId: creativeId, frameId: nil)
+            aggregated.append(contentsOf: response.comments)
+            commentsCache["creative:\(creativeId)"] = response.comments
+        }
+        return aggregated
     }
 
     private func resetProjectFiles() {
@@ -2055,8 +2153,8 @@ private extension MainView {
     @MainActor
     private func updateCommentStatus(commentId: String, status: Int) {
         comments = updatedComments(comments, commentId: commentId, status: status)
-        if let cacheKey = commentsTarget?.cacheKey {
-            commentsCache[cacheKey] = comments
+        if let target = commentsTarget {
+            commentsCache[commentsCacheKey(for: target)] = comments
         }
     }
 
@@ -2065,14 +2163,29 @@ private extension MainView {
             return event.frameId == targetFrameId
         }
 
+        if target.isFromGrid {
+            guard let selectedCreativeId = commentsCreativeFilterId else {
+                return true
+            }
+            if let frame = authService.frames.first(where: { $0.id == event.frameId }) {
+                return frame.creativeId == selectedCreativeId
+            }
+            if let frame = displayedFramesInCurrentMode.first(where: { $0.id == event.frameId }) {
+                return frame.creativeId == selectedCreativeId
+            }
+            return false
+        }
+
         let eventFrameId = event.frameId
 
+        guard let targetCreativeId = target.creativeId else { return false }
+
         if let frame = authService.frames.first(where: { $0.id == eventFrameId }) {
-            return frame.creativeId == target.creativeId
+            return frame.creativeId == targetCreativeId
         }
 
         if let frame = displayedFramesInCurrentMode.first(where: { $0.id == eventFrameId }) {
-            return frame.creativeId == target.creativeId
+            return frame.creativeId == targetCreativeId
         }
 
         return false

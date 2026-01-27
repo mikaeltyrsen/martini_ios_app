@@ -39,6 +39,17 @@ struct CommentRow: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
+                    if let boardLabel {
+                        Text(boardLabel)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(
+                                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                    .fill(Color.secondary.opacity(0.15))
+                            )
+                    }
                 }
 
                 if let body = comment.comment, !body.isEmpty {
@@ -135,6 +146,11 @@ struct CommentRow: View {
             initials.append(String(last.prefix(1)))
         }
         return String(initials.prefix(2)).uppercased()
+    }
+
+    private var boardLabel: String? {
+        guard let frameOrder = comment.frameOrder, frameOrder > 0 else { return nil }
+        return "Board \(frameOrder)"
     }
 
     private func attributedComment(from body: String) -> AttributedString {

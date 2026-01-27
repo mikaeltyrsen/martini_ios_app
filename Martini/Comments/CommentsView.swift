@@ -1,10 +1,21 @@
 import SwiftUI
 import UIKit
 
+struct CreativeFilterOption: Identifiable, Hashable {
+    let id: String
+    let creativeId: String?
+    let title: String
+}
+
 struct CommentsView: View {
     let frameTitle: String
     let frameId: String?
-    let creativeId: String
+    let creativeId: String?
+    let creativeTitle: String?
+    let showsCreativeFilter: Bool
+    let creativeFilterOptions: [CreativeFilterOption]
+    let selectedCreativeFilterId: String?
+    let onSelectCreativeFilter: (String?) -> Void
     @Binding var comments: [Comment]
     let isLoading: Bool
     let errorMessage: String?
@@ -21,7 +32,8 @@ struct CommentsView: View {
     @State private var replyMentionName: String?
     @State private var replyToCommentId: String?
     private let bottomAnchorId = "comments-bottom-anchor"
-    private var allowsComposing: Bool { authService.allowEdit }
+    private var allowsComposing: Bool { authService.allowEdit && creativeId != nil }
+    private var showsHeader: Bool { frameId == nil }
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -29,6 +41,11 @@ struct CommentsView: View {
                 .toolbar {
                     ToolbarItem(placement: .principal) {
                         toolbarContent
+                    }
+                    if showsCreativeFilter {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            creativeFilterMenu
+                        }
                     }
                 }
             .navigationBarTitleDisplayMode(.inline)
@@ -65,7 +82,10 @@ struct CommentsView: View {
     @ViewBuilder
     private var commentsContent: some View {
         if comments.isEmpty {
-            VStack(spacing: 12) {
+            VStack(spacing: 16) {
+                if showsHeader {
+                    commentsHeader
+                }
                 Image(systemName: "text.bubble")
                     .font(.system(size: 40))
                     .foregroundStyle(.tertiary)
@@ -74,10 +94,14 @@ struct CommentsView: View {
                     .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.horizontal)
         } else {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
+                        if showsHeader {
+                            commentsHeader
+                        }
                         ForEach(comments) { comment in
                             CommentThreadView(
                                 comment: comment,
@@ -125,9 +149,54 @@ struct CommentsView: View {
             if isLoading {
                 ProgressView()
             }
-            Text(navigationTitle)
-                .font(.headline)
+            if !showsHeader {
+                Text(navigationTitle)
+                    .font(.headline)
+            }
         }
+    }
+
+    private var creativeFilterMenu: some View {
+        Menu {
+            Button {
+                onSelectCreativeFilter(nil)
+            } label: {
+                if selectedCreativeFilterId == nil {
+                    Label("All creatives", systemImage: "checkmark")
+                } else {
+                    Text("All creatives")
+                }
+            }
+
+            ForEach(creativeFilterOptions) { option in
+                Button {
+                    onSelectCreativeFilter(option.creativeId)
+                } label: {
+                    if option.creativeId == selectedCreativeFilterId {
+                        Label(option.title, systemImage: "checkmark")
+                    } else {
+                        Text(option.title)
+                    }
+                }
+            }
+        } label: {
+            Image(systemName: "list.bullet")
+                .imageScale(.large)
+        }
+        .accessibilityLabel("Filter comments by creative")
+    }
+
+    private var commentsHeader: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Comments")
+                .font(.system(size: 28, weight: .bold))
+            if let creativeTitle, !creativeTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Text(creativeTitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var bottomInsetContent: some View {
@@ -164,6 +233,10 @@ struct CommentsView: View {
         }
         guard let projectId = authService.projectId else {
             sendErrorMessage = "Missing project information."
+            return
+        }
+        guard let creativeId else {
+            sendErrorMessage = "Select a creative to add a comment."
             return
         }
         isSendingComment = true
@@ -299,7 +372,7 @@ struct CommentsView: View {
         HStack(spacing: 8) {
             Image(systemName: "info.circle")
                 .foregroundStyle(.secondary)
-            Text("You do not have permission to add comments.")
+            Text(commentAccessMessage)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             Spacer()
@@ -336,10 +409,20 @@ struct CommentsView: View {
         if isLoading {
             return "Loading comments"
         }
+        if frameId == nil {
+            return "Comments"
+        }
         if frameTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return "Comments"
         }
         return "Comments for \(frameTitle)"
+    }
+
+    private var commentAccessMessage: String {
+        if !authService.allowEdit {
+            return "You do not have permission to add comments."
+        }
+        return "Select a creative to add comments."
     }
 
     private func scrollToBottom(using proxy: ScrollViewProxy, animated: Bool) {
