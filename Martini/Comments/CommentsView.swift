@@ -150,10 +150,20 @@ struct CommentsView: View {
                 ProgressView()
             }
             if !showsHeader {
-                Text(navigationTitle)
-                    .font(.headline)
+                VStack(spacing: 2) {
+                    Text("Comments")
+                        .font(.system(size: 20, weight: .semibold))
+                    Text(frameSubtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
+    }
+
+    private var frameSubtitle: String {
+        let trimmedTitle = frameTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedTitle.isEmpty ? "Frame" : trimmedTitle
     }
 
     private var creativeFilterMenu: some View {
