@@ -430,6 +430,7 @@ struct FrameLayout: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func scaledBorderWidth(for size: CGSize) -> CGFloat {
