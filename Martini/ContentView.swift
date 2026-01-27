@@ -2936,6 +2936,8 @@ struct GridFrameCell: View {
                     .font(.system(size: baseFontSize))
                     .foregroundColor(.martiniDefaultDescriptionColor)
                     .lineLimit(showFullDescription ? nil : 3)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .multilineTextAlignment(.center)
             }
             if showTags, !tagItems.isEmpty {
                 let baseFontSize = 12 * fontScale
