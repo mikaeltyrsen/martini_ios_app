@@ -514,6 +514,7 @@ private struct CommentThreadView: View {
     private let threadPadding: CGFloat = 18
     private let avatarSize: CGFloat = 28
     private let connectorWidth: CGFloat = 4
+    private let connectorTrim: CGFloat = 6
 
     var body: some View {
         VStack(alignment: .leading, spacing: 30) {
@@ -525,7 +526,7 @@ private struct CommentThreadView: View {
             )
 
             if !comment.replies.isEmpty {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 30) {
                     ForEach(comment.replies) { reply in
                         CommentRow(
                             comment: reply,
@@ -538,21 +539,22 @@ private struct CommentThreadView: View {
             }
         }
         .padding(threadPadding)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.commentBackground.opacity(1))
-        )
-        .overlay(alignment: .topLeading) {
-            if !comment.replies.isEmpty {
-                GeometryReader { proxy in
-                    let lineHeight = max(0, proxy.size.height - (threadPadding * 2) - avatarSize)
-                    Rectangle()
-                        .fill(Color.martiniAccentColor)
-                        .frame(width: connectorWidth, height: lineHeight)
-                        .offset(
-                            x: threadPadding + (avatarSize - connectorWidth) / 2,
-                            y: threadPadding + avatarSize / 2
-                        )
+        .background {
+            ZStack(alignment: .topLeading) {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color.commentBackground.opacity(1))
+
+                if !comment.replies.isEmpty {
+                    GeometryReader { proxy in
+                        let lineHeight = max(0, proxy.size.height - (threadPadding * 2) - avatarSize - connectorTrim)
+                        Rectangle()
+                            .fill(Color.martiniAccentColor)
+                            .frame(width: connectorWidth, height: lineHeight)
+                            .offset(
+                                x: threadPadding + (avatarSize - connectorWidth) / 2,
+                                y: threadPadding + avatarSize / 2
+                            )
+                    }
                 }
             }
         }
