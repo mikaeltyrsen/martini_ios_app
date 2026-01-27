@@ -78,24 +78,26 @@ struct ScheduleView: View {
     }
 
     private let wideColumnSpacing: CGFloat = 12
+    private let weatherColumnWidth: CGFloat = 84
     private let scheduleContentPadding: CGFloat = 16
     private let scheduleRowHorizontalPadding: CGFloat = 6
     private let scheduleBlockPadding: CGFloat = 12
 
-    private var wideLayoutAvailableWidth: CGFloat? {
+    private func wideLayoutAvailableWidth(showsWeather: Bool) -> CGFloat? {
         guard scheduleContentWidth > 0 else { return nil }
         let timelineInset = timelineIsVisible ? (timelineIndicatorWidth + wideColumnSpacing) : 0
-        return max(scheduleContentWidth - timelineInset, 0)
+        let weatherInset = showsWeather ? (weatherColumnWidth + wideColumnSpacing) : 0
+        return max(scheduleContentWidth - timelineInset - weatherInset, 0)
     }
 
-    private var timeColumnWidth: CGFloat? {
-        guard let width = wideLayoutAvailableWidth else { return nil }
+    private func timeColumnWidth(showsWeather: Bool) -> CGFloat? {
+        guard let width = wideLayoutAvailableWidth(showsWeather: showsWeather) else { return nil }
         return min(width * 0.2, 100)
     }
 
-    private func contentColumnWidth(hasDescription: Bool) -> CGFloat? {
-        guard let width = wideLayoutAvailableWidth,
-              let timeColumnWidth else { return nil }
+    private func contentColumnWidth(hasDescription: Bool, showsWeather: Bool) -> CGFloat? {
+        guard let width = wideLayoutAvailableWidth(showsWeather: showsWeather),
+              let timeColumnWidth = timeColumnWidth(showsWeather: showsWeather) else { return nil }
         let spacing = wideColumnSpacing * (hasDescription ? 2 : 1)
         let remaining = max(width - timeColumnWidth - spacing, 0)
         return hasDescription ? (remaining / 2) : remaining
@@ -459,14 +461,21 @@ struct ScheduleView: View {
                         .opacity(shouldFadeBlock(block, context: context) ? 0.5 : 1)
                 }
             } else {
+                let weatherEntry = hourlyWeatherEntry(for: block)
+                let rowContentWidth = wideLayoutAvailableWidth(showsWeather: weatherEntry != nil)
                 HStack(alignment: .top, spacing: wideColumnSpacing) {
-                    blockView(for: block)
+                    blockView(for: block, showsWeather: weatherEntry != nil)
                         .compositingGroup()
                         .opacity(shouldFadeBlock(block, context: context) ? 0.5 : 1)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(maxWidth: rowContentWidth ?? .infinity, alignment: .leading)
 
-                    if let entry = hourlyWeatherEntry(for: block) {
-                        scheduleRowWeatherBadge(entry)
+                    if let entry = weatherEntry {
+                        VStack {
+                            Spacer(minLength: 0)
+                            scheduleRowWeatherBadge(entry)
+                            Spacer(minLength: 0)
+                        }
+                        .frame(width: weatherColumnWidth, alignment: .center)
                     }
                 }
             }
@@ -475,7 +484,7 @@ struct ScheduleView: View {
     }
 
     @ViewBuilder
-    private func blockView(for block: ScheduleBlock) -> some View {
+    private func blockView(for block: ScheduleBlock, showsWeather: Bool = false) -> some View {
         switch block.type {
         case .title:
             HStack(alignment: .center, spacing: wideColumnSpacing) {
@@ -488,7 +497,8 @@ struct ScheduleView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                 } else if showsWideLayout {
                     let hasDescription = !(block.description?.isEmpty ?? true)
-                    let columnWidth = contentColumnWidth(hasDescription: hasDescription)
+                    let columnWidth = contentColumnWidth(hasDescription: hasDescription, showsWeather: showsWeather)
+                    let timeColumnWidth = timeColumnWidth(showsWeather: showsWeather)
 
                     wideColumnView(
                         VStack(alignment: .leading, spacing: 4) {
@@ -522,7 +532,8 @@ struct ScheduleView: View {
             Group {
                 if showsWideLayout {
                     let hasDescription = !(block.description?.isEmpty ?? true)
-                    let columnWidth = contentColumnWidth(hasDescription: hasDescription)
+                    let columnWidth = contentColumnWidth(hasDescription: hasDescription, showsWeather: showsWeather)
+                    let timeColumnWidth = timeColumnWidth(showsWeather: showsWeather)
 
                     HStack(alignment: .top, spacing: wideColumnSpacing) {
                         wideColumnView(
