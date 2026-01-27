@@ -513,7 +513,7 @@ private struct CommentThreadView: View {
     let onCopyComment: (Comment) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 30) {
             CommentRow(
                 comment: comment,
                 isReply: false,

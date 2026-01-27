@@ -31,7 +31,7 @@ struct CommentRow: View {
             avatarView
                 .frame(width: isReply ? 28 : 28, height: isReply ? 28 : 28)
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 8) {
                     Text(displayName)
                         .font(.system(size: 14, weight: .semibold))
@@ -45,12 +45,13 @@ struct CommentRow: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                    if showFrameBadge {
-                        if let frameThumbnailURL {
-                            frameThumbnailView(url: frameThumbnailURL, badgeText: frameBadgeNumber)
-                        } else if let frameBadgeNumber {
-                            frameBadgeView(frameBadgeNumber)
-                        }
+                }
+                
+                if showFrameBadge {
+                    if let frameThumbnailURL {
+                        frameThumbnailView(url: frameThumbnailURL, badgeText: frameBadgeNumber)
+                    } else if let frameBadgeNumber {
+                        frameBadgeView(frameBadgeNumber)
                     }
                 }
 
@@ -192,8 +193,9 @@ struct CommentRow: View {
                     frameThumbnailPlaceholder
                 }
             }
-            .frame(width: 48, height: 30)
+            .frame(width: 152, height: 90)
             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .padding(.vertical, 8)
 
             if let badgeText {
                 frameBadgeView(badgeText)
@@ -213,7 +215,7 @@ struct CommentRow: View {
     }
 
     private func attributedComment(from body: String) -> AttributedString {
-        let baseFont: Font = isReply ? .subheadline : .body
+        let baseFont: Font = isReply ? .subheadline : .subheadline
         var baseAttributes = AttributeContainer()
         baseAttributes.font = baseFont
         baseAttributes.foregroundColor = .primary
