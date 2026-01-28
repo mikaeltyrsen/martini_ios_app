@@ -337,30 +337,46 @@ struct CommentsView: View {
 
     private var commentComposer: some View {
         HStack(spacing: 8) {
-            if let replyMentionName {
-                replyToken(for: replyMentionName)
-                    .padding(.leading, 4)
+
+            // COMMENT FIELD (pill / glass)
+            HStack(spacing: 8) {
+                if let replyMentionName {
+                    replyToken(for: replyMentionName)
+                        .padding(.leading, 4)
+                }
+
+                TextField("Add Comment", text: $newCommentText)
+                    .focused($composeFieldFocused)
+                    .submitLabel(.send)
+                    .onTapGesture { composeFieldFocused = true }
+                    .onSubmit(sendComment)
+                    .foregroundStyle(.primary)
+                    .textFieldStyle(.plain)
+                    .tint(.primary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 12)
             }
-            TextField("Add Comment", text: $newCommentText)
-                .focused($composeFieldFocused)
-                .submitLabel(.send)
-                .onTapGesture { composeFieldFocused = true }
-                .onSubmit(sendComment)
-                .foregroundStyle(.primary)
-                .textFieldStyle(.plain)
-                .tint(.primary)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 12)
+            .padding(.horizontal, 8)
+            .glassEffect()
+
+            // SEND BUTTON (outside)
             Button(action: sendComment) {
                 Image(systemName: "paperplane.fill")
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(canSendComment ? Color.martiniAccentColor : Color.secondary)
+                    .foregroundStyle(canSendComment ? .white : .secondary)
             }
-            .buttonStyle(.plain)
+            //.buttonStyle(.plain)
+            .padding(12)
+            .background(
+                Circle()
+                    .fill(canSendComment
+                          ? Color.martiniAccentColor
+                          : Color.martiniAccentColor.opacity(0))
+            )
             .disabled(!canSendComment)
+            .glassEffect()
         }
-        .padding(.horizontal, 8)
-        .glassEffect()
+        .padding(.horizontal)
     }
 
     private func replyToken(for name: String) -> some View {
