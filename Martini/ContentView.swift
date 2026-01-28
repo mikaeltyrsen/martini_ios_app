@@ -2729,17 +2729,40 @@ private extension MainView {
 
             do {
                 let addedFrameId = try await authService.addFrame(projectId: projectId, creativeId: creativeId)
-                try await authService.fetchFrames()
 
-                let updatedFrames = authService.frames.filter { $0.creativeId == creativeId }
-                let resolvedFrameId = addedFrameId ?? updatedFrames.first(where: { !existingFrameIds.contains($0.id) })?.id
+                if let newFrameId = addedFrameId {
+                    let newFrame = Frame(id: newFrameId, creativeId: creativeId)
+                    var orderedFrames = priorFrames.filter { $0.id != newFrameId }
+                    let clampedIndex = min(max(insertIndex, 0), orderedFrames.count)
+                    orderedFrames.insert(newFrame, at: clampedIndex)
 
-                guard let newFrameId = resolvedFrameId,
-                      let newFrame = updatedFrames.first(where: { $0.id == newFrameId }) else {
+                    let orderPayload = buildOrderedFramePayload(
+                        frames: orderedFrames,
+                        orderBy: .story,
+                        priorFrames: priorFrames,
+                        insertContext: FrameInsertionContext(
+                            insertedFrameId: newFrameId,
+                            sourceFrameId: insertContext.sourceFrameId,
+                            position: insertContext.position
+                        )
+                    )
+                    try await authService.updateFrameOrder(
+                        shootId: projectId,
+                        creativeId: creativeId,
+                        orderBy: "story",
+                        orderedFrames: orderPayload
+                    )
+                    try await authService.fetchFrames()
                     return
                 }
 
-                var orderedFrames = priorFrames.filter { $0.id != newFrameId }
+                try await authService.fetchFrames()
+                let updatedFrames = authService.frames.filter { $0.creativeId == creativeId }
+                guard let newFrame = updatedFrames.first(where: { !existingFrameIds.contains($0.id) }) else {
+                    return
+                }
+
+                var orderedFrames = priorFrames.filter { $0.id != newFrame.id }
                 let clampedIndex = min(max(insertIndex, 0), orderedFrames.count)
                 orderedFrames.insert(newFrame, at: clampedIndex)
 
@@ -2748,7 +2771,7 @@ private extension MainView {
                     orderBy: .story,
                     priorFrames: priorFrames,
                     insertContext: FrameInsertionContext(
-                        insertedFrameId: newFrameId,
+                        insertedFrameId: newFrame.id,
                         sourceFrameId: insertContext.sourceFrameId,
                         position: insertContext.position
                     )
