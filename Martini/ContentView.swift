@@ -75,6 +75,10 @@ struct ContentView: View {
         .onOpenURL { url in
             handleIncomingURL(url)
         }
+        .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in
+            guard let url = activity.webpageURL else { return }
+            handleIncomingURL(url)
+        }
         .alert(item: $authService.pendingProjectSwitch) { pendingSwitch in
             Alert(
                 title: Text("Switch projects?"),
