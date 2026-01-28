@@ -183,6 +183,7 @@ class AuthService: ObservableObject {
         case removeImage = "frames/remove_image.php"
         case addFrame = "frames/add.php"
         case updateFrameOrder = "frames/update_order.php"
+        case deleteFrame = "frames/delete.php"
         case schedule = "schedules/fetch.php"
         case clips = "clips/fetch.php"
         case comments = "comments/get_comments.php"
@@ -1619,6 +1620,39 @@ class AuthService: ObservableObject {
         guard basicResponse.success else {
             print("❌ Update frame order response failed: \(basicResponse.error ?? "Unknown error")")
             throw AuthError.authenticationFailedWithMessage(basicResponse.error ?? "Failed to update frame order")
+        }
+    }
+
+    func deleteFrame(projectId: String, frameId: String) async throws {
+        let body: [String: Any] = [
+            "projectId": projectId,
+            "frameId": frameId
+        ]
+
+        var request = try authorizedRequest(for: .deleteFrame, body: body)
+        let requestJSON = String(data: request.httpBody ?? Data(), encoding: .utf8) ?? "Unable to encode"
+        print("📤 Deleting frame...")
+        print("🔗 URL: \(request.url?.absoluteString ?? "unknown")")
+        print("📝 Request body: \(requestJSON)")
+
+        let (data, response) = try await performRequest(request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw AuthError.invalidResponse
+        }
+
+        let responseJSON = String(data: data, encoding: .utf8) ?? "Unable to decode"
+        print("📥 Delete frame response received (\(httpResponse.statusCode)):")
+        print(responseJSON)
+
+        guard httpResponse.statusCode == 200 else {
+            print("❌ Delete frame failed - Status: \(httpResponse.statusCode)")
+            throw AuthError.authenticationFailedWithMessage("Failed to delete frame")
+        }
+
+        let basicResponse = try JSONDecoder().decode(BasicResponse.self, from: data)
+        guard basicResponse.success else {
+            print("❌ Delete frame response failed: \(basicResponse.error ?? "Unknown error")")
+            throw AuthError.authenticationFailedWithMessage(basicResponse.error ?? "Failed to delete frame")
         }
     }
 

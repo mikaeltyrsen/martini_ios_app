@@ -304,6 +304,7 @@ struct MainView: View {
     @State private var gridUpdatingFrameIds: Set<String> = []
     @State private var gridInsertFrameIds: Set<String> = []
     @State private var addingFrameCreativeIds: Set<String> = []
+    @State private var deleteTargetFrame: Frame?
     @State private var isShowingFrameOrdering = false
     @State private var orderingFrames: [Frame] = []
     @State private var scriptNavigationTarget: ScriptNavigationTarget?
@@ -1682,6 +1683,9 @@ struct MainView: View {
                                         onInsertFrameAfter: { frame in
                                             insertFrame(after: frame)
                                         },
+                                        onDeleteFrame: { frame in
+                                            deleteTargetFrame = frame
+                                        },
                                         onAddFrame: {
                                             addFrameToCreative(section.id)
                                         },
@@ -1762,6 +1766,30 @@ struct MainView: View {
         }
         .sheet(isPresented: $isShowingFrameOrdering) {
             frameOrderingSheet
+        }
+        .confirmationDialog(
+            "Delete Frame?",
+            isPresented: Binding(
+                get: { deleteTargetFrame != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        deleteTargetFrame = nil
+                    }
+                }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Delete Frame", role: .destructive) {
+                if let frame = deleteTargetFrame {
+                    deleteTargetFrame = nil
+                    deleteFrame(frame)
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                deleteTargetFrame = nil
+            }
+        } message: {
+            Text("This will permanently remove the frame.")
         }
     }
 
@@ -2570,6 +2598,35 @@ private extension MainView {
         }
     }
 
+    private func deleteFrame(_ frame: Frame) {
+        Task {
+            await MainActor.run {
+                gridUpdatingFrameIds.insert(frame.id)
+            }
+            defer {
+                Task { @MainActor in
+                    gridUpdatingFrameIds.remove(frame.id)
+                }
+            }
+
+            guard let projectId = authService.projectId else {
+                await MainActor.run {
+                    dataError = "Missing project ID"
+                }
+                return
+            }
+
+            do {
+                try await authService.deleteFrame(projectId: projectId, frameId: frame.id)
+                try await authService.fetchFrames()
+            } catch {
+                await MainActor.run {
+                    dataError = error.localizedDescription
+                }
+            }
+        }
+    }
+
     private func applyLocalStatusUpdate(_ updatedFrame: Frame) {
         if selectedFrame?.id == updatedFrame.id {
             selectedFrame = updatedFrame
@@ -2907,6 +2964,7 @@ struct CreativeGridSection: View {
     let onSortFrames: () -> Void
     let onInsertFrameBefore: (Frame) -> Void
     let onInsertFrameAfter: (Frame) -> Void
+    let onDeleteFrame: (Frame) -> Void
     let onAddFrame: () -> Void
     let showAddFrameButton: Bool
     let isAddingFrame: Bool
@@ -2934,6 +2992,7 @@ struct CreativeGridSection: View {
         onSortFrames: @escaping () -> Void,
         onInsertFrameBefore: @escaping (Frame) -> Void,
         onInsertFrameAfter: @escaping (Frame) -> Void,
+        onDeleteFrame: @escaping (Frame) -> Void,
         onAddFrame: @escaping () -> Void,
         showAddFrameButton: Bool,
         isAddingFrame: Bool,
@@ -2960,6 +3019,7 @@ struct CreativeGridSection: View {
         self.onSortFrames = onSortFrames
         self.onInsertFrameBefore = onInsertFrameBefore
         self.onInsertFrameAfter = onInsertFrameAfter
+        self.onDeleteFrame = onDeleteFrame
         self.onAddFrame = onAddFrame
         self.showAddFrameButton = showAddFrameButton
         self.isAddingFrame = isAddingFrame
@@ -3048,6 +3108,9 @@ struct CreativeGridSection: View {
                                     },
                                     onInsertFrameAfter: {
                                         onInsertFrameAfter(frame)
+                                    },
+                                    onDeleteFrame: {
+                                        onDeleteFrame(frame)
                                     }
                             )
                         }
@@ -3096,6 +3159,7 @@ struct GridFrameCell: View {
     var showInsertOptions: Bool = false
     var onInsertFrameBefore: () -> Void
     var onInsertFrameAfter: () -> Void
+    var onDeleteFrame: () -> Void
     @EnvironmentObject private var authService: AuthService
     @State private var resolvedCornerRadius: CGFloat = 0
 
@@ -3155,6 +3219,11 @@ struct GridFrameCell: View {
                             } label: {
                                 Label("Insert frame after", systemImage: "arrow.down.to.line.compact")
                             }
+                        }
+                        Button(role: .destructive) {
+                            onDeleteFrame()
+                        } label: {
+                            Label("Delete frame", systemImage: "trash")
                         }
                         Button {
                             onSortFrames()
