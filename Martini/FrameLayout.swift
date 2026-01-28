@@ -211,7 +211,7 @@ struct FrameLayout: View {
                 creativeTitleOverlay(creativeTitle)
             }
 
-            if showFrameNumberOverlay {
+            if showFrameNumberOverlay, frame.displayOrder != nil {
                 GeometryReader { geo in
                     let diameter = max(18, geo.size.width * 0.08) // 8% of width with a minimum
 
