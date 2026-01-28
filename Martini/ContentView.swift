@@ -2609,15 +2609,8 @@ private extension MainView {
                 }
             }
 
-            guard let projectId = authService.projectId else {
-                await MainActor.run {
-                    dataError = "Missing project ID"
-                }
-                return
-            }
-
             do {
-                try await authService.deleteFrame(projectId: projectId, frameId: frame.id)
+                try await authService.deleteFrame(creativeId: frame.creativeId, frameId: frame.id)
                 try await authService.fetchFrames()
             } catch {
                 await MainActor.run {

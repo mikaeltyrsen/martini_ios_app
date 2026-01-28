@@ -1623,10 +1623,10 @@ class AuthService: ObservableObject {
         }
     }
 
-    func deleteFrame(projectId: String, frameId: String) async throws {
+    func deleteFrame(creativeId: String, frameId: String) async throws {
         let body: [String: Any] = [
-            "projectId": projectId,
-            "frameId": frameId
+            "frameId": frameId,
+            "creativeId": creativeId
         ]
 
         var request = try authorizedRequest(for: .deleteFrame, body: body)
