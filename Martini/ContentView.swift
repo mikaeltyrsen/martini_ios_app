@@ -2161,6 +2161,31 @@ private extension MainView {
         let priorTokens = buildStoryOrderTokens(for: priorFrames)
         let insertedFrameId = insertContext.insertedFrameId
 
+        if insertedFrameId == nil,
+           !priorFrames.isEmpty,
+           frames.count < priorFrames.count {
+            var baseAssignments = [String: Int]()
+            var previousPriorBase: Int? = nil
+            var currentBase: Int? = nil
+
+            for frame in frames {
+                let priorBase = priorTokens[frame.id]?.base ?? ((previousPriorBase ?? 0) + 1)
+
+                if let previousPriorBase {
+                    if priorBase != previousPriorBase {
+                        currentBase = (currentBase ?? priorBase) + 1
+                    }
+                } else {
+                    currentBase = priorBase
+                }
+
+                baseAssignments[frame.id] = currentBase ?? priorBase
+                previousPriorBase = priorBase
+            }
+
+            return assignStoryOrders(for: frames, baseAssignments: baseAssignments)
+        }
+
         if insertContext.position == .end || insertContext.sourceFrameId == nil {
             let maxBase = priorTokens.values.map(\.base).max() ?? 0
             var baseAssignments = [String: Int]()
