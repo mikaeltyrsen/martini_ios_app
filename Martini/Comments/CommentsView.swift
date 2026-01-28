@@ -339,6 +339,7 @@ struct CommentsView: View {
         HStack(spacing: 8) {
             if let replyMentionName {
                 replyToken(for: replyMentionName)
+                    .padding(.leading, 4)
             }
             TextField("Add Comment", text: $newCommentText)
                 .focused($composeFieldFocused)
