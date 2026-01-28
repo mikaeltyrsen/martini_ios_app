@@ -2756,8 +2756,30 @@ private extension MainView {
                 }
             }
 
+            let priorFrames = orderedFramesForCreative(frame.creativeId)
+
+            guard let projectId = authService.projectId else {
+                await MainActor.run {
+                    dataError = "Missing project ID"
+                }
+                return
+            }
+
             do {
                 try await authService.deleteFrame(creativeId: frame.creativeId, frameId: frame.id)
+                try await authService.fetchFrames()
+                let updatedFrames = orderedFramesForCreative(frame.creativeId)
+                let orderPayload = buildOrderedFramePayload(
+                    frames: updatedFrames,
+                    orderBy: .story,
+                    priorFrames: priorFrames
+                )
+                try await authService.updateFrameOrder(
+                    shootId: projectId,
+                    creativeId: frame.creativeId,
+                    orderBy: "story",
+                    orderedFrames: orderPayload
+                )
                 try await authService.fetchFrames()
             } catch {
                 await MainActor.run {
