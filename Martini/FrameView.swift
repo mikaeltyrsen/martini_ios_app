@@ -1500,19 +1500,23 @@ struct FrameView: View {
                                 .buttonStyle(.plain)
                             } else {
                                 ForEach(assetStack) { asset in
-                                    let isSelected: Bool = (asset.id == visibleAssetID)
-                                    let isPinned = boardEntry(for: asset)?.isPinned == true
+                                    if asset.id == Self.placeholderBoardAsset.id {
+                                        EmptyView()
+                                    } else {
+                                        let isSelected: Bool = (asset.id == visibleAssetID)
+                                        let isPinned = boardEntry(for: asset)?.isPinned == true
 
-                                    Button {
-                                        visibleAssetID = asset.id
-                                    } label: {
-                                        tabLabel(for: asset, isPinned: isPinned, isSelected: isSelected)
+                                        Button {
+                                            visibleAssetID = asset.id
+                                        } label: {
+                                            tabLabel(for: asset, isPinned: isPinned, isSelected: isSelected)
+                                        }
+                                        .buttonStyle(.plain)
+                                        .contextMenu {
+                                            boardContextMenu(for: asset)
+                                        }
+                                        .id(asset.id)
                                     }
-                                    .buttonStyle(.plain)
-                                    .contextMenu {
-                                        boardContextMenu(for: asset)
-                                    }
-                                    .id(asset.id)
                                 }
 
                                 if authService.allowEdit {
