@@ -1677,6 +1677,28 @@ struct UpdateFrameStatusResponse: Codable {
     let error: String?
 }
 
+struct AddFrameResponse: Codable {
+    @SafeBool var success: Bool
+    let error: String?
+    let id: String?
+    let frameId: String?
+    let frameID: String?
+    let frame_id: String?
+
+    enum CodingKeys: String, CodingKey {
+        case success
+        case error
+        case id
+        case frameId
+        case frameID
+        case frame_id
+    }
+
+    var resolvedFrameId: String? {
+        id ?? frameId ?? frameID ?? frame_id
+    }
+}
+
 struct UpdateBoardResponse: Codable {
     @SafeBool var success: Bool
     let error: String?
