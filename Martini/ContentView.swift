@@ -302,6 +302,9 @@ struct MainView: View {
     @State private var gridMagnification: CGFloat = 1.0
     @State private var isGridPinching: Bool = false
     @State private var gridUpdatingFrameIds: Set<String> = []
+    @State private var gridInsertFrameIds: Set<String> = []
+    @State private var addingFrameCreativeIds: Set<String> = []
+    @State private var deleteTargetFrame: Frame?
     @State private var isShowingFrameOrdering = false
     @State private var orderingFrames: [Frame] = []
     @State private var scriptNavigationTarget: ScriptNavigationTarget?
@@ -1674,9 +1677,23 @@ struct MainView: View {
                                         onSortFrames: {
                                             beginFrameOrdering()
                                         },
+                                        onInsertFrameBefore: { frame in
+                                            insertFrame(before: frame)
+                                        },
+                                        onInsertFrameAfter: { frame in
+                                            insertFrame(after: frame)
+                                        },
+                                        onDeleteFrame: { frame in
+                                            deleteTargetFrame = frame
+                                        },
+                                        onAddFrame: {
+                                            addFrameToCreative(section.id)
+                                        },
+                                        showAddFrameButton: authService.allowEdit && frameSortMode == .story,
+                                        isAddingFrame: addingFrameCreativeIds.contains(section.id),
                                         showSkeleton: shouldShowFrameSkeleton && section.frames.isEmpty,
                                         isPinching: isGridPinching,
-                                        updatingFrameIds: gridUpdatingFrameIds
+                                        updatingFrameIds: gridUpdatingFrameIds.union(gridInsertFrameIds)
                                     )
                                 }
                                 .id(section.id)
@@ -1749,6 +1766,29 @@ struct MainView: View {
         }
         .sheet(isPresented: $isShowingFrameOrdering) {
             frameOrderingSheet
+        }
+        .alert(
+            "Delete Frame?",
+            isPresented: Binding(
+                get: { deleteTargetFrame != nil },
+                set: { isPresented in
+                    if !isPresented {
+                        deleteTargetFrame = nil
+                    }
+                }
+            )
+        ) {
+            Button("Delete Frame", role: .destructive) {
+                if let frame = deleteTargetFrame {
+                    deleteTargetFrame = nil
+                    deleteFrame(frame)
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                deleteTargetFrame = nil
+            }
+        } message: {
+            Text("This will permanently remove the frame.")
         }
     }
 
@@ -2054,6 +2094,23 @@ struct MainView: View {
 }
 
 private extension MainView {
+    enum FrameInsertionPosition {
+        case before
+        case after
+        case end
+    }
+
+    struct FrameInsertionContext {
+        var insertedFrameId: String? = nil
+        var sourceFrameId: String? = nil
+        var position: FrameInsertionPosition = .end
+    }
+
+    struct StoryOrderToken {
+        let base: Int
+        let suffix: String
+    }
+
     func sortingTuple(for frame: Frame, mode: FrameSortMode) -> (FrameOrderKey, FrameOrderKey) {
         let storyOrder = FrameOrderKey.from(frame.frameOrder)
         let shootOrder = FrameOrderKey.from(frame.frameShootOrder)
@@ -2065,6 +2122,208 @@ private extension MainView {
             // Frames without a shoot order are sent to the end
             return (shootOrder, storyOrder)
         }
+    }
+
+    func orderedFramesForCreative(_ creativeId: String) -> [Frame] {
+        if let creative = creativesToDisplay.first(where: { $0.id == creativeId }) {
+            return frames(for: creative, mode: .story)
+        }
+
+        return authService.frames
+            .filter { $0.creativeId == creativeId }
+            .sorted { sortingTuple(for: $0, mode: .story) < sortingTuple(for: $1, mode: .story) }
+    }
+
+    func buildOrderedFramePayload(
+        frames: [Frame],
+        orderBy: FrameSortMode,
+        priorFrames: [Frame] = [],
+        insertContext: FrameInsertionContext = .init()
+    ) -> [[String: String]] {
+        let orders: [String]
+        switch orderBy {
+        case .story:
+            orders = generateStoryOrders(for: frames, priorFrames: priorFrames, insertContext: insertContext)
+        case .shoot:
+            orders = (1...frames.count).map { "\($0)" }
+        }
+
+        return zip(frames, orders).map { frame, order in
+            ["frameId": frame.id, "order": order]
+        }
+    }
+
+    func generateStoryOrders(
+        for frames: [Frame],
+        priorFrames: [Frame],
+        insertContext: FrameInsertionContext
+    ) -> [String] {
+        let priorTokens = buildStoryOrderTokens(for: priorFrames)
+        let insertedFrameId = insertContext.insertedFrameId
+
+        if insertedFrameId == nil,
+           !priorFrames.isEmpty,
+           frames.count < priorFrames.count {
+            var baseAssignments = [String: Int]()
+            var previousPriorBase: Int? = nil
+            var currentBase: Int? = nil
+
+            for frame in frames {
+                let priorBase = priorTokens[frame.id]?.base ?? ((previousPriorBase ?? 0) + 1)
+
+                if let previousPriorBase {
+                    if priorBase != previousPriorBase {
+                        currentBase = (currentBase ?? priorBase) + 1
+                    }
+                } else {
+                    currentBase = priorBase
+                }
+
+                baseAssignments[frame.id] = currentBase ?? priorBase
+                previousPriorBase = priorBase
+            }
+
+            return assignStoryOrders(for: frames, baseAssignments: baseAssignments)
+        }
+
+        if insertContext.position == .end || insertContext.sourceFrameId == nil {
+            let maxBase = priorTokens.values.map(\.base).max() ?? 0
+            var baseAssignments = [String: Int]()
+
+            for frame in frames {
+                if frame.id == insertedFrameId {
+                    baseAssignments[frame.id] = maxBase + 1
+                    continue
+                }
+                if let token = priorTokens[frame.id] {
+                    baseAssignments[frame.id] = token.base
+                }
+            }
+
+            return assignStoryOrders(for: frames, baseAssignments: baseAssignments)
+        }
+
+        guard let sourceId = insertContext.sourceFrameId,
+              let sourceToken = priorTokens[sourceId] else {
+            return assignStoryOrders(for: frames, baseAssignments: [:])
+        }
+
+        let insertedBase: Int
+        if sourceToken.suffix.isEmpty {
+            insertedBase = insertContext.position == .after ? sourceToken.base + 1 : sourceToken.base
+        } else {
+            insertedBase = sourceToken.base
+        }
+
+        var baseAssignments = [String: Int]()
+
+        for frame in frames {
+            if frame.id == insertedFrameId {
+                baseAssignments[frame.id] = insertedBase
+                continue
+            }
+
+            if let token = priorTokens[frame.id] {
+                var base = token.base
+                if sourceToken.suffix.isEmpty, base >= insertedBase {
+                    base += 1
+                }
+                baseAssignments[frame.id] = base
+            }
+        }
+
+        return assignStoryOrders(for: frames, baseAssignments: baseAssignments)
+    }
+
+    func alphabeticSuffix(for index: Int) -> String {
+        var value = index
+        var result = ""
+
+        repeat {
+            let remainder = value % 26
+            guard let scalar = UnicodeScalar(97 + remainder) else {
+                return "a"
+            }
+            result = String(scalar) + result
+            value = value / 26 - 1
+        } while value >= 0
+
+        return result
+    }
+
+    func assignStoryOrders(for frames: [Frame], baseAssignments: [String: Int]) -> [String] {
+        var resolvedAssignments = baseAssignments
+        var lastBase = resolvedAssignments.values.max() ?? 0
+
+        for frame in frames where resolvedAssignments[frame.id] == nil {
+            lastBase += 1
+            resolvedAssignments[frame.id] = lastBase
+        }
+
+        var orders = Array(repeating: "", count: frames.count)
+        var index = 0
+
+        while index < frames.count {
+            let base = resolvedAssignments[frames[index].id] ?? 0
+            var groupIndices: [Int] = [index]
+            var nextIndex = index + 1
+
+            while nextIndex < frames.count,
+                  resolvedAssignments[frames[nextIndex].id] == base {
+                groupIndices.append(nextIndex)
+                nextIndex += 1
+            }
+
+            if groupIndices.count == 1 {
+                orders[groupIndices[0]] = "\(base)"
+            } else {
+                for (offset, groupIndex) in groupIndices.enumerated() {
+                    orders[groupIndex] = "\(base)\(alphabeticSuffix(for: offset))"
+                }
+            }
+
+            index = nextIndex
+        }
+
+        return orders
+    }
+
+    func buildStoryOrderTokens(for frames: [Frame]) -> [String: StoryOrderToken] {
+        var tokens: [String: StoryOrderToken] = [:]
+        var lastBase = 0
+
+        for frame in frames {
+            let parsed = parseStoryOrder(frame.frameOrder, fallbackBase: lastBase + 1)
+            tokens[frame.id] = parsed
+            lastBase = max(lastBase, parsed.base)
+        }
+
+        return tokens
+    }
+
+    func parseStoryOrder(_ value: String?, fallbackBase: Int) -> StoryOrderToken {
+        let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !trimmed.isEmpty else {
+            return StoryOrderToken(base: fallbackBase, suffix: "")
+        }
+
+        var digits = ""
+        var suffix = ""
+        var isParsingNumber = true
+        for char in trimmed {
+            if isParsingNumber, char.isNumber {
+                digits.append(char)
+            } else {
+                isParsingNumber = false
+                suffix.append(char)
+            }
+        }
+
+        if let base = Int(digits), base > 0 {
+            return StoryOrderToken(base: base, suffix: suffix.trimmingCharacters(in: .whitespacesAndNewlines).lowercased())
+        }
+
+        return StoryOrderToken(base: fallbackBase, suffix: "")
     }
 
     var hereFrame: Frame? {
@@ -2382,6 +2641,193 @@ private extension MainView {
                         showingNoConnectionModal = true
                     }
                 }
+            } catch {
+                await MainActor.run {
+                    dataError = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    private func addFrameToCreative(_ creativeId: String) {
+        guard frameSortMode == .story else { return }
+        let orderedFrames = orderedFramesForCreative(creativeId)
+        enqueueFrameAddition(
+            creativeId: creativeId,
+            insertIndex: orderedFrames.count,
+            insertContext: FrameInsertionContext(
+                insertedFrameId: nil,
+                sourceFrameId: nil,
+                position: .end
+            ),
+            priorFrames: orderedFrames
+        )
+    }
+
+    private func insertFrame(before frame: Frame) {
+        guard frameSortMode == .story else { return }
+        let orderedFrames = orderedFramesForCreative(frame.creativeId)
+        guard let index = orderedFrames.firstIndex(where: { $0.id == frame.id }) else { return }
+        enqueueFrameAddition(
+            creativeId: frame.creativeId,
+            insertIndex: index,
+            insertContext: FrameInsertionContext(
+                insertedFrameId: nil,
+                sourceFrameId: frame.id,
+                position: .before
+            ),
+            priorFrames: orderedFrames
+        )
+    }
+
+    private func insertFrame(after frame: Frame) {
+        guard frameSortMode == .story else { return }
+        let orderedFrames = orderedFramesForCreative(frame.creativeId)
+        guard let index = orderedFrames.firstIndex(where: { $0.id == frame.id }) else { return }
+        enqueueFrameAddition(
+            creativeId: frame.creativeId,
+            insertIndex: index + 1,
+            insertContext: FrameInsertionContext(
+                insertedFrameId: nil,
+                sourceFrameId: frame.id,
+                position: .after
+            ),
+            priorFrames: orderedFrames
+        )
+    }
+
+    private func enqueueFrameAddition(
+        creativeId: String,
+        insertIndex: Int,
+        insertContext: FrameInsertionContext,
+        priorFrames: [Frame]
+    ) {
+        Task {
+            await MainActor.run {
+                addingFrameCreativeIds.insert(creativeId)
+                if let sourceFrameId = insertContext.sourceFrameId {
+                    gridInsertFrameIds.insert(sourceFrameId)
+                }
+            }
+            defer {
+                Task { @MainActor in
+                    addingFrameCreativeIds.remove(creativeId)
+                    if let sourceFrameId = insertContext.sourceFrameId {
+                        gridInsertFrameIds.remove(sourceFrameId)
+                    }
+                }
+            }
+
+            guard let projectId = authService.projectId else {
+                await MainActor.run {
+                    dataError = "Missing project ID"
+                }
+                return
+            }
+
+            let existingFrameIds = Set(authService.frames.filter { $0.creativeId == creativeId }.map(\.id))
+
+            do {
+                let addedFrameId = try await authService.addFrame(projectId: projectId, creativeId: creativeId)
+
+                if let newFrameId = addedFrameId {
+                    let newFrame = Frame(id: newFrameId, creativeId: creativeId)
+                    var orderedFrames = priorFrames.filter { $0.id != newFrameId }
+                    let clampedIndex = min(max(insertIndex, 0), orderedFrames.count)
+                    orderedFrames.insert(newFrame, at: clampedIndex)
+
+                    let orderPayload = buildOrderedFramePayload(
+                        frames: orderedFrames,
+                        orderBy: .story,
+                        priorFrames: priorFrames,
+                        insertContext: FrameInsertionContext(
+                            insertedFrameId: newFrameId,
+                            sourceFrameId: insertContext.sourceFrameId,
+                            position: insertContext.position
+                        )
+                    )
+                    try await authService.updateFrameOrder(
+                        shootId: projectId,
+                        creativeId: creativeId,
+                        orderBy: "story",
+                        orderedFrames: orderPayload
+                    )
+                    try await authService.fetchFrames()
+                    return
+                }
+
+                try await authService.fetchFrames()
+                let updatedFrames = authService.frames.filter { $0.creativeId == creativeId }
+                guard let newFrame = updatedFrames.first(where: { !existingFrameIds.contains($0.id) }) else {
+                    return
+                }
+
+                var orderedFrames = priorFrames.filter { $0.id != newFrame.id }
+                let clampedIndex = min(max(insertIndex, 0), orderedFrames.count)
+                orderedFrames.insert(newFrame, at: clampedIndex)
+
+                let orderPayload = buildOrderedFramePayload(
+                    frames: orderedFrames,
+                    orderBy: .story,
+                    priorFrames: priorFrames,
+                    insertContext: FrameInsertionContext(
+                        insertedFrameId: newFrame.id,
+                        sourceFrameId: insertContext.sourceFrameId,
+                        position: insertContext.position
+                    )
+                )
+                try await authService.updateFrameOrder(
+                    shootId: projectId,
+                    creativeId: creativeId,
+                    orderBy: "story",
+                    orderedFrames: orderPayload
+                )
+
+                try await authService.fetchFrames()
+            } catch {
+                await MainActor.run {
+                    dataError = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    private func deleteFrame(_ frame: Frame) {
+        Task {
+            await MainActor.run {
+                gridUpdatingFrameIds.insert(frame.id)
+            }
+            defer {
+                Task { @MainActor in
+                    gridUpdatingFrameIds.remove(frame.id)
+                }
+            }
+
+            let priorFrames = orderedFramesForCreative(frame.creativeId)
+
+            guard let projectId = authService.projectId else {
+                await MainActor.run {
+                    dataError = "Missing project ID"
+                }
+                return
+            }
+
+            do {
+                try await authService.deleteFrame(creativeId: frame.creativeId, frameId: frame.id)
+                try await authService.fetchFrames()
+                let updatedFrames = orderedFramesForCreative(frame.creativeId)
+                let orderPayload = buildOrderedFramePayload(
+                    frames: updatedFrames,
+                    orderBy: .story,
+                    priorFrames: priorFrames
+                )
+                try await authService.updateFrameOrder(
+                    shootId: projectId,
+                    creativeId: frame.creativeId,
+                    orderBy: "story",
+                    orderedFrames: orderPayload
+                )
+                try await authService.fetchFrames()
             } catch {
                 await MainActor.run {
                     dataError = error.localizedDescription
@@ -2725,6 +3171,12 @@ struct CreativeGridSection: View {
     let primaryAsset: (Frame) -> FrameAssetItem?
     let onStatusSelected: (Frame, FrameStatus) -> Void
     let onSortFrames: () -> Void
+    let onInsertFrameBefore: (Frame) -> Void
+    let onInsertFrameAfter: (Frame) -> Void
+    let onDeleteFrame: (Frame) -> Void
+    let onAddFrame: () -> Void
+    let showAddFrameButton: Bool
+    let isAddingFrame: Bool
     let showSkeleton: Bool
     let isPinching: Bool
     let updatingFrameIds: Set<String>
@@ -2747,6 +3199,12 @@ struct CreativeGridSection: View {
         primaryAsset: @escaping (Frame) -> FrameAssetItem?,
         onStatusSelected: @escaping (Frame, FrameStatus) -> Void,
         onSortFrames: @escaping () -> Void,
+        onInsertFrameBefore: @escaping (Frame) -> Void,
+        onInsertFrameAfter: @escaping (Frame) -> Void,
+        onDeleteFrame: @escaping (Frame) -> Void,
+        onAddFrame: @escaping () -> Void,
+        showAddFrameButton: Bool,
+        isAddingFrame: Bool,
         showSkeleton: Bool,
         isPinching: Bool,
         updatingFrameIds: Set<String>
@@ -2768,6 +3226,12 @@ struct CreativeGridSection: View {
         self.primaryAsset = primaryAsset
         self.onStatusSelected = onStatusSelected
         self.onSortFrames = onSortFrames
+        self.onInsertFrameBefore = onInsertFrameBefore
+        self.onInsertFrameAfter = onInsertFrameAfter
+        self.onDeleteFrame = onDeleteFrame
+        self.onAddFrame = onAddFrame
+        self.showAddFrameButton = showAddFrameButton
+        self.isAddingFrame = isAddingFrame
         self.showSkeleton = showSkeleton
         self.isPinching = isPinching
         self.updatingFrameIds = updatingFrameIds
@@ -2777,7 +3241,7 @@ struct CreativeGridSection: View {
 
     private var columns: [GridItem] {
         let count = max(1, columnCount)
-        return Array(repeating: GridItem(.flexible(), spacing: 8), count: count)
+        return Array(repeating: GridItem(.flexible(), spacing: 8, alignment: .top), count: count)
     }
 
     var body: some View {
@@ -2846,11 +3310,34 @@ struct CreativeGridSection: View {
                                     onStatusSelected: { status in
                                         onStatusSelected(frame, status)
                                     },
-                                    onSortFrames: onSortFrames
+                                    onSortFrames: onSortFrames,
+                                    showInsertOptions: showAddFrameButton,
+                                    onInsertFrameBefore: {
+                                        onInsertFrameBefore(frame)
+                                    },
+                                    onInsertFrameAfter: {
+                                        onInsertFrameAfter(frame)
+                                    },
+                                    onDeleteFrame: {
+                                        onDeleteFrame(frame)
+                                    }
                             )
                         }
                         .id(frame.id)
                         .allowsHitTesting(!isPinching && !updatingFrameIds.contains(frame.id))
+                    }
+                    if showAddFrameButton {
+                        Button(action: onAddFrame) {
+                            AddFrameGridCell(
+                                aspectRatio: section.frames.first?.creativeAspectRatio,
+                                cornerRadius: cornerRadius,
+                                boardSizing: boardSizing,
+                                isLoading: isAddingFrame
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(isAddingFrame)
+                        .accessibilityLabel("Add frame")
                     }
                 }
             }
@@ -2878,6 +3365,10 @@ struct GridFrameCell: View {
     var isUpdating: Bool = false
     var onStatusSelected: (FrameStatus) -> Void
     var onSortFrames: () -> Void
+    var showInsertOptions: Bool = false
+    var onInsertFrameBefore: () -> Void
+    var onInsertFrameAfter: () -> Void
+    var onDeleteFrame: () -> Void
     @EnvironmentObject private var authService: AuthService
     @State private var resolvedCornerRadius: CGFloat = 0
 
@@ -2926,6 +3417,23 @@ struct GridFrameCell: View {
                         statusMenu
                     }
                     Section("Edit") {
+                        if showInsertOptions {
+                            Button {
+                                onInsertFrameBefore()
+                            } label: {
+                                Label("Insert frame before", systemImage: "arrow.backward.to.line.square.fill")
+                            }
+                            Button {
+                                onInsertFrameAfter()
+                            } label: {
+                                Label("Insert frame after", systemImage: "arrow.right.to.line.square.fill")
+                            }
+                        }
+                        Button(role: .destructive) {
+                            onDeleteFrame()
+                        } label: {
+                            Label("Delete frame", systemImage: "trash")
+                        }
                         Button {
                             onSortFrames()
                         } label: {
@@ -3116,6 +3624,81 @@ struct GridFrameCell: View {
         }
 
         return Color(red: red, green: green, blue: blue, opacity: alpha)
+    }
+}
+
+struct AddFrameGridCell: View {
+    let aspectRatio: String?
+    let cornerRadius: CGFloat
+    let boardSizing: BoardSizingConfiguration
+    let isLoading: Bool
+    @State private var resolvedCornerRadius: CGFloat = 0
+
+    private var displayAspectRatio: CGFloat {
+        if let aspectRatio,
+           let parsed = FrameLayout.aspectRatio(from: aspectRatio) {
+            return parsed
+        }
+        return 16.0 / 9.0
+    }
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: effectiveCornerRadius)
+                .fill(Color.gray.opacity(0.15))
+                .overlay(
+                    RoundedRectangle(cornerRadius: effectiveCornerRadius)
+                        .stroke(Color.gray.opacity(0.35), lineWidth: 1)
+                )
+            if isLoading {
+                ProgressView()
+                    .progressViewStyle(.circular)
+                    .tint(.secondary)
+            } else {
+                Image(systemName: "plus")
+                    .font(.system(size: 28, weight: .semibold))
+                    .foregroundColor(.secondary)
+            }
+        }
+        .aspectRatio(displayAspectRatio, contentMode: .fit)
+        .scaleEffect(boardSizingScale)
+        .background(
+            GeometryReader { geo in
+                Color.clear
+                    .onAppear {
+                        updateCornerRadius(for: geo.size)
+                    }
+                    .onChange(of: geo.size) { newSize in
+                        updateCornerRadius(for: newSize)
+                    }
+            }
+        )
+    }
+
+    private var effectiveCornerRadius: CGFloat {
+        resolvedCornerRadius == 0 ? cornerRadius : resolvedCornerRadius
+    }
+
+    private func updateCornerRadius(for size: CGSize) {
+        guard size.width > 0, size.height > 0 else { return }
+        let minDimension = min(size.width, size.height)
+        let radiusScale = max(cornerRadius, 0) * 0.01
+        let newRadius = minDimension * radiusScale
+
+        if abs(newRadius - resolvedCornerRadius) > 0.5 {
+            resolvedCornerRadius = newRadius
+        }
+    }
+
+    private var boardSizingScale: CGFloat {
+        switch boardSizing.option(for: .none) {
+        case .full:
+            return UIControlConfig.boardSizingFullScale
+        case .medium:
+            return UIControlConfig.boardSizingMediumScale
+        case .small:
+            return UIControlConfig.boardSizingSmallScale
+        }
     }
 }
 
