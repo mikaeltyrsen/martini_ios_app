@@ -181,6 +181,9 @@ class AuthService: ObservableObject {
         case updateFrameDescription = "frames/update_description.php"
         case updateBoard = "frames/update_board.php"
         case removeImage = "frames/remove_image.php"
+        case addFrame = "frames/add.php"
+        case updateFrameOrder = "frames/update_order.php"
+        case deleteFrame = "frames/delete.php"
         case schedule = "schedules/fetch.php"
         case clips = "clips/fetch.php"
         case comments = "comments/get_comments.php"
@@ -1543,6 +1546,114 @@ class AuthService: ObservableObject {
 
         publishFrameUpdate(frameId: updatedFrame.id, context: .localStatusChange)
         return updatedFrame
+    }
+
+    func addFrame(projectId: String, creativeId: String) async throws -> String? {
+        let body: [String: Any] = [
+            "projectId": projectId,
+            "creativeId": creativeId
+        ]
+
+        var request = try authorizedRequest(for: .addFrame, body: body)
+        let requestJSON = String(data: request.httpBody ?? Data(), encoding: .utf8) ?? "Unable to encode"
+        print("📤 Adding frame...")
+        print("🔗 URL: \(request.url?.absoluteString ?? "unknown")")
+        print("📝 Request body: \(requestJSON)")
+
+        let (data, response) = try await performRequest(request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw AuthError.invalidResponse
+        }
+
+        let responseJSON = String(data: data, encoding: .utf8) ?? "Unable to decode"
+        print("📥 Add frame response received (\(httpResponse.statusCode)):")
+        print(responseJSON)
+
+        guard httpResponse.statusCode == 200 else {
+            print("❌ Add frame failed - Status: \(httpResponse.statusCode)")
+            throw AuthError.authenticationFailedWithMessage("Failed to add frame")
+        }
+
+        let addResponse = try JSONDecoder().decode(AddFrameResponse.self, from: data)
+        guard addResponse.success else {
+            print("❌ Add frame response failed: \(addResponse.error ?? "Unknown error")")
+            throw AuthError.authenticationFailedWithMessage(addResponse.error ?? "Failed to add frame")
+        }
+
+        return addResponse.resolvedFrameId
+    }
+
+    func updateFrameOrder(
+        shootId: String,
+        creativeId: String,
+        orderBy: String,
+        orderedFrames: [[String: String]]
+    ) async throws {
+        let body: [String: Any] = [
+            "shootId": shootId,
+            "creativeId": creativeId,
+            "orderBy": orderBy,
+            "orderedFrames": orderedFrames
+        ]
+
+        var request = try authorizedRequest(for: .updateFrameOrder, body: body)
+        let requestJSON = String(data: request.httpBody ?? Data(), encoding: .utf8) ?? "Unable to encode"
+        print("📤 Updating frame order...")
+        print("🔗 URL: \(request.url?.absoluteString ?? "unknown")")
+        print("📝 Request body: \(requestJSON)")
+
+        let (data, response) = try await performRequest(request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw AuthError.invalidResponse
+        }
+
+        let responseJSON = String(data: data, encoding: .utf8) ?? "Unable to decode"
+        print("📥 Update frame order response received (\(httpResponse.statusCode)):")
+        print(responseJSON)
+
+        guard httpResponse.statusCode == 200 else {
+            print("❌ Update frame order failed - Status: \(httpResponse.statusCode)")
+            throw AuthError.authenticationFailedWithMessage("Failed to update frame order")
+        }
+
+        let basicResponse = try JSONDecoder().decode(BasicResponse.self, from: data)
+        guard basicResponse.success else {
+            print("❌ Update frame order response failed: \(basicResponse.error ?? "Unknown error")")
+            throw AuthError.authenticationFailedWithMessage(basicResponse.error ?? "Failed to update frame order")
+        }
+    }
+
+    func deleteFrame(creativeId: String, frameId: String) async throws {
+        let body: [String: Any] = [
+            "frameId": frameId,
+            "creativeId": creativeId
+        ]
+
+        var request = try authorizedRequest(for: .deleteFrame, body: body)
+        let requestJSON = String(data: request.httpBody ?? Data(), encoding: .utf8) ?? "Unable to encode"
+        print("📤 Deleting frame...")
+        print("🔗 URL: \(request.url?.absoluteString ?? "unknown")")
+        print("📝 Request body: \(requestJSON)")
+
+        let (data, response) = try await performRequest(request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw AuthError.invalidResponse
+        }
+
+        let responseJSON = String(data: data, encoding: .utf8) ?? "Unable to decode"
+        print("📥 Delete frame response received (\(httpResponse.statusCode)):")
+        print(responseJSON)
+
+        guard httpResponse.statusCode == 200 else {
+            print("❌ Delete frame failed - Status: \(httpResponse.statusCode)")
+            throw AuthError.authenticationFailedWithMessage("Failed to delete frame")
+        }
+
+        let basicResponse = try JSONDecoder().decode(BasicResponse.self, from: data)
+        guard basicResponse.success else {
+            print("❌ Delete frame response failed: \(basicResponse.error ?? "Unknown error")")
+            throw AuthError.authenticationFailedWithMessage(basicResponse.error ?? "Failed to delete frame")
+        }
     }
 
     func renameBoard(frameId: String, boardId: String, label: String) async throws {
