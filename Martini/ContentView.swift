@@ -1767,7 +1767,7 @@ struct MainView: View {
         .sheet(isPresented: $isShowingFrameOrdering) {
             frameOrderingSheet
         }
-        .confirmationDialog(
+        .alert(
             "Delete Frame?",
             isPresented: Binding(
                 get: { deleteTargetFrame != nil },
@@ -1776,8 +1776,7 @@ struct MainView: View {
                         deleteTargetFrame = nil
                     }
                 }
-            ),
-            titleVisibility: .visible
+            )
         ) {
             Button("Delete Frame", role: .destructive) {
                 if let frame = deleteTargetFrame {
