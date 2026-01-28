@@ -3205,12 +3205,12 @@ struct GridFrameCell: View {
                             Button {
                                 onInsertFrameBefore()
                             } label: {
-                                Label("Insert frame before", systemImage: "arrow.up.to.line.compact")
+                                Label("Insert frame before", systemImage: "arrow.backward.to.line.square.fill")
                             }
                             Button {
                                 onInsertFrameAfter()
                             } label: {
-                                Label("Insert frame after", systemImage: "arrow.down.to.line.compact")
+                                Label("Insert frame after", systemImage: "arrow.right.to.line.square.fill")
                             }
                         }
                         Button(role: .destructive) {
