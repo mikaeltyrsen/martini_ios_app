@@ -57,6 +57,7 @@ struct FrameView: View {
     @State private var reorderBoards: [FrameAssetItem] = []
     @State private var activeReorderBoard: FrameAssetItem?
     @State private var isReorderingBoards: Bool = false
+    @State private var preReorderAssetStack: [FrameAssetItem] = []
     @State private var reorderWiggle: Bool = false
     @State private var showingBoardDeleteAlert: Bool = false
     @State private var boardDeleteTarget: FrameAssetItem?
@@ -357,6 +358,10 @@ struct FrameView: View {
                 } else if visibleAssetID == nil, let first: FrameAssetItem.ID = newStack.first?.id {
                     visibleAssetID = first
                 }
+            }
+            .onChange(of: reorderBoards) { _, newOrder in
+                guard isReorderingBoards else { return }
+                assetStack = reorderedAssetStack(from: assetStack, boardOrder: newOrder)
             }
     }
 
@@ -899,6 +904,10 @@ struct FrameView: View {
                 frame: frame,
                 assetStack: assetStack,
                 visibleAssetID: $visibleAssetID,
+                isReorderingBoards: isReorderingBoards,
+                reorderBoards: $reorderBoards,
+                activeReorderBoard: $activeReorderBoard,
+                pinnedBoardId: pinnedBoardId,
                 primaryText: primaryText,
                 takePictureID: takePictureCardID,
                 takePictureAction: authService.allowEdit ? {
@@ -2044,12 +2053,15 @@ private extension FrameView {
     }
 
     private func enterBoardReorderMode() {
+        preReorderAssetStack = assetStack
         reorderBoards = boardEntries()
         activeReorderBoard = nil
         isReorderingBoards = true
+        assetStack = reorderedAssetStack(from: assetStack, boardOrder: reorderBoards)
     }
 
     private func cancelBoardReorder() {
+        assetStack = preReorderAssetStack
         reorderBoards = boardEntries()
         activeReorderBoard = nil
         isReorderingBoards = false
@@ -2058,6 +2070,26 @@ private extension FrameView {
     private func commitBoardReorder() {
         saveBoardReorder()
         isReorderingBoards = false
+    }
+
+    private func reorderedAssetStack(
+        from stack: [FrameAssetItem],
+        boardOrder: [FrameAssetItem]
+    ) -> [FrameAssetItem] {
+        let orderedBoardIds = boardOrder.map(\.id)
+        let orderedBoardSet = Set(orderedBoardIds)
+        let orderedBoards = orderedBoardIds.compactMap { id in
+            stack.first(where: { $0.id == id })
+        }
+        let remainingBoards = stack.filter { asset in
+            asset.kind == .board && !orderedBoardSet.contains(asset.id)
+        }
+        var boardIterator = (orderedBoards + remainingBoards).makeIterator()
+
+        return stack.map { asset in
+            guard asset.kind == .board else { return asset }
+            return boardIterator.next() ?? asset
+        }
     }
 
     private func renameBoard() async -> Bool {
@@ -2704,6 +2736,10 @@ private struct StackedAssetScroller<ContextMenuContent: View>: View {
     let frame: Frame
     let assetStack: [FrameAssetItem]
     @Binding var visibleAssetID: FrameAssetItem.ID?
+    let isReorderingBoards: Bool
+    @Binding var reorderBoards: [FrameAssetItem]
+    @Binding var activeReorderBoard: FrameAssetItem?
+    let pinnedBoardId: String?
     let primaryText: String?
     let takePictureID: String
     let takePictureAction: (() -> Void)?
@@ -2724,9 +2760,12 @@ private struct StackedAssetScroller<ContextMenuContent: View>: View {
                 LazyHStack(alignment: .center, spacing: 0) {
                     ForEach(assetStack) { asset in
                         let shouldEnablePreview = asset.kind == .preview
-                        let shouldHandleTap = asset.kind == .board
+                        let shouldHandleTap = asset.kind == .board && !isReorderingBoards
+                        let isBoard = asset.kind == .board
+                        let isPinned = pinnedBoardId == asset.id
+                        let isDraggable = isReorderingBoards && isBoard && !isPinned
                         let metadata = metadataForAsset(asset)
-                        AssetCardView(
+                        let cardView = AssetCardView(
                             frame: frame,
                             asset: asset,
                             cardWidth: cardWidth,
@@ -2742,12 +2781,48 @@ private struct StackedAssetScroller<ContextMenuContent: View>: View {
                                 onAssetTap?(asset)
                             } : nil
                         )
-                        .contextMenu {
-                            contextMenuContent(asset)
+                        let styledCardView = cardView
+                            .opacity(activeReorderBoard?.id == asset.id ? 0.6 : 1)
+                            .contextMenu {
+                                contextMenuContent(asset)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .containerRelativeFrame(.horizontal, alignment: .center)
+                            .id(asset.id)
+                        if isReorderingBoards && isBoard {
+                            if isDraggable {
+                                styledCardView
+                                    .onDrag {
+                                        activeReorderBoard = asset
+                                        return NSItemProvider(
+                                            item: asset.id as NSString,
+                                            typeIdentifier: UTType.text.identifier
+                                        )
+                                    }
+                                    .onDrop(
+                                        of: [UTType.text],
+                                        delegate: BoardReorderDropDelegate(
+                                            item: asset,
+                                            boards: $reorderBoards,
+                                            activeBoard: $activeReorderBoard,
+                                            pinnedBoardId: pinnedBoardId
+                                        )
+                                    )
+                            } else {
+                                styledCardView
+                                    .onDrop(
+                                        of: [UTType.text],
+                                        delegate: BoardReorderDropDelegate(
+                                            item: asset,
+                                            boards: $reorderBoards,
+                                            activeBoard: $activeReorderBoard,
+                                            pinnedBoardId: pinnedBoardId
+                                        )
+                                    )
+                            }
+                        } else {
+                            styledCardView
                         }
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .containerRelativeFrame(.horizontal, alignment: .center)
-                        .id(asset.id)
                     }
 
                     if let takePictureAction {
