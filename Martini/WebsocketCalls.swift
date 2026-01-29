@@ -101,7 +101,7 @@ final class WebsocketCalls {
 
         case "frame-board-updated":
             if let frameBoardUpdate = FrameBoardUpdate.parse(dataString: dataString) {
-                applyFrameBoardUpdate(frameBoardUpdate)
+                await applyFrameBoardUpdate(frameBoardUpdate)
             } else {
                 notifyFrameUpdate(id: frameId, eventName: name)
             }
@@ -180,12 +180,22 @@ final class WebsocketCalls {
         notifyFrameUpdate(id: frameId, eventName: "frame-description-updated")
     }
 
-    private func applyFrameBoardUpdate(_ update: FrameBoardUpdate) {
-        guard
-            let frameId = update.resolvedId,
-            let boards = update.boards,
-            let index = authService.frames.firstIndex(where: { $0.id == frameId })
-        else { return }
+    private func applyFrameBoardUpdate(_ update: FrameBoardUpdate) async {
+        guard let frameId = update.resolvedId else { return }
+
+        guard let boards = update.boards else {
+            try? await authService.fetchFrames()
+            notifyFrameUpdate(id: frameId, eventName: "frame-board-updated")
+            return
+        }
+
+        if boards.isEmpty {
+            try? await authService.fetchFrames()
+            notifyFrameUpdate(id: frameId, eventName: "frame-board-updated")
+            return
+        }
+
+        guard let index = authService.frames.firstIndex(where: { $0.id == frameId }) else { return }
 
         authService.frames[index] = authService.frames[index].updatingBoards(boards, mainBoardType: update.mainBoardType)
 
