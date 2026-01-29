@@ -3762,6 +3762,10 @@ private struct FrameReorderDropDelegate: DropDelegate {
     @Binding var frames: [Frame]
     @Binding var activeFrameId: String?
 
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: .move)
+    }
+
     func dropEntered(info: DropInfo) {
         guard let activeFrameId,
               activeFrameId != item.id,
