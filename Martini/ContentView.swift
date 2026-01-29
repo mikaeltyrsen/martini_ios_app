@@ -3523,8 +3523,8 @@ struct GridFrameCell: View {
                     }
                 }
             }
-            .contextMenu {
-                if showContextMenu, authService.allowEdit {
+            .if(showContextMenu && authService.allowEdit) { view in
+                view.contextMenu {
                     Section {
                         statusMenu
                     }
@@ -3764,6 +3764,17 @@ private struct FrameReorderDropDelegate: DropDelegate {
     func performDrop(info: DropInfo) -> Bool {
         activeFrameId = nil
         return true
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func `if`<Content: View>(_ condition: Bool, transform: (Self) -> Content) -> some View {
+        if condition {
+            transform(self)
+        } else {
+            self
+        }
     }
 }
 
