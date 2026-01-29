@@ -55,7 +55,7 @@ struct MartiniApp: App {
 
     init() {
         let connectionMonitor = ConnectionMonitor(
-            pingURL: URL(string: "https://dev.staging.trymartini.com/scripts/")!
+            pingURLProvider: { AppEnvironment.pingURL }
         )
         _connectionMonitor = StateObject(wrappedValue: connectionMonitor)
         let authService = AuthService(connectionMonitor: connectionMonitor)

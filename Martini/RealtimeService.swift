@@ -76,7 +76,7 @@ final class RealtimeService: NSObject, ObservableObject {
     private func connectIfNeeded() {
         guard task == nil else { return }
         guard let projectId = currentProjectId else { return }
-        guard let url = URL(string: "https://dev.staging.trymartini.com/scripts/sub/project.php?projectId=\(projectId)") else {
+        guard let url = AppEnvironment.realtimeProjectURL(projectId: projectId) else {
             DispatchQueue.main.async {
                 self.lastError = "Invalid realtime URL"
             }

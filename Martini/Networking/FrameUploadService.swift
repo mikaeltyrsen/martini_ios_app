@@ -1,7 +1,9 @@
 import Foundation
 
 struct FrameUploadService {
-    private let baseScriptsURL = "https://dev.staging.trymartini.com/scripts/"
+    private var baseScriptsURL: String {
+        AppEnvironment.baseScriptsURL
+    }
 
     func uploadPhotoboard(
         imageData: Data,

@@ -49,8 +49,44 @@ struct StoredProject: Codable, Identifiable, Equatable {
     var accessCode: String
     var lastSignedIn: Date
     var isExpired: Bool
+    var isDeveloperMode: Bool
 
     var id: String { projectId }
+
+    enum CodingKeys: String, CodingKey {
+        case projectId
+        case projectName
+        case accessCode
+        case lastSignedIn
+        case isExpired
+        case isDeveloperMode
+    }
+
+    init(
+        projectId: String,
+        projectName: String,
+        accessCode: String,
+        lastSignedIn: Date,
+        isExpired: Bool,
+        isDeveloperMode: Bool
+    ) {
+        self.projectId = projectId
+        self.projectName = projectName
+        self.accessCode = accessCode
+        self.lastSignedIn = lastSignedIn
+        self.isExpired = isExpired
+        self.isDeveloperMode = isDeveloperMode
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        projectId = try container.decode(String.self, forKey: .projectId)
+        projectName = try container.decode(String.self, forKey: .projectName)
+        accessCode = try container.decode(String.self, forKey: .accessCode)
+        lastSignedIn = try container.decode(Date.self, forKey: .lastSignedIn)
+        isExpired = try container.decode(Bool.self, forKey: .isExpired)
+        isDeveloperMode = try container.decodeIfPresent(Bool.self, forKey: .isDeveloperMode) ?? false
+    }
 }
 
 struct PendingDeepLink: Identifiable, Equatable {
@@ -158,7 +194,9 @@ class AuthService: ObservableObject {
     private let cachedCreativesKeyPrefix = "martini_cached_creatives_"
     private let cachedFramesKeyPrefix = "martini_cached_frames_"
     private let deviceIdKey = "martini_device_id"
-    private let baseScriptsURL = "https://dev.staging.trymartini.com/scripts/"
+    private var baseScriptsURL: String {
+        AppEnvironment.baseScriptsURL
+    }
     private let scheduleCache = ScheduleCache.shared
     private var creativesFetchTask: Task<Void, Error>?
     private var projectDetailsFetchTask: Task<Void, Error>?
@@ -501,17 +539,20 @@ class AuthService: ObservableObject {
     private func recordSuccessfulSignIn(projectId: String, projectName: String?, accessCode: String) {
         let trimmedName = projectName?.trimmingCharacters(in: .whitespacesAndNewlines)
         let displayName = trimmedName?.isEmpty == false ? trimmedName! : "Untitled Project"
+        let isDeveloperMode = AppEnvironment.isDeveloperMode
 
         if let index = savedProjects.firstIndex(where: { $0.projectId == projectId }) {
             if savedProjects[index].projectName == displayName,
                savedProjects[index].accessCode == accessCode,
-               savedProjects[index].isExpired == false {
+               savedProjects[index].isExpired == false,
+               savedProjects[index].isDeveloperMode == isDeveloperMode {
                 return
             }
             savedProjects[index].projectName = displayName
             savedProjects[index].accessCode = accessCode
             savedProjects[index].lastSignedIn = Date()
             savedProjects[index].isExpired = false
+            savedProjects[index].isDeveloperMode = isDeveloperMode
         } else {
             savedProjects.append(
                 StoredProject(
@@ -519,7 +560,8 @@ class AuthService: ObservableObject {
                     projectName: displayName,
                     accessCode: accessCode,
                     lastSignedIn: Date(),
-                    isExpired: false
+                    isExpired: false,
+                    isDeveloperMode: isDeveloperMode
                 )
             )
         }

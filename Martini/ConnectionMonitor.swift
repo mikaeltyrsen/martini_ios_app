@@ -18,7 +18,7 @@ final class ConnectionMonitor: ObservableObject {
 
     @Published private(set) var status: Status = .online
 
-    private let pingURL: URL
+    private let pingURLProvider: () -> URL
     private let pingInterval: TimeInterval = 8
     private let pingTimeout: TimeInterval = 7
     private var pingTask: Task<Void, Never>?
@@ -30,7 +30,11 @@ final class ConnectionMonitor: ObservableObject {
     }
 
     init(pingURL: URL) {
-        self.pingURL = pingURL
+        self.pingURLProvider = { pingURL }
+    }
+
+    init(pingURLProvider: @escaping () -> URL) {
+        self.pingURLProvider = pingURLProvider
     }
 
     func updateConnection(isAuthenticated: Bool) {
@@ -77,7 +81,7 @@ final class ConnectionMonitor: ObservableObject {
     }
 
     private func performPing() async {
-        var request = URLRequest(url: pingURL)
+        var request = URLRequest(url: pingURLProvider())
         request.timeoutInterval = pingTimeout
 
         do {
