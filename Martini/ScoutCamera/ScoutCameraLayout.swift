@@ -23,7 +23,7 @@ struct ScoutCameraLayout: View {
     @State private var previewOrientation: AVCaptureVideoOrientation = .landscapeRight
     @AppStorage("scoutCameraShowReferenceOverlay") private var showReferenceOverlay = false
     @AppStorage("scoutCameraShowBoardGuide") private var showBoardGuide = false
-    @AppStorage("scoutCameraDebugMode") private var debugMode = true
+    @AppStorage("scoutCameraDebugMode") private var debugMode = false
     @State private var previewLayer: AVCaptureVideoPreviewLayer?
     @State private var capturedPhoto: CapturedPhoto?
     private let previewMargin: CGFloat = 40
@@ -99,6 +99,7 @@ struct ScoutCameraLayout: View {
         .onAppear {
             previewOrientation = currentPreviewOrientation()
             viewModel.captureManager.updateVideoOrientation(previewOrientation)
+            debugMode = false
             if viewModel.creativeId == nil {
                 let creativeId = authService.frames.first(where: { $0.id == frameId })?.creativeId
                 viewModel.updateCreativeId(creativeId)
