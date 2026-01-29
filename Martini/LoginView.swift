@@ -12,13 +12,20 @@ struct LoginView: View {
     @EnvironmentObject var nearbySignInService: NearbySignInService
     @Environment(\.colorScheme) private var colorScheme
     @AppStorage("guestName") private var guestName: String = ""
+    @AppStorage(AppEnvironment.developerModeKey) private var isDeveloperMode = false
     @State private var showScanner = false
     @State private var isAuthenticating = false
     @State private var scannedQRCode = ""
     @State private var showSavedProjects = false
     @State private var showSignInFailureAlert = false
     @State private var showGuestNamePrompt = false
+    @State private var showDeveloperModePrompt = false
     @State private var pendingAuthRequest: PendingAuthRequest?
+    @State private var logoTapCount = 0
+    @State private var lastLogoTapTime: Date?
+
+    private let developerModeTapThreshold: TimeInterval = 1.0
+    private let developerModeRequiredTaps = 10
 
     private var gradientColor: Color {
         colorScheme == .dark ? .black : .white
@@ -56,10 +63,19 @@ struct LoginView: View {
                         .foregroundColor(.primary)
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 240, height: 120)
+                        .onTapGesture {
+                            registerLogoTap()
+                        }
                     
-                    Text("Storyboards, perfected.")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+                    if isDeveloperMode {
+                        Text("Developer mode")
+                            .font(.subheadline)
+                            .foregroundColor(.red)
+                    } else {
+                        Text("Storyboards, perfected.")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
                 }
                 .padding(.top, 80)
                 
@@ -147,6 +163,14 @@ struct LoginView: View {
         .alert("Sign in failed", isPresented: $showSignInFailureAlert) {
             Button("OK", role: .cancel) {}
         }
+        .alert("Developer mode", isPresented: $showDeveloperModePrompt) {
+            Button(isDeveloperMode ? "Turn off" : "Turn on") {
+                isDeveloperMode.toggle()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Turn \(isDeveloperMode ? "off" : "on") developer mode?")
+        }
         .sheet(isPresented: $showGuestNamePrompt) {
             GuestNamePromptSheet(
                 currentName: guestName,
@@ -189,6 +213,7 @@ struct LoginView: View {
 
     private func handleSavedProjectSelection(_ project: StoredProject) {
         showSavedProjects = false
+        isDeveloperMode = project.isDeveloperMode
         scannedQRCode = "\(project.projectId)-\(project.accessCode)"
         isAuthenticating = true
         ensureGuestNameThenAuthenticate(qrCode: scannedQRCode, accessCode: nil, project: project)
@@ -216,6 +241,21 @@ struct LoginView: View {
         } catch {
             isAuthenticating = false
             showSignInFailureAlert = true
+        }
+    }
+
+    private func registerLogoTap() {
+        let now = Date()
+        if let lastLogoTapTime, now.timeIntervalSince(lastLogoTapTime) > developerModeTapThreshold {
+            logoTapCount = 0
+        }
+
+        logoTapCount += 1
+        lastLogoTapTime = now
+
+        if logoTapCount >= developerModeRequiredTaps {
+            logoTapCount = 0
+            showDeveloperModePrompt = true
         }
     }
 
@@ -664,9 +704,17 @@ struct SavedProjectsSheet: View {
                                 onSelect(project)
                             } label: {
                                 HStack(spacing: 12) {
-                                    Text(project.projectName)
-                                        .font(.headline)
-                                        .foregroundColor(.primary)
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(project.projectName)
+                                            .font(.headline)
+                                            .foregroundColor(.primary)
+
+                                        if project.isDeveloperMode {
+                                            Text("Developer mode")
+                                                .font(.caption2)
+                                                .foregroundColor(.red)
+                                        }
+                                    }
 
                                     Spacer()
 
