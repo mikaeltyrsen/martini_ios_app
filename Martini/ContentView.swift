@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
 
 private enum FilterStorageKeys {
     static let selectedTagIds = "filterSelectedTagIds"
@@ -305,8 +306,12 @@ struct MainView: View {
     @State private var gridInsertFrameIds: Set<String> = []
     @State private var addingFrameCreativeIds: Set<String> = []
     @State private var deleteTargetFrame: Frame?
-    @State private var isShowingFrameOrdering = false
-    @State private var orderingFrames: [Frame] = []
+    @State private var isReorderingFrames = false
+    @State private var reorderCreativeId: String? = nil
+    @State private var reorderFrames: [Frame] = []
+    @State private var reorderPriorFrames: [Frame] = []
+    @State private var activeReorderFrameId: String? = nil
+    @State private var reorderWiggle = false
     @State private var scriptNavigationTarget: ScriptNavigationTarget?
 
     enum ViewMode {
@@ -563,7 +568,8 @@ struct MainView: View {
         switch frameSortMode {
         case .story:
             return creativesToDisplay.compactMap { creative in
-                let frames = frames(for: creative)
+                let defaultFrames = frames(for: creative)
+                let frames = reorderedFrames(for: creative.id, defaultFrames: defaultFrames)
                 let progress = creativeProgress(creative)
 
                 if isFilterActive && frames.isEmpty {
@@ -1022,13 +1028,25 @@ struct MainView: View {
         }
 
         ToolbarItemGroup(placement: .navigationBarTrailing) {
-            if shouldShowScheduleButton {
+            if isReorderingFrames {
+                Button("Done") {
+                    commitFrameOrdering()
+                }
+                .accessibilityLabel("Finish reordering")
+            } else if shouldShowScheduleButton {
                 scheduleButton
             }
         }
 
         ToolbarItem(placement: .navigationBarLeading) {
-            filterButton
+            if isReorderingFrames {
+                Button("Cancel") {
+                    cancelFrameOrdering()
+                }
+                .accessibilityLabel("Cancel reordering")
+            } else {
+                filterButton
+            }
         }
 
         ToolbarItemGroup(placement: .bottomBar) {
@@ -1581,43 +1599,6 @@ struct MainView: View {
         projectFilesError = nil
     }
 
-    private var frameOrderingSheet: some View {
-        NavigationStack {
-            List {
-                ForEach(orderingFrames) { frame in
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(frameOrderingTitle(for: frame))
-                            .font(.body)
-                        if let creativeTitle = frame.creativeTitle, !creativeTitle.isEmpty {
-                            Text(creativeTitle)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    .padding(.vertical, 2)
-                }
-                .onMove(perform: moveOrderedFrames)
-            }
-            .listStyle(.plain)
-            .environment(\.editMode, .constant(.active))
-            .navigationTitle("Sort Frames")
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        isShowingFrameOrdering = false
-                    }
-                }
-            }
-        }
-    }
-
-    private func frameOrderingTitle(for frame: Frame) -> String {
-        if let caption = frame.caption, !caption.isEmpty {
-            return caption
-        }
-        return frame.displayOrderTitle
-    }
-    
     private var showCreativeHeaders: Bool { frameSortMode == .story }
 
     private var creativesListView: some View {
@@ -1674,8 +1655,8 @@ struct MainView: View {
                                         onStatusSelected: { frame, status in
                                             updateFrameStatus(frame, to: status)
                                         },
-                                        onSortFrames: {
-                                            beginFrameOrdering()
+                                        onReorderFrames: { frame in
+                                            beginFrameOrdering(for: frame)
                                         },
                                         onInsertFrameBefore: { frame in
                                             insertFrame(before: frame)
@@ -1689,11 +1670,21 @@ struct MainView: View {
                                         onAddFrame: {
                                             addFrameToCreative(section.id)
                                         },
-                                        showAddFrameButton: authService.allowEdit && frameSortMode == .story,
+                                        showAddFrameButton: authService.allowEdit
+                                            && frameSortMode == .story
+                                            && !isReorderingFrames,
                                         isAddingFrame: addingFrameCreativeIds.contains(section.id),
                                         showSkeleton: shouldShowFrameSkeleton && section.frames.isEmpty,
                                         isPinching: isGridPinching,
-                                        updatingFrameIds: gridUpdatingFrameIds.union(gridInsertFrameIds)
+                                        updatingFrameIds: gridUpdatingFrameIds.union(gridInsertFrameIds),
+                                        isReorderingFrames: isReorderingFrames && reorderCreativeId == section.id,
+                                        reorderFrames: isReorderingFrames && reorderCreativeId == section.id
+                                            ? $reorderFrames
+                                            : .constant(section.frames),
+                                        activeReorderFrameId: isReorderingFrames && reorderCreativeId == section.id
+                                            ? $activeReorderFrameId
+                                            : .constant(nil),
+                                        reorderWiggle: reorderWiggle
                                     )
                                 }
                                 .id(section.id)
@@ -1731,6 +1722,9 @@ struct MainView: View {
                     }
                     .onChange(of: viewMode) { _ in
                         isGridPinching = false
+                        if viewMode != .grid {
+                            cancelFrameOrdering()
+                        }
                         if viewMode == .grid {
                             DispatchQueue.main.async {
                                 scrollToGridTop()
@@ -1740,6 +1734,7 @@ struct MainView: View {
                     }
                     .onChange(of: frameSortMode) { _ in
                         updateHereShortcutState(using: visibleFrameIds)
+                        cancelFrameOrdering()
                     }
                     .onPreferenceChange(SectionHeaderAnchorKey.self) { positions in
                         // Track the nearest section header above the fold so the selector stays in sync
@@ -1763,9 +1758,6 @@ struct MainView: View {
                     }
                 }
             }
-        }
-        .sheet(isPresented: $isShowingFrameOrdering) {
-            frameOrderingSheet
         }
         .alert(
             "Delete Frame?",
@@ -1822,13 +1814,61 @@ struct MainView: View {
         gridSizeStep = min(max(newValue, 1), 4)
     }
 
-    private func beginFrameOrdering() {
-        orderingFrames = displayedFramesInCurrentMode
-        isShowingFrameOrdering = true
+    private func beginFrameOrdering(for frame: Frame) {
+        guard frameSortMode == .story else { return }
+        let frames = orderedFramesForCreative(frame.creativeId)
+        reorderCreativeId = frame.creativeId
+        reorderFrames = frames
+        reorderPriorFrames = frames
+        activeReorderFrameId = nil
+        isReorderingFrames = true
+        withAnimation(.easeInOut(duration: 0.12).repeatForever(autoreverses: true)) {
+            reorderWiggle.toggle()
+        }
     }
 
-    private func moveOrderedFrames(from source: IndexSet, to destination: Int) {
-        orderingFrames.move(fromOffsets: source, toOffset: destination)
+    private func cancelFrameOrdering() {
+        guard isReorderingFrames else { return }
+        reorderFrames = []
+        reorderPriorFrames = []
+        reorderCreativeId = nil
+        activeReorderFrameId = nil
+        isReorderingFrames = false
+        reorderWiggle = false
+    }
+
+    private func commitFrameOrdering() {
+        guard isReorderingFrames else { return }
+        let frames = reorderFrames
+        let priorFrames = reorderPriorFrames
+        let creativeId = reorderCreativeId
+        cancelFrameOrdering()
+
+        guard let projectId = authService.projectId, let creativeId else {
+            dataError = "Missing project ID"
+            return
+        }
+
+        Task {
+            do {
+                let orderPayload = buildOrderedFramePayload(
+                    frames: frames,
+                    orderBy: .story,
+                    priorFrames: priorFrames
+                )
+                try await authService.updateFrameOrder(
+                    shootId: projectId,
+                    creativeId: creativeId,
+                    orderBy: "story",
+                    orderedFrames: orderPayload
+                )
+                try await authService.fetchFrames()
+            } catch {
+                await MainActor.run {
+                    dataError = error.localizedDescription
+                }
+            }
+        }
     }
 
     private func synchronizeCreativeSelection() {
@@ -1863,6 +1903,11 @@ struct MainView: View {
 
     private var displayedNavigationTitle: String {
         isScrolledToTop ? projectDisplayTitle : currentCreativeTitle
+    }
+
+    private func reorderedFrames(for creativeId: String, defaultFrames: [Frame]) -> [Frame] {
+        guard isReorderingFrames, reorderCreativeId == creativeId else { return defaultFrames }
+        return reorderFrames
     }
 
     private var contextMenuFrame: Frame? {
@@ -3166,7 +3211,7 @@ struct CreativeGridSection: View {
     let viewportHeight: CGFloat
     let primaryAsset: (Frame) -> FrameAssetItem?
     let onStatusSelected: (Frame, FrameStatus) -> Void
-    let onSortFrames: () -> Void
+    let onReorderFrames: (Frame) -> Void
     let onInsertFrameBefore: (Frame) -> Void
     let onInsertFrameAfter: (Frame) -> Void
     let onDeleteFrame: (Frame) -> Void
@@ -3176,6 +3221,10 @@ struct CreativeGridSection: View {
     let showSkeleton: Bool
     let isPinching: Bool
     let updatingFrameIds: Set<String>
+    let isReorderingFrames: Bool
+    @Binding var reorderFrames: [Frame]
+    @Binding var activeReorderFrameId: String?
+    let reorderWiggle: Bool
 
     init(
         section: GridSectionData,
@@ -3194,7 +3243,7 @@ struct CreativeGridSection: View {
         viewportHeight: CGFloat,
         primaryAsset: @escaping (Frame) -> FrameAssetItem?,
         onStatusSelected: @escaping (Frame, FrameStatus) -> Void,
-        onSortFrames: @escaping () -> Void,
+        onReorderFrames: @escaping (Frame) -> Void,
         onInsertFrameBefore: @escaping (Frame) -> Void,
         onInsertFrameAfter: @escaping (Frame) -> Void,
         onDeleteFrame: @escaping (Frame) -> Void,
@@ -3203,7 +3252,11 @@ struct CreativeGridSection: View {
         isAddingFrame: Bool,
         showSkeleton: Bool,
         isPinching: Bool,
-        updatingFrameIds: Set<String>
+        updatingFrameIds: Set<String>,
+        isReorderingFrames: Bool,
+        reorderFrames: Binding<[Frame]>,
+        activeReorderFrameId: Binding<String?>,
+        reorderWiggle: Bool
     ) {
         self.section = section
         self.onFrameTap = onFrameTap
@@ -3221,7 +3274,7 @@ struct CreativeGridSection: View {
         self.viewportHeight = viewportHeight
         self.primaryAsset = primaryAsset
         self.onStatusSelected = onStatusSelected
-        self.onSortFrames = onSortFrames
+        self.onReorderFrames = onReorderFrames
         self.onInsertFrameBefore = onInsertFrameBefore
         self.onInsertFrameAfter = onInsertFrameAfter
         self.onDeleteFrame = onDeleteFrame
@@ -3231,6 +3284,10 @@ struct CreativeGridSection: View {
         self.showSkeleton = showSkeleton
         self.isPinching = isPinching
         self.updatingFrameIds = updatingFrameIds
+        self.isReorderingFrames = isReorderingFrames
+        self._reorderFrames = reorderFrames
+        self._activeReorderFrameId = activeReorderFrameId
+        self.reorderWiggle = reorderWiggle
     }
 
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
@@ -3284,10 +3341,66 @@ struct CreativeGridSection: View {
                         SkeletonGridCell()
                     }
                 } else {
-                    ForEach(section.frames) { frame in
-                        Button {
-                            onFrameTap(frame.id)
-                        } label: {
+                    let framesToShow = isReorderingFrames ? reorderFrames : section.frames
+                    ForEach(framesToShow) { frame in
+                        if isReorderingFrames {
+                            GridFrameCell(
+                                frame: frame,
+                                primaryAsset: primaryAsset(frame),
+                                forceThinCrosses: forceThinCrosses,
+                                showDescription: showDescriptions,
+                                showFullDescription: showFullDescriptions,
+                                showTags: showTags,
+                                showFrameTimeOverlay: showFrameTimeOverlay,
+                                showCreativeTitleOverlay: showCreativeTitleOverlay,
+                                fontScale: fontScale,
+                                cornerRadius: cornerRadius,
+                                boardSizing: boardSizing,
+                                coordinateSpaceName: coordinateSpaceName,
+                                viewportHeight: viewportHeight,
+                                isUpdating: updatingFrameIds.contains(frame.id),
+                                onStatusSelected: { status in
+                                    onStatusSelected(frame, status)
+                                },
+                                onReorderFrames: onReorderFrames,
+                                showInsertOptions: showAddFrameButton,
+                                showReorderOption: false,
+                                showContextMenu: false,
+                                onInsertFrameBefore: {
+                                    onInsertFrameBefore(frame)
+                                },
+                                onInsertFrameAfter: {
+                                    onInsertFrameAfter(frame)
+                                },
+                                onDeleteFrame: {
+                                    onDeleteFrame(frame)
+                                }
+                            )
+                            .contentShape(Rectangle())
+                            .rotationEffect(.degrees(reorderWiggle ? 1.5 : -1.5))
+                            .animation(
+                                .easeInOut(duration: 0.12).repeatForever(autoreverses: true),
+                                value: reorderWiggle
+                            )
+                            .onDrag {
+                                activeReorderFrameId = frame.id
+                                return NSItemProvider(object: frame.id as NSString)
+                            }
+                            .onDrop(
+                                of: [UTType.text],
+                                delegate: FrameReorderDropDelegate(
+                                    item: frame,
+                                    frames: $reorderFrames,
+                                    activeFrameId: $activeReorderFrameId
+                                )
+                            )
+                            .opacity(activeReorderFrameId == frame.id ? 0.6 : 1)
+                            .id(frame.id)
+                            .allowsHitTesting(!isPinching && !updatingFrameIds.contains(frame.id))
+                        } else {
+                            Button {
+                                onFrameTap(frame.id)
+                            } label: {
                                 GridFrameCell(
                                     frame: frame,
                                     primaryAsset: primaryAsset(frame),
@@ -3306,8 +3419,10 @@ struct CreativeGridSection: View {
                                     onStatusSelected: { status in
                                         onStatusSelected(frame, status)
                                     },
-                                    onSortFrames: onSortFrames,
+                                    onReorderFrames: onReorderFrames,
                                     showInsertOptions: showAddFrameButton,
+                                    showReorderOption: showAddFrameButton,
+                                    showContextMenu: true,
                                     onInsertFrameBefore: {
                                         onInsertFrameBefore(frame)
                                     },
@@ -3317,10 +3432,11 @@ struct CreativeGridSection: View {
                                     onDeleteFrame: {
                                         onDeleteFrame(frame)
                                     }
-                            )
+                                )
+                            }
+                            .id(frame.id)
+                            .allowsHitTesting(!isPinching && !updatingFrameIds.contains(frame.id))
                         }
-                        .id(frame.id)
-                        .allowsHitTesting(!isPinching && !updatingFrameIds.contains(frame.id))
                     }
                     if showAddFrameButton {
                         Button(action: onAddFrame) {
@@ -3360,8 +3476,10 @@ struct GridFrameCell: View {
     let viewportHeight: CGFloat
     var isUpdating: Bool = false
     var onStatusSelected: (FrameStatus) -> Void
-    var onSortFrames: () -> Void
+    var onReorderFrames: (Frame) -> Void
     var showInsertOptions: Bool = false
+    var showReorderOption: Bool = true
+    var showContextMenu: Bool = true
     var onInsertFrameBefore: () -> Void
     var onInsertFrameAfter: () -> Void
     var onDeleteFrame: () -> Void
@@ -3405,8 +3523,8 @@ struct GridFrameCell: View {
                     }
                 }
             }
-            .contextMenu {
-                if authService.allowEdit {
+            .if(showContextMenu && authService.allowEdit) { view in
+                view.contextMenu {
                     Section {
                         statusMenu
                     }
@@ -3428,10 +3546,12 @@ struct GridFrameCell: View {
                         } label: {
                             Label("Delete frame", systemImage: "trash")
                         }
-                        Button {
-                            onSortFrames()
-                        } label: {
-                            Label("Sort frames", systemImage: "arrow.up.arrow.down")
+                        if showReorderOption {
+                            Button {
+                                onReorderFrames(frame)
+                            } label: {
+                                Label("Reorder frames", systemImage: "arrow.up.arrow.down")
+                            }
                         }
                     }
                 }
@@ -3618,6 +3738,43 @@ struct GridFrameCell: View {
         }
 
         return Color(red: red, green: green, blue: blue, opacity: alpha)
+    }
+}
+
+private struct FrameReorderDropDelegate: DropDelegate {
+    let item: Frame
+    @Binding var frames: [Frame]
+    @Binding var activeFrameId: String?
+
+    func dropEntered(info: DropInfo) {
+        guard let activeFrameId,
+              activeFrameId != item.id,
+              let fromIndex = frames.firstIndex(where: { $0.id == activeFrameId }),
+              let toIndex = frames.firstIndex(where: { $0.id == item.id })
+        else { return }
+
+        withAnimation(.easeInOut(duration: 0.2)) {
+            frames.move(
+                fromOffsets: IndexSet(integer: fromIndex),
+                toOffset: toIndex > fromIndex ? toIndex + 1 : toIndex
+            )
+        }
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        activeFrameId = nil
+        return true
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func `if`<Content: View>(_ condition: Bool, transform: (Self) -> Content) -> some View {
+        if condition {
+            transform(self)
+        } else {
+            self
+        }
     }
 }
 
