@@ -20,6 +20,7 @@
 		0730F4082F0B6800000B598F /* RichTextEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4062F0B6800000B598F /* RichTextEditor.swift */; };
 		0730F40A2F0B8736000B598F /* RichTextDisplayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4092F0B8736000B598F /* RichTextDisplayView.swift */; };
 		0730F40C2F0C6401000B598F /* FrameLineOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F40B2F0C6401000B598F /* FrameLineOverlayView.swift */; };
+		0F6A7C2B3D4E5F6789012345 /* MartiniLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F6A7C2A3D4E5F6789012345 /* MartiniLoader.swift */; };
 		0730F4112F0C6F7D000B598F /* CachedVideoPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4102F0C6F7D000B598F /* CachedVideoPlayerView.swift */; };
 		0730F4122F0C6F7D000B598F /* BoardMetadataSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F40F2F0C6F7D000B598F /* BoardMetadataSheet.swift */; };
 		0730F41C2F0CE88E000B598F /* CreativeAspectRatioConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F41B2F0CE88E000B598F /* CreativeAspectRatioConfig.swift */; };
@@ -123,6 +124,7 @@
 		0730F4062F0B6800000B598F /* RichTextEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichTextEditor.swift; sourceTree = "<group>"; };
 		0730F4092F0B8736000B598F /* RichTextDisplayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichTextDisplayView.swift; sourceTree = "<group>"; };
 		0730F40B2F0C6401000B598F /* FrameLineOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameLineOverlayView.swift; sourceTree = "<group>"; };
+		0F6A7C2A3D4E5F6789012345 /* MartiniLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MartiniLoader.swift; sourceTree = "<group>"; };
 		0730F40F2F0C6F7D000B598F /* BoardMetadataSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardMetadataSheet.swift; sourceTree = "<group>"; };
 		0730F4102F0C6F7D000B598F /* CachedVideoPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedVideoPlayerView.swift; sourceTree = "<group>"; };
 		0730F41B2F0CE88E000B598F /* CreativeAspectRatioConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreativeAspectRatioConfig.swift; sourceTree = "<group>"; };
@@ -275,6 +277,7 @@
 				0730F40B2F0C6401000B598F /* FrameLineOverlayView.swift */,
 				0730F4092F0B8736000B598F /* RichTextDisplayView.swift */,
 				0730F4052F0B6800000B598F /* FrameDescriptionEditorSheet.swift */,
+				0F6A7C2A3D4E5F6789012345 /* MartiniLoader.swift */,
 				0730F4062F0B6800000B598F /* RichTextEditor.swift */,
 				0730F4032F0ABFBB000B598F /* FramePagerView.swift */,
 				0730F3FF2F070A2E000B598F /* ScriptView.swift */,
@@ -514,6 +517,7 @@
 				B1C2D3E4F5061728394A5B6D /* ScoutCamera/Calibration/FOVCalibrationView.swift in Sources */,
 				C1D2E3F40516273849A5B6C8 /* ScoutCamera/Calibration/FOVCalibrationViewModel.swift in Sources */,
 				0730F4072F0B6800000B598F /* FrameDescriptionEditorSheet.swift in Sources */,
+				0F6A7C2B3D4E5F6789012345 /* MartiniLoader.swift in Sources */,
 				0730F4082F0B6800000B598F /* RichTextEditor.swift in Sources */,
 				07FFA2692F0F01D8006BEAF4 /* ScoutCameraMetadata.swift in Sources */,
 				B97E51D7EFDA491EBD6C974C /* ScoutCamera/CameraKit/CaptureSessionManager.swift in Sources */,
