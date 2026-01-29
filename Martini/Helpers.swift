@@ -228,8 +228,8 @@ private func mutableAttributedStringFromHTML(
     let resolvedFontSize = normalizedBaseFontSize ?? preferredFont.pointSize
     let baseFont = preferredFont.withSize(resolvedFontSize)
     let fontSize = "\(resolvedFontSize)px"
-    let normalizedHTML = htmlByApplyingAlignmentClasses(html)
-    let sanitizedHTML = normalizedHTML.replacingOccurrences(of: "\u{0000}", with: "")
+    let cleanedHTML = cleanedHTMLForAttributedString(html)
+    let normalizedHTML = htmlByApplyingAlignmentClasses(cleanedHTML)
     let styledHTML = """
     <html>
     <head>
@@ -246,7 +246,7 @@ private func mutableAttributedStringFromHTML(
     </style>
     </head>
     <body>
-    \(sanitizedHTML)
+    \(normalizedHTML)
     </body>
     </html>
     """
@@ -293,6 +293,45 @@ private func mutableAttributedStringFromHTML(
     applyParagraphSpacing(to: attributed, baseFontSize: resolvedFontSize)
 
     return attributed
+}
+
+private func cleanedHTMLForAttributedString(_ html: String) -> String {
+    let withoutControlCharacters = removingUnsupportedControlCharacters(from: html)
+    let bodyContent = extractBodyHTML(from: withoutControlCharacters)
+    return bodyContent.trimmingCharacters(in: .whitespacesAndNewlines)
+}
+
+private func removingUnsupportedControlCharacters(from html: String) -> String {
+    let allowedControls = CharacterSet(charactersIn: "\n\r\t")
+    let filteredScalars = html.unicodeScalars.filter { scalar in
+        if CharacterSet.controlCharacters.contains(scalar) {
+            return allowedControls.contains(scalar)
+        }
+        return true
+    }
+    return String(String.UnicodeScalarView(filteredScalars))
+}
+
+private func extractBodyHTML(from html: String) -> String {
+    let bodyPattern = "<body[^>]*>([\\s\\S]*?)</body>"
+    if let regex = try? NSRegularExpression(pattern: bodyPattern, options: [.caseInsensitive]),
+       let match = regex.firstMatch(in: html, options: [], range: NSRange(location: 0, length: (html as NSString).length)),
+       match.numberOfRanges > 1,
+       let range = Range(match.range(at: 1), in: html) {
+        return String(html[range])
+    }
+
+    let withoutDoctype = html.replacingOccurrences(
+        of: "<!DOCTYPE[^>]*>",
+        with: "",
+        options: [.regularExpression, .caseInsensitive]
+    )
+    let withoutHTMLWrapper = withoutDoctype.replacingOccurrences(
+        of: "</?(html|head|body)[^>]*>",
+        with: "",
+        options: [.regularExpression, .caseInsensitive]
+    )
+    return withoutHTMLWrapper
 }
 
 private func normalizedBaseFontSizeValue(_ baseFontSize: CGFloat?) -> CGFloat? {
