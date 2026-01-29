@@ -3642,7 +3642,7 @@ struct AddFrameGridCell: View {
                 .fill(Color.gray.opacity(0.15))
                 .overlay(
                     RoundedRectangle(cornerRadius: effectiveCornerRadius)
-                        .stroke(Color.gray.opacity(0.35), lineWidth: 1)
+                        .stroke(Color.gray.opacity(0), lineWidth: 1)
                 )
             if isLoading {
                 MartiniLoader(color: .secondary)
@@ -3652,6 +3652,7 @@ struct AddFrameGridCell: View {
                     .foregroundColor(.secondary)
             }
         }
+        .padding(10)
         .aspectRatio(displayAspectRatio, contentMode: .fit)
         .scaleEffect(boardSizingScale)
         .background(
