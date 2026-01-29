@@ -3415,7 +3415,10 @@ struct CreativeGridSection: View {
             )
             .onDrag {
                 activeReorderFrameId = frame.id
-                return NSItemProvider(object: frame.id as NSString)
+                return NSItemProvider(
+                    item: frame.id as NSString,
+                    typeIdentifier: UTType.text.identifier
+                )
             }
             .onDrop(
                 of: [UTType.text],
