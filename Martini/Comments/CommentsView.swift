@@ -142,7 +142,7 @@ struct CommentsView: View {
     private var toolbarContent: some View {
         HStack(spacing: 8) {
             if isLoading {
-                ProgressView()
+                MartiniLoader()
             }
             VStack(spacing: 2) {
                 Text("Comments")

@@ -68,7 +68,7 @@ struct LoginView: View {
                 // Main action button
                 VStack(spacing: 20) {
                     if isAuthenticating {
-                        ProgressView()
+                        MartiniLoader()
                             .scaleEffect(1.5)
                             .padding()
                         

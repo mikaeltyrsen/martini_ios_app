@@ -360,8 +360,7 @@ struct FullscreenMediaViewer: View {
                     }
                 }
                 if isLoadingImage {
-                    ProgressView()
-                        .progressViewStyle(.circular)
+                    MartiniLoader()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -52,7 +52,7 @@ struct FrameDescriptionEditorSheet: View {
                             }
                         } label: {
                             if isSaving {
-                                ProgressView()
+                                MartiniLoader()
                             } else {
                                 Image(systemName: "checkmark")
                             }

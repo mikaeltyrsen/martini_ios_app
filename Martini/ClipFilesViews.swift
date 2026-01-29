@@ -56,7 +56,7 @@ struct FilesView: View {
                 .listStyle(.plain)
             } else if isLoading {
                 VStack(spacing: 12) {
-                    ProgressView()
+                    MartiniLoader()
                     Text("Loading clips...")
                         .foregroundStyle(.secondary)
                 }
@@ -268,7 +268,7 @@ struct ClipThumbnailView: View {
                             .resizable()
                             .scaledToFill()
                     case .empty:
-                        ProgressView()
+                        MartiniLoader()
                     case .failure:
                         Image(systemName: clip.systemIconName)
                             .foregroundStyle(.secondary)
@@ -306,7 +306,7 @@ struct ClipPreviewView: View {
                             .scaledToFit()
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     case .empty:
-                        ProgressView()
+                        MartiniLoader()
                     case .failure:
                         Text("Unable to load image.")
                             .foregroundStyle(.secondary)
@@ -318,7 +318,7 @@ struct ClipPreviewView: View {
             } else if let localPreviewURL {
                 QuickLookPreview(url: localPreviewURL)
             } else if isLoadingPreview {
-                ProgressView()
+                MartiniLoader()
             } else {
                 Text(previewErrorMessage ?? "Unable to load clip")
                     .foregroundStyle(.secondary)

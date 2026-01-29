@@ -1904,8 +1904,7 @@ struct MainView: View {
     private var scheduleButton: some View {
         Button(action: openSchedule) {
             if isLoadingSchedule {
-                ProgressView()
-                    .progressViewStyle(.circular)
+                MartiniLoader()
             } else {
                 Image(systemName: "calendar")
                     .imageScale(.large)
@@ -1960,8 +1959,7 @@ struct MainView: View {
                     let progress = navigationProgress
                     if isProjectLoading {
                         HStack(spacing: 6) {
-                            ProgressView()
-                                .progressViewStyle(.circular)
+                            MartiniLoader()
                             Text("Loading project...")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
@@ -2017,8 +2015,7 @@ struct MainView: View {
             EmptyView()
         case .offline:
             HStack(spacing: 6) {
-                ProgressView()
-                    .progressViewStyle(.circular)
+                MartiniLoader()
                     .scaleEffect(0.7)
                 TimelineView(.animation) { timeline in
                     let shouldShowQueued = queuedFrameStatusCount > 0
@@ -2036,8 +2033,7 @@ struct MainView: View {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundColor(.green)
                     } else {
-                        ProgressView()
-                            .progressViewStyle(.circular)
+                        MartiniLoader()
                             .scaleEffect(0.7)
                     }
                     Text(authService.queuedFrameSyncStatus == .success ? "Syncing complete" : "Syncing queued frames")
@@ -3403,9 +3399,7 @@ struct GridFrameCell: View {
                     ZStack {
                         RoundedRectangle(cornerRadius: effectiveCornerRadius)
                             .fill(Color.black.opacity(0.6))
-                        ProgressView()
-                            .progressViewStyle(.circular)
-                            .tint(.white)
+                        MartiniLoader(color: .white)
                             .scaleEffect(1.1)
                             .accessibilityLabel("Updating status")
                     }
@@ -3651,9 +3645,7 @@ struct AddFrameGridCell: View {
                         .stroke(Color.gray.opacity(0.35), lineWidth: 1)
                 )
             if isLoading {
-                ProgressView()
-                    .progressViewStyle(.circular)
-                    .tint(.secondary)
+                MartiniLoader(color: .secondary)
             } else {
                 Image(systemName: "plus")
                     .font(.system(size: 28, weight: .semibold))
