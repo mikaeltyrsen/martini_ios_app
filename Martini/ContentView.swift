@@ -3394,6 +3394,7 @@ struct CreativeGridSection: View {
                                     activeFrameId: $activeReorderFrameId
                                 )
                             )
+                            .contextMenuDisabled(true)
                             .opacity(activeReorderFrameId == frame.id ? 0.6 : 1)
                             .id(frame.id)
                             .allowsHitTesting(!isPinching && !updatingFrameIds.contains(frame.id))
