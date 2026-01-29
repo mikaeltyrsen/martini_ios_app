@@ -1808,6 +1808,11 @@ class AuthService: ObservableObject {
             return
         }
 
+        if boards.isEmpty {
+            try await fetchFrames()
+            return
+        }
+
         let frameId = response.resolvedId ?? fallbackFrameId
         guard let index = frames.firstIndex(where: { $0.id == frameId }) else { return }
 

@@ -1523,14 +1523,30 @@ struct FrameView: View {
                                     Button {
                                         showingAddBoardOptions = true
                                     } label: {
-                                        Image(systemName: "plus")
-                                            .font(.system(size: 16, weight: .semibold))
+                                        if hasBoardAssets {
+                                            Image(systemName: "plus")
+                                                .font(.system(size: 16, weight: .semibold))
+                                                .foregroundStyle(.primary)
+                                                .padding(10)
+                                                .background(
+                                                    Capsule()
+                                                        .fill(Color.secondary.opacity(0.15))
+                                                )
+                                        } else {
+                                            HStack(spacing: 6) {
+                                                Image(systemName: "plus")
+                                                    .font(.system(size: 16, weight: .semibold))
+                                                Text("Add Board")
+                                                    .font(.system(size: 14, weight: .semibold))
+                                            }
                                             .foregroundStyle(.primary)
-                                            .padding(10)
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 10)
                                             .background(
                                                 Capsule()
                                                     .fill(Color.secondary.opacity(0.15))
                                             )
+                                        }
                                     }
                                     .buttonStyle(.plain)
                                     .id(takePictureCardID)
@@ -1582,6 +1598,10 @@ struct FrameView: View {
 
     private var pinnedBoardId: String? {
         frame.boards?.first(where: { $0.isPinned })?.id
+    }
+
+    private var hasBoardAssets: Bool {
+        frame.availableAssets.contains { $0.kind == .board }
     }
 
     @ViewBuilder
