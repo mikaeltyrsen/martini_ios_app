@@ -3365,6 +3365,7 @@ struct CreativeGridSection: View {
                                 onReorderFrames: onReorderFrames,
                                 showInsertOptions: showAddFrameButton,
                                 showReorderOption: false,
+                                showContextMenu: false,
                                 onInsertFrameBefore: {
                                     onInsertFrameBefore(frame)
                                 },
@@ -3375,6 +3376,7 @@ struct CreativeGridSection: View {
                                     onDeleteFrame(frame)
                                 }
                             )
+                            .contentShape(Rectangle())
                             .rotationEffect(.degrees(reorderWiggle ? 1.5 : -1.5))
                             .animation(
                                 .easeInOut(duration: 0.12).repeatForever(autoreverses: true),
@@ -3420,6 +3422,7 @@ struct CreativeGridSection: View {
                                     onReorderFrames: onReorderFrames,
                                     showInsertOptions: showAddFrameButton,
                                     showReorderOption: showAddFrameButton,
+                                    showContextMenu: true,
                                     onInsertFrameBefore: {
                                         onInsertFrameBefore(frame)
                                     },
@@ -3476,6 +3479,7 @@ struct GridFrameCell: View {
     var onReorderFrames: (Frame) -> Void
     var showInsertOptions: Bool = false
     var showReorderOption: Bool = true
+    var showContextMenu: Bool = true
     var onInsertFrameBefore: () -> Void
     var onInsertFrameAfter: () -> Void
     var onDeleteFrame: () -> Void
@@ -3520,7 +3524,7 @@ struct GridFrameCell: View {
                 }
             }
             .contextMenu {
-                if authService.allowEdit {
+                if showContextMenu, authService.allowEdit {
                     Section {
                         statusMenu
                     }
