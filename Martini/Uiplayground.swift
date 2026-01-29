@@ -72,7 +72,7 @@ struct Uiplayground: View {
                                 AsyncImage(url: item.thumbnailURL) { phase in
                                     switch phase {
                                     case .empty:
-                                        ProgressView()
+                                        MartiniLoader()
                                             .frame(maxWidth: .infinity, maxHeight: 100)
                                     case .success(let image):
                                         image

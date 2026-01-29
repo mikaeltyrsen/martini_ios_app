@@ -133,7 +133,7 @@ private struct ReviewActionButton: View {
                 
                 ZStack {
                     if isLoading {
-                        ProgressView()
+                        MartiniLoader()
                             .font(.system(size: 25))
                             .tint(tintIcon ? tintIconColor : .primary)
                     } else {

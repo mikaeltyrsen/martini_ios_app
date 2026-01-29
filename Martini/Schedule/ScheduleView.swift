@@ -598,9 +598,7 @@ struct ScheduleView: View {
                                 ZStack {
                                     RoundedRectangle(cornerRadius: 8)
                                         .fill(Color.black.opacity(0.6))
-                                    ProgressView()
-                                        .progressViewStyle(.circular)
-                                        .tint(.white)
+                                    MartiniLoader(color: .white)
                                 }
                             }
                         }

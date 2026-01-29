@@ -1108,8 +1108,7 @@ struct ScoutCameraLayout: View {
             Color.black.opacity(viewModel.capturedImage == nil ? 0.85 : 0.6)
                 .ignoresSafeArea()
             VStack(spacing: 12) {
-                ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                MartiniLoader(color: .white)
                 Text("Rendering photo…")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.white)
@@ -1217,8 +1216,7 @@ struct ScoutCameraLayout: View {
                         .scaledToFill()
                         .clipped()
                 } else {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    MartiniLoader(color: .white)
                 }
             }
             .frame(width: previewSize.width, height: previewSize.height)
@@ -1307,8 +1305,7 @@ struct ScoutCameraLayout: View {
                             .opacity(0.5)
                             .position(x: rect.midX, y: rect.midY)
                     } else {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        MartiniLoader(color: .white)
                             .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
                     }
                 }

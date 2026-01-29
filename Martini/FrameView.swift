@@ -514,9 +514,7 @@ struct FrameView: View {
 
     private var uploadingBoardOverlay: some View {
         VStack(spacing: 12) {
-            ProgressView()
-                .progressViewStyle(.circular)
-                .tint(.white)
+            MartiniLoader(color: .white)
             Text("Uploading")
                 .font(.headline)
                 .foregroundColor(.white)
@@ -698,7 +696,7 @@ struct FrameView: View {
                         .lineLimit(1)
                 } icon: {
                     if isUpdatingStatus {
-                        ProgressView()
+                        MartiniLoader()
                             .tint(.white)
                     } else {
                         Image(systemName: selectedStatus == .none ? "pencil.tip" : selectedStatus.systemImageName)
@@ -1913,7 +1911,7 @@ struct FrameView: View {
             VStack(spacing: 12) {
                 Group {
                     if isLoading {
-                        ProgressView()
+                        MartiniLoader()
                             .tint(labelColor)
                     } else {
                         Image(systemName: status.systemImageName)
@@ -2899,7 +2897,7 @@ private struct BoardRenameAlert: View {
                         onSave()
                     } label: {
                         if isSaving {
-                            ProgressView()
+                            MartiniLoader()
                         } else {
                             Text("Save")
                         }
