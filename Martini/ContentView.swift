@@ -3299,162 +3299,175 @@ struct CreativeGridSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if section.showHeader {
-                VStack(){
-                    TrackableHeader(id: section.id, title: section.title, coordSpace: coordinateSpaceName)
+            headerView
 
-                    if let completed = section.completedFrames, let total = section.totalFrames {
-                        VStack(alignment: .leading, spacing: 6) {
-                            
-
-                            HStack(spacing: 4) {
-                                Text("\(completed) completed")
-                                    .font(.footnote)
-                                    .foregroundColor(.secondary)
-
-                                Text("•")
-                                    .font(.footnote)
-                                    .foregroundColor(.secondary)
-
-                                Text("\(total) total")
-                                    .font(.footnote)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                        .padding(.horizontal)
-                        
-                        HStack {
-                            ProgressView(value: Double(completed), total: Double(max(total, 1)))
-                                .tint(.martiniDefaultColor)
-                                .accessibilityLabel("\(completed) of \(total) frames complete")
-                                .animation(.timingCurve(0.2, 0.0, 0.0, 1.0, duration: 0.35), value: Double(completed))
-                        }
-                        .padding(.horizontal, 14)
-                    }
-                }
-            }
-
-            // Grid of frames
             LazyVGrid(columns: columns, spacing: 8) {
-                if showSkeleton {
-                    ForEach(0..<max(columnCount * 2, columnCount * 3), id: \.self) { _ in
-                        SkeletonGridCell()
-                    }
-                } else {
-                    let framesToShow = isReorderingFrames ? reorderFrames : section.frames
-                    ForEach(framesToShow) { frame in
-                        if isReorderingFrames {
-                            GridFrameCell(
-                                frame: frame,
-                                primaryAsset: primaryAsset(frame),
-                                forceThinCrosses: forceThinCrosses,
-                                showDescription: showDescriptions,
-                                showFullDescription: showFullDescriptions,
-                                showTags: showTags,
-                                showFrameTimeOverlay: showFrameTimeOverlay,
-                                showCreativeTitleOverlay: showCreativeTitleOverlay,
-                                fontScale: fontScale,
-                                cornerRadius: cornerRadius,
-                                boardSizing: boardSizing,
-                                coordinateSpaceName: coordinateSpaceName,
-                                viewportHeight: viewportHeight,
-                                isUpdating: updatingFrameIds.contains(frame.id),
-                                onStatusSelected: { status in
-                                    onStatusSelected(frame, status)
-                                },
-                                onReorderFrames: onReorderFrames,
-                                showInsertOptions: showAddFrameButton,
-                                showReorderOption: false,
-                                showContextMenu: false,
-                                onInsertFrameBefore: {
-                                    onInsertFrameBefore(frame)
-                                },
-                                onInsertFrameAfter: {
-                                    onInsertFrameAfter(frame)
-                                },
-                                onDeleteFrame: {
-                                    onDeleteFrame(frame)
-                                }
-                            )
-                            .contentShape(Rectangle())
-                            .rotationEffect(.degrees(reorderWiggle ? 1.5 : -1.5))
-                            .animation(
-                                .easeInOut(duration: 0.12).repeatForever(autoreverses: true),
-                                value: reorderWiggle
-                            )
-                            .onDrag {
-                                activeReorderFrameId = frame.id
-                                return NSItemProvider(object: frame.id as NSString)
-                            }
-                            .onDrop(
-                                of: [UTType.text],
-                                delegate: FrameReorderDropDelegate(
-                                    item: frame,
-                                    frames: $reorderFrames,
-                                    activeFrameId: $activeReorderFrameId
-                                )
-                            )
-                            .contextMenuDisabled(true)
-                            .opacity(activeReorderFrameId == frame.id ? 0.6 : 1)
-                            .id(frame.id)
-                            .allowsHitTesting(!isPinching && !updatingFrameIds.contains(frame.id))
-                        } else {
-                            Button {
-                                onFrameTap(frame.id)
-                            } label: {
-                                GridFrameCell(
-                                    frame: frame,
-                                    primaryAsset: primaryAsset(frame),
-                                    forceThinCrosses: forceThinCrosses,
-                                    showDescription: showDescriptions,
-                                    showFullDescription: showFullDescriptions,
-                                    showTags: showTags,
-                                    showFrameTimeOverlay: showFrameTimeOverlay,
-                                    showCreativeTitleOverlay: showCreativeTitleOverlay,
-                                    fontScale: fontScale,
-                                    cornerRadius: cornerRadius,
-                                    boardSizing: boardSizing,
-                                    coordinateSpaceName: coordinateSpaceName,
-                                    viewportHeight: viewportHeight,
-                                    isUpdating: updatingFrameIds.contains(frame.id),
-                                    onStatusSelected: { status in
-                                        onStatusSelected(frame, status)
-                                    },
-                                    onReorderFrames: onReorderFrames,
-                                    showInsertOptions: showAddFrameButton,
-                                    showReorderOption: showAddFrameButton,
-                                    showContextMenu: true,
-                                    onInsertFrameBefore: {
-                                        onInsertFrameBefore(frame)
-                                    },
-                                    onInsertFrameAfter: {
-                                        onInsertFrameAfter(frame)
-                                    },
-                                    onDeleteFrame: {
-                                        onDeleteFrame(frame)
-                                    }
-                                )
-                            }
-                            .id(frame.id)
-                            .allowsHitTesting(!isPinching && !updatingFrameIds.contains(frame.id))
-                        }
-                    }
-                    if showAddFrameButton {
-                        Button(action: onAddFrame) {
-                            AddFrameGridCell(
-                                aspectRatio: section.frames.first?.creativeAspectRatio,
-                                cornerRadius: cornerRadius,
-                                boardSizing: boardSizing,
-                                isLoading: isAddingFrame
-                            )
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(isAddingFrame)
-                        .accessibilityLabel("Add frame")
-                    }
-                }
+                gridContent
             }
             .padding(.horizontal)
+        }
+    }
+
+    @ViewBuilder
+    private var headerView: some View {
+        if section.showHeader {
+            VStack {
+                TrackableHeader(id: section.id, title: section.title, coordSpace: coordinateSpaceName)
+
+                if let completed = section.completedFrames, let total = section.totalFrames {
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 4) {
+                            Text("\(completed) completed")
+                                .font(.footnote)
+                                .foregroundColor(.secondary)
+
+                            Text("•")
+                                .font(.footnote)
+                                .foregroundColor(.secondary)
+
+                            Text("\(total) total")
+                                .font(.footnote)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .padding(.horizontal)
+
+                    HStack {
+                        ProgressView(value: Double(completed), total: Double(max(total, 1)))
+                            .tint(.martiniDefaultColor)
+                            .accessibilityLabel("\(completed) of \(total) frames complete")
+                            .animation(.timingCurve(0.2, 0.0, 0.0, 1.0, duration: 0.35), value: Double(completed))
+                    }
+                    .padding(.horizontal, 14)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var gridContent: some View {
+        if showSkeleton {
+            ForEach(0..<max(columnCount * 2, columnCount * 3), id: \.self) { _ in
+                SkeletonGridCell()
+            }
+        } else {
+            let framesToShow = isReorderingFrames ? reorderFrames : section.frames
+            ForEach(framesToShow) { frame in
+                frameCell(for: frame)
+            }
+
+            if showAddFrameButton {
+                Button(action: onAddFrame) {
+                    AddFrameGridCell(
+                        aspectRatio: section.frames.first?.creativeAspectRatio,
+                        cornerRadius: cornerRadius,
+                        boardSizing: boardSizing,
+                        isLoading: isAddingFrame
+                    )
+                }
+                .buttonStyle(.plain)
+                .disabled(isAddingFrame)
+                .accessibilityLabel("Add frame")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func frameCell(for frame: Frame) -> some View {
+        if isReorderingFrames {
+            GridFrameCell(
+                frame: frame,
+                primaryAsset: primaryAsset(frame),
+                forceThinCrosses: forceThinCrosses,
+                showDescription: showDescriptions,
+                showFullDescription: showFullDescriptions,
+                showTags: showTags,
+                showFrameTimeOverlay: showFrameTimeOverlay,
+                showCreativeTitleOverlay: showCreativeTitleOverlay,
+                fontScale: fontScale,
+                cornerRadius: cornerRadius,
+                boardSizing: boardSizing,
+                coordinateSpaceName: coordinateSpaceName,
+                viewportHeight: viewportHeight,
+                isUpdating: updatingFrameIds.contains(frame.id),
+                onStatusSelected: { status in
+                    onStatusSelected(frame, status)
+                },
+                onReorderFrames: onReorderFrames,
+                showInsertOptions: showAddFrameButton,
+                showReorderOption: false,
+                showContextMenu: false,
+                onInsertFrameBefore: {
+                    onInsertFrameBefore(frame)
+                },
+                onInsertFrameAfter: {
+                    onInsertFrameAfter(frame)
+                },
+                onDeleteFrame: {
+                    onDeleteFrame(frame)
+                }
+            )
+            .contentShape(Rectangle())
+            .rotationEffect(.degrees(reorderWiggle ? 1.5 : -1.5))
+            .animation(
+                .easeInOut(duration: 0.12).repeatForever(autoreverses: true),
+                value: reorderWiggle
+            )
+            .onDrag {
+                activeReorderFrameId = frame.id
+                return NSItemProvider(object: frame.id as NSString)
+            }
+            .onDrop(
+                of: [UTType.text],
+                delegate: FrameReorderDropDelegate(
+                    item: frame,
+                    frames: $reorderFrames,
+                    activeFrameId: $activeReorderFrameId
+                )
+            )
+            .contextMenuDisabled(true)
+            .opacity(activeReorderFrameId == frame.id ? 0.6 : 1)
+            .id(frame.id)
+            .allowsHitTesting(!isPinching && !updatingFrameIds.contains(frame.id))
+        } else {
+            Button {
+                onFrameTap(frame.id)
+            } label: {
+                GridFrameCell(
+                    frame: frame,
+                    primaryAsset: primaryAsset(frame),
+                    forceThinCrosses: forceThinCrosses,
+                    showDescription: showDescriptions,
+                    showFullDescription: showFullDescriptions,
+                    showTags: showTags,
+                    showFrameTimeOverlay: showFrameTimeOverlay,
+                    showCreativeTitleOverlay: showCreativeTitleOverlay,
+                    fontScale: fontScale,
+                    cornerRadius: cornerRadius,
+                    boardSizing: boardSizing,
+                    coordinateSpaceName: coordinateSpaceName,
+                    viewportHeight: viewportHeight,
+                    isUpdating: updatingFrameIds.contains(frame.id),
+                    onStatusSelected: { status in
+                        onStatusSelected(frame, status)
+                    },
+                    onReorderFrames: onReorderFrames,
+                    showInsertOptions: showAddFrameButton,
+                    showReorderOption: showAddFrameButton,
+                    showContextMenu: true,
+                    onInsertFrameBefore: {
+                        onInsertFrameBefore(frame)
+                    },
+                    onInsertFrameAfter: {
+                        onInsertFrameAfter(frame)
+                    },
+                    onDeleteFrame: {
+                        onDeleteFrame(frame)
+                    }
+                )
+            }
+            .id(frame.id)
+            .allowsHitTesting(!isPinching && !updatingFrameIds.contains(frame.id))
         }
     }
 }
