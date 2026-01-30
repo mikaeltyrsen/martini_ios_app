@@ -545,6 +545,19 @@ struct FrameLayout: View {
         return nil
     }
 
+    private var resolvedMediaCrop: String? {
+        guard let asset = resolvedAsset else { return nil }
+        switch asset.kind {
+        case .board:
+            if asset.id == "photoboard" {
+                return frame.photoboardCrop ?? frame.crop
+            }
+            return frame.boards?.first(where: { $0.id == asset.id })?.fileCrop ?? frame.crop
+        case .preview:
+            return frame.previewCrop ?? frame.crop
+        }
+    }
+
     private var shouldPlayAsVideo: Bool {
         guard let url = resolvedMediaURL else { return false }
 
@@ -558,6 +571,12 @@ struct FrameLayout: View {
 
         // Allow common streaming URL hints (e.g. HLS)
         return url.absoluteString.lowercased().contains(".m3u8")
+    }
+
+    private static func normalizedCrop(_ crop: String?) -> String? {
+        guard let crop else { return nil }
+        let trimmed = crop.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 
     private var resolvedFrameNumber: String? {
@@ -770,6 +789,8 @@ struct FrameLayout: View {
             frameNumberLabel: frameNumberLabel,
             placeholder: AnyView(placeholder),
             imageShouldFill: isFullscreen ? false : shouldFillImage,
+            crop: resolvedMediaCrop,
+            aspectRatio: aspectRatio,
             isSource: !isFullscreen,
             useMatchedGeometry: !isFullscreen
         )
@@ -788,6 +809,8 @@ struct FrameLayout: View {
         let frameNumberLabel: String?
         let placeholder: AnyView
         let imageShouldFill: Bool
+        let crop: String?
+        let aspectRatio: CGFloat
         let isSource: Bool
         let useMatchedGeometry: Bool
 
@@ -797,34 +820,45 @@ struct FrameLayout: View {
                     if isVideo {
                         LoopingVideoView(url: url, videoGravity: imageShouldFill ? .resizeAspectFill : .resizeAspect)
                     } else {
-                        CachedAsyncImage(url: url) { phase in
-                            switch phase {
-                            case let .success(image):
-                                let baseImage = image.resizable()
-                                let renderedImage: AnyView = imageShouldFill
-                                    ? AnyView(
-                                        baseImage
-                                            .scaledToFill()
-                                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                                            .clipped()
+                        if let crop = FrameLayout.normalizedCrop(crop) {
+                            CroppedAsyncImage(
+                                url: url,
+                                crop: crop,
+                                aspectRatio: aspectRatio,
+                                imageShouldFill: imageShouldFill,
+                                cornerRadius: cornerRadius,
+                                placeholder: placeholder
+                            )
+                        } else {
+                            CachedAsyncImage(url: url) { phase in
+                                switch phase {
+                                case let .success(image):
+                                    let baseImage = image.resizable()
+                                    let renderedImage: AnyView = imageShouldFill
+                                        ? AnyView(
+                                            baseImage
+                                                .scaledToFill()
+                                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                                                .clipped()
+                                        )
+                                        : AnyView(
+                                            baseImage
+                                                .scaledToFit()
+                                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                                        )
+                                    renderedImage
+                                case .empty:
+                                    AnyView(
+                                        ShimmerLoadingPlaceholder(
+                                            cornerRadius: cornerRadius,
+                                            overlay: placeholder
+                                        )
                                     )
-                                    : AnyView(
-                                        baseImage
-                                            .scaledToFit()
-                                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                                    )
-                                renderedImage
-                            case .empty:
-                                AnyView(
-                                    ShimmerLoadingPlaceholder(
-                                        cornerRadius: cornerRadius,
-                                        overlay: placeholder
-                                    )
-                                )
-                            case .failure:
-                                placeholder
-                            @unknown default:
-                                placeholder
+                                case .failure:
+                                    placeholder
+                                @unknown default:
+                                    placeholder
+                                }
                             }
                         }
                     }
@@ -835,6 +869,265 @@ struct FrameLayout: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
             .modifier(MatchedGeometryModifier(useMatchedGeometry: useMatchedGeometry, heroID: heroID, namespace: namespace, isSource: isSource))
+        }
+    }
+
+    private struct CroppedAsyncImage: View {
+        let url: URL
+        let crop: String
+        let aspectRatio: CGFloat
+        let imageShouldFill: Bool
+        let cornerRadius: CGFloat
+        let placeholder: AnyView
+
+        @State private var displayImage: UIImage?
+        @State private var didFail: Bool = false
+
+        var body: some View {
+            Group {
+                if let displayImage {
+                    let baseImage = Image(uiImage: displayImage).resizable()
+                    if imageShouldFill {
+                        baseImage
+                            .scaledToFill()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                            .clipped()
+                    } else {
+                        baseImage
+                            .scaledToFit()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                    }
+                } else if didFail {
+                    placeholder
+                } else {
+                    ShimmerLoadingPlaceholder(
+                        cornerRadius: cornerRadius,
+                        overlay: placeholder
+                    )
+                }
+            }
+            .task(id: taskIdentifier) {
+                await loadImage()
+            }
+        }
+
+        private var taskIdentifier: String {
+            "\(url.absoluteString)-\(crop)"
+        }
+
+        private func loadImage() async {
+            guard let image = await CroppedImageLoader.loadImage(
+                url: url,
+                crop: crop,
+                aspectRatio: aspectRatio
+            ) else {
+                await MainActor.run {
+                    displayImage = nil
+                    didFail = true
+                }
+                return
+            }
+            await MainActor.run {
+                displayImage = image
+                didFail = false
+            }
+        }
+    }
+
+    private enum CroppedImageLoader {
+        static func loadImage(url: URL, crop: String, aspectRatio: CGFloat) async -> UIImage? {
+            guard let image = await ImageCache.shared.image(for: url) else { return nil }
+            let transformedCrop = parseTransformCrop(
+                crop,
+                imageSize: image.size,
+                frameAspectRatio: aspectRatio
+            )
+            if let transformedCrop {
+                return cropImage(image, using: transformedCrop) ?? image
+            }
+            return cropImage(image, using: parseCrop(crop)) ?? image
+        }
+
+        private static func cropImage(_ image: UIImage, using crop: ReferenceImageCrop?) -> UIImage? {
+            guard let crop, let cgImage = image.cgImage else { return nil }
+            let imageWidth = CGFloat(cgImage.width)
+            let imageHeight = CGFloat(cgImage.height)
+
+            var rect = crop.rect(in: CGSize(width: imageWidth, height: imageHeight))
+            rect = rect.intersection(CGRect(x: 0, y: 0, width: imageWidth, height: imageHeight))
+            guard rect.width > 1, rect.height > 1 else { return nil }
+
+            guard let cropped = cgImage.cropping(to: rect.integral) else { return nil }
+            return UIImage(cgImage: cropped, scale: image.scale, orientation: image.imageOrientation)
+        }
+
+        private static func parseCrop(_ value: String?) -> ReferenceImageCrop? {
+            guard let value, !value.isEmpty else { return nil }
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return nil }
+
+            if let data = trimmed.data(using: .utf8),
+               let json = try? JSONSerialization.jsonObject(with: data) {
+                if let dict = json as? [String: Any] {
+                    let x = number(from: dict["x"])
+                        ?? number(from: dict["left"])
+                        ?? number(from: dict["x1"])
+                    let y = number(from: dict["y"])
+                        ?? number(from: dict["top"])
+                        ?? number(from: dict["y1"])
+                    let right = number(from: dict["right"]) ?? number(from: dict["x2"])
+                    let bottom = number(from: dict["bottom"]) ?? number(from: dict["y2"])
+                    var width = number(from: dict["width"]) ?? number(from: dict["w"])
+                    var height = number(from: dict["height"]) ?? number(from: dict["h"])
+                    if width == nil, let right, let x {
+                        width = right - x
+                    }
+                    if height == nil, let bottom, let y {
+                        height = bottom - y
+                    }
+                    if let x, let y, let width, let height {
+                        return ReferenceImageCrop(x: x, y: y, width: width, height: height)
+                    }
+                } else if let array = json as? [Any], array.count >= 4 {
+                    let values = array.compactMap { number(from: $0) }
+                    if values.count >= 4 {
+                        return ReferenceImageCrop(x: values[0], y: values[1], width: values[2], height: values[3])
+                    }
+                }
+            }
+
+            let separators = CharacterSet(charactersIn: ",|:")
+            let parts = trimmed.components(separatedBy: separators).compactMap { Double($0.trimmingCharacters(in: .whitespacesAndNewlines)) }
+            if parts.count >= 4 {
+                return ReferenceImageCrop(x: parts[0], y: parts[1], width: parts[2], height: parts[3])
+            }
+
+            return nil
+        }
+
+        private static func parseTransformCrop(
+            _ value: String?,
+            imageSize: CGSize,
+            frameAspectRatio: CGFloat
+        ) -> ReferenceImageCrop? {
+            guard let value, !value.isEmpty else { return nil }
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return nil }
+
+            let pattern = #"translate\(([^,]+),\s*([^)]+)\)\s*scale\(([^)]+)\)"#
+            guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+            let range = NSRange(trimmed.startIndex..<trimmed.endIndex, in: trimmed)
+            guard let match = regex.firstMatch(in: trimmed, range: range),
+                  match.numberOfRanges == 4,
+                  let translateXRange = Range(match.range(at: 1), in: trimmed),
+                  let translateYRange = Range(match.range(at: 2), in: trimmed),
+                  let scaleRange = Range(match.range(at: 3), in: trimmed) else {
+                return nil
+            }
+
+            let translateXText = String(trimmed[translateXRange])
+            let translateYText = String(trimmed[translateYRange])
+            let scaleText = String(trimmed[scaleRange])
+
+            guard let translateXPercent = parsePercent(translateXText),
+                  let translateYPercent = parsePercent(translateYText),
+                  let scaleValue = Double(scaleText.trimmingCharacters(in: .whitespacesAndNewlines)),
+                  scaleValue > 0,
+                  frameAspectRatio > 0 else {
+                return nil
+            }
+
+            let imageWidth = max(imageSize.width, 1)
+            let imageHeight = max(imageSize.height, 1)
+            let frameWidth = frameAspectRatio
+            let frameHeight: CGFloat = 1
+
+            let fillScale = max(frameWidth / imageWidth, frameHeight / imageHeight)
+            let totalScale = fillScale * CGFloat(scaleValue)
+
+            let scaledImageWidth = imageWidth * totalScale
+            let scaledImageHeight = imageHeight * totalScale
+
+            let translateX = CGFloat(translateXPercent) * frameWidth
+            let translateY = CGFloat(translateYPercent) * frameHeight
+
+            let frameLeft = -frameWidth / 2
+            let frameTop = -frameHeight / 2
+            let imageLeft = translateX - scaledImageWidth / 2
+            let imageTop = translateY - scaledImageHeight / 2
+
+            let cropXScaled = frameLeft - imageLeft
+            let cropYScaled = frameTop - imageTop
+            let cropWidthScaled = frameWidth
+            let cropHeightScaled = frameHeight
+
+            let cropX = cropXScaled / totalScale
+            let cropY = cropYScaled / totalScale
+            let cropWidth = cropWidthScaled / totalScale
+            let cropHeight = cropHeightScaled / totalScale
+
+            return ReferenceImageCrop(x: cropX, y: cropY, width: cropWidth, height: cropHeight)
+        }
+
+        private static func parsePercent(_ value: String) -> Double? {
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.hasSuffix("%") {
+                let percentValue = trimmed.dropLast().trimmingCharacters(in: .whitespacesAndNewlines)
+                guard let value = Double(percentValue) else { return nil }
+                return value / 100
+            }
+            guard let value = Double(trimmed) else { return nil }
+            return value / 100
+        }
+
+        private static func number(from value: Any?) -> CGFloat? {
+            switch value {
+            case let number as NSNumber:
+                return CGFloat(truncating: number)
+            case let string as String:
+                guard let value = Double(string.trimmingCharacters(in: .whitespacesAndNewlines)) else {
+                    return nil
+                }
+                return CGFloat(value)
+            default:
+                return nil
+            }
+        }
+    }
+
+    private struct ReferenceImageCrop {
+        let x: CGFloat
+        let y: CGFloat
+        let width: CGFloat
+        let height: CGFloat
+
+        func rect(in size: CGSize) -> CGRect {
+            let imageWidth = max(size.width, 1)
+            let imageHeight = max(size.height, 1)
+
+            var cropX = x
+            var cropY = y
+            var cropWidth = width
+            var cropHeight = height
+
+            if cropWidth <= 1, cropHeight <= 1 {
+                cropX *= imageWidth
+                cropY *= imageHeight
+                cropWidth *= imageWidth
+                cropHeight *= imageHeight
+            } else if cropWidth <= 100, cropHeight <= 100 {
+                cropX = cropX / 100 * imageWidth
+                cropY = cropY / 100 * imageHeight
+                cropWidth = cropWidth / 100 * imageWidth
+                cropHeight = cropHeight / 100 * imageHeight
+            }
+
+            cropWidth = max(1, min(cropWidth, imageWidth))
+            cropHeight = max(1, min(cropHeight, imageHeight))
+            cropX = max(0, min(cropX, imageWidth - cropWidth))
+            cropY = max(0, min(cropY, imageHeight - cropHeight))
+
+            return CGRect(x: cropX, y: cropY, width: cropWidth, height: cropHeight)
         }
     }
 
