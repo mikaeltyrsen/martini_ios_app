@@ -1470,7 +1470,6 @@ struct FrameView: View {
                                         : .easeInOut(duration: 0.12).repeatForever(autoreverses: true),
                                         value: reorderWiggle
                                     )
-                                    .opacity(activeReorderBoard?.id == board.id ? 0.6 : 1)
                                     .onDrop(
                                         of: [UTType.text],
                                         delegate: BoardReorderDropDelegate(
@@ -2794,7 +2793,6 @@ private struct StackedAssetScroller<ContextMenuContent: View>: View {
                             } : nil
                         )
                         let styledCardView = cardView
-                            .opacity(activeReorderBoard?.id == asset.id ? 0.6 : 1)
                             .frame(maxWidth: .infinity, alignment: .center)
                             .containerRelativeFrame(.horizontal, alignment: .center)
                             .id(asset.id)

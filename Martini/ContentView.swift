@@ -1878,7 +1878,7 @@ struct MainView: View {
                     orderBy: "story",
                     orderedFrames: orderPayload
                 )
-                let updatedOrders = Dictionary(
+                let updatedOrders: [String: String] = Dictionary(
                     uniqueKeysWithValues: orderPayload.compactMap { payload in
                         guard let frameId = payload["frameId"],
                               let order = payload["order"]
@@ -3456,7 +3456,6 @@ struct CreativeGridSection: View {
                     onDrop: onReorderDrop
                 )
             )
-            .opacity(activeReorderFrameId == frame.id ? 0.6 : 1)
             .id(frame.id)
             .allowsHitTesting(!isPinching && !updatingFrameIds.contains(frame.id))
         } else {
