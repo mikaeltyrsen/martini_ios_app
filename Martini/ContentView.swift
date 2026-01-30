@@ -1858,29 +1858,7 @@ struct MainView: View {
             return
         }
 
-        let priorFrames = reorderPriorFrames.isEmpty
-            ? orderedFramesForCreative(creativeId)
-            : reorderPriorFrames
-        let insertContext = FrameInsertionContext(
-            insertedFrameId: movedFrameId,
-            sourceFrameId: targetFrameId,
-            position: position == .after ? .after : .before
-        )
-
-        let orderPayload = buildOrderedFramePayload(
-            frames: frames,
-            orderBy: .story,
-            priorFrames: priorFrames,
-            insertContext: insertContext
-        )
-        let updatedOrders: [String: String] = Dictionary(
-            uniqueKeysWithValues: orderPayload.compactMap { payload in
-                guard let frameId = payload["frameId"],
-                      let order = payload["order"]
-                else { return nil }
-                return (frameId, order)
-            }
-        )
+        let updatedOrders = reorderStoryOrders(for: frames)
         let updatedReorderFrames = reorderFrames.map { frame in
             guard let order = updatedOrders[frame.id] else { return frame }
             return frame.updatingFrameOrder(order)
@@ -2263,6 +2241,28 @@ private extension MainView {
         return zip(frames, orders).map { frame, order in
             ["frameId": frame.id, "order": order]
         }
+    }
+
+    func reorderStoryOrders(for frames: [Frame]) -> [String: String] {
+        var result: [String: String] = [:]
+        let tokens = frames.map { parseStoryOrder($0.frameOrder, fallbackBase: 1) }
+        var nextBase = 1
+
+        for (index, frame) in frames.enumerated() {
+            let suffix = tokens[index].suffix
+            result[frame.id] = "\(nextBase)\(suffix)"
+
+            if suffix.isEmpty {
+                nextBase += 1
+            } else {
+                let nextSuffixIsEmpty = index + 1 >= tokens.count || tokens[index + 1].suffix.isEmpty
+                if nextSuffixIsEmpty {
+                    nextBase += 1
+                }
+            }
+        }
+
+        return result
     }
 
     func generateStoryOrders(
