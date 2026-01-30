@@ -313,6 +313,7 @@ struct MainView: View {
     @State private var reorderPriorFrames: [Frame] = []
     @State private var reorderWiggle = false
     @State private var hasPendingFrameReorder = false
+    @State private var needsFrameOrderRefresh = false
     @State private var scriptNavigationTarget: ScriptNavigationTarget?
 
     enum ViewMode {
@@ -1820,8 +1821,25 @@ struct MainView: View {
 
     private func beginFrameOrdering(for frame: Frame) {
         guard frameSortMode == .story else { return }
-        let frames = orderedFramesForCreative(frame.creativeId)
-        reorderCreativeId = frame.creativeId
+        let creativeId = frame.creativeId
+
+        guard needsFrameOrderRefresh else {
+            startFrameOrdering(for: creativeId)
+            return
+        }
+
+        Task {
+            await refreshFrames()
+            await MainActor.run {
+                needsFrameOrderRefresh = false
+                startFrameOrdering(for: creativeId)
+            }
+        }
+    }
+
+    private func startFrameOrdering(for creativeId: String) {
+        let frames = orderedFramesForCreative(creativeId)
+        reorderCreativeId = creativeId
         reorderFrames = frames
         reorderPriorFrames = frames
         activeReorderFrameId = nil
@@ -2510,6 +2528,10 @@ private extension MainView {
     }
 
     private func handleFrameUpdateEvent(_ event: FrameUpdateEvent) {
+        if case .websocket(let eventName) = event.context,
+           eventName == "frame-order-updated" {
+            needsFrameOrderRefresh = true
+        }
         guard shouldScrollToHereFrame(for: event) else { return }
         scrollFrameIntoGridIfAvailable(frameId: event.frameId)
     }
