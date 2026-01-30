@@ -1858,7 +1858,7 @@ struct MainView: View {
             return
         }
 
-        let updatedOrders = reorderStoryOrders(for: frames)
+        let updatedOrders = reorderStoryOrders(for: frames, movedFrameId: movedFrameId)
         let updatedReorderFrames = reorderFrames.map { frame in
             guard let order = updatedOrders[frame.id] else { return frame }
             return frame.updatingFrameOrder(order)
@@ -2243,26 +2243,44 @@ private extension MainView {
         }
     }
 
-    func reorderStoryOrders(for frames: [Frame]) -> [String: String] {
-        var result: [String: String] = [:]
-        let tokens = frames.map { parseStoryOrder($0.frameOrder, fallbackBase: 1) }
-        var nextBase = 1
+    func reorderStoryOrders(for frames: [Frame], movedFrameId: String?) -> [String: String] {
+        var tokens: [StoryOrderToken] = []
+        var lastBase = 0
 
-        for (index, frame) in frames.enumerated() {
-            let suffix = tokens[index].suffix
-            result[frame.id] = "\(nextBase)\(suffix)"
+        for frame in frames {
+            let parsed = parseStoryOrder(frame.frameOrder, fallbackBase: lastBase + 1)
+            tokens.append(parsed)
+            lastBase = max(lastBase, parsed.base)
+        }
 
-            if suffix.isEmpty {
-                nextBase += 1
-            } else {
-                let nextSuffixIsEmpty = index + 1 >= tokens.count || tokens[index + 1].suffix.isEmpty
-                if nextSuffixIsEmpty {
-                    nextBase += 1
+        var effectiveBases = tokens.map(\.base)
+        if let movedFrameId,
+           let movedIndex = frames.firstIndex(where: { $0.id == movedFrameId }) {
+            let prevIndex = movedIndex - 1
+            let nextIndex = movedIndex + 1
+
+            if prevIndex >= 0,
+               nextIndex < frames.count {
+                let prevBase = tokens[prevIndex].base
+                let nextBase = tokens[nextIndex].base
+                if prevBase == nextBase {
+                    effectiveBases[movedIndex] = prevBase
                 }
             }
         }
 
-        return result
+        var baseAssignments: [String: Int] = [:]
+        var nextBase = 1
+
+        for index in frames.indices {
+            if index > 0, effectiveBases[index] != effectiveBases[index - 1] {
+                nextBase += 1
+            }
+            baseAssignments[frames[index].id] = nextBase
+        }
+
+        let orders = assignStoryOrders(for: frames, baseAssignments: baseAssignments)
+        return Dictionary(uniqueKeysWithValues: zip(frames.map(\.id), orders))
     }
 
     func generateStoryOrders(
