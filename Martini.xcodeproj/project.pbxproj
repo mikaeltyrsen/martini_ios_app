@@ -20,7 +20,6 @@
 		0730F4082F0B6800000B598F /* RichTextEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4062F0B6800000B598F /* RichTextEditor.swift */; };
 		0730F40A2F0B8736000B598F /* RichTextDisplayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4092F0B8736000B598F /* RichTextDisplayView.swift */; };
 		0730F40C2F0C6401000B598F /* FrameLineOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F40B2F0C6401000B598F /* FrameLineOverlayView.swift */; };
-		0F6A7C2B3D4E5F6789012345 /* MartiniLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F6A7C2A3D4E5F6789012345 /* MartiniLoader.swift */; };
 		0730F4112F0C6F7D000B598F /* CachedVideoPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F4102F0C6F7D000B598F /* CachedVideoPlayerView.swift */; };
 		0730F4122F0C6F7D000B598F /* BoardMetadataSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F40F2F0C6F7D000B598F /* BoardMetadataSheet.swift */; };
 		0730F41C2F0CE88E000B598F /* CreativeAspectRatioConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F41B2F0CE88E000B598F /* CreativeAspectRatioConfig.swift */; };
@@ -44,6 +43,7 @@
 		07D1C1052FF0BBBB00000002 /* ScheduleCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07D1C1042FF0BBBB00000002 /* ScheduleCache.swift */; };
 		07D1C1072FF0BBBB00000003 /* PhotoLibraryHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0730F3F62F0400F0000B598F /* PhotoLibraryHelper.swift */; };
 		07E1A0033B7A111100000001 /* ConnectionMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07E1A0023B7A111100000001 /* ConnectionMonitor.swift */; };
+		07E5F2912F2BD18B00B36FB4 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07E5F2902F2BD18B00B36FB4 /* AppEnvironment.swift */; };
 		07F4E0022FF0AAAA00000001 /* RealtimeService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07F4E0012FF0AAAA00000001 /* RealtimeService.swift */; };
 		07F4E0052FF0AAAA00000002 /* WebsocketCalls.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07F4E0032FF0AAAA00000002 /* WebsocketCalls.swift */; };
 		07FFA2442F0D931A006BEAF4 /* MartiniAlertModal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07FFA2432F0D931A006BEAF4 /* MartiniAlertModal.swift */; };
@@ -61,6 +61,7 @@
 		07FFA2802F1304F6006BEAF4 /* MarkupOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07FFA27F2F1304F6006BEAF4 /* MarkupOverlayView.swift */; };
 		08D1C0A32FFF111100000001 /* NearbySignInService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08D1C0A22FFF111100000001 /* NearbySignInService.swift */; };
 		0A95C54C437E5685FC7524B3 /* MartiniLiveActivityModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2CD91F637EC3098B3B6F535 /* MartiniLiveActivityModels.swift */; };
+		0F6A7C2B3D4E5F6789012345 /* MartiniLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F6A7C2A3D4E5F6789012345 /* MartiniLoader.swift */; };
 		13952330E1EF424FADD563ED /* ScoutCamera/ScoutCameraLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F825837CC9D4A3C884F0F59 /* ScoutCamera/ScoutCameraLayout.swift */; };
 		1F7A3C5E4D1B4C3A8B9C0D1E /* ScoutCamera/ScoutCameraSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F7A3C5D4D1B4C3A8B9C0D1E /* ScoutCamera/ScoutCameraSettingsView.swift */; };
 		212769B0E99B412F8D9C27E8 /* ScoutCamera/ScoutCameraViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30240C00983A4B208F56B246 /* ScoutCamera/ScoutCameraViewModel.swift */; };
@@ -124,7 +125,6 @@
 		0730F4062F0B6800000B598F /* RichTextEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichTextEditor.swift; sourceTree = "<group>"; };
 		0730F4092F0B8736000B598F /* RichTextDisplayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichTextDisplayView.swift; sourceTree = "<group>"; };
 		0730F40B2F0C6401000B598F /* FrameLineOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameLineOverlayView.swift; sourceTree = "<group>"; };
-		0F6A7C2A3D4E5F6789012345 /* MartiniLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MartiniLoader.swift; sourceTree = "<group>"; };
 		0730F40F2F0C6F7D000B598F /* BoardMetadataSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoardMetadataSheet.swift; sourceTree = "<group>"; };
 		0730F4102F0C6F7D000B598F /* CachedVideoPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedVideoPlayerView.swift; sourceTree = "<group>"; };
 		0730F41B2F0CE88E000B598F /* CreativeAspectRatioConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreativeAspectRatioConfig.swift; sourceTree = "<group>"; };
@@ -149,6 +149,7 @@
 		07D1C1022FF0BBBB00000001 /* ImageCache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ImageCache.swift; sourceTree = "<group>"; };
 		07D1C1042FF0BBBB00000002 /* ScheduleCache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScheduleCache.swift; sourceTree = "<group>"; };
 		07E1A0023B7A111100000001 /* ConnectionMonitor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ConnectionMonitor.swift; sourceTree = "<group>"; };
+		07E5F2902F2BD18B00B36FB4 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
 		07F4E0012FF0AAAA00000001 /* RealtimeService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RealtimeService.swift; sourceTree = "<group>"; };
 		07F4E0032FF0AAAA00000002 /* WebsocketCalls.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebsocketCalls.swift; sourceTree = "<group>"; };
 		07FFA2432F0D931A006BEAF4 /* MartiniAlertModal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MartiniAlertModal.swift; sourceTree = "<group>"; };
@@ -165,6 +166,7 @@
 		07FFA27C2F129F45006BEAF4 /* ClipFilesViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipFilesViews.swift; sourceTree = "<group>"; };
 		07FFA27F2F1304F6006BEAF4 /* MarkupOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkupOverlayView.swift; sourceTree = "<group>"; };
 		08D1C0A22FFF111100000001 /* NearbySignInService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbySignInService.swift; sourceTree = "<group>"; };
+		0F6A7C2A3D4E5F6789012345 /* MartiniLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MartiniLoader.swift; sourceTree = "<group>"; };
 		107AD8B89F4A441698E034E1 /* ScoutCamera/Processing/PhotoProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/Processing/PhotoProcessor.swift; sourceTree = "<group>"; };
 		10F9CB29EE71481EB424475E /* ScoutCamera/FOV/FOVMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoutCamera/FOV/FOVMath.swift; sourceTree = "<group>"; };
 		19F1DEF3A6FA25EADC0FCA2A /* MartiniLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MartiniLiveActivityWidget.swift; sourceTree = "<group>"; };
@@ -258,6 +260,7 @@
 		07A6A6842EC9A272002C8EB9 /* Martini */ = {
 			isa = PBXGroup;
 			children = (
+				07E5F2902F2BD18B00B36FB4 /* AppEnvironment.swift */,
 				0746C3DE2F2056C500898C7A /* PushNotificationManager.swift */,
 				0733190E2F17ED1800D6FE10 /* UIControlConfig.swift */,
 				AE7ABC696B04ABA7B60E1719 /* LiveActivityManager.swift */,
@@ -510,6 +513,7 @@
 				13952330E1EF424FADD563ED /* ScoutCamera/ScoutCameraLayout.swift in Sources */,
 				0730F40C2F0C6401000B598F /* FrameLineOverlayView.swift in Sources */,
 				1F7A3C5E4D1B4C3A8B9C0D1E /* ScoutCamera/ScoutCameraSettingsView.swift in Sources */,
+				07E5F2912F2BD18B00B36FB4 /* AppEnvironment.swift in Sources */,
 				A1B2C3D4E5F60718293A4B5C /* ScoutCamera/ScoutCameraPhotoLayout.swift in Sources */,
 				B9D8650A752F4255AD620B9B /* ScoutCamera/ScoutCameraReviewView.swift in Sources */,
 				212769B0E99B412F8D9C27E8 /* ScoutCamera/ScoutCameraViewModel.swift in Sources */,
@@ -707,7 +711,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.01;
 				PRODUCT_BUNDLE_IDENTIFIER = com.martini.martinilive;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -744,7 +748,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.01;
 				PRODUCT_BUNDLE_IDENTIFIER = com.martini.martinilive;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
