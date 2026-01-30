@@ -363,10 +363,6 @@ struct FrameView: View {
             .onChange(of: reorderBoards) { _, newOrder in
                 guard isReorderingBoards else { return }
                 assetStack = reorderedAssetStack(from: assetStack, boardOrder: newOrder)
-                let newOrderIds = newOrder.map(\.id)
-                guard newOrderIds != lastSavedBoardOrder else { return }
-                lastSavedBoardOrder = newOrderIds
-                saveBoardReorder()
             }
     }
 
@@ -1483,20 +1479,6 @@ struct FrameView: View {
                                 }
 
                                 Button {
-                                    cancelBoardReorder()
-                                } label: {
-                                    Image(systemName: "xmark")
-                                        .font(.system(size: 14, weight: .semibold))
-                                        .foregroundStyle(.primary)
-                                        .padding(10)
-                                        .background(
-                                            Capsule()
-                                                .fill(Color.secondary.opacity(0.15))
-                                        )
-                                }
-                                .buttonStyle(.plain)
-
-                                Button {
                                     commitBoardReorder()
                                 } label: {
                                     Image(systemName: "checkmark")
@@ -1603,6 +1585,24 @@ struct FrameView: View {
             }
             // Give GeometryReader a deterministic height (match your tab row height)
             .frame(height: tabRowHeight)
+        }
+        .overlay(alignment: .topLeading) {
+            if isReorderingBoards {
+                Button("Cancel") {
+                    cancelBoardReorder()
+                }
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(.primary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(
+                    Capsule()
+                        .fill(Color.secondary.opacity(0.15))
+                )
+                .buttonStyle(.plain)
+                .padding(.leading, 12)
+                .padding(.top, 6)
+            }
         }
     }
 
