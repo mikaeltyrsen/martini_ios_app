@@ -312,6 +312,7 @@ struct MainView: View {
     @State private var activeReorderFrameId: String? = nil
     @State private var reorderPriorFrames: [Frame] = []
     @State private var reorderWiggle = false
+    @State private var hasPendingFrameReorder = false
     @State private var scriptNavigationTarget: ScriptNavigationTarget?
 
     enum ViewMode {
@@ -1035,7 +1036,7 @@ struct MainView: View {
         ToolbarItemGroup(placement: .navigationBarTrailing) {
             if isReorderingFrames {
                 Button("Done") {
-                    cancelFrameOrdering()
+                    commitFrameOrdering()
                 }
                 .accessibilityLabel("Finish reordering")
             } else if shouldShowScheduleButton {
@@ -1825,6 +1826,7 @@ struct MainView: View {
         reorderPriorFrames = frames
         activeReorderFrameId = nil
         isReorderingFrames = true
+        hasPendingFrameReorder = false
         withAnimation(.easeInOut(duration: 0.12).repeatForever(autoreverses: true)) {
             reorderWiggle.toggle()
         }
@@ -1838,6 +1840,7 @@ struct MainView: View {
         activeReorderFrameId = nil
         isReorderingFrames = false
         reorderWiggle = false
+        hasPendingFrameReorder = false
     }
 
     private func submitFrameOrderingUpdate(
@@ -1850,8 +1853,8 @@ struct MainView: View {
         let creativeId = reorderCreativeId
         guard !frames.isEmpty else { return }
 
-        guard let projectId = authService.projectId, let creativeId else {
-            dataError = "Missing project ID"
+        guard let creativeId else {
+            dataError = "Missing creative ID"
             return
         }
 
@@ -1864,48 +1867,79 @@ struct MainView: View {
             position: position == .after ? .after : .before
         )
 
+        let orderPayload = buildOrderedFramePayload(
+            frames: frames,
+            orderBy: .story,
+            priorFrames: priorFrames,
+            insertContext: insertContext
+        )
+        let updatedOrders: [String: String] = Dictionary(
+            uniqueKeysWithValues: orderPayload.compactMap { payload in
+                guard let frameId = payload["frameId"],
+                      let order = payload["order"]
+                else { return nil }
+                return (frameId, order)
+            }
+        )
+        let updatedReorderFrames = reorderFrames.map { frame in
+            guard let order = updatedOrders[frame.id] else { return frame }
+            return frame.updatingFrameOrder(order)
+        }
+        reorderFrames = updatedReorderFrames
+        reorderPriorFrames = updatedReorderFrames
+        authService.frames = authService.frames.map { frame in
+            guard frame.creativeId == creativeId,
+                  let order = updatedOrders[frame.id]
+            else { return frame }
+            return frame.updatingFrameOrder(order)
+        }
+        hasPendingFrameReorder = true
+    }
+
+    private func commitFrameOrdering() {
+        guard isReorderingFrames else { return }
+        let frames = reorderFrames
+        let creativeId = reorderCreativeId
+        let priorFrames = reorderPriorFrames
+        let shouldSubmit = hasPendingFrameReorder
+
+        guard shouldSubmit, !frames.isEmpty else {
+            cancelFrameOrdering()
+            return
+        }
+        guard let projectId = authService.projectId, let creativeId else {
+            dataError = "Missing project ID"
+            return
+        }
+
+        let payload = buildPendingFrameOrderPayload(frames: frames, priorFrames: priorFrames)
+        cancelFrameOrdering()
+
         Task {
             do {
-                let orderPayload = buildOrderedFramePayload(
-                    frames: frames,
-                    orderBy: .story,
-                    priorFrames: priorFrames,
-                    insertContext: insertContext
-                )
                 try await authService.updateFrameOrder(
                     shootId: projectId,
                     creativeId: creativeId,
                     orderBy: "story",
-                    orderedFrames: orderPayload
+                    orderedFrames: payload
                 )
-                let updatedOrders: [String: String] = Dictionary(
-                    uniqueKeysWithValues: orderPayload.compactMap { payload in
-                        guard let frameId = payload["frameId"],
-                              let order = payload["order"]
-                        else { return nil }
-                        return (frameId, order)
-                    }
-                )
-                await MainActor.run {
-                    let updatedReorderFrames = reorderFrames.map { frame in
-                        guard let order = updatedOrders[frame.id] else { return frame }
-                        return frame.updatingFrameOrder(order)
-                    }
-                    reorderFrames = updatedReorderFrames
-                    reorderPriorFrames = updatedReorderFrames
-                    authService.frames = authService.frames.map { frame in
-                        guard frame.creativeId == creativeId,
-                              let order = updatedOrders[frame.id]
-                        else { return frame }
-                        return frame.updatingFrameOrder(order)
-                    }
-                }
             } catch {
                 await MainActor.run {
                     dataError = error.localizedDescription
                 }
             }
         }
+    }
+
+    private func buildPendingFrameOrderPayload(frames: [Frame], priorFrames: [Frame]) -> [[String: String]] {
+        let payload = frames.map { frame in
+            ["frameId": frame.id, "order": frame.frameOrder ?? ""]
+        }
+        let hasMissingOrder = payload.contains { ($0["order"] ?? "").isEmpty }
+        if hasMissingOrder {
+            return buildOrderedFramePayload(frames: frames, orderBy: .story, priorFrames: priorFrames)
+        }
+        return payload
     }
 
     private func synchronizeCreativeSelection() {
