@@ -111,6 +111,7 @@ struct FrameLayout: View {
     var metadataTapAction: (() -> Void)? = nil
     var showTextBlock: Bool = true
     var showCreativeTitleOverlay: Bool = false
+    var frameNumberOverride: String? = nil
     var cornerRadius: CGFloat = 8
     var enablesFullScreen: Bool = true
     var doneCrossLineWidthOverride: Double? = nil
@@ -211,7 +212,7 @@ struct FrameLayout: View {
                 creativeTitleOverlay(creativeTitle)
             }
 
-            if showFrameNumberOverlay, frame.displayOrder != nil {
+            if showFrameNumberOverlay, resolvedFrameNumber != nil {
                 GeometryReader { geo in
                     let diameter = max(18, geo.size.width * 0.08) // 8% of width with a minimum
 
@@ -559,13 +560,21 @@ struct FrameLayout: View {
         return url.absoluteString.lowercased().contains(".m3u8")
     }
 
+    private var resolvedFrameNumber: String? {
+        if let override = frameNumberOverride?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !override.isEmpty {
+            return override
+        }
+        return frame.displayOrder
+    }
+
     private var frameNumberLabel: String? {
-        guard let displayOrder = frame.displayOrder else { return nil }
+        guard let displayOrder = resolvedFrameNumber else { return nil }
         return "Frame #\(displayOrder)"
     }
 
     private var frameNumberText: String {
-        frame.displayOrder ?? "--"
+        resolvedFrameNumber ?? "--"
     }
 
     private var frameStartTimeText: String? { frame.formattedStartTime }

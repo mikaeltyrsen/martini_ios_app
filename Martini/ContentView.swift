@@ -3372,6 +3372,7 @@ struct CreativeGridSection: View {
     @ViewBuilder
     private func frameCell(for frame: Frame) -> some View {
         if isReorderingFrames {
+            let frameNumberOverride = reorderFrameNumberOverride(for: frame)
             GridFrameCell(
                 frame: frame,
                 primaryAsset: primaryAsset(frame),
@@ -3381,6 +3382,7 @@ struct CreativeGridSection: View {
                 showTags: showTags,
                 showFrameTimeOverlay: showFrameTimeOverlay,
                 showCreativeTitleOverlay: showCreativeTitleOverlay,
+                frameNumberOverride: frameNumberOverride,
                 fontScale: fontScale,
                 cornerRadius: cornerRadius,
                 boardSizing: boardSizing,
@@ -3444,6 +3446,11 @@ struct CreativeGridSection: View {
         }
     }
 
+    private func reorderFrameNumberOverride(for frame: Frame) -> String? {
+        guard let index = reorderFrames.firstIndex(where: { $0.id == frame.id }) else { return nil }
+        return String(index + 1)
+    }
+
     @ViewBuilder
     private func frameContextMenu(for frame: Frame) -> some View {
         Section {
@@ -3504,6 +3511,7 @@ struct GridFrameCell: View {
     var showTags: Bool = false
     var showFrameTimeOverlay: Bool = true
     var showCreativeTitleOverlay: Bool = false
+    var frameNumberOverride: String? = nil
     var fontScale: CGFloat
     var cornerRadius: CGFloat
     var boardSizing: BoardSizingConfiguration
@@ -3522,6 +3530,7 @@ struct GridFrameCell: View {
                 showFrameTimeOverlay: showFrameTimeOverlay,
                 showTextBlock: false,
                 showCreativeTitleOverlay: showCreativeTitleOverlay,
+                frameNumberOverride: frameNumberOverride,
                 cornerRadius: effectiveCornerRadius,
                 enablesFullScreen: false,
                 doneCrossLineWidthOverride: forceThinCrosses ? 1 : nil,
