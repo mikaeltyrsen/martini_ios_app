@@ -2783,12 +2783,12 @@ private struct StackedAssetScroller<ContextMenuContent: View>: View {
                         )
                         let styledCardView = cardView
                             .opacity(activeReorderBoard?.id == asset.id ? 0.6 : 1)
-                            .contextMenu {
-                                contextMenuContent(asset)
-                            }
                             .frame(maxWidth: .infinity, alignment: .center)
                             .containerRelativeFrame(.horizontal, alignment: .center)
                             .id(asset.id)
+                        let contextMenuCardView = styledCardView.contextMenu {
+                            contextMenuContent(asset)
+                        }
                         if isReorderingBoards && isBoard {
                             if isDraggable {
                                 styledCardView
@@ -2821,7 +2821,7 @@ private struct StackedAssetScroller<ContextMenuContent: View>: View {
                                     )
                             }
                         } else {
-                            styledCardView
+                            contextMenuCardView
                         }
                     }
 
