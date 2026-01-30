@@ -3524,6 +3524,9 @@ struct CreativeGridSection: View {
     }
 
     private func reorderFrameNumberOverride(for frame: Frame) -> String? {
+        if let displayOrder = frame.displayOrder, !displayOrder.isEmpty {
+            return displayOrder
+        }
         guard let index = reorderFrames.firstIndex(where: { $0.id == frame.id }) else { return nil }
         return String(index + 1)
     }
