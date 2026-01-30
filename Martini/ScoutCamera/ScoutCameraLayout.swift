@@ -1239,7 +1239,11 @@ struct ScoutCameraLayout: View {
         }
 
         private func loadImage() async {
-            guard let image = await ReferenceImageLoader.loadImage(url: url, crop: crop) else { return }
+            guard let image = await ReferenceImageLoader.loadImage(
+                url: url,
+                crop: crop,
+                aspectRatio: aspectRatio
+            ) else { return }
             let cropped = image
             await MainActor.run {
                 displayImage = cropped
@@ -1322,7 +1326,11 @@ struct ScoutCameraLayout: View {
         }
 
         private func loadImage() async {
-            guard let image = await ReferenceImageLoader.loadImage(url: url, crop: crop) else { return }
+            guard let image = await ReferenceImageLoader.loadImage(
+                url: url,
+                crop: crop,
+                aspectRatio: aspectRatio
+            ) else { return }
             await MainActor.run {
                 displayImage = image
                 imageAspectRatio = image.size.width / max(image.size.height, 1)
@@ -1350,8 +1358,16 @@ struct ScoutCameraLayout: View {
     }
 
     private enum ReferenceImageLoader {
-        static func loadImage(url: URL, crop: String?) async -> UIImage? {
+        static func loadImage(url: URL, crop: String?, aspectRatio: CGFloat?) async -> UIImage? {
             guard let image = await ImageCache.shared.image(for: url) else { return nil }
+            let transformedCrop = parseTransformCrop(
+                crop,
+                imageSize: image.size,
+                frameAspectRatio: aspectRatio ?? (image.size.width / max(image.size.height, 1))
+            )
+            if let transformedCrop {
+                return cropImage(image, using: transformedCrop) ?? image
+            }
             return cropImage(image, using: parseCrop(crop)) ?? image
         }
 
@@ -1410,6 +1426,81 @@ struct ScoutCameraLayout: View {
             }
 
             return nil
+        }
+
+        private static func parseTransformCrop(
+            _ value: String?,
+            imageSize: CGSize,
+            frameAspectRatio: CGFloat
+        ) -> ReferenceImageCrop? {
+            guard let value, !value.isEmpty else { return nil }
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return nil }
+
+            let pattern = #"translate\(([^,]+),\s*([^)]+)\)\s*scale\(([^)]+)\)"#
+            guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+            let range = NSRange(trimmed.startIndex..<trimmed.endIndex, in: trimmed)
+            guard let match = regex.firstMatch(in: trimmed, range: range),
+                  match.numberOfRanges == 4,
+                  let translateXRange = Range(match.range(at: 1), in: trimmed),
+                  let translateYRange = Range(match.range(at: 2), in: trimmed),
+                  let scaleRange = Range(match.range(at: 3), in: trimmed) else {
+                return nil
+            }
+
+            let translateXText = String(trimmed[translateXRange])
+            let translateYText = String(trimmed[translateYRange])
+            let scaleText = String(trimmed[scaleRange])
+
+            guard let translateXPercent = parsePercent(translateXText),
+                  let translateYPercent = parsePercent(translateYText),
+                  let scaleValue = Double(scaleText.trimmingCharacters(in: .whitespacesAndNewlines)),
+                  scaleValue > 0,
+                  frameAspectRatio > 0 else {
+                return nil
+            }
+
+            let imageWidth = max(imageSize.width, 1)
+            let imageHeight = max(imageSize.height, 1)
+            let frameWidth = frameAspectRatio
+            let frameHeight: CGFloat = 1
+
+            let fillScale = max(frameWidth / imageWidth, frameHeight / imageHeight)
+            let totalScale = fillScale * CGFloat(scaleValue)
+
+            let scaledImageWidth = imageWidth * totalScale
+            let scaledImageHeight = imageHeight * totalScale
+
+            let translateX = CGFloat(translateXPercent) * frameWidth
+            let translateY = CGFloat(translateYPercent) * frameHeight
+
+            let frameLeft = -frameWidth / 2
+            let frameTop = -frameHeight / 2
+            let imageLeft = translateX - scaledImageWidth / 2
+            let imageTop = translateY - scaledImageHeight / 2
+
+            let cropXScaled = frameLeft - imageLeft
+            let cropYScaled = frameTop - imageTop
+            let cropWidthScaled = frameWidth
+            let cropHeightScaled = frameHeight
+
+            let cropX = cropXScaled / totalScale
+            let cropY = cropYScaled / totalScale
+            let cropWidth = cropWidthScaled / totalScale
+            let cropHeight = cropHeightScaled / totalScale
+
+            return ReferenceImageCrop(x: cropX, y: cropY, width: cropWidth, height: cropHeight)
+        }
+
+        private static func parsePercent(_ value: String) -> Double? {
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.hasSuffix("%") {
+                let percentValue = trimmed.dropLast().trimmingCharacters(in: .whitespacesAndNewlines)
+                guard let value = Double(percentValue) else { return nil }
+                return value / 100
+            }
+            guard let value = Double(trimmed) else { return nil }
+            return value / 100
         }
 
         private static func number(from value: Any?) -> CGFloat? {
