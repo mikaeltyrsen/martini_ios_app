@@ -310,6 +310,7 @@ struct MainView: View {
     @State private var reorderCreativeId: String? = nil
     @State private var reorderFrames: [Frame] = []
     @State private var activeReorderFrameId: String? = nil
+    @State private var reorderPriorFrames: [Frame] = []
     @State private var reorderWiggle = false
     @State private var scriptNavigationTarget: ScriptNavigationTarget?
 
@@ -773,6 +774,10 @@ struct MainView: View {
                 Task {
                     await loadProjectFiles(force: false)
                 }
+            }
+            .onChange(of: activeReorderFrameId) { _, newValue in
+                guard newValue != nil else { return }
+                reorderPriorFrames = reorderFrames
             }
     }
 
@@ -1815,6 +1820,7 @@ struct MainView: View {
         guard frameSortMode == .story else { return }
         reorderCreativeId = frame.creativeId
         reorderFrames = frames
+        reorderPriorFrames = frames
         activeReorderFrameId = nil
         isReorderingFrames = true
         withAnimation(.easeInOut(duration: 0.12).repeatForever(autoreverses: true)) {
@@ -1825,13 +1831,18 @@ struct MainView: View {
     private func cancelFrameOrdering() {
         guard isReorderingFrames else { return }
         reorderFrames = []
+        reorderPriorFrames = []
         reorderCreativeId = nil
         activeReorderFrameId = nil
         isReorderingFrames = false
         reorderWiggle = false
     }
 
-    private func submitFrameOrderingUpdate() {
+    private func submitFrameOrderingUpdate(
+        movedFrameId: String,
+        targetFrameId: String,
+        position: FrameReorderPosition
+    ) {
         guard isReorderingFrames else { return }
         let frames = reorderFrames
         let creativeId = reorderCreativeId
@@ -1842,12 +1853,22 @@ struct MainView: View {
             return
         }
 
+        let priorFrames = reorderPriorFrames.isEmpty
+            ? orderedFramesForCreative(creativeId)
+            : reorderPriorFrames
+        let insertContext = FrameInsertionContext(
+            insertedFrameId: movedFrameId,
+            sourceFrameId: targetFrameId,
+            position: position == .after ? .after : .before
+        )
+
         Task {
             do {
                 let orderPayload = buildOrderedFramePayload(
                     frames: frames,
                     orderBy: .story,
-                    priorFrames: []
+                    priorFrames: priorFrames,
+                    insertContext: insertContext
                 )
                 try await authService.updateFrameOrder(
                     shootId: projectId,
@@ -3205,7 +3226,7 @@ struct CreativeGridSection: View {
     let primaryAsset: (Frame) -> FrameAssetItem?
     let onStatusSelected: (Frame, FrameStatus) -> Void
     let onReorderFrames: (Frame) -> Void
-    let onReorderDrop: () -> Void
+    let onReorderDrop: (String, String, FrameReorderPosition) -> Void
     let onInsertFrameBefore: (Frame) -> Void
     let onInsertFrameAfter: (Frame) -> Void
     let onDeleteFrame: (Frame) -> Void
@@ -3238,7 +3259,7 @@ struct CreativeGridSection: View {
         primaryAsset: @escaping (Frame) -> FrameAssetItem?,
         onStatusSelected: @escaping (Frame, FrameStatus) -> Void,
         onReorderFrames: @escaping (Frame) -> Void,
-        onReorderDrop: @escaping () -> Void,
+        onReorderDrop: @escaping (String, String, FrameReorderPosition) -> Void,
         onInsertFrameBefore: @escaping (Frame) -> Void,
         onInsertFrameAfter: @escaping (Frame) -> Void,
         onDeleteFrame: @escaping (Frame) -> Void,
@@ -3725,11 +3746,16 @@ struct GridFrameCell: View {
     }
 }
 
+private enum FrameReorderPosition {
+    case before
+    case after
+}
+
 private struct FrameReorderDropDelegate: DropDelegate {
     let item: Frame
     @Binding var frames: [Frame]
     @Binding var activeFrameId: String?
-    let onDrop: () -> Void
+    let onDrop: (String, String, FrameReorderPosition) -> Void
 
     func dropUpdated(info: DropInfo) -> DropProposal? {
         DropProposal(operation: .move)
@@ -3751,8 +3777,17 @@ private struct FrameReorderDropDelegate: DropDelegate {
     }
 
     func performDrop(info: DropInfo) -> Bool {
+        guard let movingFrameId = activeFrameId else { return false }
+        guard let movingIndex = frames.firstIndex(where: { $0.id == movingFrameId }),
+              let targetIndex = frames.firstIndex(where: { $0.id == item.id })
+        else {
+            activeFrameId = nil
+            return false
+        }
+
+        let position: FrameReorderPosition = movingIndex > targetIndex ? .after : .before
         activeFrameId = nil
-        onDrop()
+        onDrop(movingFrameId, item.id, position)
         return true
     }
 }
