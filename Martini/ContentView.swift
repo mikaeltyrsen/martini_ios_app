@@ -3469,17 +3469,17 @@ struct CreativeGridSection: View {
                     Label("Insert frame after", systemImage: "arrow.right.to.line.square.fill")
                 }
             }
-            Button(role: .destructive) {
-                onDeleteFrame(frame)
-            } label: {
-                Label("Delete frame", systemImage: "trash")
-            }
             if showAddFrameButton {
                 Button {
                     onReorderFrames(frame)
                 } label: {
                     Label("Reorder frames", systemImage: "arrow.up.arrow.down")
                 }
+            }
+            Button(role: .destructive) {
+                onDeleteFrame(frame)
+            } label: {
+                Label("Delete frame", systemImage: "trash")
             }
         }
     }
