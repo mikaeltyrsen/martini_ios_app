@@ -309,7 +309,6 @@ struct MainView: View {
     @State private var isReorderingFrames = false
     @State private var reorderCreativeId: String? = nil
     @State private var reorderFrames: [Frame] = []
-    @State private var reorderPriorFrames: [Frame] = []
     @State private var activeReorderFrameId: String? = nil
     @State private var reorderWiggle = false
     @State private var scriptNavigationTarget: ScriptNavigationTarget?
@@ -1816,7 +1815,6 @@ struct MainView: View {
         let frames = orderedFramesForCreative(frame.creativeId)
         reorderCreativeId = frame.creativeId
         reorderFrames = frames
-        reorderPriorFrames = frames
         activeReorderFrameId = nil
         isReorderingFrames = true
         withAnimation(.easeInOut(duration: 0.12).repeatForever(autoreverses: true)) {
@@ -1827,7 +1825,6 @@ struct MainView: View {
     private func cancelFrameOrdering() {
         guard isReorderingFrames else { return }
         reorderFrames = []
-        reorderPriorFrames = []
         reorderCreativeId = nil
         activeReorderFrameId = nil
         isReorderingFrames = false
@@ -1837,7 +1834,6 @@ struct MainView: View {
     private func commitFrameOrdering() {
         guard isReorderingFrames else { return }
         let frames = reorderFrames
-        let priorFrames = reorderPriorFrames
         let creativeId = reorderCreativeId
         cancelFrameOrdering()
 
@@ -1851,7 +1847,7 @@ struct MainView: View {
                 let orderPayload = buildOrderedFramePayload(
                     frames: frames,
                     orderBy: .story,
-                    priorFrames: priorFrames
+                    priorFrames: []
                 )
                 try await authService.updateFrameOrder(
                     shootId: projectId,
