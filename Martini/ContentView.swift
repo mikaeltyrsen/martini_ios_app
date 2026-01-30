@@ -777,7 +777,8 @@ struct MainView: View {
             }
             .onChange(of: activeReorderFrameId) { _, newValue in
                 guard newValue != nil else { return }
-                reorderPriorFrames = reorderFrames
+                guard let creativeId = reorderCreativeId else { return }
+                reorderPriorFrames = orderedFramesForCreative(creativeId)
             }
     }
 
