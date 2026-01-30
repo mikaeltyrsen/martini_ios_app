@@ -1657,7 +1657,7 @@ struct MainView: View {
                                             updateFrameStatus(frame, to: status)
                                         },
                                         onReorderFrames: { frame in
-                                            beginFrameOrdering(for: frame, frames: section.frames)
+                                            beginFrameOrdering(for: frame)
                                         },
                                         onReorderDrop: submitFrameOrderingUpdate,
                                         onInsertFrameBefore: { frame in
@@ -1816,8 +1816,9 @@ struct MainView: View {
         gridSizeStep = min(max(newValue, 1), 4)
     }
 
-    private func beginFrameOrdering(for frame: Frame, frames: [Frame]) {
+    private func beginFrameOrdering(for frame: Frame) {
         guard frameSortMode == .story else { return }
+        let frames = orderedFramesForCreative(frame.creativeId)
         reorderCreativeId = frame.creativeId
         reorderFrames = frames
         reorderPriorFrames = frames
