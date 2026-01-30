@@ -288,6 +288,9 @@ struct FrameView: View {
                         visibleAssetID = newStack.first?.id
                     }
                 }
+                if !isReorderingBoards {
+                    reorderBoards = boardEntries(from: newStack, frame: updated)
+                }
             }
             .onReceive(authService.$frameUpdateEvent) { event in
                 guard let event else { return }
@@ -1769,6 +1772,9 @@ struct FrameView: View {
         selectedStatus = providedFrame.statusEnum
         let newStack: [FrameAssetItem] = FrameView.orderedAssets(for: providedFrame, order: assetOrder)
         assetStack = newStack
+        if !isReorderingBoards {
+            reorderBoards = boardEntries(from: newStack, frame: providedFrame)
+        }
         visibleAssetID = newStack.first?.id
         clips = []
         filesBadgeCount = nil
@@ -2049,9 +2055,14 @@ private extension FrameView {
         frame.boards?.first { $0.id == asset.id }
     }
 
-    private func boardEntries() -> [FrameAssetItem] {
-        let boardIds = Set(frame.boards?.map(\.id) ?? [])
-        return assetStack.filter { asset in
+    private func boardEntries(
+        from stack: [FrameAssetItem]? = nil,
+        frame: Frame? = nil
+    ) -> [FrameAssetItem] {
+        let activeStack = stack ?? assetStack
+        let activeFrame = frame ?? self.frame
+        let boardIds = Set(activeFrame.boards?.map(\.id) ?? [])
+        return activeStack.filter { asset in
             asset.kind == .board && boardIds.contains(asset.id)
         }
     }
