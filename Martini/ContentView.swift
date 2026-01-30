@@ -1878,7 +1878,28 @@ struct MainView: View {
                     orderBy: "story",
                     orderedFrames: orderPayload
                 )
-                try await authService.fetchFrames()
+                let updatedOrders = Dictionary(
+                    uniqueKeysWithValues: orderPayload.compactMap { payload in
+                        guard let frameId = payload["frameId"],
+                              let order = payload["order"]
+                        else { return nil }
+                        return (frameId, order)
+                    }
+                )
+                await MainActor.run {
+                    let updatedReorderFrames = reorderFrames.map { frame in
+                        guard let order = updatedOrders[frame.id] else { return frame }
+                        return frame.updatingFrameOrder(order)
+                    }
+                    reorderFrames = updatedReorderFrames
+                    reorderPriorFrames = updatedReorderFrames
+                    authService.frames = authService.frames.map { frame in
+                        guard frame.creativeId == creativeId,
+                              let order = updatedOrders[frame.id]
+                        else { return frame }
+                        return frame.updatingFrameOrder(order)
+                    }
+                }
             } catch {
                 await MainActor.run {
                     dataError = error.localizedDescription
