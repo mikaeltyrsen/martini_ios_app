@@ -3156,6 +3156,10 @@ private struct BoardReorderDropDelegate: DropDelegate {
         }
     }
 
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: .move)
+    }
+
     func performDrop(info: DropInfo) -> Bool {
         activeBoard = nil
         return true
