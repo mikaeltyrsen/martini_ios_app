@@ -3291,6 +3291,7 @@ struct CreativeGridSection: View {
     }
 
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    @EnvironmentObject private var authService: AuthService
 
     private var columns: [GridItem] {
         let count = max(1, columnCount)
@@ -3389,23 +3390,7 @@ struct CreativeGridSection: View {
                 boardSizing: boardSizing,
                 coordinateSpaceName: coordinateSpaceName,
                 viewportHeight: viewportHeight,
-                isUpdating: updatingFrameIds.contains(frame.id),
-                onStatusSelected: { status in
-                    onStatusSelected(frame, status)
-                },
-                onReorderFrames: onReorderFrames,
-                showInsertOptions: showAddFrameButton,
-                showReorderOption: false,
-                showContextMenu: false,
-                onInsertFrameBefore: {
-                    onInsertFrameBefore(frame)
-                },
-                onInsertFrameAfter: {
-                    onInsertFrameAfter(frame)
-                },
-                onDeleteFrame: {
-                    onDeleteFrame(frame)
-                }
+                isUpdating: updatingFrameIds.contains(frame.id)
             )
             .contentShape(Rectangle())
             .rotationEffect(.degrees(reorderWiggle ? 1.5 : -1.5))
@@ -3449,28 +3434,65 @@ struct CreativeGridSection: View {
                     boardSizing: boardSizing,
                     coordinateSpaceName: coordinateSpaceName,
                     viewportHeight: viewportHeight,
-                    isUpdating: updatingFrameIds.contains(frame.id),
-                    onStatusSelected: { status in
-                        onStatusSelected(frame, status)
-                    },
-                    onReorderFrames: onReorderFrames,
-                    showInsertOptions: showAddFrameButton,
-                    showReorderOption: showAddFrameButton,
-                    showContextMenu: true,
-                    onInsertFrameBefore: {
-                        onInsertFrameBefore(frame)
-                    },
-                    onInsertFrameAfter: {
-                        onInsertFrameAfter(frame)
-                    },
-                    onDeleteFrame: {
-                        onDeleteFrame(frame)
-                    }
+                    isUpdating: updatingFrameIds.contains(frame.id)
                 )
+            }
+            .if(authService.allowEdit) { view in
+                view.contextMenu {
+                    frameContextMenu(for: frame)
+                }
             }
             .id(frame.id)
             .allowsHitTesting(!isPinching && !updatingFrameIds.contains(frame.id))
         }
+    }
+
+    @ViewBuilder
+    private func frameContextMenu(for frame: Frame) -> some View {
+        Section {
+            ForEach(statusOptions(for: frame), id: \.self) { status in
+                Button {
+                    triggerStatusHaptic(for: status)
+                    onStatusSelected(frame, status)
+                } label: {
+                    Label(status.displayName, systemImage: status.systemImageName)
+                }
+            }
+        }
+        Section("Edit") {
+            if showAddFrameButton {
+                Button {
+                    onInsertFrameBefore(frame)
+                } label: {
+                    Label("Insert frame before", systemImage: "arrow.backward.to.line.square.fill")
+                }
+                Button {
+                    onInsertFrameAfter(frame)
+                } label: {
+                    Label("Insert frame after", systemImage: "arrow.right.to.line.square.fill")
+                }
+            }
+            Button(role: .destructive) {
+                onDeleteFrame(frame)
+            } label: {
+                Label("Delete frame", systemImage: "trash")
+            }
+            if showAddFrameButton {
+                Button {
+                    onReorderFrames(frame)
+                } label: {
+                    Label("Reorder frames", systemImage: "arrow.up.arrow.down")
+                }
+            }
+        }
+    }
+
+    private func statusOptions(for frame: Frame) -> [FrameStatus] {
+        var options: [FrameStatus] = [.done, .here, .next, .omit]
+        if frame.statusEnum != .none {
+            options.append(.none)
+        }
+        return options
     }
 }
 
@@ -3491,14 +3513,6 @@ struct GridFrameCell: View {
     let coordinateSpaceName: String
     let viewportHeight: CGFloat
     var isUpdating: Bool = false
-    var onStatusSelected: (FrameStatus) -> Void
-    var onReorderFrames: (Frame) -> Void
-    var showInsertOptions: Bool = false
-    var showReorderOption: Bool = true
-    var showContextMenu: Bool = true
-    var onInsertFrameBefore: () -> Void
-    var onInsertFrameAfter: () -> Void
-    var onDeleteFrame: () -> Void
     @EnvironmentObject private var authService: AuthService
     @State private var resolvedCornerRadius: CGFloat = 0
 
@@ -3536,39 +3550,6 @@ struct GridFrameCell: View {
                         MartiniLoader(color: .white)
                             .scaleEffect(1.1)
                             .accessibilityLabel("Updating status")
-                    }
-                }
-            }
-            .if(showContextMenu && authService.allowEdit) { view in
-                view.contextMenu {
-                    Section {
-                        statusMenu
-                    }
-                    Section("Edit") {
-                        if showInsertOptions {
-                            Button {
-                                onInsertFrameBefore()
-                            } label: {
-                                Label("Insert frame before", systemImage: "arrow.backward.to.line.square.fill")
-                            }
-                            Button {
-                                onInsertFrameAfter()
-                            } label: {
-                                Label("Insert frame after", systemImage: "arrow.right.to.line.square.fill")
-                            }
-                        }
-                        Button(role: .destructive) {
-                            onDeleteFrame()
-                        } label: {
-                            Label("Delete frame", systemImage: "trash")
-                        }
-                        if showReorderOption {
-                            Button {
-                                onReorderFrames(frame)
-                            } label: {
-                                Label("Reorder frames", systemImage: "arrow.up.arrow.down")
-                            }
-                        }
                     }
                 }
             }
@@ -3639,25 +3620,6 @@ struct GridFrameCell: View {
         case .small:
             return UIControlConfig.boardSizingSmallScale
         }
-    }
-
-    private var statusMenu: some View {
-        ForEach(statusOptions, id: \.self) { status in
-            Button {
-                triggerStatusHaptic(for: status)
-                onStatusSelected(status)
-            } label: {
-                Label(status.displayName, systemImage: status.systemImageName)
-            }
-        }
-    }
-
-    private var statusOptions: [FrameStatus] {
-        var options: [FrameStatus] = [.done, .here, .next, .omit]
-        if frame.statusEnum != .none {
-            options.append(.none)
-        }
-        return options
     }
 
     private var tagItems: [GridTagItem] {
