@@ -3746,7 +3746,7 @@ struct GridFrameCell: View {
     }
 }
 
-private enum FrameReorderPosition {
+enum FrameReorderPosition {
     case before
     case after
 }
