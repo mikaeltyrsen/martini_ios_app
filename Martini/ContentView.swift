@@ -1029,7 +1029,7 @@ struct MainView: View {
         ToolbarItemGroup(placement: .navigationBarTrailing) {
             if isReorderingFrames {
                 Button("Done") {
-                    commitFrameOrdering()
+                    cancelFrameOrdering()
                 }
                 .accessibilityLabel("Finish reordering")
             } else if shouldShowScheduleButton {
@@ -1652,8 +1652,9 @@ struct MainView: View {
                                             updateFrameStatus(frame, to: status)
                                         },
                                         onReorderFrames: { frame in
-                                            beginFrameOrdering(for: frame)
+                                            beginFrameOrdering(for: frame, frames: section.frames)
                                         },
+                                        onReorderDrop: submitFrameOrderingUpdate,
                                         onInsertFrameBefore: { frame in
                                             insertFrame(before: frame)
                                         },
@@ -1810,9 +1811,8 @@ struct MainView: View {
         gridSizeStep = min(max(newValue, 1), 4)
     }
 
-    private func beginFrameOrdering(for frame: Frame) {
+    private func beginFrameOrdering(for frame: Frame, frames: [Frame]) {
         guard frameSortMode == .story else { return }
-        let frames = orderedFramesForCreative(frame.creativeId)
         reorderCreativeId = frame.creativeId
         reorderFrames = frames
         activeReorderFrameId = nil
@@ -1831,11 +1831,11 @@ struct MainView: View {
         reorderWiggle = false
     }
 
-    private func commitFrameOrdering() {
+    private func submitFrameOrderingUpdate() {
         guard isReorderingFrames else { return }
         let frames = reorderFrames
         let creativeId = reorderCreativeId
-        cancelFrameOrdering()
+        guard !frames.isEmpty else { return }
 
         guard let projectId = authService.projectId, let creativeId else {
             dataError = "Missing project ID"
@@ -3205,6 +3205,7 @@ struct CreativeGridSection: View {
     let primaryAsset: (Frame) -> FrameAssetItem?
     let onStatusSelected: (Frame, FrameStatus) -> Void
     let onReorderFrames: (Frame) -> Void
+    let onReorderDrop: () -> Void
     let onInsertFrameBefore: (Frame) -> Void
     let onInsertFrameAfter: (Frame) -> Void
     let onDeleteFrame: (Frame) -> Void
@@ -3237,6 +3238,7 @@ struct CreativeGridSection: View {
         primaryAsset: @escaping (Frame) -> FrameAssetItem?,
         onStatusSelected: @escaping (Frame, FrameStatus) -> Void,
         onReorderFrames: @escaping (Frame) -> Void,
+        onReorderDrop: @escaping () -> Void,
         onInsertFrameBefore: @escaping (Frame) -> Void,
         onInsertFrameAfter: @escaping (Frame) -> Void,
         onDeleteFrame: @escaping (Frame) -> Void,
@@ -3268,6 +3270,7 @@ struct CreativeGridSection: View {
         self.primaryAsset = primaryAsset
         self.onStatusSelected = onStatusSelected
         self.onReorderFrames = onReorderFrames
+        self.onReorderDrop = onReorderDrop
         self.onInsertFrameBefore = onInsertFrameBefore
         self.onInsertFrameAfter = onInsertFrameAfter
         self.onDeleteFrame = onDeleteFrame
@@ -3403,7 +3406,8 @@ struct CreativeGridSection: View {
                 delegate: FrameReorderDropDelegate(
                     item: frame,
                     frames: $reorderFrames,
-                    activeFrameId: $activeReorderFrameId
+                    activeFrameId: $activeReorderFrameId,
+                    onDrop: onReorderDrop
                 )
             )
             .opacity(activeReorderFrameId == frame.id ? 0.6 : 1)
@@ -3716,6 +3720,7 @@ private struct FrameReorderDropDelegate: DropDelegate {
     let item: Frame
     @Binding var frames: [Frame]
     @Binding var activeFrameId: String?
+    let onDrop: () -> Void
 
     func dropUpdated(info: DropInfo) -> DropProposal? {
         DropProposal(operation: .move)
@@ -3738,6 +3743,7 @@ private struct FrameReorderDropDelegate: DropDelegate {
 
     func performDrop(info: DropInfo) -> Bool {
         activeFrameId = nil
+        onDrop()
         return true
     }
 }
