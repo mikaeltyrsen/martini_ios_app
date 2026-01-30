@@ -1507,6 +1507,10 @@ struct Frame: Codable, Identifiable {
         copyFrame(creativeAspectRatio: aspectRatio)
     }
 
+    func updatingFrameOrder(_ order: String?) -> Frame {
+        copyFrame(frameOrder: order)
+    }
+
     func updatingBoards(_ boards: [FrameBoard], mainBoardType: String?) -> Frame {
         let primaryBoard = Frame.selectPrimaryBoard(from: boards, matching: mainBoardType)
 
@@ -1537,6 +1541,7 @@ struct Frame: Codable, Identifiable {
         caption: String? = nil,
         status: String?? = nil,
         creativeAspectRatio: String? = nil,
+        frameOrder: String?? = nil,
         boards: [FrameBoard]? = nil,
         mainBoardType: String? = nil,
         board: String? = nil,
@@ -1592,7 +1597,7 @@ struct Frame: Codable, Identifiable {
             isArchived: isArchived,
             createdAt: createdAt,
             lastUpdated: lastUpdated,
-            frameOrder: frameOrder,
+            frameOrder: frameOrder ?? self.frameOrder,
             frameShootOrder: frameShootOrder,
             schedule: schedule,
             frameStartTime: frameStartTime,
