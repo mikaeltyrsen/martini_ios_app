@@ -1039,89 +1039,86 @@ struct MainView: View {
         }
 
         ToolbarItem(placement: .navigationBarLeading) {
-            if isReorderingFrames {
-                Button("Cancel") {
-                    cancelFrameOrdering()
-                }
-                .accessibilityLabel("Cancel reordering")
-            } else {
+            if !isReorderingFrames {
                 filterButton
             }
         }
 
-        ToolbarItemGroup(placement: .bottomBar) {
+        if !isReorderingFrames {
+            ToolbarItemGroup(placement: .bottomBar) {
 
-            Menu {
-                Button {
-                    showingProjectFiles = true
+                Menu {
+                    Button {
+                        showingProjectFiles = true
+                    } label: {
+                        Label("Files", systemImage: "folder")
+                    }
+
+                    Button {
+                        openComments()
+                    } label: {
+                        Label("Comments", systemImage: "text.bubble")
+                    }
+                    .disabled(!canOpenComments)
+
                 } label: {
-                    Label("Files", systemImage: "folder")
+                    Label("More", systemImage: "ellipsis.circle")
+                        .labelStyle(.titleAndIcon)
+                        .font(.system(size: 17, weight: .semibold))
                 }
+                .accessibilityLabel("More options")
+
+                Spacer()
 
                 Button {
-                    openComments()
+                    toggleViewMode()
                 } label: {
-                    Label("Comments", systemImage: "text.bubble")
+                    Label(viewMode == .grid ? "Close Overview" : "Open Overview", systemImage: viewMode == .grid ? "square.grid.4x3.fill" : "eye")
                 }
-                .disabled(!canOpenComments)
+                .accessibilityLabel(viewMode == .grid ? "Close Overview" : "Open Overview")
+                //.symbolEffect(.drawOn)
+                
+                Button {
+                    frameSortMode = (frameSortMode == .story ? .shoot : .story)
 
-            } label: {
-                Label("More", systemImage: "ellipsis.circle")
-                    .labelStyle(.titleAndIcon)
-                    .font(.system(size: 17, weight: .semibold))
-            }
-            .accessibilityLabel("More options")
+                } label: {
+                    HStack(spacing: 6) {
+                        Text(frameSortMode == .story ? "Story" : "Shoot")
+                            .font(.system(size: 15, weight: .semibold))   // thicker text
 
-            Spacer()
-
-            Button {
-                toggleViewMode()
-            } label: {
-                Label(viewMode == .grid ? "Close Overview" : "Open Overview", systemImage: viewMode == .grid ? "square.grid.4x3.fill" : "eye")
-            }
-            .accessibilityLabel(viewMode == .grid ? "Close Overview" : "Open Overview")
-            //.symbolEffect(.drawOn)
-            
-            Button {
-                frameSortMode = (frameSortMode == .story ? .shoot : .story)
-
-            } label: {
-                HStack(spacing: 6) {
-                    Text(frameSortMode == .story ? "Story" : "Shoot")
-                        .font(.system(size: 15, weight: .semibold))   // thicker text
-
-                    Image(systemName: "arrow.up.arrow.down")
-                        .font(.system(size: 12))                       // smaller icon
-                        .symbolRenderingMode(.hierarchical)            // optional, nicer
-                        .symbolEffect(.wiggle, value: frameSortMode)
+                        Image(systemName: "arrow.up.arrow.down")
+                            .font(.system(size: 12))                       // smaller icon
+                            .symbolRenderingMode(.hierarchical)            // optional, nicer
+                            .symbolEffect(.wiggle, value: frameSortMode)
+                    }
                 }
-            }
 //            Button {
 //                frameSortMode = (frameSortMode == .story ? .shoot : .story)
 //            } label: {
 //                Label(frameSortMode == .story ? "Story" : "Shoot",
 //                      systemImage: "arrow.up.arrow.down")
 //            }
-            .accessibilityLabel("Toggle sort order")
-            .accessibilityValue(frameSortMode == .story ? "Story" : "Shoot")
+                .accessibilityLabel("Toggle sort order")
+                .accessibilityValue(frameSortMode == .story ? "Story" : "Shoot")
 
-            Button {
-                openScriptView()
-            } label: {
-                Image(systemName: "square.fill.text.grid.1x2")
-                    .imageScale(.large)
-            }
-            .accessibilityLabel("Open Script")
+                Button {
+                    openScriptView()
+                } label: {
+                    Image(systemName: "square.fill.text.grid.1x2")
+                        .imageScale(.large)
+                }
+                .accessibilityLabel("Open Script")
 
-            Spacer()
-            
-            Button {
-                isShowingSettings = true
-            } label: {
-                Image(systemName: "switch.2")
-                    .imageScale(.large)
+                Spacer()
+                
+                Button {
+                    isShowingSettings = true
+                } label: {
+                    Image(systemName: "switch.2")
+                        .imageScale(.large)
+                }
+                .accessibilityLabel("Settings")
             }
-            .accessibilityLabel("Settings")
         }
     }
 
