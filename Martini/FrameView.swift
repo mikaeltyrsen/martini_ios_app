@@ -59,6 +59,7 @@ struct FrameView: View {
     @State private var isReorderingBoards: Bool = false
     @State private var preReorderAssetStack: [FrameAssetItem] = []
     @State private var reorderWiggle: Bool = false
+    @State private var lastSavedBoardOrder: [String] = []
     @State private var showingBoardDeleteAlert: Bool = false
     @State private var boardDeleteTarget: FrameAssetItem?
     @State private var boardActionError: String?
@@ -362,6 +363,10 @@ struct FrameView: View {
             .onChange(of: reorderBoards) { _, newOrder in
                 guard isReorderingBoards else { return }
                 assetStack = reorderedAssetStack(from: assetStack, boardOrder: newOrder)
+                let newOrderIds = newOrder.map(\.id)
+                guard newOrderIds != lastSavedBoardOrder else { return }
+                lastSavedBoardOrder = newOrderIds
+                saveBoardReorder()
             }
     }
 
@@ -2054,7 +2059,9 @@ private extension FrameView {
 
     private func enterBoardReorderMode() {
         preReorderAssetStack = assetStack
-        reorderBoards = boardEntries()
+        let entries = boardEntries()
+        lastSavedBoardOrder = entries.map(\.id)
+        reorderBoards = entries
         activeReorderBoard = nil
         isReorderingBoards = true
         assetStack = reorderedAssetStack(from: assetStack, boardOrder: reorderBoards)
@@ -2065,10 +2072,15 @@ private extension FrameView {
         reorderBoards = boardEntries()
         activeReorderBoard = nil
         isReorderingBoards = false
+        lastSavedBoardOrder = []
     }
 
     private func commitBoardReorder() {
-        saveBoardReorder()
+        let currentOrder = reorderBoards.map(\.id)
+        if currentOrder != lastSavedBoardOrder {
+            lastSavedBoardOrder = currentOrder
+            saveBoardReorder()
+        }
         isReorderingBoards = false
     }
 
