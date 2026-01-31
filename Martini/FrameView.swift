@@ -137,7 +137,9 @@ struct FrameView: View {
         let minStep = UIControlConfig.descriptionFontStepMin
         let maxStep = UIControlConfig.descriptionFontStepMax
         let clampedStep = min(max(descriptionFontStep, minStep), maxStep)
-        return baseFontSize + (CGFloat(clampedStep) * stepSize)
+        let baseSize = baseFontSize + (CGFloat(clampedStep) * stepSize)
+        let multiplier = UIControlConfig.descriptionFontSizeMultiplier()
+        return baseSize * multiplier
     }
 
     private var scriptPreviewFontSize: CGFloat {
