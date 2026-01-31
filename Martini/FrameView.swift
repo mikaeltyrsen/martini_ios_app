@@ -73,6 +73,7 @@ struct FrameView: View {
     @State private var descriptionUpdateError: String?
     @State private var scriptNavigationTarget: ScriptNavigationTarget?
     @State private var didLogLayout: Bool = false
+    @AppStorage("frameDescriptionFontStep") private var descriptionFontStep: Int = UIControlConfig.descriptionFontStepDefault
     @Environment(\.openURL) private var openURL
     @Environment(\.colorScheme) private var colorScheme
 
@@ -83,7 +84,6 @@ struct FrameView: View {
     private let boardsTabsSpacing: CGFloat = 12
     private let selectionStore = ProjectKitSelectionStore.shared
     private let dataStore = LocalJSONStore.shared
-    private let scriptPreviewFontSize = UIFont.preferredFont(forTextStyle: .body).pointSize
     private let uploadService = FrameUploadService()
 
     init(
@@ -127,6 +127,19 @@ struct FrameView: View {
     private var creativeTitleText: String? {
         let trimmed = frame.creativeTitle?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return trimmed.isEmpty ? nil : trimmed
+    }
+
+    private var descriptionFontSize: CGFloat {
+        let baseFontSize = UIFont.preferredFont(forTextStyle: .body).pointSize
+        let stepSize = UIControlConfig.descriptionFontStepSize
+        let minStep = UIControlConfig.descriptionFontStepMin
+        let maxStep = UIControlConfig.descriptionFontStepMax
+        let clampedStep = min(max(descriptionFontStep, minStep), maxStep)
+        return baseFontSize + (CGFloat(clampedStep) * stepSize)
+    }
+
+    private var scriptPreviewFontSize: CGFloat {
+        descriptionFontSize
     }
 
     private var systemCameraBoardLabel: String {
@@ -324,6 +337,7 @@ struct FrameView: View {
             }
             .onAppear {
                 isFrameVisible = true
+                updateDescriptionFontStep(delta: 0)
                 refreshDescriptionAttributedText()
             }
             .onDisappear {
@@ -333,6 +347,9 @@ struct FrameView: View {
                 refreshDescriptionAttributedText()
             }
             .onChange(of: colorScheme) { _ in
+                refreshDescriptionAttributedText()
+            }
+            .onChange(of: descriptionFontStep) { _ in
                 refreshDescriptionAttributedText()
             }
     }
@@ -1030,7 +1047,8 @@ struct FrameView: View {
         let descriptionUIColor = UIColor(named: "MartiniDefaultDescriptionColor") ?? .label
         let attributedText = nsAttributedStringFromHTML(
             secondaryText,
-            defaultColor: descriptionUIColor
+            defaultColor: descriptionUIColor,
+            baseFontSize: descriptionFontSize
         )
 
         descriptionAttributedText = attributedText
@@ -1073,7 +1091,7 @@ struct FrameView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 } else {
                     Text(plainTextFromHTML(secondaryText))
-                        .font(.body)
+                        .font(.system(size: descriptionFontSize))
                         .foregroundStyle(Color.martiniDefaultDescriptionColor)
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1388,6 +1406,34 @@ struct FrameView: View {
                     .padding(12)
                 }
             }
+            .overlay(alignment: .bottomLeading) {
+                HStack(spacing: 10) {
+                    Button {
+                        updateDescriptionFontStep(delta: -1)
+                    } label: {
+                        Image(systemName: "textformat.size.smaller")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Color.martiniAccentColor)
+                            .padding(10)
+                            .background(.ultraThinMaterial, in: Circle())
+                    }
+                    .accessibilityLabel("Decrease Description Font Size")
+                    .disabled(descriptionFontStep <= UIControlConfig.descriptionFontStepMin)
+
+                    Button {
+                        updateDescriptionFontStep(delta: 1)
+                    } label: {
+                        Image(systemName: "textformat.size.larger")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(Color.martiniAccentColor)
+                            .padding(10)
+                            .background(.ultraThinMaterial, in: Circle())
+                    }
+                    .accessibilityLabel("Increase Description Font Size")
+                    .disabled(descriptionFontStep >= UIControlConfig.descriptionFontStepMax)
+                }
+                .padding(12)
+            }
             .contextMenu {
                 Button {
                     UIPasteboard.general.string = descriptionCopyText ?? ""
@@ -1407,6 +1453,13 @@ struct FrameView: View {
         .frame(height: overlayHeight)
         .padding(.horizontal, 10)
         .padding(.bottom, 10)
+    }
+
+    private func updateDescriptionFontStep(delta: Int) {
+        let minStep = UIControlConfig.descriptionFontStepMin
+        let maxStep = UIControlConfig.descriptionFontStepMax
+        let clampedStep = min(max(descriptionFontStep + delta, minStep), maxStep)
+        descriptionFontStep = clampedStep
     }
 
     private var descriptionHandle: some View {
