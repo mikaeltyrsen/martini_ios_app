@@ -314,6 +314,7 @@ struct MainView: View {
     @State private var reorderWiggle = false
     @State private var hasPendingFrameReorder = false
     @State private var needsFrameOrderRefresh = false
+    @State private var frameOrderSnapshotByCreative: [String: [String]] = [:]
     @State private var scriptNavigationTarget: ScriptNavigationTarget?
 
     enum ViewMode {
@@ -1838,13 +1839,17 @@ struct MainView: View {
     }
 
     private func startFrameOrdering(for creativeId: String) {
-        let frames = orderedFramesForCreative(creativeId)
-        reorderCreativeId = creativeId
-        reorderFrames = frames
-        reorderPriorFrames = frames
-        activeReorderFrameId = nil
-        isReorderingFrames = true
-        hasPendingFrameReorder = false
+        let frames = resolvedFrameOrderSnapshot(for: creativeId)
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            reorderCreativeId = creativeId
+            reorderFrames = frames
+            reorderPriorFrames = frames
+            activeReorderFrameId = nil
+            isReorderingFrames = true
+            hasPendingFrameReorder = false
+        }
         withAnimation(.easeInOut(duration: 0.12).repeatForever(autoreverses: true)) {
             reorderWiggle.toggle()
         }
@@ -1859,6 +1864,23 @@ struct MainView: View {
         isReorderingFrames = false
         reorderWiggle = false
         hasPendingFrameReorder = false
+    }
+
+    private func captureFrameOrderSnapshot(for frameId: String) {
+        guard let creativeId = authService.frames.first(where: { $0.id == frameId })?.creativeId else { return }
+        frameOrderSnapshotByCreative[creativeId] = orderedFramesForCreative(creativeId).map(\.id)
+    }
+
+    private func resolvedFrameOrderSnapshot(for creativeId: String) -> [Frame] {
+        let currentFrames = orderedFramesForCreative(creativeId)
+        guard let snapshot = frameOrderSnapshotByCreative[creativeId], !snapshot.isEmpty else {
+            return currentFrames
+        }
+
+        let framesById = Dictionary(uniqueKeysWithValues: currentFrames.map { ($0.id, $0) })
+        let ordered = snapshot.compactMap { framesById[$0] }
+        let remaining = currentFrames.filter { !snapshot.contains($0.id) }
+        return ordered + remaining
     }
 
     private func submitFrameOrderingUpdate(
@@ -2531,6 +2553,7 @@ private extension MainView {
         if case .websocket(let eventName) = event.context,
            eventName == "frame-order-updated" || eventName == "reload" {
             needsFrameOrderRefresh = true
+            captureFrameOrderSnapshot(for: event.frameId)
         }
         guard shouldScrollToHereFrame(for: event) else { return }
         scrollFrameIntoGridIfAvailable(frameId: event.frameId)
