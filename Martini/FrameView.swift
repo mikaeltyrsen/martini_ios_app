@@ -73,7 +73,9 @@ struct FrameView: View {
     @State private var descriptionUpdateError: String?
     @State private var scriptNavigationTarget: ScriptNavigationTarget?
     @State private var didLogLayout: Bool = false
-    @AppStorage("frameDescriptionFontStep") private var descriptionFontStep: Int = UIControlConfig.descriptionFontStepDefault
+    @AppStorage("frameDescriptionFontStep") private var descriptionFontStep: Int = UIControlConfig.descriptionFontStepDefault(
+        for: UIDevice.current.userInterfaceIdiom
+    )
     @Environment(\.openURL) private var openURL
     @Environment(\.colorScheme) private var colorScheme
 
