@@ -2529,7 +2529,7 @@ private extension MainView {
 
     private func handleFrameUpdateEvent(_ event: FrameUpdateEvent) {
         if case .websocket(let eventName) = event.context,
-           eventName == "frame-order-updated" {
+           eventName == "frame-order-updated" || eventName == "reload" {
             needsFrameOrderRefresh = true
         }
         guard shouldScrollToHereFrame(for: event) else { return }
