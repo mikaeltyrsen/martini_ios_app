@@ -48,7 +48,7 @@ enum UIControlConfig {
     static let descriptionFontStepMin: Int = -2
     static let descriptionFontStepMax: Int = 5
     static let descriptionFontStepDefault: Int = 0
-    static let descriptionFontStepSize: CGFloat = 1.0
+    static let descriptionFontStepSize: CGFloat = 2.0
 
     static func descriptionFontStepDefault(for idiom: UIUserInterfaceIdiom = UIDevice.current.userInterfaceIdiom) -> Int {
         idiom == .pad ? 2 : descriptionFontStepDefault
