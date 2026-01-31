@@ -16,6 +16,7 @@ struct CommentsView: View {
     let creativeFilterOptions: [CreativeFilterOption]
     let selectedCreativeFilterId: String?
     let onSelectCreativeFilter: (String?) -> Void
+    let onSelectFrame: (String) -> Void
     @Binding var comments: [Comment]
     let isLoading: Bool
     let errorMessage: String?
@@ -102,7 +103,8 @@ struct CommentsView: View {
                                 showFrameBadge: showsHeader,
                                 onToggleStatus: toggleStatus,
                                 onReply: handleReply,
-                                onCopyComment: copyComment
+                                onCopyComment: copyComment,
+                                onSelectFrame: onSelectFrame
                             )
                             .padding(.bottom, 4)
                             .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -571,6 +573,7 @@ private struct CommentThreadView: View {
     let onToggleStatus: (Comment) -> Void
     let onReply: (Comment) -> Void
     let onCopyComment: (Comment) -> Void
+    let onSelectFrame: (String) -> Void
     private let threadPadding: CGFloat = 18
     private let avatarSize: CGFloat = 28
     private let connectorWidth: CGFloat = 4
@@ -582,7 +585,8 @@ private struct CommentThreadView: View {
                 comment: comment,
                 isReply: false,
                 showFrameBadge: showFrameBadge,
-                onToggleStatus: onToggleStatus
+                onToggleStatus: onToggleStatus,
+                onSelectFrame: onSelectFrame
             )
 
             if !comment.replies.isEmpty {
@@ -592,7 +596,8 @@ private struct CommentThreadView: View {
                             comment: reply,
                             isReply: true,
                             showFrameBadge: showFrameBadge,
-                            onToggleStatus: onToggleStatus
+                            onToggleStatus: onToggleStatus,
+                            onSelectFrame: onSelectFrame
                         )
                     }
                 }

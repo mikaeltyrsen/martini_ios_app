@@ -814,6 +814,9 @@ struct MainView: View {
                     onSelectCreativeFilter: { selection in
                         selectCommentsCreativeFilter(selection, target: target)
                     },
+                    onSelectFrame: { frameId in
+                        openFrameFromComments(frameId)
+                    },
                     comments: $comments,
                     isLoading: isLoadingComments,
                     errorMessage: commentsError,
@@ -1183,6 +1186,13 @@ struct MainView: View {
             return commentsCreativeFilterTitle
         }
         return target.creativeTitle
+    }
+
+    private func openFrameFromComments(_ frameId: String) {
+        selectedFrameId = frameId
+        if let match = authService.frames.first(where: { $0.id == frameId }) {
+            selectedFrame = match
+        }
     }
 
     private var commentsCreativeFilterTitle: String {
