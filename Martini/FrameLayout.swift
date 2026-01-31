@@ -353,6 +353,7 @@ struct FrameLayout: View {
         GeometryReader { geo in
             let minDimension = min(geo.size.width, geo.size.height)
             let badgeHeight = max(18, minDimension * 0.12)
+            let numberBadgeTopPadding = max(2, minDimension * 0.08 * 0.25)
             let fontSize = badgeHeight * 0.42
             let horizontalPadding = badgeHeight * 0.35
             let verticalPadding = badgeHeight * 0.25
@@ -373,7 +374,7 @@ struct FrameLayout: View {
                         .shadow(color: Color.black.opacity(0.2), radius: 2, x: 0, y: 1)
                     Spacer()
                 }
-                .padding(.top, 8)
+                .padding(.top, numberBadgeTopPadding)
                 Spacer()
             }
         }
