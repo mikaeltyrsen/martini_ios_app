@@ -25,6 +25,7 @@ struct CommentRow: View {
     let isReply: Bool
     let showFrameBadge: Bool
     let onToggleStatus: (Comment) -> Void
+    let onSelectFrame: ((String) -> Void)? = nil
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -48,10 +49,17 @@ struct CommentRow: View {
                 }
                 
                 if showFrameBadge {
-                    if let frameThumbnailURL {
-                        frameThumbnailView(url: frameThumbnailURL, badgeText: frameBadgeNumber)
-                    } else if let frameBadgeNumber {
-                        frameBadgeView(frameBadgeNumber)
+                    if let frameId = selectableFrameId, let onSelectFrame {
+                        Button {
+                            onSelectFrame(frameId)
+                        } label: {
+                            frameBadgeContent
+                        }
+                        .buttonStyle(.plain)
+                        .contentShape(Rectangle())
+                        .accessibilityLabel("Open frame")
+                    } else {
+                        frameBadgeContent
                     }
                 }
 
@@ -156,6 +164,15 @@ struct CommentRow: View {
         return String(frameOrder)
     }
 
+    private var selectableFrameId: String? {
+        guard let frameId = comment.frameId?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !frameId.isEmpty
+        else {
+            return nil
+        }
+        return frameId
+    }
+
     private var frameThumbnailURL: URL? {
         guard let thumb = comment.frameThumb?.trimmingCharacters(in: .whitespacesAndNewlines),
               !thumb.isEmpty
@@ -163,6 +180,15 @@ struct CommentRow: View {
             return nil
         }
         return URL(string: thumb)
+    }
+
+    @ViewBuilder
+    private var frameBadgeContent: some View {
+        if let frameThumbnailURL {
+            frameThumbnailView(url: frameThumbnailURL, badgeText: frameBadgeNumber)
+        } else if let frameBadgeNumber {
+            frameBadgeView(frameBadgeNumber)
+        }
     }
 
     @ViewBuilder

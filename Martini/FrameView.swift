@@ -664,6 +664,7 @@ struct FrameView: View {
                     creativeFilterOptions: [],
                     selectedCreativeFilterId: nil,
                     onSelectCreativeFilter: { _ in },
+                    onSelectFrame: { _ in },
                     comments: $comments,
                     isLoading: isLoadingComments,
                     errorMessage: commentsError,
