@@ -25,7 +25,21 @@ struct CommentRow: View {
     let isReply: Bool
     let showFrameBadge: Bool
     let onToggleStatus: (Comment) -> Void
-    let onSelectFrame: ((String) -> Void)? = nil
+    let onSelectFrame: ((String) -> Void)?
+
+    init(
+        comment: Comment,
+        isReply: Bool,
+        showFrameBadge: Bool,
+        onToggleStatus: @escaping (Comment) -> Void,
+        onSelectFrame: ((String) -> Void)? = nil
+    ) {
+        self.comment = comment
+        self.isReply = isReply
+        self.showFrameBadge = showFrameBadge
+        self.onToggleStatus = onToggleStatus
+        self.onSelectFrame = onSelectFrame
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
