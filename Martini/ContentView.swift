@@ -1650,7 +1650,8 @@ struct MainView: View {
                                         showFullDescriptions: effectiveShowFullDescriptions,
                                         showTags: effectiveShowGridTags,
                                         showFrameTimeOverlay: shouldShowFrameTimeOverlay,
-                                        showCreativeTitleOverlay: frameSortMode == .shoot,
+                                        showCreativeTitleOverlay: frameSortMode == .shoot
+                                            && creativesToDisplay.count > 1,
                                         fontScale: fontScale,
                                         cornerRadius: CGFloat(gridCornerRadiusStep),
                                         boardSizing: boardSizingConfiguration,
