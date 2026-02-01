@@ -94,7 +94,7 @@ struct SchedulesView: View {
                     .padding(10)
                     .background(.markerPopup)
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    .opacity(isEntryComplete(entry) ? 0.5 : 1)
+                    .opacity(1)
                 }
             }
             Spacer()
