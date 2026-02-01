@@ -45,14 +45,14 @@ enum UIControlConfig {
     static let scriptDialogFontScaleDefault: CGFloat = 1.0
     static let scriptDialogFontScaleEnabledDefault: Bool = false
 
-    static let descriptionFontStepMin: Int = -2
+    static let descriptionFontStepMin: Int = -3
     static let descriptionFontStepMax: Int = 5
     static let descriptionFontStepDefault: Int = 0
     static let descriptionFontStepSize: CGFloat = 2.0
-    static let descriptionFontSizeIpadMultiplier: CGFloat = 2.0
+    static let descriptionFontSizeIpadMultiplier: CGFloat = 1.5
 
     static func descriptionFontStepDefault(for idiom: UIUserInterfaceIdiom = UIDevice.current.userInterfaceIdiom) -> Int {
-        idiom == .pad ? 2 : descriptionFontStepDefault
+        idiom == .pad ? 0 : descriptionFontStepDefault
     }
 
     static func descriptionFontSizeMultiplier(for idiom: UIUserInterfaceIdiom = UIDevice.current.userInterfaceIdiom) -> CGFloat {
