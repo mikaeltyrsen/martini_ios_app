@@ -2102,6 +2102,8 @@ struct MainView: View {
                         .fontWeight(.semibold)
                         .lineLimit(1)
                         .truncationMode(.tail)
+                        .frame(maxWidth: 220)
+                        .multilineTextAlignment(.center)
 
                     let progress = navigationProgress
                     if isProjectLoading {
@@ -4152,6 +4154,8 @@ private struct TrackableHeader: View {
         Text(title)
             .font(.headline)
             .fontWeight(.bold)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .multilineTextAlignment(.center)
             .padding(.horizontal)
             .background(
                 GeometryReader { geo in
