@@ -2100,6 +2100,8 @@ struct MainView: View {
                     Text(displayedNavigationTitle)
                         .font(.headline)
                         .fontWeight(.semibold)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
 
                     let progress = navigationProgress
                     if isProjectLoading {
@@ -3684,6 +3686,7 @@ struct GridFrameCell: View {
                 showFrameTimeOverlay: showFrameTimeOverlay,
                 showTextBlock: false,
                 showCreativeTitleOverlay: showCreativeTitleOverlay,
+                creativeTitleLineLimit: showCreativeTitleOverlay ? 2 : 1,
                 frameNumberOverride: frameNumberOverride,
                 cornerRadius: effectiveCornerRadius,
                 enablesFullScreen: false,

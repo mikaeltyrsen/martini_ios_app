@@ -572,6 +572,8 @@ struct FrameView: View {
             VStack(spacing: 4) {
                 Text(frameTitle)
                     .font(.headline)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
                 if let creativeTitleText {
                     creativeTitleBadge(creativeTitleText)
                         .transition(.opacity.combined(with: .move(edge: .top)))
@@ -633,6 +635,7 @@ struct FrameView: View {
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
+                .truncationMode(.tail)
                 .minimumScaleFactor(0.75)
         }
     }
@@ -642,6 +645,7 @@ struct FrameView: View {
             .font(.caption2.weight(.semibold))
             .foregroundStyle(.white)
             .lineLimit(1)
+            .truncationMode(.tail)
             .minimumScaleFactor(0.75)
             .padding(.horizontal, 10)
             .padding(.vertical, 4)

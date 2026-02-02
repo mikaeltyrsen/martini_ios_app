@@ -111,6 +111,8 @@ struct FrameLayout: View {
     var metadataTapAction: (() -> Void)? = nil
     var showTextBlock: Bool = true
     var showCreativeTitleOverlay: Bool = false
+    var creativeTitleLineLimit: Int = 1
+    var creativeTitleMaxWidthRatio: CGFloat = 0.7
     var frameNumberOverride: String? = nil
     var cornerRadius: CGFloat = 8
     var enablesFullScreen: Bool = true
@@ -364,8 +366,11 @@ struct FrameLayout: View {
                     Text(title)
                         .font(.system(size: fontSize, weight: .semibold))
                         .foregroundStyle(.white)
-                        .lineLimit(1)
+                        .lineLimit(creativeTitleLineLimit)
+                        .truncationMode(.tail)
+                        .multilineTextAlignment(.center)
                         .minimumScaleFactor(0.75)
+                        .frame(maxWidth: geo.size.width * creativeTitleMaxWidthRatio)
                         .padding(.horizontal, horizontalPadding)
                         .padding(.vertical, verticalPadding)
                         .background(
@@ -392,6 +397,8 @@ struct FrameLayout: View {
                 .font(.system(size: fontSize, weight: .semibold))
                 .foregroundStyle(Color.white)
                 .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .truncationMode(.tail)
                 .padding(.horizontal, horizontalPadding)
                 .padding(.vertical, verticalPadding)
                 .frame(width: geo.size.width, height: geo.size.height)

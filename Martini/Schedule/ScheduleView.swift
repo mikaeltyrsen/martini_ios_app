@@ -589,6 +589,7 @@ struct ScheduleView: View {
                             showFrameTimeOverlay: false,
                             showTextBlock: false,
                             showCreativeTitleOverlay: true,
+                            creativeTitleLineLimit: 2,
                             enablesFullScreen: false,
                             usePinnedBoardMarkupFallback: true
                         )
