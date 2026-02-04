@@ -181,6 +181,35 @@ final class ScoutCameraViewModel: ObservableObject {
         }
     }
 
+    func applyPinchZoom(scale: CGFloat, startLensId: String?, startFocalLength: Double, startLensIndex: Int?) {
+        let lensPool = selectedLensPack?.lenses ?? availableLenses
+        guard !lensPool.isEmpty else { return }
+        if let startLensId,
+           let startLens = lensPool.first(where: { $0.id == startLensId }),
+           startLens.isZoom,
+           let minFocal = startLens.focalLengthMinMm,
+           let maxFocal = startLens.focalLengthMaxMm {
+            let range = maxFocal - minFocal
+            let delta = Double(scale - 1) * range
+            let nextFocal = max(min(startFocalLength + delta, maxFocal), minFocal)
+            if selectedLens?.id != startLens.id {
+                selectedLens = startLens
+            }
+            if abs(nextFocal - focalLengthMm) > 0.01 {
+                focalLengthMm = nextFocal
+            }
+            return
+        }
+
+        guard let startLensIndex else { return }
+        let stepMultiplier = max(3, lensPool.count / 4)
+        let step = Int((Double(scale - 1) * Double(stepMultiplier)).rounded())
+        let newIndex = min(max(startLensIndex + step, 0), lensPool.count - 1)
+        if newIndex != startLensIndex {
+            selectedLens = lensPool[newIndex]
+        }
+    }
+
     func updateCaptureConfiguration() async {
         let authStatus = AVCaptureDevice.authorizationStatus(for: .video)
         if authStatus == .notDetermined {

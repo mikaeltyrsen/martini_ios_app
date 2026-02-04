@@ -22,6 +22,9 @@ struct ScoutCameraLayout: View {
     @State private var lensToastMessage: String?
     @State private var showLensToast = false
     @State private var previewOrientation: AVCaptureVideoOrientation = .landscapeRight
+    @State private var pinchStartFocalLength: Double?
+    @State private var pinchStartLensId: String?
+    @State private var pinchStartLensIndex: Int?
     @AppStorage("scoutCameraShowReferenceOverlay") private var showReferenceOverlay = false
     @AppStorage("scoutCameraShowBoardGuide") private var showBoardGuide = false
     @AppStorage("scoutCameraDebugMode") private var debugMode = false
@@ -64,7 +67,8 @@ struct ScoutCameraLayout: View {
                     previewPanel
                         .frame(width: previewWidth, height: previewHeight)
                         .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
-                        .gesture(lensSwipeGesture)
+                        .simultaneousGesture(lensSwipeGesture)
+                        .simultaneousGesture(lensPinchGesture)
 
                     VStack(spacing: 12) {
                         topInfoBar
@@ -1119,6 +1123,29 @@ struct ScoutCameraLayout: View {
                 } else {
                     viewModel.selectPreviousLens()
                 }
+            }
+    }
+
+    private var lensPinchGesture: some Gesture {
+        MagnificationGesture()
+            .onChanged { value in
+                if pinchStartFocalLength == nil {
+                    pinchStartFocalLength = viewModel.activeFocalLengthMm
+                    pinchStartLensId = viewModel.selectedLens?.id
+                    let lensPool = viewModel.selectedLensPack?.lenses ?? viewModel.availableLenses
+                    pinchStartLensIndex = lensPool.firstIndex(where: { $0.id == pinchStartLensId })
+                }
+                viewModel.applyPinchZoom(
+                    scale: value,
+                    startLensId: pinchStartLensId,
+                    startFocalLength: pinchStartFocalLength ?? viewModel.activeFocalLengthMm,
+                    startLensIndex: pinchStartLensIndex
+                )
+            }
+            .onEnded { _ in
+                pinchStartFocalLength = nil
+                pinchStartLensId = nil
+                pinchStartLensIndex = nil
             }
     }
 
