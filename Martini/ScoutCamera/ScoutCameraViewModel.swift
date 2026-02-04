@@ -148,8 +148,8 @@ final class ScoutCameraViewModel: ObservableObject {
             let nextValue = min(maxFocal, focalLengthMm + 1)
             if nextValue != focalLengthMm {
                 focalLengthMm = nextValue
+                return
             }
-            return
         }
         let lensPool = selectedLensPack?.lenses ?? availableLenses
         guard let currentIndex = lensPool.firstIndex(where: { $0.id == selectedLens.id }) else {
@@ -168,8 +168,8 @@ final class ScoutCameraViewModel: ObservableObject {
             let previousValue = max(minFocal, focalLengthMm - 1)
             if previousValue != focalLengthMm {
                 focalLengthMm = previousValue
+                return
             }
-            return
         }
         let lensPool = selectedLensPack?.lenses ?? availableLenses
         guard let currentIndex = lensPool.firstIndex(where: { $0.id == selectedLens.id }) else {
