@@ -2318,6 +2318,14 @@
       "type": "anamorphic",
       "format": "S35",
       "description": "Hawk V-Lite 2x anamorphic (common rental)"
+    },
+    {
+      "id": "sony_g_master",
+      "brand": "Sony",
+      "name": "G Master",
+      "type": "mixed",
+      "format": "FF",
+      "description": "Sony G Master full-frame lenses"
     }
   ],
   "lenses": [
@@ -4170,6 +4178,47 @@
       "focal_length_mm": 135,
       "max_t_stop": 1.9,
       "squeeze": 1.0
+    },
+    {
+      "id": "sony_g_master__16-35mm__t2_8__1x",
+      "type": "zoom",
+      "brand": "Sony",
+      "series": "G Master",
+      "format": "FF",
+      "mounts": [
+        "E"
+      ],
+      "focal_length_mm_min": 16,
+      "focal_length_mm_max": 35,
+      "max_t_stop": 2.8,
+      "squeeze": 1.0
+    },
+    {
+      "id": "sony_g_master__24-70mm__t2_8__1x",
+      "type": "zoom",
+      "brand": "Sony",
+      "series": "G Master",
+      "format": "FF",
+      "mounts": [
+        "E"
+      ],
+      "focal_length_mm_min": 24,
+      "focal_length_mm_max": 70,
+      "max_t_stop": 2.8,
+      "squeeze": 1.0
+    },
+    {
+      "id": "sony_g_master__35mm__t1_4__1x",
+      "type": "prime",
+      "brand": "Sony",
+      "series": "G Master",
+      "format": "FF",
+      "mounts": [
+        "E"
+      ],
+      "focal_length_mm": 35,
+      "max_t_stop": 1.4,
+      "squeeze": 1.0
     }
   ],
   "lens_pack_items": [
@@ -4867,6 +4916,21 @@
       "pack_id": "hawk_v_lite_2x",
       "lens_id": "hawk_v_lite__100mm__t2_2__2x",
       "sort_order": 100
+    },
+    {
+      "pack_id": "sony_g_master",
+      "lens_id": "sony_g_master__16-35mm__t2_8__1x",
+      "sort_order": 16035
+    },
+    {
+      "pack_id": "sony_g_master",
+      "lens_id": "sony_g_master__24-70mm__t2_8__1x",
+      "sort_order": 24070
+    },
+    {
+      "pack_id": "sony_g_master",
+      "lens_id": "sony_g_master__35mm__t1_4__1x",
+      "sort_order": 35
     }
   ]
 }
