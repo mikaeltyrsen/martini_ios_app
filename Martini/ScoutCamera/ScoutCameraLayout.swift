@@ -6,6 +6,7 @@ import UIKit
 struct ScoutCameraLayout: View {
     @EnvironmentObject private var authService: AuthService
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var viewModel: ScoutCameraViewModel
     @ObservedObject private var calibrationStore: FOVCalibrationStore
@@ -26,12 +27,21 @@ struct ScoutCameraLayout: View {
     @AppStorage("scoutCameraDebugMode") private var debugMode = false
     @State private var previewLayer: AVCaptureVideoPreviewLayer?
     @State private var capturedPhoto: CapturedPhoto?
+    @State private var photoAccessAlert: PhotoLibraryHelper.PhotoAccessAlert?
     private let previewMargin: CGFloat = 40
     private let referenceOverlayPadding = EdgeInsets(top: 0, leading: 0, bottom: 120, trailing: 72)
+    private let onAddBoard: (UIImage, String?) -> Void
 
-    init(projectId: String, frameId: String, targetAspectRatio: CGFloat, creativeId: String? = nil) {
+    init(
+        projectId: String,
+        frameId: String,
+        targetAspectRatio: CGFloat,
+        creativeId: String? = nil,
+        onAddBoard: @escaping (UIImage, String?) -> Void
+    ) {
         self.frameId = frameId
         self.targetAspectRatio = targetAspectRatio
+        self.onAddBoard = onAddBoard
         let viewModel = ScoutCameraViewModel(
             projectId: projectId,
             frameId: frameId,
@@ -131,6 +141,9 @@ struct ScoutCameraLayout: View {
         }
         .onChange(of: viewModel.processedImage) { newValue in
             capturedPhoto = newValue.map { CapturedPhoto(image: $0) }
+            if let image = newValue {
+                Task { await saveCapturedPhotoToPhotos(image) }
+            }
         }
         .onChange(of: previewOrientation) { newValue in
             viewModel.captureManager.updateVideoOrientation(newValue)
@@ -168,6 +181,18 @@ struct ScoutCameraLayout: View {
             Button("OK", role: .cancel) { viewModel.errorMessage = nil }
         } message: {
             Text(viewModel.errorMessage ?? "Unknown error")
+        }
+        .alert(item: $photoAccessAlert) { alert in
+            Alert(
+                title: Text("Photos Access Needed"),
+                message: Text(alert.message),
+                primaryButton: .default(Text("Open Settings")) {
+                    if let settingsURL = URL(string: UIApplication.openSettingsURLString) {
+                        openURL(settingsURL)
+                    }
+                },
+                secondaryButton: .cancel()
+            )
         }
         .fullScreenCover(item: $capturedPhoto) { photo in
             ScoutCameraReviewView(
@@ -1564,10 +1589,25 @@ struct ScoutCameraLayout: View {
     }
 
     private func handleImport() async {
-        let success = await viewModel.uploadCapturedImage(token: authService.currentBearerToken())
-        if success {
-            try? await authService.fetchFrames()
+        guard let payload = await viewModel.preparePendingUploadPayload() else { return }
+        await MainActor.run {
+            onAddBoard(payload.image, payload.metadata)
+            capturedPhoto = nil
+            viewModel.capturedImage = nil
+            viewModel.processedImage = nil
             dismiss()
+        }
+    }
+
+    private func saveCapturedPhotoToPhotos(_ image: UIImage) async {
+        guard let data = image.jpegData(compressionQuality: 0.95) else { return }
+        let result = await PhotoLibraryHelper.saveImage(data: data)
+        if case .accessDenied = result {
+            await MainActor.run {
+                photoAccessAlert = PhotoLibraryHelper.PhotoAccessAlert(
+                    message: PhotoLibraryHelper.accessDeniedMessage(for: .board)
+                )
+            }
         }
     }
 

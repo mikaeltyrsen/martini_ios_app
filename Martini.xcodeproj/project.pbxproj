@@ -30,6 +30,7 @@
 		075456032EC9A6E200C45739 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075455FF2EC9A6E100C45739 /* LoginView.swift */; };
 		075456042EC9A6E200C45739 /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075456002EC9A6E100C45739 /* QRScannerView.swift */; };
 		075456082EC9AA2100C45739 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 075456072EC9AA2100C45739 /* Assets.xcassets */; };
+		075D7C932F32B99200802DAA /* UploadSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075D7C922F32B99200802DAA /* UploadSettings.swift */; };
 		07A6A6862EC9A272002C8EB9 /* MartiniApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07A6A6852EC9A272002C8EB9 /* MartiniApp.swift */; };
 		07A6A6882EC9A272002C8EB9 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07A6A6872EC9A272002C8EB9 /* ContentView.swift */; };
 		07C904B02EDA8665004EDBFA /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C904AF2EDA8665004EDBFA /* Models.swift */; };
@@ -134,6 +135,7 @@
 		075455FF2EC9A6E100C45739 /* LoginView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		075456002EC9A6E100C45739 /* QRScannerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
 		075456072EC9AA2100C45739 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		075D7C922F32B99200802DAA /* UploadSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadSettings.swift; sourceTree = "<group>"; };
 		07A6A6822EC9A272002C8EB9 /* Martini.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Martini.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		07A6A6852EC9A272002C8EB9 /* MartiniApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MartiniApp.swift; sourceTree = "<group>"; };
 		07A6A6872EC9A272002C8EB9 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -260,6 +262,7 @@
 		07A6A6842EC9A272002C8EB9 /* Martini */ = {
 			isa = PBXGroup;
 			children = (
+				075D7C922F32B99200802DAA /* UploadSettings.swift */,
 				07E5F2902F2BD18B00B36FB4 /* AppEnvironment.swift */,
 				0746C3DE2F2056C500898C7A /* PushNotificationManager.swift */,
 				0733190E2F17ED1800D6FE10 /* UIControlConfig.swift */,
@@ -531,6 +534,7 @@
 				0730F4112F0C6F7D000B598F /* CachedVideoPlayerView.swift in Sources */,
 				0730F4122F0C6F7D000B598F /* BoardMetadataSheet.swift in Sources */,
 				2C5B05456FA04ED5ACD63C85 /* ScoutCamera/FOV/FOVEngine.swift in Sources */,
+				075D7C932F32B99200802DAA /* UploadSettings.swift in Sources */,
 				C0E3AD0331584BB39C1BE6BA /* ScoutCamera/FOV/FOVMath.swift in Sources */,
 				835B9B20D9AC43568A59A541 /* ScoutCamera/FOV/IPhoneCameraModelResolver.swift in Sources */,
 				0730F4042F0ABFBB000B598F /* FramePagerView.swift in Sources */,
@@ -697,7 +701,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Martini/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Martini needs access to your camera in order to scan QR codes to access Martini projects.";
-				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Martini uses the local network to find nearby devices for sign-in.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Find nearby signed-in Martini devices to request sign-in help. We do not collect or share data; this is only to help sign others in.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Martini uses your location to tag scout photos and calculate sun position data.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Martini needs access to save clips to your Photos library.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
@@ -734,7 +738,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Martini/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Martini needs access to your camera in order to scan QR codes to access Martini projects.";
-				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Martini uses the local network to find nearby devices for sign-in.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Find nearby signed-in Martini devices to request sign-in help. We do not collect or share data; this is only to help sign others in.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Martini uses your location to tag scout photos and calculate sun position data.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Martini needs access to save clips to your Photos library.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;

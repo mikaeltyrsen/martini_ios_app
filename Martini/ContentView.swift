@@ -4300,6 +4300,7 @@ struct SettingsView: View {
     @Binding var boardSizingOmitted: BoardSizingOption
     @Binding var boardSizingUpNext: BoardSizingOption
     @Binding var boardSizingHere: BoardSizingOption
+    @AppStorage("uploadCompressionSetting") private var uploadCompressionSettingRawValue = UploadCompressionSetting.large.rawValue
 
     var body: some View {
         NavigationStack {
@@ -4330,63 +4331,15 @@ struct SettingsView: View {
                     }
                 }
 
-                Section("Grid") {
-                    Toggle("Show Descriptions", isOn: $showDescriptions)
-
-                    Toggle("Show Full Descriptions", isOn: $showFullDescriptions)
-                        .disabled(!showDescriptions)
-
-                    Toggle("Show Tags", isOn: $showGridTags)
-
-                    // Grid size slider: portrait 4/3/2/1, landscape 5/4/3/2 (handled by gridColumnCount)
-                    VStack(alignment: .leading) {
-                        Text("Grid Size")
-                        HStack {
-                            Image(systemName: "square.grid.4x3.fill")
-                            Spacer()
-                            Slider(value: Binding(
-                                get: { Double(gridSizeStep) },
-                                set: { gridSizeStep = Int($0.rounded()) }
-                            ), in: Double(UIControlConfig.gridSizeMin)...Double(UIControlConfig.gridSizeMax), step: Double(UIControlConfig.gridSizeStep))
-                            Spacer()
-                            Image(systemName: "rectangle.fill")
-                        }
-                        Text("Pinch and zoom on grid to change size.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    // Font size slider: 1..5 steps
-                    VStack(alignment: .leading) {
-                        Text("Font Size")
-                        HStack {
-                            Image(systemName: "textformat.size.smaller")
-                            Spacer()
-                            Slider(value: Binding(
-                                get: { Double(gridFontStep) },
-                                set: { gridFontStep = Int($0.rounded()) }
-                            ), in: Double(UIControlConfig.gridFontSizeMin)...Double(UIControlConfig.gridFontSizeMax), step: Double(UIControlConfig.gridFontSizeStep))
-                            Spacer()
-                            Image(systemName: "textformat.size.larger")
-                        }
-                    }
-
-                    VStack(alignment: .leading) {
-                        Text("Border Radius")
-                        HStack {
-                            Image(systemName: "square")
-                            Spacer()
-                            Slider(value: Binding(
-                                get: { Double(gridCornerRadiusStep) },
-                                set: { gridCornerRadiusStep = Int($0.rounded()) }
-                            ), in: Double(UIControlConfig.borderRadiusMin)...Double(UIControlConfig.borderRadiusMax), step: Double(UIControlConfig.borderRadiusStep))
-                            Spacer()
-                            Image(systemName: "capsule")
-                        }
-                    }
-
+                Section("Settings") {
                     NavigationLink {
-                        BoardSizingView(
+                        GridSettingsView(
+                            showDescriptions: $showDescriptions,
+                            showFullDescriptions: $showFullDescriptions,
+                            showGridTags: $showGridTags,
+                            gridSizeStep: $gridSizeStep,
+                            gridFontStep: $gridFontStep,
+                            gridCornerRadiusStep: $gridCornerRadiusStep,
                             boardSizingCleared: $boardSizingCleared,
                             boardSizingCrossed: $boardSizingCrossed,
                             boardSizingOmitted: $boardSizingOmitted,
@@ -4394,30 +4347,65 @@ struct SettingsView: View {
                             boardSizingHere: $boardSizingHere
                         )
                     } label: {
-                        Text("Board Sizing")
-                    }
-
-                }
-
-                Section("Markers") {
-                    VStack(alignment: .leading) {
-                        Text("Border Width")
-                        HStack {
-                            Slider(value: $markerBorderWidth, in: UIControlConfig.borderThicknessMin...UIControlConfig.borderThicknessMax, step: UIControlConfig.borderThicknessStep)
+                        Label {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Grid")
+                                Text("Manage grid layout")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                        } icon: {
+                            settingsIcon("square.grid.3x3.fill")
                         }
                     }
-                    VStack(alignment: .leading) {
-                        Text("Crosses Thickness")
-                        HStack {
-                            //Image(systemName: "line.diagonal")
-                            //Spacer()
-                            Slider(value: $doneCrossLineWidth, in: UIControlConfig.crossMarkThicknessMin...UIControlConfig.crossMarkThicknessMax, step: UIControlConfig.crossMarkThicknessStep)
-                            //Spacer()
-                            //Image(systemName: "line.diagonal.arrow")
+
+                    NavigationLink {
+                        MarkerSettingsView(
+                            doneCrossLineWidth: $doneCrossLineWidth,
+                            showDoneCrosses: $showDoneCrosses,
+                            markerBorderWidth: $markerBorderWidth
+                        )
+                    } label: {
+                        Label {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Markers")
+                                Text("Manage marker styles")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                        } icon: {
+                            settingsIcon("pencil.tip")
                         }
                     }
-                    VStack(alignment: .leading) {
-                        Toggle("Show Crosses", isOn: $showDoneCrosses)
+
+                    NavigationLink {
+                        ScoutCameraSettingsView()
+                    } label: {
+                        Label {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Scout Camera")
+                                Text("Manage cameras and lenses")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                        } icon: {
+                            settingsIcon("video.fill")
+                        }
+                    }
+
+                    NavigationLink {
+                        UploadSettingsView(selection: $uploadCompressionSettingRawValue)
+                    } label: {
+                        Label {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Upload Settings")
+                                Text(uploadSettingSubtitle)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                        } icon: {
+                            settingsIcon("square.and.arrow.up.fill")
+                        }
                     }
                 }
 
@@ -4451,19 +4439,6 @@ struct SettingsView: View {
                     }
                 }
 
-                Section {
-                    NavigationLink {
-                        ScoutCameraSettingsView()
-                    } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Scout Camera")
-                            Text("Manage cameras and lenses")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-
                 Section("Account") {
                     Button(role: .destructive) {
                         Task {
@@ -4474,15 +4449,23 @@ struct SettingsView: View {
                             }
                         }
                     } label: {
-                        Label("Sign out", systemImage: "rectangle.portrait.and.arrow.right")
+                        Label {
+                            Text("Sign out")
+                        } icon: {
+                            settingsIcon("rectangle.portrait.and.arrow.right", fill: .red)
+                        }
                     }
-                    .foregroundStyle(.red)
+                    .foregroundStyle(.white)
                 }
 
-                Section("Version") {
+                Section {
                     Text(appVersionDescription)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                } header: {
+                    Text("Version")
                 }
             }
             .navigationTitle("")
@@ -4553,6 +4536,22 @@ struct SettingsView: View {
         )
     }
 
+    private func settingsIcon(_ systemName: String, fill: Color = .martiniAccentColor) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(fill)
+            Image(systemName: systemName)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white)
+        }
+        .frame(width: 32, height: 32)
+    }
+
+    private var uploadSettingSubtitle: String {
+        let setting = UploadCompressionSetting(rawValue: uploadCompressionSettingRawValue) ?? .large
+        return setting.displayName
+    }
+
     private var appVersionDescription: String {
         let info = Bundle.main.infoDictionary
         let version = info?["CFBundleShortVersionString"] as? String ?? "Unknown"
@@ -4578,6 +4577,168 @@ struct SettingsView: View {
         boardSizingOmitted = UIControlConfig.boardSizingDefault
         boardSizingUpNext = UIControlConfig.boardSizingDefault
         boardSizingHere = UIControlConfig.boardSizingDefault
+        uploadCompressionSettingRawValue = UploadCompressionSetting.large.rawValue
+    }
+}
+
+private struct GridSettingsView: View {
+    @Binding var showDescriptions: Bool
+    @Binding var showFullDescriptions: Bool
+    @Binding var showGridTags: Bool
+    @Binding var gridSizeStep: Int
+    @Binding var gridFontStep: Int
+    @Binding var gridCornerRadiusStep: Int
+    @Binding var boardSizingCleared: BoardSizingOption
+    @Binding var boardSizingCrossed: BoardSizingOption
+    @Binding var boardSizingOmitted: BoardSizingOption
+    @Binding var boardSizingUpNext: BoardSizingOption
+    @Binding var boardSizingHere: BoardSizingOption
+
+    var body: some View {
+        Form {
+            Section("Grid") {
+                Toggle("Show Descriptions", isOn: $showDescriptions)
+
+                Toggle("Show Full Descriptions", isOn: $showFullDescriptions)
+                    .disabled(!showDescriptions)
+
+                Toggle("Show Tags", isOn: $showGridTags)
+
+                // Grid size slider: portrait 4/3/2/1, landscape 5/4/3/2 (handled by gridColumnCount)
+                VStack(alignment: .leading) {
+                    Text("Grid Size")
+                    HStack {
+                        Image(systemName: "square.grid.4x3.fill")
+                        Spacer()
+                        Slider(value: Binding(
+                            get: { Double(gridSizeStep) },
+                            set: { gridSizeStep = Int($0.rounded()) }
+                        ), in: Double(UIControlConfig.gridSizeMin)...Double(UIControlConfig.gridSizeMax), step: Double(UIControlConfig.gridSizeStep))
+                        Spacer()
+                        Image(systemName: "rectangle.fill")
+                    }
+                    Text("Pinch and zoom on grid to change size.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
+                // Font size slider: 1..5 steps
+                VStack(alignment: .leading) {
+                    Text("Font Size")
+                    HStack {
+                        Image(systemName: "textformat.size.smaller")
+                        Spacer()
+                        Slider(value: Binding(
+                            get: { Double(gridFontStep) },
+                            set: { gridFontStep = Int($0.rounded()) }
+                        ), in: Double(UIControlConfig.gridFontSizeMin)...Double(UIControlConfig.gridFontSizeMax), step: Double(UIControlConfig.gridFontSizeStep))
+                        Spacer()
+                        Image(systemName: "textformat.size.larger")
+                    }
+                }
+
+                VStack(alignment: .leading) {
+                    Text("Border Radius")
+                    HStack {
+                        Image(systemName: "square")
+                        Spacer()
+                        Slider(value: Binding(
+                            get: { Double(gridCornerRadiusStep) },
+                            set: { gridCornerRadiusStep = Int($0.rounded()) }
+                        ), in: Double(UIControlConfig.borderRadiusMin)...Double(UIControlConfig.borderRadiusMax), step: Double(UIControlConfig.borderRadiusStep))
+                        Spacer()
+                        Image(systemName: "capsule")
+                    }
+                }
+
+                NavigationLink {
+                    BoardSizingView(
+                        boardSizingCleared: $boardSizingCleared,
+                        boardSizingCrossed: $boardSizingCrossed,
+                        boardSizingOmitted: $boardSizingOmitted,
+                        boardSizingUpNext: $boardSizingUpNext,
+                        boardSizingHere: $boardSizingHere
+                    )
+                } label: {
+                    Text("Board Sizing")
+                }
+            }
+        }
+        .navigationTitle("Grid")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct MarkerSettingsView: View {
+    @Binding var doneCrossLineWidth: Double
+    @Binding var showDoneCrosses: Bool
+    @Binding var markerBorderWidth: Double
+
+    var body: some View {
+        Form {
+            Section("Markers") {
+                VStack(alignment: .leading) {
+                    Text("Border Width")
+                    HStack {
+                        Slider(value: $markerBorderWidth, in: UIControlConfig.borderThicknessMin...UIControlConfig.borderThicknessMax, step: UIControlConfig.borderThicknessStep)
+                    }
+                }
+                VStack(alignment: .leading) {
+                    Text("Crosses Thickness")
+                    HStack {
+                        Slider(value: $doneCrossLineWidth, in: UIControlConfig.crossMarkThicknessMin...UIControlConfig.crossMarkThicknessMax, step: UIControlConfig.crossMarkThicknessStep)
+                    }
+                }
+                VStack(alignment: .leading) {
+                    Toggle("Show Crosses", isOn: $showDoneCrosses)
+                }
+            }
+        }
+        .navigationTitle("Markers")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct UploadSettingsView: View {
+    @Binding var selection: String
+
+    private var selectedSetting: UploadCompressionSetting {
+        UploadCompressionSetting(rawValue: selection) ?? .large
+    }
+
+    var body: some View {
+        Form {
+            Section("Compression") {
+                ForEach(UploadCompressionSetting.allCases) { setting in
+                    Button {
+                        selection = setting.rawValue
+                    } label: {
+                        HStack(alignment: .center, spacing: 12) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(setting.displayName)
+                                    .font(.headline)
+                                ForEach(setting.detailLines, id: \.self) { line in
+                                    Text(line)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            Spacer()
+                            if setting == selectedSetting {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(Color.martiniDefaultColor)
+                            } else {
+                                Image(systemName: "circle")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .navigationTitle("Upload Settings")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

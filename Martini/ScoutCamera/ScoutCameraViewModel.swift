@@ -314,6 +314,19 @@ final class ScoutCameraViewModel: ObservableObject {
         }
     }
 
+    func preparePendingUploadPayload() async -> (image: UIImage, metadata: String?)? {
+        guard let capturedImage else { return nil }
+        let finalImage: UIImage
+        if let processedImage {
+            finalImage = processedImage
+        } else if let processed = await processImage(capturedImage) {
+            finalImage = processed
+        } else {
+            finalImage = capturedImage
+        }
+        return (image: finalImage, metadata: metadataJSONString())
+    }
+
     func prepareShareImage() async -> UIImage? {
         if let processedImage {
             return processedImage

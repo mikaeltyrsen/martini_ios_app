@@ -11,6 +11,8 @@
 	<array>
 		<string>_martini-login._tcp</string>
 	</array>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Martini needs access to save photos to your library.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

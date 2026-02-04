@@ -11,6 +11,7 @@ struct BoardAnnotationEditor: View {
 
     @State private var drawing: PKDrawing
     @State private var canvasSize: CGSize = .zero
+    @State private var isSaving: Bool = false
 
     init(
         title: String,
@@ -89,12 +90,21 @@ struct BoardAnnotationEditor: View {
                     Button("Cancel") {
                         onCancel()
                     }
+                    .disabled(isSaving)
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
+                    Button {
+                        isSaving = true
                         onSave(drawing, canvasSize)
+                    } label: {
+                        if isSaving {
+                            MartiniLoader()
+                        } else {
+                            Text("Save")
+                        }
                     }
+                    .disabled(isSaving)
                 }
             }
         }

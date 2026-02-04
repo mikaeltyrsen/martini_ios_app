@@ -256,6 +256,7 @@ struct FrameLayout: View {
                                     )
                             }
                             .buttonStyle(.plain)
+                            .allowsHitTesting(metadataTapAction != nil)
                             Spacer()
                         }
                         .padding(max(2, diameter * 0.25))
@@ -360,26 +361,53 @@ struct FrameLayout: View {
             let horizontalPadding = badgeHeight * 0.35
             let verticalPadding = badgeHeight * 0.25
 
+            let diameter = max(18, geo.size.width * 0.08) // 8% of width with a minimum
+            
             VStack {
                 HStack {
-                    Spacer()
-                    Text(title)
-                        .font(.system(size: fontSize, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .lineLimit(creativeTitleLineLimit)
-                        .truncationMode(.tail)
-                        .multilineTextAlignment(.center)
-                        .minimumScaleFactor(0.75)
-                        .frame(maxWidth: geo.size.width * creativeTitleMaxWidthRatio)
-                        .padding(.horizontal, horizontalPadding)
-                        .padding(.vertical, verticalPadding)
-                        .background(
-                            Capsule().fill(Color.martiniCreativeColor(from: frame.creativeColor))
-                        )
-                        .shadow(color: Color.black.opacity(0.2), radius: 2, x: 0, y: 1)
-                    Spacer()
+                    HStack {
+                        Spacer(minLength: 25)
+
+                        ViewThatFits(in: .horizontal) {
+                            // 1) Content-hugging version (preferred)
+                            Text(title)
+                                .font(.system(size: fontSize, weight: .semibold))
+                                .foregroundStyle(.white)
+                                //.lineLimit(creativeTitleLineLimit)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                                .multilineTextAlignment(.center)
+                                .minimumScaleFactor(0.75)
+                                .fixedSize(horizontal: true, vertical: false)
+                                .padding(.horizontal, horizontalPadding)
+                                .padding(.vertical, verticalPadding)
+                                .background(
+                                    Capsule().fill(Color.martiniCreativeColor(from: frame.creativeColor))
+                                )
+                                .shadow(color: Color.black.opacity(0.2), radius: 2, x: 0, y: 1)
+
+                            // 2) Fallback capped-width version
+                            Text(title)
+                                .font(.system(size: fontSize, weight: .semibold))
+                                .foregroundStyle(.white)
+                                //.lineLimit(creativeTitleLineLimit)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                                .multilineTextAlignment(.center)
+                                .minimumScaleFactor(0.75)
+                                .padding(.horizontal, horizontalPadding)
+                                .padding(.vertical, verticalPadding)
+                                .frame(maxWidth: geo.size.width * creativeTitleMaxWidthRatio)
+                                .background(
+                                    Capsule().fill(Color.martiniCreativeColor(from: frame.creativeColor))
+                                )
+                                .shadow(color: Color.black.opacity(0.2), radius: 2, x: 0, y: 1)
+                        }
+
+                        Spacer(minLength: 25)
+                    }
                 }
-                .padding(.top, numberBadgeTopPadding)
+                .padding(max(2, diameter * 0.25))
                 Spacer()
             }
         }

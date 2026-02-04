@@ -5,6 +5,32 @@ import Combine
 import Foundation
 import PencilKit
 
+private enum PendingBoardUploadStatus {
+    case uploading
+    case failed
+}
+
+private struct RetryOptionEstimate {
+    let bytes: Int
+    let pixelWidth: Int
+    let pixelHeight: Int
+}
+
+private struct PendingBoardUpload: Identifiable {
+    let id: String
+    let asset: FrameAssetItem
+    let image: UIImage
+    let boardLabel: String
+    let metadata: String?
+    let previewURL: URL?
+    let pixelWidth: Int
+    let pixelHeight: Int
+    var status: PendingBoardUploadStatus
+    var awaitingServerAck: Bool
+    let createdAt: Date
+    var errorMessage: String?
+}
+
 @MainActor
 struct FrameView: View {
     private let providedFrame: Frame
@@ -64,6 +90,14 @@ struct FrameView: View {
     @State private var boardDeleteTarget: FrameAssetItem?
     @State private var boardActionError: String?
     @State private var isUploadingBoardAsset: Bool = false
+    @State private var pendingBoardUploads: [String: PendingBoardUpload] = [:]
+    @State private var deletingBoardIds: Set<String> = []
+    @State private var uploadFailureAlertMessage: String?
+    @State private var showRetryOptions: Bool = false
+    @State private var retryTargetUploadId: String?
+    @State private var retryOverrides: [String: UploadCompressionSetting] = [:]
+    @State private var retryOptionEstimates: [String: [UploadCompressionSetting: RetryOptionEstimate]] = [:]
+    @State private var retrySetAsDefault: Bool = false
     @State private var metadataSheetItem: BoardMetadataItem?
     @State private var annotationEditorContext: BoardAnnotationEditorContext?
     @State private var boardPhotoAccessAlert: PhotoLibraryHelper.PhotoAccessAlert?
@@ -76,6 +110,7 @@ struct FrameView: View {
     @AppStorage("frameDescriptionFontStep") private var descriptionFontStep: Int = UIControlConfig.descriptionFontStepDefault(
         for: UIDevice.current.userInterfaceIdiom
     )
+    @AppStorage("uploadCompressionSetting") private var uploadCompressionSettingRawValue = UploadCompressionSetting.large.rawValue
     @Environment(\.openURL) private var openURL
     @Environment(\.colorScheme) private var colorScheme
 
@@ -255,7 +290,14 @@ struct FrameView: View {
                     ScoutCameraLayout(
                         projectId: projectId,
                         frameId: frame.id,
-                        targetAspectRatio: frameAspectRatio
+                        targetAspectRatio: frameAspectRatio,
+                        onAddBoard: { image, metadata in
+                            startPendingBoardUpload(
+                                image: image,
+                                boardLabel: "Scout Camera",
+                                metadata: metadata
+                            )
+                        }
                     )
                     .environmentObject(authService)
                 }
@@ -290,14 +332,17 @@ struct FrameView: View {
                 }
             }
             .onReceive(authService.$frames) { frames in
+                let previousBoardIDs = Set(frame.boards?.map(\.id) ?? [])
                 guard let updated = frames.first(where: { $0.id == frame.id }) else { return }
                 frame = updated
                 selectedStatus = updated.statusEnum
+                handlePendingUploadAcknowledgements(previousBoardIDs: previousBoardIDs, updatedFrame: updated)
 
                 let newStack: [FrameAssetItem] = FrameView.orderedAssets(for: updated, order: assetOrder)
-                if assetStack != newStack {
+                let mergedStack = mergePendingAssets(into: newStack)
+                if assetStack != mergedStack {
                     let previousStack = assetStack
-                    assetStack = newStack
+                    assetStack = mergedStack
                     let previousIDs = Set(previousStack.map(\.id))
                     if let newBoard = newStack.first(where: { $0.kind == .board && !previousIDs.contains($0.id) }) {
                         visibleAssetID = newBoard.id
@@ -372,7 +417,7 @@ struct FrameView: View {
         boardActionContent
             .onChange(of: assetOrder) { (newOrder: [FrameAssetKind]) in
                 let newStack: [FrameAssetItem] = FrameView.orderedAssets(for: frame, order: newOrder)
-                assetStack = newStack
+                assetStack = mergePendingAssets(into: newStack)
                 if visibleAssetID == nil { visibleAssetID = newStack.first?.id }
             }
             .onChange(of: assetStack) { (newStack: [FrameAssetItem]) in
@@ -386,7 +431,8 @@ struct FrameView: View {
             }
             .onChange(of: reorderBoards) { _, newOrder in
                 guard isReorderingBoards else { return }
-                assetStack = reorderedAssetStack(from: assetStack, boardOrder: newOrder)
+                let reordered = reorderedAssetStack(from: assetStack, boardOrder: newOrder)
+                assetStack = mergePendingAssets(into: reordered)
             }
     }
 
@@ -429,6 +475,16 @@ struct FrameView: View {
                     secondaryButton: .cancel()
                 )
             }
+            .alert("Upload didn’t finish", isPresented: Binding(
+                get: { uploadFailureAlertMessage != nil },
+                set: { if !$0 { uploadFailureAlertMessage = nil } }
+            )) {
+                Button("Try Again") {
+                    showRetryOptions = true
+                }
+            } message: {
+                Text(uploadFailureAlertMessage ?? "")
+            }
             .overlay {
                 if showingBoardRenameAlert {
                     BoardRenameAlert(
@@ -450,6 +506,33 @@ struct FrameView: View {
                             }
                         }
                     )
+                }
+                if showRetryOptions {
+                    RetryUploadOptionsAlert(
+                        estimates: retryOptionEstimates[retryTargetUploadId ?? ""] ?? [:],
+                        setAsDefault: $retrySetAsDefault,
+                        onSelect: { setting in
+                            guard let targetId = retryTargetUploadId else { return }
+                            retryOverrides[targetId] = setting
+                            if retrySetAsDefault {
+                                uploadCompressionSettingRawValue = setting.rawValue
+                            }
+                            retrySetAsDefault = false
+                            showRetryOptions = false
+                            pendingBoardUploads[targetId]?.awaitingServerAck = false
+                            pendingBoardUploads[targetId]?.errorMessage = nil
+                            Task { await performPendingBoardUpload(id: targetId) }
+                        },
+                        onCancel: {
+                            retrySetAsDefault = false
+                            showRetryOptions = false
+                        }
+                    )
+                    .onAppear {
+                        if let targetId = retryTargetUploadId {
+                            prepareRetryEstimates(for: targetId)
+                        }
+                    }
                 }
                 if showingAddBoardOptions {
                     AddBoardAlert(
@@ -930,35 +1013,50 @@ struct FrameView: View {
 
         return VStack(alignment: .leading, spacing: boardsTabsSpacing) {
             //Spacer()
-            StackedAssetScroller(
-                frame: frame,
-                assetStack: assetStack,
-                visibleAssetID: $visibleAssetID,
-                isReorderingBoards: isReorderingBoards,
-                reorderBoards: $reorderBoards,
-                activeReorderBoard: $activeReorderBoard,
-                pinnedBoardId: pinnedBoardId,
-                primaryText: primaryText,
-                takePictureID: takePictureCardID,
-                takePictureAction: authService.allowEdit ? {
-                    showingAddBoardOptions = true
-                } : nil,
-                onAssetTap: { asset in
-                    guard asset.kind == .board else { return }
-                    openBoardPreview(asset)
-                },
-                onMetadataTap: { asset, metadata in
-                    metadataSheetItem = BoardMetadataItem(
-                        boardName: asset.displayLabel,
-                        metadata: metadata,
-                        assetURL: asset.url,
-                        assetIsVideo: asset.isVideo
-                    )
-                },
-                contextMenuContent: { asset in
-                    boardContextMenu(for: asset)
-                }
-            )
+                StackedAssetScroller(
+                    frame: frame,
+                    assetStack: assetStack,
+                    visibleAssetID: $visibleAssetID,
+                    isReorderingBoards: isReorderingBoards,
+                    reorderBoards: $reorderBoards,
+                    activeReorderBoard: $activeReorderBoard,
+                    pinnedBoardId: pinnedBoardId,
+                    primaryText: primaryText,
+                    takePictureID: takePictureCardID,
+                    takePictureAction: authService.allowEdit ? {
+                        showingAddBoardOptions = true
+                    } : nil,
+                    onAssetTap: { asset in
+                        guard asset.kind == .board else { return }
+                        openBoardPreview(asset)
+                    },
+                    onMetadataTap: { asset, metadata in
+                        metadataSheetItem = BoardMetadataItem(
+                            boardName: asset.displayLabel,
+                            metadata: metadata,
+                            assetURL: asset.url,
+                            assetIsVideo: asset.isVideo
+                        )
+                    },
+                    pendingUploadState: { asset in
+                        pendingStatus(for: asset)
+                    },
+                    pendingUploadError: { asset in
+                        pendingBoardUploads[asset.id]?.errorMessage
+                    },
+                    isDeleting: { asset in
+                        deletingBoardIds.contains(asset.id)
+                    },
+                    onRetryPendingUpload: { asset in
+                        retryPendingUpload(asset)
+                    },
+                    onCancelPendingUpload: { asset in
+                        cancelPendingUpload(asset)
+                    },
+                    contextMenuContent: { asset in
+                        boardContextMenu(for: asset)
+                    }
+                )
             .frame(height: scrollerHeight)
 
             //Spacer()
@@ -976,7 +1074,9 @@ struct FrameView: View {
 
     @ViewBuilder
     private func boardContextMenu(for asset: FrameAssetItem) -> some View {
-        if asset.kind == .board {
+        if isPendingUpload(asset) {
+            EmptyView()
+        } else if asset.kind == .board {
             let isBoardEntry = boardEntry(for: asset) != nil
             let canEdit = authService.allowEdit
             if isBoardEntry {
@@ -1009,7 +1109,7 @@ struct FrameView: View {
                     Button {
                         saveBoardAssetToPhotos(asset)
                     } label: {
-                        Label(asset.isVideo ? "Download Video" : "Download Image", systemImage: "square.and.arrow.down")
+                        Label(asset.isVideo ? "Save Video" : "Save to Camera Roll", systemImage: "square.and.arrow.down")
                     }
                 }
                 if canEdit {
@@ -1025,7 +1125,7 @@ struct FrameView: View {
                     Button {
                         saveBoardAssetToPhotos(asset)
                     } label: {
-                        Label(asset.isVideo ? "Download Video" : "Download Image", systemImage: "square.and.arrow.down")
+                        Label(asset.isVideo ? "Save Video" : "Save to Camera Roll", systemImage: "square.and.arrow.down")
                     }
                 }
                 if canEdit {
@@ -1407,9 +1507,11 @@ struct FrameView: View {
                     } label: {
                         Image(systemName: "square.fill.text.grid.1x2")
                             .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(Color.martiniAccentColor)
+                            .foregroundStyle(Color.martiniDefaultText)
                             .padding(10)
-                            .background(.ultraThinMaterial, in: Circle())
+                            .background(
+                                Circle().fill(Color.martiniDefaultColor)
+                            )
                     }
                     .accessibilityLabel("Open Script")
                     .padding(12)
@@ -1422,9 +1524,11 @@ struct FrameView: View {
                     } label: {
                         Image(systemName: "textformat.size.smaller")
                             .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(Color.martiniAccentColor)
+                            .foregroundStyle(Color.martiniDefaultText)
                             .padding(10)
-                            .background(.ultraThinMaterial, in: Circle())
+                            .background(
+                                Circle().fill(Color.martiniDefaultColor)
+                            )
                     }
                     .accessibilityLabel("Decrease Description Font Size")
                     .disabled(descriptionFontStep <= UIControlConfig.descriptionFontStepMin)
@@ -1434,9 +1538,11 @@ struct FrameView: View {
                     } label: {
                         Image(systemName: "textformat.size.larger")
                             .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(Color.martiniAccentColor)
+                            .foregroundStyle(Color.martiniDefaultText)
                             .padding(10)
-                            .background(.ultraThinMaterial, in: Circle())
+                            .background(
+                                Circle().fill(Color.martiniDefaultColor)
+                            )
                     }
                     .accessibilityLabel("Increase Description Font Size")
                     .disabled(descriptionFontStep >= UIControlConfig.descriptionFontStepMax)
@@ -1564,14 +1670,27 @@ struct FrameView: View {
                                         let isSelected: Bool = (asset.id == visibleAssetID)
                                         let isPinned = boardEntry(for: asset)?.isPinned == true
 
+                                        let pendingState = pendingStatus(for: asset)
+                                        let isDeleting = deletingBoardIds.contains(asset.id)
                                         Button {
                                             visibleAssetID = asset.id
                                         } label: {
-                                            tabLabel(for: asset, isPinned: isPinned, isSelected: isSelected)
+                                            tabLabel(
+                                                for: asset,
+                                                isPinned: isPinned,
+                                                isSelected: isSelected,
+                                                pendingState: pendingState
+                                            )
                                         }
                                         .buttonStyle(.plain)
+                                        .scaleEffect(isDeleting ? 1.06 : 1.0)
+                                        .opacity(isDeleting ? 0.0 : 1.0)
+                                        .animation(.spring(response: 0.22, dampingFraction: 0.72), value: isDeleting)
+                                        .disabled(pendingState != nil)
                                         .contextMenu {
-                                            boardContextMenu(for: asset)
+                                            if pendingState == nil {
+                                                boardContextMenu(for: asset)
+                                            }
                                         }
                                         .id(asset.id)
                                     }
@@ -1681,25 +1800,44 @@ struct FrameView: View {
     }
 
     @ViewBuilder
-    private func tabLabel(for asset: FrameAssetItem, isPinned: Bool, isSelected: Bool) -> some View {
+    private func tabLabel(
+        for asset: FrameAssetItem,
+        isPinned: Bool,
+        isSelected: Bool,
+        pendingState: PendingBoardUploadStatus?
+    ) -> some View {
+        let isPending = pendingState != nil
+        let fillColor = isSelected ? Color.martiniDefaultColor : Color.secondary.opacity(0.2)
+        let foregroundColor = isSelected ? Color.martiniDefaultText : Color.primary
+
         HStack(spacing: 6) {
-            if isPinned && asset.kind == .board {
+            if let pendingState {
+                switch pendingState {
+                case .uploading:
+                    MartiniLoader()
+                        .scaleEffect(0.6)
+                        .frame(width: 12, height: 12)
+                case .failed:
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 12, weight: .semibold))
+                }
+            } else if isPinned && asset.kind == .board {
                 Image(systemName: "pin.fill")
                     .font(.system(size: 12, weight: .semibold))
             }
             Text(asset.label ?? asset.kind.displayName)
         }
         .font(.system(size: 14, weight: .semibold))
-        //.foregroundStyle(isSelected ? Color.white : Color.primary)
         .lineLimit(1)
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .frame(minWidth: 80)
         .background(
             Capsule()
-                .fill(isSelected ? Color.martiniDefaultColor : Color.secondary.opacity(0.2))
+                .fill(isPending ? Color.secondary.opacity(0.15) : fillColor)
         )
-        .foregroundStyle(isSelected ? Color.martiniDefaultText : Color.primary)
+        .foregroundStyle(isPending ? Color.secondary : foregroundColor)
+        .opacity(isPending ? 0.7 : 1.0)
     }
 
     private func reorderLabel(for board: FrameAssetItem, isPinned: Bool) -> some View {
@@ -1833,11 +1971,11 @@ struct FrameView: View {
         frame = providedFrame
         selectedStatus = providedFrame.statusEnum
         let newStack: [FrameAssetItem] = FrameView.orderedAssets(for: providedFrame, order: assetOrder)
-        assetStack = newStack
+        assetStack = mergePendingAssets(into: newStack)
         if !isReorderingBoards {
             reorderBoards = boardEntries(from: newStack, frame: providedFrame)
         }
-        visibleAssetID = newStack.first?.id
+        visibleAssetID = assetStack.first?.id
         clips = []
         filesBadgeCount = nil
         clipsError = nil
@@ -1869,9 +2007,200 @@ struct FrameView: View {
     }
 
     private func importCapturedPhoto(_ image: UIImage) async {
-        let didUpload = await uploadBoardImage(image, boardLabel: systemCameraBoardLabel)
-        if didUpload {
+        await saveCapturedPhotoToPhotos(image)
+        await MainActor.run {
+            startPendingBoardUpload(
+                image: image,
+                boardLabel: systemCameraBoardLabel,
+                metadata: nil
+            )
             capturedPhoto = nil
+        }
+    }
+
+    private func saveCapturedPhotoToPhotos(_ image: UIImage) async {
+        guard let data = image.jpegData(compressionQuality: 0.95) else { return }
+        let result = await PhotoLibraryHelper.saveImage(data: data)
+        if case .accessDenied = result {
+            await MainActor.run {
+                boardPhotoAccessAlert = PhotoLibraryHelper.PhotoAccessAlert(
+                    message: PhotoLibraryHelper.accessDeniedMessage(for: .board)
+                )
+            }
+        }
+    }
+
+    private func startPendingBoardUpload(image: UIImage, boardLabel: String, metadata: String?) {
+        let previewURL = writePendingPreviewImage(image)
+        let pixelWidth = Int(image.size.width * image.scale)
+        let pixelHeight = Int(image.size.height * image.scale)
+        let pendingAsset = FrameAssetItem(
+            kind: .board,
+            primary: previewURL?.absoluteString,
+            fallback: nil,
+            fileType: "image/jpeg",
+            label: boardLabel
+        )
+        let pendingUpload = PendingBoardUpload(
+            id: pendingAsset.id,
+            asset: pendingAsset,
+            image: image,
+            boardLabel: boardLabel,
+            metadata: metadata,
+            previewURL: previewURL,
+            pixelWidth: pixelWidth,
+            pixelHeight: pixelHeight,
+            status: .uploading,
+            awaitingServerAck: false,
+            createdAt: Date(),
+            errorMessage: nil
+        )
+        pendingBoardUploads[pendingAsset.id] = pendingUpload
+        assetStack = appendPendingAsset(pendingAsset, to: assetStack)
+        visibleAssetID = pendingAsset.id
+        Task { await performPendingBoardUpload(id: pendingAsset.id) }
+    }
+
+    private func performPendingBoardUpload(id: String) async {
+        guard let pending = pendingBoardUploads[id] else { return }
+        await MainActor.run {
+            pendingBoardUploads[id]?.status = .uploading
+            pendingBoardUploads[id]?.errorMessage = nil
+        }
+        guard let projectId = authService.projectId else {
+            await MainActor.run {
+                pendingBoardUploads[id]?.status = .failed
+                pendingBoardUploads[id]?.errorMessage = "Missing project ID for upload."
+                retryTargetUploadId = id
+                uploadFailureAlertMessage = "This can happen on slow or unstable connections.\nTry again, or upload a lower-quality image for a faster upload."
+            }
+            return
+        }
+        let setting = compressionSetting(for: id)
+        guard let data = compressedImageData(from: pending.image, uploadId: id) else {
+            await MainActor.run {
+                pendingBoardUploads[id]?.status = .failed
+                pendingBoardUploads[id]?.errorMessage = "Failed to compress image."
+                retryTargetUploadId = id
+                uploadFailureAlertMessage = "This can happen on slow or unstable connections.\nTry again, or upload a lower-quality image for a faster upload."
+            }
+            return
+        }
+        do {
+            try await uploadService.uploadBoardAsset(
+                data: data,
+                filename: "photoboard.jpg",
+                mimeType: "image/jpeg",
+                boardLabel: pending.boardLabel,
+                shootId: projectId,
+                creativeId: frame.creativeId,
+                frameId: frame.id,
+                bearerToken: authService.currentBearerToken(),
+                metadata: pending.metadata
+            )
+            await MainActor.run {
+                pendingBoardUploads[id]?.awaitingServerAck = true
+            }
+            Task {
+                try? await Task.sleep(nanoseconds: 15_000_000_000)
+                await MainActor.run {
+                    if let pending = pendingBoardUploads[id],
+                       pending.awaitingServerAck {
+                        pendingBoardUploads[id]?.status = .failed
+                        pendingBoardUploads[id]?.awaitingServerAck = false
+                        pendingBoardUploads[id]?.errorMessage = "Upload timed out."
+                        retryTargetUploadId = id
+                        uploadFailureAlertMessage = "This can happen on slow or unstable connections.\nTry again, or upload a lower-quality image for a faster upload."
+                    }
+                }
+            }
+            Task {
+                try? await authService.fetchFrames()
+            }
+        } catch {
+            await MainActor.run {
+                pendingBoardUploads[id]?.status = .failed
+                pendingBoardUploads[id]?.errorMessage = error.localizedDescription
+                retryTargetUploadId = id
+                uploadFailureAlertMessage = "This can happen on slow or unstable connections.\nTry again, or upload a lower-quality image for a faster upload."
+            }
+        }
+    }
+
+    private func retryPendingUpload(_ asset: FrameAssetItem) {
+        guard pendingBoardUploads[asset.id] != nil else { return }
+        retryTargetUploadId = asset.id
+        uploadFailureAlertMessage = "This can happen on slow or unstable connections.\nTry again, or upload a lower-quality image for a faster upload."
+    }
+
+    private func cancelPendingUpload(_ asset: FrameAssetItem) {
+        removePendingUpload(id: asset.id)
+    }
+
+    private func removePendingUpload(id: String) {
+        let pending = pendingBoardUploads.removeValue(forKey: id)
+        if let previewURL = pending?.previewURL {
+            try? FileManager.default.removeItem(at: previewURL)
+        }
+        assetStack.removeAll { $0.id == id }
+        if assetStack.isEmpty, frame.availableAssets.isEmpty {
+            assetStack = [Self.placeholderBoardAsset]
+        }
+    }
+
+    private func writePendingPreviewImage(_ image: UIImage) -> URL? {
+        let filename = "pending-board-\(UUID().uuidString).jpg"
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+        let data = image.jpegData(compressionQuality: 0.85)
+        do {
+            if let data {
+                try data.write(to: url, options: [.atomic])
+                return url
+            }
+        } catch {
+            return nil
+        }
+        return nil
+    }
+
+    private func appendPendingAsset(_ asset: FrameAssetItem, to stack: [FrameAssetItem]) -> [FrameAssetItem] {
+        var updated = stack.filter { $0.id != Self.placeholderBoardAsset.id }
+        if !updated.contains(where: { $0.id == asset.id }) {
+            updated.append(asset)
+        }
+        return updated
+    }
+
+    private func mergePendingAssets(into stack: [FrameAssetItem]) -> [FrameAssetItem] {
+        guard !pendingBoardUploads.isEmpty else { return stack }
+        var updated = stack.filter { $0.id != Self.placeholderBoardAsset.id }
+        let existingIDs = Set(stack.map(\.id))
+        for pending in pendingBoardUploads.values {
+            if !existingIDs.contains(pending.asset.id) {
+                updated.append(pending.asset)
+            }
+        }
+        return updated
+    }
+
+    private func pendingStatus(for asset: FrameAssetItem) -> PendingBoardUploadStatus? {
+        pendingBoardUploads[asset.id]?.status
+    }
+
+    private func isPendingUpload(_ asset: FrameAssetItem) -> Bool {
+        pendingBoardUploads[asset.id] != nil
+    }
+
+    private func handlePendingUploadAcknowledgements(previousBoardIDs: Set<String>, updatedFrame: Frame) {
+        let updatedBoardIDs = Set(updatedFrame.boards?.map(\.id) ?? [])
+        let newBoardIDs = updatedBoardIDs.subtracting(previousBoardIDs)
+        guard !newBoardIDs.isEmpty else { return }
+        let candidates = pendingBoardUploads.values
+            .sorted { $0.createdAt < $1.createdAt }
+        guard !candidates.isEmpty else { return }
+        let removeCount = min(candidates.count, newBoardIDs.count)
+        for index in 0..<removeCount {
+            removePendingUpload(id: candidates[index].id)
         }
     }
 
@@ -1880,7 +2209,7 @@ struct FrameView: View {
             boardActionError = "Missing project ID for upload."
             return false
         }
-        guard let data = compressedImageData(from: image, maxPixelDimension: 2000) else {
+        guard let data = compressedImageData(from: image) else {
             boardActionError = "Failed to compress image."
             return false
         }
@@ -1933,21 +2262,73 @@ struct FrameView: View {
         }
     }
 
-    private func compressedImageData(from image: UIImage, maxPixelDimension: CGFloat) -> Data? {
-        let resized = resizedImageForUpload(from: image, maxPixelDimension: maxPixelDimension)
-        return resized.jpegData(compressionQuality: 0.85)
+    private var uploadCompressionSetting: UploadCompressionSetting {
+        UploadCompressionSetting(rawValue: uploadCompressionSettingRawValue) ?? .large
     }
 
-    private func resizedImageForUpload(from image: UIImage, maxPixelDimension: CGFloat) -> UIImage {
-        let size = image.size
-        let maxDimension = max(size.width, size.height)
+    private func compressionSetting(for uploadId: String?) -> UploadCompressionSetting {
+        if let uploadId, let override = retryOverrides[uploadId] {
+            return override
+        }
+        return uploadCompressionSetting
+    }
+
+    private func compressedImageData(from image: UIImage, uploadId: String? = nil) -> Data? {
+        let setting = compressionSetting(for: uploadId)
+        let resized = resizedImageForUpload(from: image, maxPixelDimension: setting.maxPixelDimension)
+        return resized.jpegData(compressionQuality: setting.jpegQuality)
+    }
+
+    private func prepareRetryEstimates(for uploadId: String) {
+        guard let pending = pendingBoardUploads[uploadId] else { return }
+        if retryOptionEstimates[uploadId] != nil { return }
+        Task.detached { [image = pending.image] in
+            var estimates: [UploadCompressionSetting: RetryOptionEstimate] = [:]
+            for setting in UploadCompressionSetting.allCases {
+                let resized = await MainActor.run {
+                    resizedImageForUpload(from: image, maxPixelDimension: setting.maxPixelDimension)
+                }
+                let data = await MainActor.run {
+                    resized.jpegData(compressionQuality: setting.jpegQuality)
+                }
+                let bytes = data?.count ?? 0
+                let pixelWidth = Int(resized.size.width * resized.scale)
+                let pixelHeight = Int(resized.size.height * resized.scale)
+                estimates[setting] = RetryOptionEstimate(bytes: bytes, pixelWidth: pixelWidth, pixelHeight: pixelHeight)
+            }
+            await MainActor.run {
+                retryOptionEstimates[uploadId] = estimates
+            }
+        }
+    }
+
+    private func formatRetryEstimate(_ estimate: RetryOptionEstimate?) -> String {
+        guard let estimate else { return "Calculating…" }
+        let sizeText = formatBytes(estimate.bytes)
+        return "\(estimate.pixelWidth)x\(estimate.pixelHeight) • \(sizeText)"
+    }
+
+    private func formatBytes(_ bytes: Int) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = .file
+        return formatter.string(fromByteCount: Int64(bytes))
+    }
+
+    private func resizedImageForUpload(from image: UIImage, maxPixelDimension: CGFloat?) -> UIImage {
+        guard let maxPixelDimension else { return image }
+        let pixelWidth = image.size.width * image.scale
+        let pixelHeight = image.size.height * image.scale
+        let maxDimension = max(pixelWidth, pixelHeight)
         guard maxDimension > maxPixelDimension else { return image }
 
-        let scale = maxPixelDimension / maxDimension
-        let newSize = CGSize(width: size.width * scale, height: size.height * scale)
-        let renderer = UIGraphicsImageRenderer(size: newSize)
+        let scaleFactor = maxPixelDimension / maxDimension
+        let newPixelSize = CGSize(width: pixelWidth * scaleFactor, height: pixelHeight * scaleFactor)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        format.opaque = false
+        let renderer = UIGraphicsImageRenderer(size: newPixelSize, format: format)
         return renderer.image { _ in
-            image.draw(in: CGRect(origin: .zero, size: newSize))
+            image.draw(in: CGRect(origin: .zero, size: newPixelSize))
         }
     }
 
@@ -2136,11 +2517,12 @@ private extension FrameView {
         reorderBoards = entries
         activeReorderBoard = nil
         isReorderingBoards = true
-        assetStack = reorderedAssetStack(from: assetStack, boardOrder: reorderBoards)
+        let reordered = reorderedAssetStack(from: assetStack, boardOrder: reorderBoards)
+        assetStack = mergePendingAssets(into: reordered)
     }
 
     private func cancelBoardReorder() {
-        assetStack = preReorderAssetStack
+        assetStack = mergePendingAssets(into: preReorderAssetStack)
         reorderBoards = boardEntries()
         activeReorderBoard = nil
         isReorderingBoards = false
@@ -2236,6 +2618,9 @@ private extension FrameView {
             Task {
                 do {
                     try await authService.deleteBoard(frameId: frame.id, boardId: boardId)
+                    await MainActor.run {
+                        animateBoardDeletion(asset)
+                    }
                     boardDeleteTarget = nil
                 } catch {
                     boardActionError = error.localizedDescription
@@ -2248,9 +2633,29 @@ private extension FrameView {
         Task {
             do {
                 try await authService.removeBoardImage(frameId: frame.id, boardLabel: fallbackLabel)
+                await MainActor.run {
+                    animateBoardDeletion(asset)
+                }
                 boardDeleteTarget = nil
             } catch {
                 boardActionError = error.localizedDescription
+            }
+        }
+    }
+
+    private func animateBoardDeletion(_ asset: FrameAssetItem) {
+        guard !deletingBoardIds.contains(asset.id) else { return }
+        withAnimation(.spring(response: 0.22, dampingFraction: 0.72)) {
+            deletingBoardIds.insert(asset.id)
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
+            withAnimation(.easeInOut(duration: 0.12)) {
+                assetStack.removeAll { $0.id == asset.id }
+                reorderBoards.removeAll { $0.id == asset.id }
+                deletingBoardIds.remove(asset.id)
+                if visibleAssetID == asset.id {
+                    visibleAssetID = assetStack.first?.id
+                }
             }
         }
     }
@@ -2468,17 +2873,15 @@ private extension FrameView {
     }
 
     private func drawingImageData(_ drawing: PKDrawing, aspectRatio: CGFloat) -> Data? {
-        let width: CGFloat = 2048
+        let width: CGFloat = uploadCompressionSetting.maxPixelDimension ?? 2048
         let height = width / max(aspectRatio, 0.01)
         let size = CGSize(width: width, height: height)
         let renderer = UIGraphicsImageRenderer(size: size)
         let image = renderer.image { context in
             UIColor.white.setFill()
             context.fill(CGRect(origin: .zero, size: size))
-            let drawingImage = drawing.image(from: CGRect(origin: .zero, size: size), scale: 1)
-            drawingImage.draw(in: CGRect(origin: .zero, size: size))
         }
-        return image.jpegData(compressionQuality: 0.92)
+        return image.jpegData(compressionQuality: uploadCompressionSetting.jpegQuality)
     }
 
     private func openBoardPreview(_ asset: FrameAssetItem, startInMarkup: Bool = false) {
@@ -2829,6 +3232,11 @@ private struct StackedAssetScroller<ContextMenuContent: View>: View {
     let takePictureAction: (() -> Void)?
     let onAssetTap: ((FrameAssetItem) -> Void)?
     let onMetadataTap: ((FrameAssetItem, JSONValue) -> Void)?
+    let pendingUploadState: (FrameAssetItem) -> PendingBoardUploadStatus?
+    let pendingUploadError: (FrameAssetItem) -> String?
+    let isDeleting: (FrameAssetItem) -> Bool
+    let onRetryPendingUpload: (FrameAssetItem) -> Void
+    let onCancelPendingUpload: (FrameAssetItem) -> Void
     let contextMenuContent: (FrameAssetItem) -> ContextMenuContent
 
     var body: some View {
@@ -2844,10 +3252,14 @@ private struct StackedAssetScroller<ContextMenuContent: View>: View {
                 LazyHStack(alignment: .center, spacing: 0) {
                     ForEach(assetStack) { asset in
                         let shouldEnablePreview = asset.kind == .preview
-                        let shouldHandleTap = asset.kind == .board && !isReorderingBoards
+                        let pendingState = pendingUploadState(asset)
+                        let pendingError = pendingUploadError(asset)
+                        let deleting = isDeleting(asset)
+                        let isPending = pendingState != nil
+                        let shouldHandleTap = asset.kind == .board && !isReorderingBoards && !isPending
                         let isBoard = asset.kind == .board
                         let isPinned = pinnedBoardId == asset.id
-                        let isDraggable = isReorderingBoards && isBoard && !isPinned
+                        let isDraggable = isReorderingBoards && isBoard && !isPinned && !isPending
                         let metadata = metadataForAsset(asset)
                         let cardView = AssetCardView(
                             frame: frame,
@@ -2856,11 +3268,7 @@ private struct StackedAssetScroller<ContextMenuContent: View>: View {
                             primaryText: primaryText,
                             enablesFullScreen: shouldEnablePreview,
                             showMetadataOverlay: metadata != nil,
-                            onMetadataTap: {
-                                if let metadata {
-                                    onMetadataTap?(asset, metadata)
-                                }
-                            },
+                            onMetadataTap: nil,
                             onTap: shouldHandleTap ? {
                                 onAssetTap?(asset)
                             } : nil
@@ -2869,12 +3277,28 @@ private struct StackedAssetScroller<ContextMenuContent: View>: View {
                             .frame(maxWidth: .infinity, alignment: .center)
                             .containerRelativeFrame(.horizontal, alignment: .center)
                             .id(asset.id)
-                        let contextMenuCardView = styledCardView.contextMenu {
-                            contextMenuContent(asset)
+                        let decoratedCardView = styledCardView
+                            .scaleEffect(deleting ? 1.06 : 1.0)
+                            .opacity(deleting ? 0.0 : 1.0)
+                            .animation(.spring(response: 0.22, dampingFraction: 0.72), value: deleting)
+                            .overlay {
+                                if let pendingState {
+                                    PendingBoardUploadOverlay(
+                                        status: pendingState,
+                                        errorMessage: pendingError,
+                                        onRetry: { onRetryPendingUpload(asset) },
+                                        onCancel: { onCancelPendingUpload(asset) }
+                                    )
+                                }
+                            }
+                        let contextMenuCardView = decoratedCardView.contextMenu {
+                            if pendingState == nil {
+                                contextMenuContent(asset)
+                            }
                         }
                         if isReorderingBoards && isBoard {
                             if isDraggable {
-                                styledCardView
+                                decoratedCardView
                                     .onDrag {
                                         activeReorderBoard = asset
                                         return NSItemProvider(
@@ -2892,7 +3316,7 @@ private struct StackedAssetScroller<ContextMenuContent: View>: View {
                                         )
                                     )
                             } else {
-                                styledCardView
+                                decoratedCardView
                                     .onDrop(
                                         of: [UTType.text],
                                         delegate: BoardReorderDropDelegate(
@@ -2981,6 +3405,143 @@ private struct AssetCardView: View {
         } else {
             styledCard
         }
+    }
+}
+
+private struct PendingBoardUploadOverlay: View {
+    let status: PendingBoardUploadStatus
+    let errorMessage: String?
+    let onRetry: () -> Void
+    let onCancel: () -> Void
+    private let cornerRadius: CGFloat = 16
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.45)
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+
+            switch status {
+            case .uploading:
+                VStack(spacing: 10) {
+                    MartiniLoader(color: .white)
+                    Text("Uploading")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                }
+            case .failed:
+                VStack(spacing: 12) {
+                    Text("Upload Failed")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.white)
+                    HStack(spacing: 12) {
+                        Button("Try Again") {
+                            onRetry()
+                        }
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.black)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(
+                            Capsule()
+                                .fill(Color.white)
+                        )
+
+                        Button("Cancel") {
+                            onCancel()
+                        }
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(
+                            Capsule()
+                                .stroke(Color.white.opacity(0.7), lineWidth: 1)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct RetryUploadOptionsAlert: View {
+    let estimates: [UploadCompressionSetting: RetryOptionEstimate]
+    @Binding var setAsDefault: Bool
+    let onSelect: (UploadCompressionSetting) -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.45)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    onCancel()
+                }
+
+            GlassEffectContainer(spacing: 16) {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Try Again With")
+                        .font(.title3.weight(.semibold))
+                    Text("Select a size for this retry. This won’t change your default.")
+                        .foregroundStyle(.secondary)
+                        .font(.subheadline)
+
+                    VStack(spacing: 10) {
+                        ForEach(UploadCompressionSetting.allCases) { setting in
+                            Button {
+                                onSelect(setting)
+                            } label: {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(setting.displayName)
+                                        .font(.headline)
+                                    Text(formatEstimate(estimates[setting]))
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 12)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                        .fill(Color.secondary.opacity(0.12))
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+
+                    Toggle("Set choice as default", isOn: $setAsDefault)
+
+                    HStack {
+                        Spacer()
+                        Button("Cancel") {
+                            onCancel()
+                        }
+                    }
+                    .padding(.top, 4)
+                }
+                .padding(20)
+            }
+            .frame(maxWidth: 360)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(.ultraThinMaterial)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+            )
+            .shadow(radius: 16)
+            .padding(24)
+        }
+    }
+
+    private func formatEstimate(_ estimate: RetryOptionEstimate?) -> String {
+        guard let estimate else { return "Calculating…" }
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = .file
+        let sizeText = formatter.string(fromByteCount: Int64(estimate.bytes))
+        return "\(estimate.pixelWidth)x\(estimate.pixelHeight) • \(sizeText)"
     }
 }
 

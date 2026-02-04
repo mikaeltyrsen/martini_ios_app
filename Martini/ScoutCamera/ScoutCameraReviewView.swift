@@ -9,7 +9,6 @@ struct ScoutCameraReviewView: View {
     let onRetake: () -> Void
     let onCancel: () -> Void
 
-    @State private var isUploading = false
     @State private var isPreparingShare = false
     @State private var shareItem: ShareItem?
     private let actionColor = Color.martiniDefaultColor
@@ -81,7 +80,7 @@ struct ScoutCameraReviewView: View {
                         .disabled(isPreparingShare)
                         
                         ReviewActionButton(
-                            title: "Import",
+                            title: "Add Board",
                             systemImage: "photo.badge.plus",
                             //actionColor: actionColor,
                             hasTint: true,
@@ -89,15 +88,12 @@ struct ScoutCameraReviewView: View {
                             tintOpacity: 1,
                             tintIcon: true,
                             tintIconColor: .martiniDefaultText,
-                            isLoading: isUploading
+                            isLoading: false
                         ) {
                             Task {
-                                isUploading = true
                                 await onImport()
-                                isUploading = false
                             }
                         }
-                        .disabled(isUploading)
                     }
                     .padding(.bottom, 24)
                 }
