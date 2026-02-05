@@ -66,7 +66,7 @@ struct FullscreenMediaViewer: View {
     @State private var showsClearMarkupAlert: Bool = false
     @State private var mediaAspectRatio: CGFloat?
     @State private var mediaPixelSize: CGSize?
-    @State private var isLoadingImage: Bool = false
+    @State private var hasLoadedFullImage: Bool = false
     @State private var isMapSheetPresented: Bool = false
     @State private var markupCanvasSize: CGSize = .zero
     @State private var hasScaledInitialDrawing: Bool = false
@@ -319,12 +319,13 @@ struct FullscreenMediaViewer: View {
         case .imageURL(let url):
             ZStack {
                 if let thumbnailURL {
-                    AsyncImage(url: thumbnailURL) { phase in
+                    CachedAsyncImage(url: thumbnailURL) { phase in
                         switch phase {
                         case .success(let image):
                             image
                                 .resizable()
                                 .scaledToFit()
+                                .opacity(hasLoadedFullImage ? 0 : 1)
                         case .failure:
                             Image(systemName: "photo")
                                 .font(.system(size: 40, weight: .medium))
@@ -334,33 +335,24 @@ struct FullscreenMediaViewer: View {
                         }
                     }
                 }
-                AsyncImage(url: url) { phase in
+                CachedAsyncImage(url: url) { phase in
                     switch phase {
                     case .empty:
                         Color.clear
-                            .onAppear {
-                                isLoadingImage = true
-                            }
                     case .success(let image):
                         image
                             .resizable()
                             .scaledToFit()
                             .onAppear {
-                                isLoadingImage = false
+                                hasLoadedFullImage = true
                             }
                     case .failure:
                         Image(systemName: "photo")
                             .font(.system(size: 40, weight: .medium))
                             .foregroundStyle(.secondary)
-                            .onAppear {
-                                isLoadingImage = false
-                            }
                     @unknown default:
                         EmptyView()
                     }
-                }
-                if isLoadingImage {
-                    MartiniLoader()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -521,6 +513,9 @@ struct FullscreenMediaViewer: View {
     }
 
     private func updateMediaAspectRatio() async {
+        await MainActor.run {
+            hasLoadedFullImage = false
+        }
         let ratio: CGFloat?
         switch media {
         case .imageURL(let url):
