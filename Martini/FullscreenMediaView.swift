@@ -70,6 +70,10 @@ struct FullscreenMediaViewer: View {
     @State private var isMapSheetPresented: Bool = false
     @State private var markupCanvasSize: CGSize = .zero
     @State private var hasScaledInitialDrawing: Bool = false
+    @State private var zoomScale: CGFloat = 1.0
+    @State private var lastZoomScale: CGFloat = 1.0
+    @State private var panOffset: CGSize = .zero
+    @State private var lastPanOffset: CGSize = .zero
     @AppStorage("scoutCameraFullscreenShowFrameLines") private var showFrameLines: Bool = true
     @AppStorage("scoutCameraFullscreenShowFrameShading") private var showFrameShading: Bool = true
     @AppStorage("scoutCameraFullscreenShowCrosshair") private var showCrosshair: Bool = true
@@ -158,6 +162,8 @@ struct FullscreenMediaViewer: View {
                         }
                     }
                 }
+                .scaleEffect(zoomScale)
+                .offset(panOffset)
                 .frame(width: proxy.size.width, height: proxy.size.height, alignment: .center)
                 .opacity(isVisible ? 1 : 0)
                 .scaleEffect(isVisible ? 1 : 0.98)
@@ -170,6 +176,25 @@ struct FullscreenMediaViewer: View {
                 updateMarkupCanvasSize(newSize)
             }
             .contentShape(Rectangle())
+            .highPriorityGesture(
+                TapGesture(count: 2).onEnded {
+                    guard !isMarkupMode else { return }
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        if zoomScale > 1.0 {
+                            zoomScale = 1.0
+                            lastZoomScale = 1.0
+                            panOffset = .zero
+                            lastPanOffset = .zero
+                        } else {
+                            let nextScale: CGFloat = 2.0
+                            zoomScale = nextScale
+                            lastZoomScale = nextScale
+                            panOffset = .zero
+                            lastPanOffset = .zero
+                        }
+                    }
+                }
+            )
             .gesture(
                 TapGesture().onEnded {
                     guard config.tapTogglesChrome else { return }
@@ -181,6 +206,50 @@ struct FullscreenMediaViewer: View {
                     }
                 },
                 including: .gesture
+            )
+            .simultaneousGesture(
+                MagnificationGesture()
+                    .onChanged { value in
+                        guard !isMarkupMode else { return }
+                        let nextScale = clampZoom(lastZoomScale * value)
+                        zoomScale = nextScale
+                        panOffset = clampPan(
+                            panOffset,
+                            containerSize: proxy.size,
+                            mediaSize: mediaSize,
+                            scale: nextScale
+                        )
+                    }
+                    .onEnded { _ in
+                        guard !isMarkupMode else { return }
+                        lastZoomScale = zoomScale
+                        if zoomScale <= 1.0 {
+                            zoomScale = 1.0
+                            lastZoomScale = 1.0
+                            panOffset = .zero
+                            lastPanOffset = .zero
+                        }
+                    }
+            )
+            .simultaneousGesture(
+                DragGesture()
+                    .onChanged { value in
+                        guard !isMarkupMode, zoomScale > 1.0 else { return }
+                        let nextOffset = CGSize(
+                            width: lastPanOffset.width + value.translation.width,
+                            height: lastPanOffset.height + value.translation.height
+                        )
+                        panOffset = clampPan(
+                            nextOffset,
+                            containerSize: proxy.size,
+                            mediaSize: mediaSize,
+                            scale: zoomScale
+                        )
+                    }
+                    .onEnded { _ in
+                        guard !isMarkupMode else { return }
+                        lastPanOffset = panOffset
+                    }
             )
             .onAppear {
                 withAnimation(.easeInOut(duration: animationDuration)) {
@@ -200,6 +269,10 @@ struct FullscreenMediaViewer: View {
                     isToolbarVisible = true
                     isToolPickerVisible = true
                     isMetadataOverlayVisible = false
+                    zoomScale = 1.0
+                    lastZoomScale = 1.0
+                    panOffset = .zero
+                    lastPanOffset = .zero
                 } else {
                     isToolPickerVisible = false
                     if metadataItem != nil, config.showsTopToolbar {
@@ -212,6 +285,12 @@ struct FullscreenMediaViewer: View {
                     isMarkupMode = false
                     isToolPickerVisible = false
                 }
+            }
+            .onChange(of: media.url) { _ in
+                zoomScale = 1.0
+                lastZoomScale = 1.0
+                panOffset = .zero
+                lastPanOffset = .zero
             }
         }
         .task(id: media.url) {
@@ -510,6 +589,32 @@ struct FullscreenMediaViewer: View {
             let width = container.width
             return CGSize(width: width, height: width / aspectRatio)
         }
+    }
+
+    private func clampZoom(_ value: CGFloat) -> CGFloat {
+        let minScale: CGFloat = 1.0
+        let maxScale: CGFloat = 4.0
+        return min(max(value, minScale), maxScale)
+    }
+
+    private func clampPan(
+        _ offset: CGSize,
+        containerSize: CGSize,
+        mediaSize: CGSize,
+        scale: CGFloat
+    ) -> CGSize {
+        guard containerSize.width > 0, containerSize.height > 0 else { return .zero }
+
+        let scaledWidth = mediaSize.width * scale
+        let scaledHeight = mediaSize.height * scale
+
+        let maxX = max(0, (scaledWidth - containerSize.width) / 2)
+        let maxY = max(0, (scaledHeight - containerSize.height) / 2)
+
+        let clampedX = min(max(offset.width, -maxX), maxX)
+        let clampedY = min(max(offset.height, -maxY), maxY)
+
+        return CGSize(width: clampedX, height: clampedY)
     }
 
     private func updateMediaAspectRatio() async {

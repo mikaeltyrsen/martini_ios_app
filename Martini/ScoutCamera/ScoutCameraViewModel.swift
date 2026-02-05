@@ -134,6 +134,11 @@ final class ScoutCameraViewModel: ObservableObject {
 
     func updateFocalLength() {
         guard let lens = selectedLens else { return }
+        if let override = nextFocalLengthOverride {
+            focalLengthMm = override
+            nextFocalLengthOverride = nil
+            return
+        }
         focalLengthMm = lens.focalLengthMm ?? lens.focalLengthMinMm ?? focalLengthMm
     }
 
@@ -209,6 +214,81 @@ final class ScoutCameraViewModel: ObservableObject {
             selectedLens = lensPool[newIndex]
         }
     }
+
+    var focalLengthOptions: [Int] {
+        let lensPool = selectedLensPack?.lenses ?? availableLenses
+        guard !lensPool.isEmpty else { return [] }
+        var values = Set<Int>()
+        for lens in lensPool {
+            if lens.isZoom,
+               let minFocal = lens.focalLengthMinMm,
+               let maxFocal = lens.focalLengthMaxMm {
+                let minValue = Int(round(minFocal))
+                let maxValue = Int(round(maxFocal))
+                values.insert(minValue)
+                values.insert(maxValue)
+                for step in zoomSampleSteps {
+                    let stepValue = Double(step)
+                    if stepValue >= minFocal - 0.01, stepValue <= maxFocal + 0.01 {
+                        values.insert(step)
+                    }
+                }
+            } else if let focal = lens.focalLengthMm {
+                values.insert(Int(round(focal)))
+            }
+        }
+        return values.sorted()
+    }
+
+    func selectFocalLength(_ value: Double) {
+        let lensPool = selectedLensPack?.lenses ?? availableLenses
+        guard !lensPool.isEmpty else { return }
+
+        if let current = selectedLens, lensSupports(current, value: value) {
+            if current.isZoom {
+                focalLengthMm = value
+            } else if let focal = current.focalLengthMm {
+                focalLengthMm = focal
+            }
+            return
+        }
+
+        if let prime = lensPool.first(where: { lensMatchesPrime($0, value: value) }) {
+            nextFocalLengthOverride = prime.focalLengthMm ?? value
+            selectedLens = prime
+            return
+        }
+
+        if let zoom = lensPool.first(where: { lensSupportsZoom($0, value: value) }) {
+            nextFocalLengthOverride = value
+            selectedLens = zoom
+        }
+    }
+
+    private func lensSupports(_ lens: DBLens, value: Double) -> Bool {
+        if lens.isZoom {
+            return lensSupportsZoom(lens, value: value)
+        }
+        return lensMatchesPrime(lens, value: value)
+    }
+
+    private func lensSupportsZoom(_ lens: DBLens, value: Double) -> Bool {
+        guard let minFocal = lens.focalLengthMinMm,
+              let maxFocal = lens.focalLengthMaxMm else { return false }
+        return value >= minFocal - 0.01 && value <= maxFocal + 0.01
+    }
+
+    private func lensMatchesPrime(_ lens: DBLens, value: Double) -> Bool {
+        guard let focal = lens.focalLengthMm else { return false }
+        return abs(focal - value) <= 0.5
+    }
+
+    private let zoomSampleSteps: [Int] = [
+        12, 14, 16, 18, 20, 21, 24, 25, 28, 32, 35, 40,
+        50, 65, 75, 85, 100, 135, 150, 180, 200, 250, 300, 400
+    ]
+
+    private var nextFocalLengthOverride: Double?
 
     func updateCaptureConfiguration() async {
         let authStatus = AVCaptureDevice.authorizationStatus(for: .video)

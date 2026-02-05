@@ -21,6 +21,7 @@ struct ScoutCameraLayout: View {
     @State private var lastCameraRole: String?
     @State private var lensToastMessage: String?
     @State private var showLensToast = false
+    @State private var showFocalLengthOverlay = false
     @State private var previewOrientation: AVCaptureVideoOrientation = .landscapeRight
     @State private var pinchStartFocalLength: Double?
     @State private var pinchStartLensId: String?
@@ -108,8 +109,15 @@ struct ScoutCameraLayout: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .zIndex(1)
             }
+
+            if showFocalLengthOverlay {
+                focalLengthOverlay
+                    .transition(.opacity)
+                    .zIndex(2)
+            }
         }
         .animation(.easeInOut(duration: 0.25), value: showLensToast)
+        .animation(.easeInOut(duration: 0.2), value: showFocalLengthOverlay)
         .onAppear {
             previewOrientation = currentPreviewOrientation()
             viewModel.captureManager.updateVideoOrientation(previewOrientation)
@@ -936,8 +944,10 @@ struct ScoutCameraLayout: View {
                     .buttonStyle(.plain)
                 }
             }
-            VStack(spacing: 4) {
-                VStack() {
+            Button {
+                showFocalLengthOverlay = true
+            } label: {
+                VStack(spacing: 4) {
                     Text(lensInfoText)
                         .font(.system(size: 30, weight: .regular))
                         .lineSpacing(1)
@@ -945,13 +955,13 @@ struct ScoutCameraLayout: View {
                         .font(.system(size: 12, weight: .regular))
                         .lineSpacing(1)
                 }
-//                if let match = viewModel.matchResult {
-//                    Text("\(match.cameraRole.uppercased()) • \(String(format: "%.2fx", match.zoomFactor))")
-//                        .font(.caption2)
-//                        .foregroundStyle(.white.opacity(0.7))
-//                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Color.black.opacity(0.35))
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             }
-            .foregroundStyle(.white)
+            .buttonStyle(.plain)
         }
     }
 
@@ -1110,6 +1120,76 @@ struct ScoutCameraLayout: View {
 //            return "\(focalText) • \(Int(targetHFOV.rounded()))°"
 //        }
         return focalText
+    }
+
+    private var focalLengthOverlay: some View {
+        let options = viewModel.focalLengthOptions
+        return ZStack {
+            Color.black.opacity(0.7)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    showFocalLengthOverlay = false
+                }
+
+            VStack(spacing: 18) {
+                Text("Focal Lengths")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.white)
+
+                if options.isEmpty {
+                    Text("No focal lengths available")
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.7))
+                } else {
+                    ScrollView {
+                        VStack(spacing: 14) {
+                            let rows = focalLengthRows(options)
+                            ForEach(rows.indices, id: \.self) { rowIndex in
+                                let row = rows[rowIndex]
+                                HStack(spacing: 14) {
+                                    Spacer(minLength: 0)
+                                    ForEach(row, id: \.self) { value in
+                                        Button {
+                                            viewModel.selectFocalLength(Double(value))
+                                            showFocalLengthOverlay = false
+                                        } label: {
+                                            Text("\(value)")
+                                                .font(.system(size: 16, weight: .semibold))
+                                                .frame(width: 62, height: 62)
+                                                .foregroundStyle(isFocalLengthSelected(value) ? .black : .white)
+                                                .background(isFocalLengthSelected(value) ? .white : Color.white.opacity(0.18))
+                                                .clipShape(Circle())
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                    Spacer(minLength: 0)
+                                }
+                            }
+                        }
+                        .padding(.vertical, 6)
+                    }
+                    .scrollIndicators(.hidden)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            .padding(.horizontal, 24)
+        }
+    }
+
+    private func focalLengthRows(_ values: [Int]) -> [[Int]] {
+        guard !values.isEmpty else { return [] }
+        var rows: [[Int]] = []
+        var index = 0
+        while index < values.count {
+            let end = min(index + 4, values.count)
+            rows.append(Array(values[index..<end]))
+            index = end
+        }
+        return rows
+    }
+
+    private func isFocalLengthSelected(_ value: Int) -> Bool {
+        Int(round(viewModel.activeFocalLengthMm)) == value
     }
 
     private var lensSwipeGesture: some Gesture {
@@ -1639,8 +1719,10 @@ struct ScoutCameraLayout: View {
     }
 
     private func resumePreviewIfNeeded() {
-        guard !viewModel.captureManager.isRunning else { return }
-        Task { await viewModel.updateCaptureConfiguration() }
+        Task {
+            await viewModel.updateCaptureConfiguration()
+            viewModel.captureManager.restartSessionForOrientationChange()
+        }
     }
 
     private func currentPreviewOrientation() -> AVCaptureVideoOrientation {

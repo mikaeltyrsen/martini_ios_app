@@ -1522,6 +1522,41 @@ struct MainView: View {
         }
     }
 
+    @MainActor
+    private func refreshAll() async {
+        guard !useMockData else { return }
+
+        do {
+            try await authService.fetchProjectDetails()
+            hasLoadedProjectDetails = true
+
+            try await authService.fetchCreatives(pullAll: true)
+            hasLoadedCreatives = true
+
+            try await authService.fetchFrames(source: "pull-to-refresh")
+            hasLoadedFrames = true
+
+            await loadProjectFiles(force: true)
+
+            if let scheduleId = authService.projectDetails?.activeSchedule?.id {
+                if navigationPathContainsScheduleRoute, let schedule = activeSchedule {
+                    await loadSchedule(schedule, replaceExistingRoutes: true)
+                } else {
+                    _ = try? await authService.fetchSchedule(for: scheduleId)
+                }
+            }
+        } catch {
+            if error is CancellationError {
+                return
+            }
+            if let urlError = error as? URLError, urlError.code == .cancelled {
+                return
+            }
+            dataError = error.localizedDescription
+            print("❌ Failed to refresh all data: \(error)")
+        }
+    }
+
     private func loadProjectFilesIfNeeded() async {
         guard !useMockData else { return }
         guard authService.projectId != nil else { return }
@@ -1711,7 +1746,7 @@ struct MainView: View {
                         .padding(.bottom, 0)
                     }
                     .refreshable {
-                        await refreshFrames()
+                        await refreshAll()
                     }
                     .simultaneousGesture(
                         MagnificationGesture()
