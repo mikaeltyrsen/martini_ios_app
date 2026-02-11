@@ -236,7 +236,7 @@ struct FrameView: View {
             .sheet(item: $metadataSheetItem) { item in
                 BoardMetadataSheet(item: item)
             }
-            .sheet(item: $annotationEditorContext) { context in
+            .fullScreenCover(item: $annotationEditorContext) { context in
                 BoardAnnotationEditor(
                     title: context.title,
                     aspectRatio: context.aspectRatio,
