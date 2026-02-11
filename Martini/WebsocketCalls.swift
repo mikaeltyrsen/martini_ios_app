@@ -62,7 +62,7 @@ final class WebsocketCalls {
 
         if creativeEvents.contains(name) {
             Task { [weak self] in
-                await self?.refreshCreatives()
+                await self?.refreshCreatives(for: name)
             }
         }
 
@@ -212,8 +212,22 @@ final class WebsocketCalls {
         notifyFrameUpdate(id: frameId, eventName: "frame-caption-updated")
     }
 
-    private func refreshCreatives() async {
+    private func refreshCreatives(for eventName: String) async {
         try? await authService.fetchCreatives()
+
+        guard shouldRefreshFrames(for: eventName) else { return }
+        try? await authService.fetchFrames(source: "creative-update:\(eventName)", forceRefresh: true)
+    }
+
+    private func shouldRefreshFrames(for eventName: String) -> Bool {
+        switch eventName {
+        case "creative-live-updated",
+             "creative-deleted",
+             "reload":
+            return true
+        default:
+            return false
+        }
     }
 
     private func handleCreativeAspectRatioUpdate(dataString: String) async {

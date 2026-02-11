@@ -7,6 +7,7 @@
 
 import Foundation
 import UIKit
+import SwiftUI
 
 struct FrameUpdateEvent: Equatable {
     let frameId: String
@@ -454,7 +455,12 @@ class AuthService: ObservableObject {
         pendingProjectSwitch = nil
     }
 
-    private func authorizedRequest(for endpoint: APIEndpoint, method: String = "POST", body: [String: Any]? = nil) throws -> URLRequest {
+    private func authorizedRequest(
+        for endpoint: APIEndpoint,
+        method: String = "POST",
+        body: [String: Any]? = nil,
+        cachePolicy: URLRequest.CachePolicy = .useProtocolCachePolicy
+    ) throws -> URLRequest {
         guard let token = currentBearerToken() else {
             throw AuthError.noAuth
         }
@@ -462,6 +468,7 @@ class AuthService: ObservableObject {
         let url = try endpointURL(for: endpoint)
         var request = URLRequest(url: url)
         request.httpMethod = method
+        request.cachePolicy = cachePolicy
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
 
@@ -857,14 +864,14 @@ class AuthService: ObservableObject {
         return data
     }
 
-    func fetchProjectCreativesAndFrames() async throws {
-        try await fetchProjectDetails()
-        try await fetchCreatives()
-        try await fetchFrames()
+    func fetchProjectCreativesAndFrames(forceRefresh: Bool = false) async throws {
+        try await fetchProjectDetails(forceRefresh: forceRefresh)
+        try await fetchCreatives(forceRefresh: forceRefresh)
+        try await fetchFrames(forceRefresh: forceRefresh)
     }
     
     // Fetch creatives for the current project
-    func fetchCreatives(pullAll: Bool = false) async throws {
+    func fetchCreatives(pullAll: Bool = false, forceRefresh: Bool = false) async throws {
         guard let projectId = projectId else {
             throw AuthError.noAuth
         }
@@ -885,7 +892,11 @@ class AuthService: ObservableObject {
                 "pullAll": pullAll
             ]
 
-            var request = try authorizedRequest(for: .creatives, body: body)
+            let cachePolicy: URLRequest.CachePolicy = forceRefresh ? .reloadIgnoringLocalCacheData : .useProtocolCachePolicy
+            var request = try authorizedRequest(for: .creatives, body: body, cachePolicy: cachePolicy)
+            if forceRefresh {
+                request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+            }
 
             let requestJSON = String(data: request.httpBody ?? Data(), encoding: .utf8) ?? "Unable to encode"
             print("📤 Fetching creatives...")
@@ -924,7 +935,9 @@ class AuthService: ObservableObject {
                 UserDefaults.standard.set(responseProjectId, forKey: projectIdKey)
             }
             
-            self.creatives = creativesResponse.creatives
+            withAnimation(.timingCurve(0.2, 0.0, 0.0, 1.0, duration: 0.35)) {
+                self.creatives = creativesResponse.creatives
+            }
             cacheCreatives(creativesResponse.creatives, for: projectId)
             print("✅ Successfully fetched \(creatives.count) creatives")
             for (index, creative) in creatives.prefix(3).enumerated() {
@@ -945,7 +958,7 @@ class AuthService: ObservableObject {
     }
 
     // Fetch frames for the current project
-    func fetchFrames(source: String? = nil) async throws {
+    func fetchFrames(source: String? = nil, forceRefresh: Bool = false) async throws {
         guard let projectId = projectId else {
             throw AuthError.noAuth
         }
@@ -957,7 +970,11 @@ class AuthService: ObservableObject {
             "projectId": projectId,
         ]
 
-        var request = try authorizedRequest(for: .frames, body: body)
+        let cachePolicy: URLRequest.CachePolicy = forceRefresh ? .reloadIgnoringLocalCacheData : .useProtocolCachePolicy
+        var request = try authorizedRequest(for: .frames, body: body, cachePolicy: cachePolicy)
+        if forceRefresh {
+            request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+        }
 
         let requestJSON = String(data: request.httpBody ?? Data(), encoding: .utf8) ?? "Unable to encode"
         print("📤 Fetching frames...")
@@ -994,9 +1011,11 @@ class AuthService: ObservableObject {
             throw AuthError.authenticationFailedWithMessage(framesResponse.error ?? "Failed to fetch frames")
         }
 
-        self.frames = framesResponse.frames
-        if let tagGroups = framesResponse.tagGroups {
-            self.tagGroups = tagGroups
+        withAnimation(.timingCurve(0.2, 0.0, 0.0, 1.0, duration: 0.35)) {
+            self.frames = framesResponse.frames
+            if let tagGroups = framesResponse.tagGroups {
+                self.tagGroups = tagGroups
+            }
         }
         cacheFrames(framesResponse.frames, for: projectId)
         self.isScheduleActive = framesResponse.frames.contains { frame in
@@ -1250,7 +1269,7 @@ class AuthService: ObservableObject {
         return commentId
     }
 
-    func fetchProjectDetails() async throws {
+    func fetchProjectDetails(forceRefresh: Bool = false) async throws {
         guard let projectId = projectId else {
             throw AuthError.noAuth
         }
@@ -1270,7 +1289,11 @@ class AuthService: ObservableObject {
                 "projectId": projectId
             ]
 
-            var request = try authorizedRequest(for: .project, body: body)
+            let cachePolicy: URLRequest.CachePolicy = forceRefresh ? .reloadIgnoringLocalCacheData : .useProtocolCachePolicy
+            var request = try authorizedRequest(for: .project, body: body, cachePolicy: cachePolicy)
+            if forceRefresh {
+                request.setValue("no-cache", forHTTPHeaderField: "Cache-Control")
+            }
 
             let requestJSON = String(data: request.httpBody ?? Data(), encoding: .utf8) ?? "Unable to encode"
             print("📤 Fetching project details...")

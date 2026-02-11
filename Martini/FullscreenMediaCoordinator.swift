@@ -1,5 +1,6 @@
 import PencilKit
 import SwiftUI
+import UIKit
 
 struct BoardMarkupConfiguration {
     let initialDrawing: PKDrawing
@@ -13,6 +14,7 @@ struct FullscreenMediaConfiguration: Identifiable {
     let config: MediaViewerConfig
     let metadataItem: BoardMetadataItem?
     let thumbnailURL: URL?
+    let previewImage: UIImage?
     let markupConfiguration: BoardMarkupConfiguration?
     let startsInMarkupMode: Bool
 }

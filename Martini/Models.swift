@@ -943,6 +943,48 @@ struct TagGroupDefinition: Codable, Identifiable, Hashable {
         case order
         case tags
     }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        color = try container.decodeIfPresent(String.self, forKey: .color)
+        icon = try container.decodeIfPresent(String.self, forKey: .icon)
+        order = try container.decodeIfPresent(Int.self, forKey: .order)
+
+        if var tagsContainer = try? container.nestedUnkeyedContainer(forKey: .tags) {
+            var decodedTags: [FrameTag] = []
+            while !tagsContainer.isAtEnd {
+                if let tag = try? tagsContainer.decode(FrameTag.self) {
+                    if !tag.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        decodedTags.append(tag)
+                    }
+                    continue
+                }
+                if let tagString = try? tagsContainer.decode(String.self) {
+                    let cleaned = tagString.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !cleaned.isEmpty {
+                        decodedTags.append(FrameTag(id: nil, name: cleaned))
+                    }
+                    continue
+                }
+                _ = try? tagsContainer.decode(JSONValue.self)
+            }
+            tags = decodedTags
+        } else {
+            tags = nil
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encodeIfPresent(color, forKey: .color)
+        try container.encodeIfPresent(icon, forKey: .icon)
+        try container.encodeIfPresent(order, forKey: .order)
+        try container.encodeIfPresent(tags, forKey: .tags)
+    }
 }
 
 enum JSONValue: Codable, Hashable {

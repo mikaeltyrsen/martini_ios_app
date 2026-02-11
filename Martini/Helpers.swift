@@ -681,3 +681,42 @@ func triggerStatusHaptic(for status: FrameStatus) {
         impact.impactOccurred(intensity: 0.9)
     }
 }
+
+struct TopFadeOverlay: View {
+    let color: Color
+    var height: CGFloat = 20
+    var startOpacity: Double = 0.9
+    var endOpacity: Double = 0.0
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack{
+                LinearGradient(
+                    colors: [
+                        Color("systemBackground").opacity(startOpacity),
+                        Color("systemBackground").opacity(endOpacity)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: geo.safeAreaInsets.top + height)
+                .frame(maxWidth: .infinity, alignment: .top)
+                .allowsHitTesting(false)
+                .ignoresSafeArea()
+                
+                LinearGradient(
+                    colors: [
+                        color.opacity(startOpacity),
+                        color.opacity(endOpacity)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: geo.safeAreaInsets.top + height)
+                .frame(maxWidth: .infinity, alignment: .top)
+                .allowsHitTesting(false)
+                .ignoresSafeArea()
+            }
+        }
+    }
+}

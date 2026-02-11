@@ -3,6 +3,7 @@ import AVKit
 import ImageIO
 import PencilKit
 import SwiftUI
+import UIKit
 
 enum MediaItem: Equatable {
     case imageURL(URL)
@@ -48,6 +49,7 @@ struct FullscreenMediaViewer: View {
     let config: MediaViewerConfig
     let metadataItem: BoardMetadataItem?
     let thumbnailURL: URL?
+    let previewImage: UIImage?
     let markupConfiguration: BoardMarkupConfiguration?
     let startsInMarkupMode: Bool
 
@@ -91,6 +93,7 @@ struct FullscreenMediaViewer: View {
         config: MediaViewerConfig = .default,
         metadataItem: BoardMetadataItem? = nil,
         thumbnailURL: URL? = nil,
+        previewImage: UIImage? = nil,
         markupConfiguration: BoardMarkupConfiguration? = nil,
         startsInMarkupMode: Bool = false
     ) {
@@ -99,6 +102,7 @@ struct FullscreenMediaViewer: View {
         self.config = config
         self.metadataItem = metadataItem
         self.thumbnailURL = thumbnailURL
+        self.previewImage = previewImage
         self.markupConfiguration = markupConfiguration
         self.startsInMarkupMode = startsInMarkupMode
         let shouldStartMarkup = startsInMarkupMode && markupConfiguration != nil && !media.isVideo
@@ -157,9 +161,6 @@ struct FullscreenMediaViewer: View {
                             CrosshairOverlay()
                                 .frame(width: mediaSize.width, height: mediaSize.height)
                         }
-                        if isMetadataOverlayVisible && !isMarkupMode {
-                            fullscreenMetadataOverlay(scoutMetadata)
-                        }
                     }
                 }
                 .scaleEffect(zoomScale)
@@ -167,6 +168,11 @@ struct FullscreenMediaViewer: View {
                 .frame(width: proxy.size.width, height: proxy.size.height, alignment: .center)
                 .opacity(isVisible ? 1 : 0)
                 .scaleEffect(isVisible ? 1 : 0.98)
+
+                if let scoutMetadata, isMetadataOverlayVisible, !isMarkupMode {
+                    fullscreenMetadataOverlay(scoutMetadata)
+                        .opacity(isVisible ? 1 : 0)
+                }
 
             }
             .onAppear {
@@ -256,14 +262,17 @@ struct FullscreenMediaViewer: View {
                     isVisible = true
                 }
             }
-            .onChange(of: isPresented) { newValue in
-                if newValue, config.showsTopToolbar {
-                    isToolbarVisible = true
-                    if metadataItem != nil, !isMarkupMode {
-                        isMetadataOverlayVisible = true
-                    }
+        .onChange(of: isPresented) { newValue in
+            if newValue, config.showsTopToolbar {
+                isToolbarVisible = true
+                if metadataItem != nil, !isMarkupMode {
+                    isMetadataOverlayVisible = true
                 }
             }
+        }
+        .onChange(of: media.url) { _ in
+            hasLoadedFullImage = false
+        }
             .onChange(of: isMarkupMode) { _, isActive in
                 if isActive {
                     isToolbarVisible = true
@@ -286,13 +295,13 @@ struct FullscreenMediaViewer: View {
                     isToolPickerVisible = false
                 }
             }
-            .onChange(of: media.url) { _ in
-                zoomScale = 1.0
-                lastZoomScale = 1.0
-                panOffset = .zero
-                lastPanOffset = .zero
-            }
+        .onChange(of: media.url) { _ in
+            zoomScale = 1.0
+            lastZoomScale = 1.0
+            panOffset = .zero
+            lastPanOffset = .zero
         }
+    }
         .task(id: media.url) {
             await updateMediaAspectRatio()
         }
@@ -397,6 +406,12 @@ struct FullscreenMediaViewer: View {
         switch media {
         case .imageURL(let url):
             ZStack {
+                if let previewImage {
+                    Image(uiImage: previewImage)
+                        .resizable()
+                        .scaledToFit()
+                        .opacity(hasLoadedFullImage ? 0 : 1)
+                }
                 if let thumbnailURL {
                     CachedAsyncImage(url: thumbnailURL) { phase in
                         switch phase {

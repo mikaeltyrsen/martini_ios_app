@@ -162,6 +162,9 @@ struct ScriptView: View {
                 }
             }
         }
+        .overlay(alignment: .top) {
+            TopFadeOverlay(color: .martiniAccentColor)
+        }
     }
 
     private var effectiveScale: CGFloat {

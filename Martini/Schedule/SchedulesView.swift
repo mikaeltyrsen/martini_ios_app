@@ -49,57 +49,62 @@ struct SchedulesView: View {
     }
 
     var body: some View {
-        Section(){
-            VStack(alignment: .leading, spacing: 10){
-                ForEach(schedule.schedules ?? [], id: \.listIdentifier) { entry in
-                    Button {
-                        onSelect(entry)
-                    } label: {
-                        HStack(spacing: 14){
-                            if let dateString = entry.date,
-                               let parsedDate = try? Date(dateString, strategy: .iso8601.year().month().day()) {
+        ZStack(alignment: .top) {
+            Section(){
+                VStack(alignment: .leading, spacing: 10){
+                    ForEach(schedule.schedules ?? [], id: \.listIdentifier) { entry in
+                        Button {
+                            onSelect(entry)
+                        } label: {
+                            HStack(spacing: 14){
+                                if let dateString = entry.date,
+                                   let parsedDate = try? Date(dateString, strategy: .iso8601.year().month().day()) {
 
-                                VStack(spacing: 0) {
-                                    Text(parsedDate.formatted(.dateTime.day()))
-                                        .font(.system(size: 30, weight: .semibold))
-                                        .foregroundStyle(.white)
+                                    VStack(spacing: 0) {
+                                        Text(parsedDate.formatted(.dateTime.day()))
+                                            .font(.system(size: 30, weight: .semibold))
+                                            .foregroundStyle(.white)
 
-                                    Text(parsedDate.formatted(.dateTime.month(.abbreviated)).uppercased())
-                                        .font(.system(size: 8, weight: .semibold))
-                                        .foregroundStyle(.white)
+                                        Text(parsedDate.formatted(.dateTime.month(.abbreviated)).uppercased())
+                                            .font(.system(size: 8, weight: .semibold))
+                                            .foregroundStyle(.white)
+                                    }
+                                    .frame(width: 40)
+                                    .padding(10)
+                                    .background(RoundedRectangle(cornerRadius: 12).fill(Color(.martiniDefault)))
                                 }
-                                .frame(width: 40)
-                                .padding(10)
-                                .background(RoundedRectangle(cornerRadius: 12).fill(Color(.martiniDefault)))
-                            }
 
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(entry.title)
-                                    .font(.system(size: 24, weight: .semibold))
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(entry.title)
+                                        .font(.system(size: 24, weight: .semibold))
 
-                                if let timeAndDuration = timeAndDurationText(for: entry) {
-                                    Text(timeAndDuration)
-                                        .foregroundStyle(.gray)
-                                        .font(.footnote)
-                                        .frame(
-                                            maxWidth: .infinity,
-                                            alignment: horizontalSizeClass == .compact ? .center : .leading
-                                        )
+                                    if let timeAndDuration = timeAndDurationText(for: entry) {
+                                        Text(timeAndDuration)
+                                            .foregroundStyle(.gray)
+                                            .font(.footnote)
+                                            .frame(
+                                                maxWidth: .infinity,
+                                                alignment: horizontalSizeClass == .compact ? .center : .leading
+                                            )
+                                    }
                                 }
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
+                        .padding(10)
+                        .background(.markerPopup)
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .opacity(1)
                     }
-                    .padding(10)
-                    .background(.markerPopup)
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    .opacity(1)
                 }
+                Spacer()
             }
-            Spacer()
+            .padding(10)
+
+            TopFadeOverlay(color: .martiniAccentColor)
         }
-        .padding(10)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {

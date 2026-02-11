@@ -31,6 +31,7 @@
 		075456042EC9A6E200C45739 /* QRScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075456002EC9A6E100C45739 /* QRScannerView.swift */; };
 		075456082EC9AA2100C45739 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 075456072EC9AA2100C45739 /* Assets.xcassets */; };
 		075D7C932F32B99200802DAA /* UploadSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075D7C922F32B99200802DAA /* UploadSettings.swift */; };
+		075D7C952F35338B00802DAA /* ButtonStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075D7C942F35338B00802DAA /* ButtonStyles.swift */; };
 		07A6A6862EC9A272002C8EB9 /* MartiniApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07A6A6852EC9A272002C8EB9 /* MartiniApp.swift */; };
 		07A6A6882EC9A272002C8EB9 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07A6A6872EC9A272002C8EB9 /* ContentView.swift */; };
 		07C904B02EDA8665004EDBFA /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07C904AF2EDA8665004EDBFA /* Models.swift */; };
@@ -136,6 +137,7 @@
 		075456002EC9A6E100C45739 /* QRScannerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QRScannerView.swift; sourceTree = "<group>"; };
 		075456072EC9AA2100C45739 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		075D7C922F32B99200802DAA /* UploadSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadSettings.swift; sourceTree = "<group>"; };
+		075D7C942F35338B00802DAA /* ButtonStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonStyles.swift; sourceTree = "<group>"; };
 		07A6A6822EC9A272002C8EB9 /* Martini.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Martini.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		07A6A6852EC9A272002C8EB9 /* MartiniApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MartiniApp.swift; sourceTree = "<group>"; };
 		07A6A6872EC9A272002C8EB9 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -262,6 +264,7 @@
 		07A6A6842EC9A272002C8EB9 /* Martini */ = {
 			isa = PBXGroup;
 			children = (
+				075D7C942F35338B00802DAA /* ButtonStyles.swift */,
 				075D7C922F32B99200802DAA /* UploadSettings.swift */,
 				07E5F2902F2BD18B00B36FB4 /* AppEnvironment.swift */,
 				0746C3DE2F2056C500898C7A /* PushNotificationManager.swift */,
@@ -482,6 +485,7 @@
 				07E1A0033B7A111100000001 /* ConnectionMonitor.swift in Sources */,
 				07C904B22EDB92DB004EDBFA /* playground.swift in Sources */,
 				07C904B62EDBAE73004EDBFA /* FrameView.swift in Sources */,
+				075D7C952F35338B00802DAA /* ButtonStyles.swift in Sources */,
 				07D1C1072FF0BBBB00000003 /* PhotoLibraryHelper.swift in Sources */,
 				07C904B72FE2B5E9004EDBFA /* FrameLayout.swift in Sources */,
 				0730F41C2F0CE88E000B598F /* CreativeAspectRatioConfig.swift in Sources */,

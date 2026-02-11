@@ -78,6 +78,9 @@ struct CommentsView: View {
                 keyboardHeight = 0
             }
         }
+        .overlay(alignment: .top) {
+            TopFadeOverlay(color: .martiniAccentColor)
+        }
     }
 
     @ViewBuilder
@@ -367,8 +370,9 @@ struct CommentsView: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(canSendComment ? .white : .secondary)
             }
-            //.buttonStyle(.plain)
-            .padding(12)
+            .buttonStyle(.plain)
+            .frame(minWidth: 44, minHeight: 44)
+            .contentShape(Rectangle())
             .background(
                 Circle()
                     .fill(canSendComment

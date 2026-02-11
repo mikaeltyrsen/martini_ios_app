@@ -325,15 +325,12 @@ struct ScoutCameraLayout: View {
             HStack {
                 HStack(spacing: 15) {
                     
-                    Button {
+                    GlassIconButton(size: 35, glass: .regular.tint(nil).interactive(), action: {
                         dismiss()
-                    } label: {
+                    }) {
                         Image(systemName: "xmark")
                             .font(.system(size: 20, weight: .light))
-                            .frame(width: 35, height: 35)
-                            .glassEffect(.regular.tint(nil).interactive())
                     }
-                    .buttonStyle(.plain)
                     
                     Button {
                         isCameraSelectionPresented = true
@@ -910,38 +907,29 @@ struct ScoutCameraLayout: View {
     private var bottomControlBar: some View {
         ZStack {
             HStack {
-                Button {
+                GlassIconButton(size: 45, glass: .regular.tint(nil).interactive(), action: {
                     viewModel.selectPreviousLens()
-                } label: {
+                }) {
                     Image(systemName: "minus.circle")
                         .font(.system(size: 30, weight: .light))
-                        .frame(width: 45, height: 45)
-                        .glassEffect(.regular.tint(nil).interactive())
                 }
-                .buttonStyle(.plain)
                 
                 Spacer()
 
                 HStack(spacing: 12) {
-                    Button {
+                    GlassIconButton(size: 60, glass: .regular.tint(.blue).interactive(), action: {
                         viewModel.capturePhoto()
-                    } label: {
+                    }) {
                         Image(systemName: "camera")
                             .font(.system(size: 20, weight: .light))
-                            .frame(width: 60, height: 60)
-                            .glassEffect(.regular.tint(.blue).interactive())
                     }
-                    .buttonStyle(.plain)
                     
-                    Button {
+                    GlassIconButton(size: 45, glass: .regular.tint(nil).interactive(), action: {
                         viewModel.selectNextLens()
-                    } label: {
+                    }) {
                         Image(systemName: "plus.circle")
                             .font(.system(size: 30, weight: .light))
-                            .frame(width: 45, height: 45)
-                            .glassEffect(.regular.tint(nil).interactive())
                     }
-                    .buttonStyle(.plain)
                 }
             }
             Button {
@@ -1131,48 +1119,60 @@ struct ScoutCameraLayout: View {
                     showFocalLengthOverlay = false
                 }
 
-            VStack(spacing: 18) {
-                Text("Focal Lengths")
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(.white)
+            GeometryReader { proxy in
+                let maxListHeight = min(proxy.size.height * 0.6, 420)
+                VStack(spacing: 18) {
+                    Text("Focal Lengths")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.white)
 
-                if options.isEmpty {
-                    Text("No focal lengths available")
-                        .font(.subheadline)
-                        .foregroundStyle(.white.opacity(0.7))
-                } else {
-                    ScrollView {
-                        VStack(spacing: 14) {
-                            let rows = focalLengthRows(options)
-                            ForEach(rows.indices, id: \.self) { rowIndex in
-                                let row = rows[rowIndex]
-                                HStack(spacing: 14) {
-                                    Spacer(minLength: 0)
-                                    ForEach(row, id: \.self) { value in
-                                        Button {
-                                            viewModel.selectFocalLength(Double(value))
-                                            showFocalLengthOverlay = false
-                                        } label: {
-                                            Text("\(value)")
-                                                .font(.system(size: 16, weight: .semibold))
+                    if options.isEmpty {
+                        Text("No focal lengths available")
+                            .font(.subheadline)
+                            .foregroundStyle(.white.opacity(0.7))
+                    } else {
+                        ScrollView {
+                            VStack(spacing: 14) {
+                                let rows = focalLengthRows(options)
+                                ForEach(rows.indices, id: \.self) { rowIndex in
+                                    let row = rows[rowIndex]
+                                    HStack(spacing: 14) {
+                                        Spacer(minLength: 0)
+                                        ForEach(row, id: \.self) { value in
+                                            Button {
+                                                viewModel.selectFocalLength(Double(value))
+                                                showFocalLengthOverlay = false
+                                            } label: {
+                                                VStack(spacing: 2) {
+                                                    Text("\(value)")
+                                                        .font(.system(size: 16, weight: .semibold))
+                                                    Text("mm")
+                                                        .font(.system(size: 10, weight: .regular))
+                                                }
                                                 .frame(width: 62, height: 62)
                                                 .foregroundStyle(isFocalLengthSelected(value) ? .black : .white)
                                                 .background(isFocalLengthSelected(value) ? .white : Color.white.opacity(0.18))
                                                 .clipShape(Circle())
+                                            }
+                                            .buttonStyle(.plain)
                                         }
-                                        .buttonStyle(.plain)
+                                        Spacer(minLength: 0)
                                     }
-                                    Spacer(minLength: 0)
                                 }
                             }
+                            .padding(.vertical, 6)
                         }
-                        .padding(.vertical, 6)
+                        .frame(maxHeight: maxListHeight)
+                        .scrollIndicators(.hidden)
                     }
-                    .scrollIndicators(.hidden)
                 }
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    showFocalLengthOverlay = false
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                .padding(.horizontal, 24)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-            .padding(.horizontal, 24)
         }
     }
 

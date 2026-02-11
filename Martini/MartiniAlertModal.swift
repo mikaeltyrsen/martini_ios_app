@@ -40,7 +40,7 @@ struct MartiniAlertModal: View {
         if isPresented {
             GeometryReader { proxy in
                 ZStack {
-                    Color.black.opacity(0.4)
+                    Color.black.opacity(0.6)
                         .ignoresSafeArea()
                         .transition(.opacity)
                         .animation(.easeInOut(duration: 0.2), value: isPresented)
@@ -81,7 +81,7 @@ struct MartiniAlertModal: View {
         }
         .padding(24)
         .frame(maxWidth: maxWidth)
-        .background(Color(uiColor: .systemBackground))
+        .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .shadow(color: Color.black.opacity(0.2), radius: 20, x: 0, y: 10)
     }
@@ -93,13 +93,32 @@ struct MartiniAlertModal: View {
         Group {
             if action.style == .primary {
                 Button(action.title, role: action.role, action: action.action)
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(MartiniBtn())
             } else {
                 Button(action.title, role: action.role, action: action.action)
-                    .buttonStyle(.bordered)
+                    .buttonStyle(MartiniBtnOutlined())
             }
         }
         .tint(tint)
         .frame(maxWidth: .infinity)
+    }
+}
+
+struct MartiniNoConnectionModal: View {
+    @Binding var isPresented: Bool
+
+    var body: some View {
+        MartiniAlertModal(
+            isPresented: $isPresented,
+            iconName: "wifi.exclamationmark",
+            iconColor: .red,
+            title: "No Connection",
+            message: "Martini can’t reach the server at the moment. You can keep working—markings are saved locally.\nOnce connection is restored, we’ll automatically push your updates and sync across all devices.",
+            actions: [
+                MartiniAlertAction(title: "CONTINUE OFFLINE", style: .primary) {
+                    isPresented = false
+                }
+            ]
+        )
     }
 }

@@ -105,6 +105,8 @@ struct FrameView: View {
     @State private var showingDescriptionEditor: Bool = false
     @State private var descriptionEditorText: NSAttributedString = NSAttributedString(string: "")
     @State private var descriptionUpdateError: String?
+    @State private var emptyDescriptionOpacity: Double = 1.0
+    @State private var emptyDescriptionFadeTask: Task<Void, Never>?
     @State private var scriptNavigationTarget: ScriptNavigationTarget?
     @State private var didLogLayout: Bool = false
     @AppStorage("frameDescriptionFontStep") private var descriptionFontStep: Int = UIControlConfig.descriptionFontStepDefault(
@@ -114,8 +116,12 @@ struct FrameView: View {
     @Environment(\.openURL) private var openURL
     @Environment(\.colorScheme) private var colorScheme
 
-    private let dimmerAnim = Animation.easeInOut(duration: 0.28)
-    private let sheetAnim = Animation.spring(response: 0.42, dampingFraction: 0.92, blendDuration: 0.20)
+    private let statusRowAnim = Animation.spring(response: 0.34, dampingFraction: 0.82, blendDuration: 0.20)
+    private let statusButtonPop = Animation.spring(response: 0.25, dampingFraction: 0.5, blendDuration: 0.3)
+    private let statusDimmerAnim = Animation.easeInOut(duration: 0.28)
+    private let statusButtonSpacing: CGFloat = 12
+    private let statusButtonWidth: CGFloat = 84
+    private let statusButtonDelay: Double = 0.15
     private let takePictureCardID = "take-picture"
     private let tabRowHeight: CGFloat = 100
     private let boardsTabsSpacing: CGFloat = 12
@@ -189,6 +195,7 @@ struct FrameView: View {
             return "iPhone Camera"
         }
     }
+
 
     var body: some View {
         fullContent
@@ -310,7 +317,7 @@ struct FrameView: View {
 
     private var overlayContent: some View {
         eventDrivenContent
-            .overlay(alignment: .bottom) {
+            .overlay(alignment: .topTrailing) {
                 statusSheetOverlay
             }
     }
@@ -582,18 +589,7 @@ struct FrameView: View {
                 Text(descriptionUpdateError ?? "An unknown error occurred.")
             }
             .overlay {
-                MartiniAlertModal(
-                    isPresented: $showingNoConnectionModal,
-                    iconName: "wifi.exclamationmark",
-                    iconColor: .red,
-                    title: "No Connection",
-                    message: "Martini can’t reach the server at the moment. You can keep working—markings are saved locally.\nOnce connection is restored, we’ll automatically push your updates and sync across all devices.",
-                    actions: [
-                        MartiniAlertAction(title: "CONTINUE OFFLINE", style: .primary) {
-                            showingNoConnectionModal = false
-                        }
-                    ]
-                )
+                MartiniNoConnectionModal(isPresented: $showingNoConnectionModal)
             }
     }
 
@@ -602,13 +598,15 @@ struct FrameView: View {
             .navigationTitle(showsTopToolbar ? " " : frameTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                if showsTopToolbar {
+                if shouldShowTopToolbar {
                     topToolbar
                 }
                 if shouldShowBottomToolbar {
                     bottomToolbar
                 }
             }
+            // Keep the nav bar transparent so the top fade/background can show behind it.
+            .toolbarBackground(.hidden, for: .navigationBar)
             .overlay {
                 if isUploadingBoardAsset {
                     ZStack {
@@ -642,6 +640,12 @@ struct FrameView: View {
         return activeFrameID == frame.id
     }
 
+    private var shouldShowTopToolbar: Bool {
+        guard showsTopToolbar else { return false }
+        guard let activeFrameID else { return true }
+        return activeFrameID == frame.id
+    }
+
     private var statusUpdateAlertBinding: Binding<Bool> {
         Binding(
             get: { statusUpdateError != nil },
@@ -661,20 +665,11 @@ struct FrameView: View {
                     creativeTitleBadge(creativeTitleText)
                         .transition(.opacity.combined(with: .move(edge: .top)))
                 }
-                if selectedStatus != .none {
-                    Text(selectedStatus.displayName)
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(selectedStatus.markerBackgroundColor)
-                        .textCase(.uppercase)
-                        .transition(
-                            .asymmetric(
-                                insertion: .move(edge: .bottom).combined(with: .opacity),
-                                removal: .move(edge: .top).combined(with: .opacity)
-                            )
-                        )
-                }
             }
             .animation(.easeInOut(duration: 0.2), value: selectedStatus)
+            .transaction { transaction in
+                transaction.animation = nil
+            }
         }
 
         if showsCloseButton {
@@ -688,22 +683,8 @@ struct FrameView: View {
             }
         }
 
-        ToolbarItemGroup(placement: .topBarTrailing) {
-            Button {
-                onNavigate(.previous)
-            } label: {
-                Image(systemName: "arrow.left")
-            }
-            .accessibilityLabel("Previous frame")
-            .disabled(!hasPreviousFrame)
-
-            Button {
-                onNavigate(.next)
-            } label: {
-                Image(systemName: "arrow.right")
-            }
-            .accessibilityLabel("Next frame")
-            .disabled(!hasNextFrame)
+        ToolbarItem(placement: .topBarTrailing) {
+            markerButton
         }
     }
 
@@ -758,7 +739,7 @@ struct FrameView: View {
 
             Spacer()
 
-            markerButton
+            navigationButtons
             
             Spacer()
 
@@ -804,32 +785,43 @@ struct FrameView: View {
                 openStatusSheet()
             } label: {
                 let labelColor: Color = selectedStatus == .none ? .primary : selectedStatus.markerBackgroundColor
-                let statusLabel: String = {
-                    if isUpdatingStatus { return "Updating Status" }
-                    return selectedStatus == .none ? "Mark Frame" : selectedStatus.displayName
-                }()
-                Label {
-                    Text(statusLabel)
-                        .font(.system(size: 14, weight: .semibold))
-                        .lineLimit(1)
-                } icon: {
+                Group {
                     if isUpdatingStatus {
                         MartiniLoader()
-                            .tint(.white)
+                            .tint(labelColor)
                     } else {
                         Image(systemName: selectedStatus == .none ? "pencil.tip" : selectedStatus.systemImageName)
                     }
                 }
-                .labelStyle(.titleAndIcon)
+                .font(.system(size: 16, weight: .semibold))
                 .foregroundStyle(labelColor)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .fixedSize(horizontal: true, vertical: false)
-                .layoutPriority(1)
+                .padding(8)
             }
             .buttonStyle(.plain)
+            .frame(minWidth: 44, minHeight: 44)
+            .contentShape(Rectangle())
+            .accessibilityLabel(selectedStatus == .none ? "Mark frame" : "Frame status \(selectedStatus.displayName)")
             .disabled(isUpdatingStatus || !authService.allowEdit)
-            .glassEffect(.regular.tint(selectedStatus.markerBackgroundColor.opacity(0.3)))
+        }
+    }
+
+    private var navigationButtons: some View {
+        HStack(spacing: 16) {
+            Button {
+                onNavigate(.previous)
+            } label: {
+                Image(systemName: "arrow.left")
+            }
+            .accessibilityLabel("Previous frame")
+            .disabled(!hasPreviousFrame)
+
+            Button {
+                onNavigate(.next)
+            } label: {
+                Image(systemName: "arrow.right")
+            }
+            .accessibilityLabel("Next frame")
+            .disabled(!hasNextFrame)
         }
     }
 
@@ -937,61 +929,53 @@ struct FrameView: View {
     }
 
     private var statusSheetOverlay: some View {
-        ZStack(alignment: .bottom) {
+        ZStack(alignment: .topTrailing) {
             if showingStatusSheet {
-                // Dimmer (gentle, native)
-                Color(.systemBackground)
-                    .opacity(sheetVisible ? 0.7 : 0)
+                Color.black
+                    .opacity(sheetVisible ? 0.8 : 0)
+                    .contentShape(Rectangle())
                     .ignoresSafeArea()
-                    .animation(dimmerAnim, value: sheetVisible)
+                    .animation(statusDimmerAnim, value: sheetVisible)
                     .onTapGesture {
                         guard !isUpdatingStatus else { return }
                         closeStatusSheet()
                     }
 
-                // Sheet (native spring)
                 sheetContent
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 12)
-                    .offset(y: sheetVisible ? 0 : 420)
-                    .animation(sheetAnim, value: sheetVisible)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 100)
+                    .padding(.top, 6)
+                    .padding(.trailing, 16)
+                    .opacity(sheetVisible ? 1 : 0)
+                    .scaleEffect(sheetVisible ? 1 : 0.95, anchor: .trailing)
+                    .animation(statusRowAnim, value: sheetVisible)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+    }
+
+    private var availableStatusOptions: [FrameStatus] {
+        let allStatuses: [FrameStatus] = [.here, .next, .done, .omit, .none]
+        return allStatuses.filter { $0 != selectedStatus }
     }
 
     private var sheetContent: some View {
-        HStack(spacing: 0) {
-            if selectedStatus != .here {
-                statusSelectionButton(for: .here)
-            }
-            if selectedStatus != .next {
-//                if selectedStatus != .here {
-//                    Divider()
-//                }
-                statusSelectionButton(for: .next)
-            }
-            if selectedStatus != .done {
-                //Divider()
-                statusSelectionButton(for: .done)
-            }
-            if selectedStatus != .omit {
-                //Divider()
-                statusSelectionButton(for: .omit)
-            }
-            if selectedStatus != .none {
-                //Divider()
-                statusSelectionButton(for: .none)
+        let statuses = availableStatusOptions
+
+        return HStack(spacing: statusButtonSpacing) {
+            ForEach(Array(statuses.enumerated()), id: \.element.rawValue) { index, status in
+                statusSelectionButton(for: status)
+                    .frame(width: statusButtonWidth)
+                    .offset(x: sheetVisible ? 0 : statusButtonCollapsedOffset(index: index, total: statuses.count))
+                    .opacity(sheetVisible ? 1 : 0)
+                    .scaleEffect(sheetVisible ? 1 : 0.88)
+                    .animation(statusButtonPop.delay(statusButtonDelay), value: sheetVisible)
             }
         }
-        .frame(maxWidth: .infinity)
-        .background(.ultraThinMaterial)
-        .padding(10)
-//        .background(
-//            RoundedRectangle(cornerRadius: 20, style: .continuous)
-//                .fill(Color(.markerPopup).opacity(1))
-//        )
+        .frame(maxWidth: .infinity, alignment: .trailing)
+    }
+
+    private func statusButtonCollapsedOffset(index: Int, total: Int) -> CGFloat {
+        let step = statusButtonWidth + statusButtonSpacing
+        return CGFloat(max(0, total - 1 - index)) * step
     }
 
     private func openStatusSheet() {
@@ -1003,7 +987,7 @@ struct FrameView: View {
 
     private func closeStatusSheet() {
         sheetVisible = false
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
             showingStatusSheet = false
         }
     }
@@ -1026,9 +1010,9 @@ struct FrameView: View {
                     takePictureAction: authService.allowEdit ? {
                         showingAddBoardOptions = true
                     } : nil,
-                    onAssetTap: { asset in
+                    onAssetTap: { asset, previewImage in
                         guard asset.kind == .board else { return }
-                        openBoardPreview(asset)
+                        openBoardPreview(asset, previewImage: previewImage)
                     },
                     onMetadataTap: { asset, metadata in
                         metadataSheetItem = BoardMetadataItem(
@@ -1181,6 +1165,26 @@ struct FrameView: View {
         showingDescriptionEditor = true
     }
 
+    private func startEmptyDescriptionFade() {
+        emptyDescriptionFadeTask?.cancel()
+        emptyDescriptionOpacity = 1.0
+        emptyDescriptionFadeTask = Task {
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                withAnimation(.easeOut(duration: 0.6)) {
+                    emptyDescriptionOpacity = 0.0
+                }
+            }
+        }
+    }
+
+    private func resetEmptyDescriptionFade() {
+        emptyDescriptionFadeTask?.cancel()
+        emptyDescriptionFadeTask = nil
+        emptyDescriptionOpacity = 1.0
+    }
+
     @ViewBuilder
     private var descriptionSection: some View {
         if let secondaryText {
@@ -1222,18 +1226,32 @@ struct FrameView: View {
 //            }
             .disabled(secondaryText.isEmpty)
         } else {
-            VStack {
+            VStack(spacing: authService.allowEdit ? 20 : 0) {
 //                Text("Description")
 //                    .font(.headline)
 //                    .foregroundStyle(.primary)
 
-                Image(systemName: "character.cursor.ibeam")
-                    .font(.system(size: 48, weight: .regular))
-                    .foregroundStyle(Color.martiniDefaultDescriptionColor)
-                    .opacity(0.3)
+                Text("No description yet")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.martiniDefaultDescriptionColor.opacity(0.9))
+                    .multilineTextAlignment(.center)
+
+                if authService.allowEdit {
+                    Text("Tap and hold to add a description")
+                        .font(.footnote)
+                        .foregroundStyle(Color.martiniDefaultDescriptionColor.opacity(0.9))
+                        .multilineTextAlignment(.center)
+                }
             }
             .frame(maxWidth: .infinity, minHeight: 140, alignment: .center)
             .padding(.top, 20)
+            .opacity(emptyDescriptionOpacity)
+            .onAppear {
+                startEmptyDescriptionFade()
+            }
+            .onDisappear {
+                resetEmptyDescriptionFade()
+            }
             .contextMenu {
                 if authService.allowEdit {
                     Button {
@@ -1518,36 +1536,38 @@ struct FrameView: View {
                 }
             }
             .overlay(alignment: .bottomLeading) {
-                HStack(spacing: 10) {
-                    Button {
-                        updateDescriptionFontStep(delta: -1)
-                    } label: {
-                        Image(systemName: "textformat.size.smaller")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(Color.martiniDefaultText)
-                            .padding(10)
-                            .background(
-                                Circle().fill(Color.martiniDefaultColor)
-                            )
-                    }
-                    .accessibilityLabel("Decrease Description Font Size")
-                    .disabled(descriptionFontStep <= UIControlConfig.descriptionFontStepMin)
+                if secondaryText != nil {
+                    HStack(spacing: 10) {
+                        Button {
+                            updateDescriptionFontStep(delta: -1)
+                        } label: {
+                            Image(systemName: "textformat.size.smaller")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(Color.martiniDefaultText)
+                                .padding(10)
+                                .background(
+                                    Circle().fill(Color.martiniDefaultColor)
+                                )
+                        }
+                        .accessibilityLabel("Decrease Description Font Size")
+                        .disabled(descriptionFontStep <= UIControlConfig.descriptionFontStepMin)
 
-                    Button {
-                        updateDescriptionFontStep(delta: 1)
-                    } label: {
-                        Image(systemName: "textformat.size.larger")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(Color.martiniDefaultText)
-                            .padding(10)
-                            .background(
-                                Circle().fill(Color.martiniDefaultColor)
-                            )
+                        Button {
+                            updateDescriptionFontStep(delta: 1)
+                        } label: {
+                            Image(systemName: "textformat.size.larger")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundStyle(Color.martiniDefaultText)
+                                .padding(10)
+                                .background(
+                                    Circle().fill(Color.martiniDefaultColor)
+                                )
+                        }
+                        .accessibilityLabel("Increase Description Font Size")
+                        .disabled(descriptionFontStep >= UIControlConfig.descriptionFontStepMax)
                     }
-                    .accessibilityLabel("Increase Description Font Size")
-                    .disabled(descriptionFontStep >= UIControlConfig.descriptionFontStepMax)
+                    .padding(12)
                 }
-                .padding(12)
             }
             .contextMenu {
                 Button {
@@ -2371,7 +2391,7 @@ struct FrameView: View {
             updateStatus(to: status)
         } label: {
             VStack(spacing: 12) {
-                Group {
+                ZStack {
                     if isLoading {
                         MartiniLoader()
                             .tint(labelColor)
@@ -2386,16 +2406,17 @@ struct FrameView: View {
                 .glassEffect(
                     status == .none
                         ? .regular.interactive()
-                        : .regular.tint(status.markerBackgroundColor.opacity(0.3)).interactive()
+                        : .regular.tint(status.markerBackgroundColor.opacity(0.3)).interactive(),
+                    in: Circle()
                 )
                 //.background(RoundedRectangle(cornerRadius: 12).fill(Color.white))
                 Text(status.displayName)
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.primary)
             }
+            .contentShape(Rectangle())
             .padding(.vertical, 18)
             .padding(.horizontal, 10)
-            .frame(maxWidth: .infinity, alignment: .center)
 //            .background(
 //                RoundedRectangle(cornerRadius: 12)
 //                    .fill(Color(.secondarySystemBackground))
@@ -2884,8 +2905,15 @@ private extension FrameView {
         return image.jpegData(compressionQuality: uploadCompressionSetting.jpegQuality)
     }
 
-    private func openBoardPreview(_ asset: FrameAssetItem, startInMarkup: Bool = false) {
+    private func openBoardPreview(
+        _ asset: FrameAssetItem,
+        startInMarkup: Bool = false,
+        previewImage: UIImage? = nil
+    ) {
         guard let url = asset.url else { return }
+        let cachedPreviewImage = previewImage
+            ?? ImageCache.cachedImageSync(for: url)
+            ?? asset.thumbnailURL.flatMap { ImageCache.cachedImageSync(for: $0) }
         let media: MediaItem = asset.isVideo ? .videoURL(url) : .imageURL(url)
         let metadataItem = metadataForAsset(asset).map { metadata in
             BoardMetadataItem(
@@ -2925,6 +2953,7 @@ private extension FrameView {
             config: .default,
             metadataItem: metadataItem,
             thumbnailURL: asset.thumbnailURL,
+            previewImage: cachedPreviewImage,
             markupConfiguration: markupConfiguration,
             startsInMarkupMode: startInMarkup
         )
@@ -2938,6 +2967,7 @@ private extension FrameView {
             config: .default,
             metadataItem: nil,
             thumbnailURL: clip.thumbnailURL,
+            previewImage: nil,
             markupConfiguration: nil,
             startsInMarkupMode: false
         )
@@ -3230,7 +3260,7 @@ private struct StackedAssetScroller<ContextMenuContent: View>: View {
     let primaryText: String?
     let takePictureID: String
     let takePictureAction: (() -> Void)?
-    let onAssetTap: ((FrameAssetItem) -> Void)?
+    let onAssetTap: ((FrameAssetItem, UIImage?) -> Void)?
     let onMetadataTap: ((FrameAssetItem, JSONValue) -> Void)?
     let pendingUploadState: (FrameAssetItem) -> PendingBoardUploadStatus?
     let pendingUploadError: (FrameAssetItem) -> String?
@@ -3269,8 +3299,8 @@ private struct StackedAssetScroller<ContextMenuContent: View>: View {
                             enablesFullScreen: shouldEnablePreview,
                             showMetadataOverlay: metadata != nil,
                             onMetadataTap: nil,
-                            onTap: shouldHandleTap ? {
-                                onAssetTap?(asset)
+                            onTap: shouldHandleTap ? { previewImage in
+                                onAssetTap?(asset, previewImage)
                             } : nil
                         )
                         let styledCardView = cardView
@@ -3374,8 +3404,9 @@ private struct AssetCardView: View {
     let enablesFullScreen: Bool
     let showMetadataOverlay: Bool
     let onMetadataTap: (() -> Void)?
-    let onTap: (() -> Void)?
+    let onTap: ((UIImage?) -> Void)?
     private let cardCornerRadius: CGFloat = 16
+    @State private var previewImage: UIImage?
 
     var body: some View {
         let card = FrameLayout(
@@ -3388,7 +3419,10 @@ private struct AssetCardView: View {
             metadataTapAction: onMetadataTap,
             showTextBlock: false,
             cornerRadius: cardCornerRadius,
-            enablesFullScreen: enablesFullScreen
+            enablesFullScreen: enablesFullScreen,
+            onPreviewImageLoaded: { image in
+                previewImage = image
+            }
         )
 
         let styledCard = card
@@ -3400,7 +3434,7 @@ private struct AssetCardView: View {
         if let onTap {
             styledCard
                 .onTapGesture {
-                    onTap()
+                    onTap(previewImage)
                 }
         } else {
             styledCard
@@ -3751,13 +3785,15 @@ private struct AddBoardAlert: View {
                 }
                 .frame(width: 80, height: 80)
                 .foregroundColor(.primary)
-                .glassEffect(.regular.interactive())
+                .glassEffect(.regular.interactive(), in: Circle())
                 
                 Text(title)
                     .font(.caption)
             }
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .frame(minWidth: 44, minHeight: 44)
     }
 }
 
@@ -3813,6 +3849,8 @@ private struct MediaPicker: UIViewControllerRepresentable {
         } else {
             picker.sourceType = .photoLibrary
         }
+        picker.orientationMask = picker.sourceType == .camera ? .portrait : .all
+        context.coordinator.lockOrientationIfNeeded(for: picker)
         if allowsVideo {
             picker.mediaTypes = [UTType.image.identifier, UTType.movie.identifier]
         } else {
@@ -3831,9 +3869,24 @@ private struct MediaPicker: UIViewControllerRepresentable {
 
     final class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
         private let parent: MediaPicker
+        private var previousOrientationLock: UIInterfaceOrientationMask?
 
         init(parent: MediaPicker) {
             self.parent = parent
+        }
+
+        func lockOrientationIfNeeded(for picker: UIImagePickerController) {
+            guard picker.sourceType == .camera else { return }
+            if previousOrientationLock == nil {
+                previousOrientationLock = AppDelegate.orientationLock
+            }
+            OrientationLock.lock(.portrait)
+        }
+
+        private func unlockOrientationIfNeeded() {
+            guard let previousOrientationLock else { return }
+            OrientationLock.unlock(to: previousOrientationLock)
+            self.previousOrientationLock = nil
         }
 
         func imagePickerController(
@@ -3841,6 +3894,7 @@ private struct MediaPicker: UIViewControllerRepresentable {
             didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
         ) {
             defer { parent.dismiss() }
+            unlockOrientationIfNeeded()
             if let mediaType = info[.mediaType] as? String {
                 if mediaType == UTType.image.identifier {
                     if let image = info[.originalImage] as? UIImage {
@@ -3855,6 +3909,7 @@ private struct MediaPicker: UIViewControllerRepresentable {
         }
 
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            unlockOrientationIfNeeded()
             parent.dismiss()
         }
     }
@@ -3877,12 +3932,14 @@ private struct BoardAnnotationEditorContext: Identifiable {
 }
 
 private final class RotatingImagePickerController: UIImagePickerController {
+    var orientationMask: UIInterfaceOrientationMask = .all
+
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
-        .all
+        orientationMask
     }
 
     override var shouldAutorotate: Bool {
-        true
+        orientationMask != .portrait
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -3892,6 +3949,36 @@ private final class RotatingImagePickerController: UIImagePickerController {
             self.view.setNeedsLayout()
             self.view.layoutIfNeeded()
         })
+    }
+}
+
+private enum OrientationLock {
+    static func lock(_ mask: UIInterfaceOrientationMask) {
+        set(mask)
+    }
+
+    static func unlock(to mask: UIInterfaceOrientationMask) {
+        set(mask)
+    }
+
+    private static func set(_ mask: UIInterfaceOrientationMask) {
+        AppDelegate.orientationLock = mask
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
+            return
+        }
+        if #available(iOS 16.0, *) {
+            do {
+                try windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: mask))
+            } catch {
+                // Fall back to best-effort rotation attempt.
+                UIViewController.attemptRotationToDeviceOrientation()
+            }
+        } else {
+            if mask.contains(.portrait) {
+                UIDevice.current.setValue(UIInterfaceOrientation.portrait.rawValue, forKey: "orientation")
+            }
+            UIViewController.attemptRotationToDeviceOrientation()
+        }
     }
 }
 //

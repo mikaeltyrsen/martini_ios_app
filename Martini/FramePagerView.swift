@@ -10,6 +10,8 @@ struct FramePagerView: View {
 
     @State private var selection: Frame.ID
     @Environment(\.fullscreenMediaCoordinator) private var fullscreenCoordinator
+    @Environment(\.dismiss) private var dismiss
+    @State private var isClosing: Bool = false
 
     init(
         frames: [Frame],
@@ -38,42 +40,45 @@ struct FramePagerView: View {
             if frames.isEmpty {
                 ContentUnavailableView("No Frames", systemImage: "film")
             } else {
-                TabView(selection: $selection) {
-                    ForEach(Array(frames.enumerated()), id: \.element.id) { index, frame in
-                        FrameView(
-                            frame: frame,
-                            assetOrder: assetOrderBinding(frame),
-                            onClose: onClose,
-                            showsCloseButton: showsCloseButton,
-                            hasPreviousFrame: index > 0,
-                            hasNextFrame: index + 1 < frames.count,
-                            showsTopToolbar: false,
-                            activeFrameID: selection,
-                            onNavigate: { direction in
-                                switch direction {
-                                case .previous:
-                                    guard index > 0 else { return }
-                                    withAnimation(.easeInOut(duration: 0.25)) {
-                                        selection = frames[index - 1].id
+                ZStack(alignment: .top) {
+                    TabView(selection: $selection) {
+                        ForEach(Array(frames.enumerated()), id: \.element.id) { index, frame in
+                            FrameView(
+                                frame: frame,
+                                assetOrder: assetOrderBinding(frame),
+                                onClose: onClose,
+                                showsCloseButton: showsCloseButton,
+                                hasPreviousFrame: index > 0,
+                                hasNextFrame: index + 1 < frames.count,
+                                showsTopToolbar: true,
+                                activeFrameID: selection,
+                                onNavigate: { direction in
+                                    switch direction {
+                                    case .previous:
+                                        guard index > 0 else { return }
+                                        withAnimation(.easeInOut(duration: 0.25)) {
+                                            selection = frames[index - 1].id
+                                        }
+                                    case .next:
+                                        guard index + 1 < frames.count else { return }
+                                        withAnimation(.easeInOut(duration: 0.25)) {
+                                            selection = frames[index + 1].id
+                                        }
                                     }
-                                case .next:
-                                    guard index + 1 < frames.count else { return }
-                                    withAnimation(.easeInOut(duration: 0.25)) {
-                                        selection = frames[index + 1].id
-                                    }
-                                }
-                            },
-                            onStatusSelected: onStatusSelected
-                        )
-                        .tag(frame.id)
+                                },
+                                onStatusSelected: onStatusSelected
+                            )
+                            .tag(frame.id)
+                        }
                     }
-                }
-                .tabViewStyle(.page(indexDisplayMode: .never))
-                .toolbar {
-                    topToolbar
-                }
-                .onChange(of: selection) { newValue in
-                    onSelectionChanged(newValue)
+                    .tabViewStyle(.page(indexDisplayMode: .never))
+                    .toolbarBackground(.hidden, for: .navigationBar)
+                    .onChange(of: selection) { newValue in
+                        guard !isClosing else { return }
+                        onSelectionChanged(newValue)
+                    }
+
+                    TopFadeOverlay(color: topFadeTintColor)
                 }
             }
         }
@@ -85,6 +90,7 @@ struct FramePagerView: View {
                     config: configuration.config,
                     metadataItem: configuration.metadataItem,
                     thumbnailURL: configuration.thumbnailURL,
+                    previewImage: configuration.previewImage,
                     markupConfiguration: configuration.markupConfiguration,
                     startsInMarkupMode: configuration.startsInMarkupMode
                 )
@@ -114,6 +120,22 @@ struct FramePagerView: View {
 
     private var selectedIndex: Int? {
         frames.firstIndex { $0.id == selection }
+    }
+
+    private var topFadeTintColor: Color {
+        guard let currentFrame = frames.first(where: { $0.id == selection }) else {
+            return .martiniAccentColor
+        }
+        switch currentFrame.statusEnum {
+        case .done, .omit:
+            return .red
+        case .here:
+            return .green
+        case .next:
+            return .orange
+        case .none:
+            return .martiniAccentColor
+        }
     }
 
     private var selectedFrame: Frame? {
@@ -194,7 +216,10 @@ struct FramePagerView: View {
         if showsCloseButton {
             ToolbarItem(placement: .topBarLeading) {
                 Button {
+                    guard !isClosing else { return }
+                    isClosing = true
                     onClose()
+                    dismiss()
                 } label: {
                     Image(systemName: "xmark")
                 }

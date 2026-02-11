@@ -120,6 +120,7 @@ struct Uiplayground: View {
                         media: selectedMedia.media,
                         config: selectedMedia.config,
                         thumbnailURL: selectedMedia.thumbnailURL,
+                        previewImage: nil,
                         markupConfiguration: nil,
                         startsInMarkupMode: false
                     )

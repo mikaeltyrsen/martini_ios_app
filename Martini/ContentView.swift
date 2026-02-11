@@ -100,6 +100,7 @@ struct ContentView: View {
                     config: configuration.config,
                     metadataItem: configuration.metadataItem,
                     thumbnailURL: configuration.thumbnailURL,
+                    previewImage: configuration.previewImage,
                     markupConfiguration: configuration.markupConfiguration,
                     startsInMarkupMode: configuration.startsInMarkupMode
                 )
@@ -224,16 +225,14 @@ struct NearbySignInRequestSheet: View {
         .padding(24)
         .presentationDetents([.medium])
         .overlay(alignment: .topTrailing) {
-            Button {
+            GlassIconButton(size: 36, action: {
                 nearbySignInService.denyPendingRequest()
-            } label: {
+            }) {
                 Image(systemName: "xmark")
                     .font(.headline)
                     .foregroundColor(.secondary)
-                    .padding(10)
             }
-            .buttonStyle(.plain)
-            .glassEffect(.regular.interactive(), in: Circle())
+            .accessibilityLabel("Close")
         }
     }
 }
@@ -243,9 +242,11 @@ struct NearbySignInRequestSheet: View {
 struct MainView: View {
     @EnvironmentObject var authService: AuthService
     @EnvironmentObject var connectionMonitor: ConnectionMonitor
+    @EnvironmentObject var realtimeService: RealtimeService
     @EnvironmentObject var fullscreenCoordinator: FullscreenMediaCoordinator
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @Environment(\.scenePhase) private var scenePhase
     @State private var viewMode: ViewMode = .list
     @State private var selectedFrameId: String?
     @State private var selectedFrame: Frame?
@@ -316,6 +317,14 @@ struct MainView: View {
     @State private var needsFrameOrderRefresh = false
     @State private var frameOrderSnapshotByCreative: [String: [String]] = [:]
     @State private var scriptNavigationTarget: ScriptNavigationTarget?
+    @State private var hasEnteredBackground = false
+    @State private var isReconnecting = false
+    @State private var isCreativeMenuExpanded = false
+    @State private var creativeListHeight: CGFloat = 0
+    @State private var creativeListMaxHeight: CGFloat = 0
+    @State private var statusBarHeight: CGFloat = 0
+    private let topBarHeight: CGFloat = 50
+    private let topFadeHeight: CGFloat = 20
 
     enum ViewMode {
         case list
@@ -421,8 +430,9 @@ struct MainView: View {
     }
 
     private var creativesToDisplay: [Creative] {
-        guard !selectedCreativeIds.isEmpty else { return allCreatives }
-        return allCreatives.filter { selectedCreativeIds.contains($0.id) }
+        let liveCreatives = allCreatives.filter { $0.isLive && !$0.isArchived }
+        guard !selectedCreativeIds.isEmpty else { return liveCreatives }
+        return liveCreatives.filter { selectedCreativeIds.contains($0.id) }
     }
 
     private var displayedCreativeIds: Set<String> {
@@ -449,9 +459,18 @@ struct MainView: View {
         return authService.projectId ?? "Martini"
     }
 
+    private func adjustedTotalFrames(totalFrames: Int, frames: [Frame]) -> Int {
+        guard !frames.isEmpty else { return totalFrames }
+        return frames.count
+    }
+
     private var overallProgress: ProgressCounts {
         let frames = authService.frames.filter { displayedCreativeIds.contains($0.creativeId) }
-        let totalOverride = creativesToDisplay.reduce(0) { $0 + $1.totalFrames }
+        let framesByCreative = Dictionary(grouping: frames, by: \.creativeId)
+        let totalOverride = creativesToDisplay.reduce(0) { sum, creative in
+            let creativeFrames = framesByCreative[creative.id] ?? []
+            return sum + adjustedTotalFrames(totalFrames: creative.totalFrames, frames: creativeFrames)
+        }
         return progressCounts(for: frames, totalOverride: totalOverride)
     }
     
@@ -552,6 +571,16 @@ struct MainView: View {
         return adjustableColumnCount(for: step)
     }
 
+    @MainActor
+    private func updateStatusBarHeight() {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let activeScene = scenes.first(where: { $0.activationState == .foregroundActive }) ?? scenes.first
+        let height = activeScene?.statusBarManager?.statusBarFrame.height ?? 0
+        if statusBarHeight != height {
+            statusBarHeight = height
+        }
+    }
+
     private func adjustableColumnCount(for step: Int) -> Int {
         switch step { // Grid View adjustable
         case 0: return isLandscape ? 6 : 5
@@ -564,7 +593,8 @@ struct MainView: View {
 
     private func creativeProgress(_ creative: Creative) -> ProgressCounts {
         let frames = authService.frames.filter { $0.creativeId == creative.id }
-        return progressCounts(for: frames, totalOverride: creative.totalFrames)
+        let totalOverride = adjustedTotalFrames(totalFrames: creative.totalFrames, frames: frames)
+        return progressCounts(for: frames, totalOverride: totalOverride)
     }
 
     private var gridSections: [GridSectionData] {
@@ -706,6 +736,9 @@ struct MainView: View {
                     hasShownOfflineModal = false
                 }
             }
+            .onChange(of: scenePhase) { newPhase in
+                handleScenePhaseChange(newPhase)
+            }
     }
 
     private var mainContentWithStateUpdates: some View {
@@ -724,6 +757,9 @@ struct MainView: View {
             .onAppear(perform: loadStoredFiltersIfNeeded)
             .onChange(of: creativesToDisplay.count) { _ in
                 synchronizeCreativeSelection()
+                if creativesToDisplay.count <= 1 {
+                    isCreativeMenuExpanded = false
+                }
             }
             .onChange(of: selectedCreativeIds) { _ in
                 synchronizeCreativeSelection()
@@ -883,14 +919,47 @@ struct MainView: View {
     }
 
     private var mainContentWithToolbar: some View {
-        mainContent
-            //.navigationTitle(displayedNavigationTitle)
-            .toolbar { toolbarContent }
-            .navigationBarTitleDisplayMode(.inline)
-            .overlay(alignment: .leading) {
-                filterSidebar
-                    .zIndex(1)
+        ZStack(alignment: .top) {
+            mainContent
+                //.navigationTitle(displayedNavigationTitle)
+                .toolbar { toolbarContent }
+                .toolbar(.hidden, for: .navigationBar)
+                .navigationBarTitleDisplayMode(.inline)
+                .onAppear {
+                    updateStatusBarHeight()
+                }
+                .onChange(of: horizontalSizeClass) { _ in
+                    updateStatusBarHeight()
+                }
+                .onChange(of: verticalSizeClass) { _ in
+                    updateStatusBarHeight()
+                }
+
+            GeometryReader { geo in
+                let maxHeight = max(0, geo.size.height - (statusBarHeight + topBarHeight + 24))
+                Color.clear
+                    .onAppear {
+                        creativeListMaxHeight = maxHeight
+                    }
+                    .onChange(of: maxHeight) { newValue in
+                        creativeListMaxHeight = newValue
+                    }
             }
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+
+            topFadeOverlay
+                .zIndex(1)
+
+            customTopBar
+                .padding(.top, statusBarHeight + 2)
+                .frame(maxWidth: .infinity, alignment: .top)
+                .ignoresSafeArea(edges: .top)
+                .zIndex(2)
+
+            filterSidebar
+                .zIndex(3)
+        }
     }
 
     private var dataErrorIsPresented: Binding<Bool> {
@@ -902,6 +971,32 @@ struct MainView: View {
                 }
             }
         )
+    }
+
+    private func recordDataError(_ error: Error) {
+        guard !shouldSuppressDataError(for: error) else { return }
+        dataError = error.localizedDescription
+    }
+
+    private func shouldSuppressDataError(for error: Error) -> Bool {
+        if connectionMonitor.status == .offline || connectionMonitor.status == .unstable {
+            return true
+        }
+
+        let nsError = error as NSError
+        guard nsError.domain == NSURLErrorDomain else { return false }
+
+        switch nsError.code {
+        case NSURLErrorNotConnectedToInternet,
+             NSURLErrorTimedOut,
+             NSURLErrorCannotFindHost,
+             NSURLErrorCannotConnectToHost,
+             NSURLErrorNetworkConnectionLost,
+             NSURLErrorDNSLookupFailed:
+            return true
+        default:
+            return false
+        }
     }
 
     private var selectedFrameIsPresented: Binding<Bool> {
@@ -917,22 +1012,7 @@ struct MainView: View {
     }
 
     private var noConnectionOverlay: some View {
-        MartiniAlertModal(
-            isPresented: $showingNoConnectionModal,
-            iconName: "wifi.exclamationmark",
-            iconColor: .red,
-            title: "No Connection",
-            message: "Martini can’t reach the server at the moment. You can keep working—markings are saved locally.\nOnce connection is restored, we’ll automatically push your updates and sync across all devices.",
-            actions: noConnectionActions
-        )
-    }
-
-    private var noConnectionActions: [MartiniAlertAction] {
-        [
-            MartiniAlertAction(title: "CONTINUE OFFLINE", style: .primary) {
-                showingNoConnectionModal = false
-            }
-        ]
+        MartiniNoConnectionModal(isPresented: $showingNoConnectionModal)
     }
 
     private var framePagerSheet: some View {
@@ -985,39 +1065,37 @@ struct MainView: View {
     }
 
     private var emptyStateView: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "photo.on.rectangle.angled")
-                .font(.system(size: 60))
-                .foregroundColor(.secondary)
+        GeometryReader { proxy in
+            VStack(spacing: 20) {
+                Image(systemName: "photo.on.rectangle.angled")
+                    .font(.system(size: 60))
+                    .foregroundColor(.secondary)
 
-            Text("No Creatives")
-                .font(.title2)
-                .fontWeight(.bold)
+                Text("No Creatives")
+                    .font(.title2)
+                    .fontWeight(.bold)
 
-            Text("No creatives found for this project.")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+                Text("No creatives found for this project.")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            .frame(maxWidth: .infinity, minHeight: proxy.size.height, alignment: .center)
         }
     }
 
     private var contentStack: some View {
-        ZStack(alignment: .bottom) {
+        ZStack(alignment: .bottomTrailing) {
             gridView
 
             if isHereShortcutVisible {
-                Button(action: scrollToHereFrame) {
-                    HStack(spacing: 8) {
-                        Image(systemName: hereShortcutIconName)
-                        Text("Jump to Here")
-                            .font(.system(size: 15, weight: .semibold))
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(.ultraThickMaterial, in: Capsule())
+                GlassIconButton(size: 48, action: scrollToHereFrame) {
+                    Image(systemName: hereShortcutIconName)
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(.primary)
                 }
-                .buttonStyle(.plain)
                 .shadow(radius: 3, y: 2)
-                .padding(.bottom, 12)
+                .padding(.trailing, 28)
+                .padding(.bottom, 10)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
@@ -1025,36 +1103,6 @@ struct MainView: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        ToolbarItemGroup(placement: .principal) {
-            if shouldAllowCreativeSelectionMenu {
-                Menu {
-                    creativeMenuContent
-                } label: {
-                    navigationTitleStack
-                }
-                .accessibilityLabel("Select creative")
-            } else {
-                navigationTitleStack
-            }
-        }
-
-        ToolbarItemGroup(placement: .navigationBarTrailing) {
-            if isReorderingFrames {
-                Button("Done") {
-                    commitFrameOrdering()
-                }
-                .accessibilityLabel("Finish reordering")
-            } else if shouldShowScheduleButton {
-                scheduleButton
-            }
-        }
-
-        ToolbarItem(placement: .navigationBarLeading) {
-            if !isReorderingFrames {
-                filterButton
-            }
-        }
-
         if !isReorderingFrames {
             ToolbarItemGroup(placement: .bottomBar) {
 
@@ -1130,6 +1178,91 @@ struct MainView: View {
                 }
                 .accessibilityLabel("Settings")
             }
+        }
+    }
+
+    private var customTopBar: some View {
+        ZStack(alignment: .top) {
+            HStack {
+                Spacer(minLength: 0)
+                navigationTitleStack
+                    .frame(height: isCreativeMenuExpanded ? nil : topBarHeight, alignment: .top)
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
+            .zIndex(2)
+
+            HStack(alignment: .top) {
+                if isReorderingFrames {
+                    Color.clear.frame(width: 80, height: 1)
+                } else {
+                    topBarFilterButton
+                }
+                Spacer()
+                if isReorderingFrames {
+                    Button("Done") {
+                        commitFrameOrdering()
+                    }
+                    .accessibilityLabel("Finish reordering")
+                } else if shouldShowScheduleButton {
+                    topBarScheduleButton
+                } else {
+                    Color.clear.frame(width: 32, height: 1)
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 2)
+            .zIndex(1)
+        }
+        .frame(maxWidth: .infinity, alignment: .top)
+    }
+
+    private var topFadeOverlay: some View {
+        TopFadeOverlay(
+            color: topFadeTintColor,
+            height: topBarHeight + topFadeHeight
+        )
+    }
+
+    private var topFadeTintColor: Color {
+        connectionBanner?.color ?? .martiniAccentColor
+    }
+
+    private var topBarFilterButton: some View {
+        let iconName = isFilterActive
+            ? "line.3.horizontal.decrease.circle.fill"
+            : "line.3.horizontal.decrease.circle"
+        return topBarGlassButton {
+            withAnimation(.spring(response: 0.28, dampingFraction: 0.85)) {
+                isShowingFilters.toggle()
+            }
+        } label: {
+            Image(systemName: iconName)
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(isFilterActive ? Color.martiniDefaultColor : .primary)
+        }
+        .accessibilityLabel(isFilterActive ? "Filters active" : "Open filters")
+    }
+
+    private var topBarScheduleButton: some View {
+        topBarGlassButton(action: openSchedule) {
+            if isLoadingSchedule {
+                MartiniLoader(color: .secondary)
+                    .scaleEffect(0.85)
+            } else {
+                Image(systemName: "calendar")
+                    .font(.system(size: 20, weight: .semibold))
+            }
+        }
+        .accessibilityLabel("Open Schedule")
+    }
+
+    private func topBarGlassButton<Label: View>(
+        action: @escaping () -> Void,
+        @ViewBuilder label: @escaping () -> Label
+    ) -> some View {
+        GlassIconButton(size: 50, action: action) {
+            label()
         }
     }
 
@@ -1238,6 +1371,7 @@ struct MainView: View {
             config: .default,
             metadataItem: nil,
             thumbnailURL: clip.thumbnailURL,
+            previewImage: nil,
             markupConfiguration: nil,
             startsInMarkupMode: false
         )
@@ -1258,7 +1392,7 @@ struct MainView: View {
             let latest = try await authService.fetchSchedule(for: schedule.id)
             showSchedule(latest, replaceExistingRoutes: true)
         } catch {
-            dataError = error.localizedDescription
+            recordDataError(error)
             if let cached = authService.cachedSchedule(for: schedule.id) {
                 showSchedule(cached, replaceExistingRoutes: true)
             }
@@ -1439,7 +1573,7 @@ struct MainView: View {
             try await authService.fetchProjectDetails()
             hasLoadedProjectDetails = true
         } catch {
-            dataError = error.localizedDescription
+            recordDataError(error)
             print("❌ Failed to load project details: \(error)")
         }
     }
@@ -1456,7 +1590,7 @@ struct MainView: View {
             try await authService.fetchCreatives()
             hasLoadedCreatives = true
         } catch {
-            dataError = error.localizedDescription
+            recordDataError(error)
             print("❌ Failed to load creatives: \(error)")
         }
     }
@@ -1498,7 +1632,6 @@ struct MainView: View {
             try await authService.fetchFrames()
             hasLoadedFrames = true
         } catch {
-            dataError = error.localizedDescription
             print("❌ Failed to load frames: \(error)")
         }
     }
@@ -1508,7 +1641,7 @@ struct MainView: View {
         guard !useMockData else { return }
 
         do {
-            try await authService.fetchFrames(source: "pull-to-refresh")
+            try await authService.fetchFrames(source: "pull-to-refresh", forceRefresh: true)
             hasLoadedFrames = true
         } catch {
             if error is CancellationError {
@@ -1517,7 +1650,6 @@ struct MainView: View {
             if let urlError = error as? URLError, urlError.code == .cancelled {
                 return
             }
-            dataError = error.localizedDescription
             print("❌ Failed to refresh frames: \(error)")
         }
     }
@@ -1526,15 +1658,28 @@ struct MainView: View {
     private func refreshAll() async {
         guard !useMockData else { return }
 
+        isReconnecting = true
+        defer { isReconnecting = false }
+
         do {
-            try await authService.fetchProjectDetails()
+            try await authService.fetchProjectDetails(forceRefresh: true)
             hasLoadedProjectDetails = true
 
-            try await authService.fetchCreatives(pullAll: true)
+            try await authService.fetchCreatives(pullAll: true, forceRefresh: true)
             hasLoadedCreatives = true
 
-            try await authService.fetchFrames(source: "pull-to-refresh")
-            hasLoadedFrames = true
+            do {
+                try await authService.fetchFrames(source: "pull-to-refresh", forceRefresh: true)
+                hasLoadedFrames = true
+            } catch {
+                if error is CancellationError {
+                    return
+                }
+                if let urlError = error as? URLError, urlError.code == .cancelled {
+                    return
+                }
+                print("❌ Failed to refresh frames: \(error)")
+            }
 
             await loadProjectFiles(force: true)
 
@@ -1552,7 +1697,7 @@ struct MainView: View {
             if let urlError = error as? URLError, urlError.code == .cancelled {
                 return
             }
-            dataError = error.localizedDescription
+            recordDataError(error)
             print("❌ Failed to refresh all data: \(error)")
         }
     }
@@ -1630,6 +1775,29 @@ struct MainView: View {
         } catch {
             guard commentsTarget?.id == target.id else { return }
             commentsError = error.localizedDescription
+        }
+    }
+
+    private func handleScenePhaseChange(_ newPhase: ScenePhase) {
+        switch newPhase {
+        case .background, .inactive:
+            hasEnteredBackground = true
+        case .active:
+            guard hasEnteredBackground else { return }
+            hasEnteredBackground = false
+            guard authService.isAuthenticated, !useMockData else { return }
+
+            realtimeService.updateConnection(
+                projectId: authService.projectId,
+                isAuthenticated: authService.isAuthenticated
+            )
+            connectionMonitor.updateConnection(isAuthenticated: authService.isAuthenticated)
+
+            Task {
+                await refreshAll()
+            }
+        @unknown default:
+            break
         }
     }
 
@@ -1742,9 +1910,11 @@ struct MainView: View {
                                 .id(section.id)
                             }
                         }
+                        .padding(.top, statusBarHeight + topBarHeight + 8)
                         .padding(.vertical)
                         .padding(.bottom, 0)
                     }
+                    .ignoresSafeArea(edges: .top)
                     .refreshable {
                         await refreshAll()
                     }
@@ -1802,7 +1972,7 @@ struct MainView: View {
                                 .first?.key
 
                             if let id = visibleId, gridSections.contains(where: { $0.id == id }) {
-                                currentCreativeId = id
+                                updateCurrentCreativeId(id)
                             } else if currentCreativeId == nil {
                                 synchronizeCreativeSelection()
                             }
@@ -1844,7 +2014,7 @@ struct MainView: View {
     }
 
     private func selectCreative(_ id: String) {
-        currentCreativeId = id
+        updateCurrentCreativeId(id)
         scrollToCreative(withId: id)
     }
 
@@ -2008,7 +2178,7 @@ struct MainView: View {
 
     private func synchronizeCreativeSelection() {
         guard let firstId = creativesToDisplay.first?.id else {
-            currentCreativeId = nil
+            updateCurrentCreativeId(nil)
             return
         }
 
@@ -2016,7 +2186,14 @@ struct MainView: View {
             return
         }
 
-        currentCreativeId = firstId
+        updateCurrentCreativeId(firstId)
+    }
+
+    private func updateCurrentCreativeId(_ newValue: String?) {
+        guard currentCreativeId != newValue else { return }
+        withAnimation(.timingCurve(0.2, 0.0, 0.0, 1.0, duration: 0.35)) {
+            currentCreativeId = newValue
+        }
     }
 
     private func scrollToCreative(withId id: String) {
@@ -2093,30 +2270,17 @@ struct MainView: View {
         .accessibilityLabel("Open Schedule")
     }
 
-    @ViewBuilder
-    private var creativeMenuContent: some View {
-        if !creativesToDisplay.isEmpty {
-            Section("Creatives") {
-                ForEach(creativesToDisplay) { creative in
-                    Button {
-                        selectCreative(creative.id)
-                    } label: {
-                        if creative.id == (currentCreativeId ?? creativesToDisplay.first?.id) {
-                            Label(creative.title, systemImage: "checkmark")
-                        } else {
-                            Text(creative.title)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     private var navigationTitleStack: some View {
         navigationTitleHeader
-        .contentShape(Rectangle())
-        .accessibilityElement(children: .contain)
-        .accessibilityAddTraits(shouldAllowCreativeSelectionMenu ? .isButton : [])
+            .contentShape(Rectangle())
+            .accessibilityElement(children: .contain)
+            .accessibilityAddTraits(canExpandCreativeMenu ? .isButton : [])
+            .onTapGesture {
+                guard canExpandCreativeMenu else { return }
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isCreativeMenuExpanded.toggle()
+                }
+            }
     }
 
     private enum ConnectionBannerKind {
@@ -2126,41 +2290,135 @@ struct MainView: View {
     }
 
     private var navigationTitleHeader: some View {
-        ZStack {
-            if let banner = connectionBanner {
-                connectionBannerView(banner)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            } else {
-                VStack(spacing: 6) {
-                    Text(displayedNavigationTitle)
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                        .frame(maxWidth: 220)
-                        .multilineTextAlignment(.center)
+        let banner = connectionBanner
+        let isCompactState = banner != nil || isReconnecting || isProjectLoading
 
-                    let progress = navigationProgress
-                    if isProjectLoading {
-                        HStack(spacing: 6) {
-                            MartiniLoader()
-                            Text("Loading project...")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                        }
-                    } else if progress.total > 0 {
-                        ProgressView(value: Double(progress.completed), total: Double(progress.total))
-                            .progressViewStyle(.linear)
-                            .tint(.martiniDefaultColor)
-                            .frame(width: 180)
-                            .animation(.timingCurve(0.2, 0.0, 0.0, 1.0, duration: 0.35), value: progress.percentage)
+        return VStack(spacing: 6) {
+            if let banner {
+                let bannerColor = banner.color.opacity(0.9)
+                VStack(spacing: 2) {
+                    HStack(spacing: 4) {
+                        Image(systemName: banner.iconName)
+                        Text(banner.text)
                     }
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(bannerColor)
+
+                    connectionBannerStatusView(for: banner.kind, textColor: bannerColor)
                 }
-                .transition(.move(edge: .top).combined(with: .opacity))
+            } else if isReconnecting {
+                HStack(spacing: 6) {
+                    MartiniLoader(color: .white)
+                        .scaleEffect(0.5)
+                    Text("Syncing")
+                        .font(.subheadline)
+                        .foregroundColor(.white)
+                }
+            } else if isProjectLoading {
+                HStack(spacing: 6) {
+                    MartiniLoader(color: .white)
+                    Text("Loading project...")
+                        .font(.subheadline)
+                        .foregroundColor(.white)
+                }
+            } else {
+                Text(displayedNavigationTitle)
+                    .font(viewMode == .grid ? .subheadline : .subheadline)
+                    .fontWeight(.semibold)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(maxWidth: 220)
+                    .multilineTextAlignment(.center)
+
+                let progress = navigationProgress
+                if progress.total > 0 {
+                    AnimatedLinearProgressBar(
+                        progress: progress.percentage,
+                        color: .martiniDefaultColor,
+                        height: 4,
+                        animation: .timingCurve(0.2, 0, 0, 1.0, duration: 0.35)
+                    )
+                    .frame(width: 100)
+                }
+
+                if canExpandCreativeMenu && isCreativeMenuExpanded {
+                    creativeSelectionContainer
+                        .transition(.opacity)
+                }
             }
         }
+        .padding(.horizontal, isCreativeMenuExpanded ? 0 : 12)
+        .padding(.vertical, 8)
+        .frame(maxWidth: isCreativeMenuExpanded ? UIScreen.main.bounds.width * 0.95 : 260)
+        .frame(height: isCreativeMenuExpanded ? nil : topBarHeight, alignment: isCompactState ? .center : .center)
+        .glassEffect(
+            .regular,
+            in: RoundedRectangle(cornerRadius: 24, style: .continuous)
+        )
+        .transition(.move(edge: .top).combined(with: .opacity))
         .animation(.easeInOut(duration: 0.25), value: connectionMonitor.status)
         .animation(.easeInOut(duration: 0.25), value: authService.queuedFrameSyncStatus)
+        .animation(.easeInOut(duration: 0.25), value: isReconnecting)
+        .animation(.easeInOut(duration: 0.2), value: isCreativeMenuExpanded)
+    }
+
+    private var creativeSelectionList: some View {
+        let shouldScroll = creativeListMaxHeight > 0 && creativeListHeight > creativeListMaxHeight
+
+        return Group {
+            if shouldScroll {
+                ScrollView {
+                    creativeSelectionListContent
+                }
+                .frame(maxHeight: creativeListMaxHeight)
+            } else {
+                creativeSelectionListContent
+            }
+        }
+        .onPreferenceChange(ViewHeightKey.self) { newValue in
+            if abs(newValue - creativeListHeight) > 0.5 {
+                creativeListHeight = newValue
+            }
+        }
+    }
+
+    private var creativeSelectionListContent: some View {
+        VStack(spacing: 8) {
+            ForEach(creativesToDisplay) { creative in
+                let isSelected = creative.id == (currentCreativeId ?? creativesToDisplay.first?.id)
+                Button {
+                    selectCreative(creative.id)
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isCreativeMenuExpanded = false
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        if isSelected {
+                            Image(systemName: "checkmark")
+                        }
+                        Text(creative.title)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.top, 2)
+        .background(
+            GeometryReader { geo in
+                Color.clear.preference(key: ViewHeightKey.self, value: geo.size.height)
+            }
+        )
+    }
+
+    private var creativeSelectionContainer: some View {
+        creativeSelectionList
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .padding(.horizontal, 12)
     }
 
     private var connectionBanner: (text: String, color: Color, kind: ConnectionBannerKind, iconName: String)? {
@@ -2185,49 +2443,39 @@ struct MainView: View {
             }
             .font(.caption.weight(.semibold))
             .foregroundColor(banner.color)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
-            .background(banner.color.opacity(0.2), in: Capsule())
-            connectionBannerStatusView(for: banner.kind)
+            connectionBannerStatusView(for: banner.kind, textColor: banner.color)
         }
     }
 
     @ViewBuilder
-    private func connectionBannerStatusView(for kind: ConnectionBannerKind) -> some View {
+    private func connectionBannerStatusView(for kind: ConnectionBannerKind, textColor: Color = .secondary) -> some View {
         switch kind {
         case .unstable:
             EmptyView()
         case .offline:
-            HStack(spacing: 6) {
-                MartiniLoader()
-                    .scaleEffect(0.7)
-                TimelineView(.animation) { timeline in
-                    let shouldShowQueued = queuedFrameStatusCount > 0
-                        && Int(timeline.date.timeIntervalSinceReferenceDate) % 4 >= 2
-                    Text(shouldShowQueued ? queuedFrameStatusText : "Retrying")
-                        .animation(.easeInOut(duration: 0.35), value: shouldShowQueued)
-                }
+            if queuedFrameStatusCount > 0 {
+                Text(queuedFrameStatusText)
+                    .font(.caption2)
+                    .foregroundColor(textColor)
             }
-            .font(.footnote)
-            .foregroundColor(.secondary)
         case .backOnline:
             if shouldShowQueuedSyncStatus {
-                HStack(spacing: 6) {
+                HStack(spacing: 2) {
                     if authService.queuedFrameSyncStatus == .success {
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.green)
+                            .foregroundColor(textColor)
                     } else {
-                        MartiniLoader()
-                            .scaleEffect(0.7)
+                        MartiniLoader(color: textColor)
+                            .scaleEffect(0.5)
                     }
                     Text(authService.queuedFrameSyncStatus == .success ? "Syncing complete" : "Syncing queued frames")
                 }
-                .font(.footnote)
-                .foregroundColor(.secondary)
+                .font(.caption2)
+                .foregroundColor(textColor)
             } else {
                 Text("Connection restored")
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
+                    .font(.caption2)
+                    .foregroundColor(textColor)
             }
         }
     }
@@ -2246,6 +2494,10 @@ struct MainView: View {
 
     private var shouldAllowCreativeSelectionMenu: Bool {
         frameSortMode == .story && !creativesToDisplay.isEmpty
+    }
+
+    private var canExpandCreativeMenu: Bool {
+        shouldAllowCreativeSelectionMenu && creativesToDisplay.count > 1
     }
 
     private var isProjectLoading: Bool {
@@ -2734,7 +2986,7 @@ private extension MainView {
         guard let proxy = gridScrollProxy else { return }
 
         if frameSortMode == .story {
-            currentCreativeId = frame.creativeId
+            updateCurrentCreativeId(frame.creativeId)
         }
 
         let shouldPrimeSection = frameSortMode == .story
@@ -3187,117 +3439,142 @@ private extension MainView {
 
     @ViewBuilder
     private var filterSidebar: some View {
-        if isShowingFilters {
+        GeometryReader { geo in
+            let topInset: CGFloat = 0
+            let bottomInset: CGFloat = 0
+            let leadingInset: CGFloat = 0
+            let panelHeight = max(0, geo.size.height - topInset - bottomInset)
+            let contentTopPadding = max(geo.safeAreaInsets.top, statusBarHeight) + 8
+            let panelShape = UnevenRoundedRectangle(
+                cornerRadii: .init(
+                    topLeading: 0,
+                    bottomLeading: 0,
+                    bottomTrailing: 44,
+                    topTrailing: 44
+                ),
+                style: .continuous
+            )
+
             ZStack(alignment: .leading) {
-                Color.black.opacity(0.25)
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
-                            isShowingFilters = false
-                        }
-                    }
-
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Text("Filters")
-                            .font(.title3)
-                            .fontWeight(.semibold)
-
-                        Spacer()
-
-                        if isFilterActive {
-                            Button("Clear") {
-                                withAnimation(.easeInOut(duration: 0.15)) {
-                                    clearFilters()
-                                }
+                if isShowingFilters {
+                    Color.black.opacity(0.25)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
+                                isShowingFilters = false
                             }
-                            .font(.system(size: 14, weight: .semibold))
                         }
+                        .transition(.opacity)
+                }
 
-//                        Button {
-//                            withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
-//                                isShowingFilters = false
-//                            }
-//                        } label: {
-//                            Image(systemName: "xmark")
-//                                .font(.system(size: 14, weight: .bold))
-//                                .padding(8)
-//                                .background(Color(.systemGray5), in: Circle())
-//                        }
-                    }
+                if isShowingFilters {
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Text("Filters")
+                                .font(.title3)
+                                .fontWeight(.semibold)
 
-                    Divider()
+                            Spacer()
 
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 16) {
-                            VStack(alignment: .leading, spacing: 10) {
-                                Text("Creatives")
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(.secondary)
-
-                                if allCreatives.isEmpty {
-                                    Text("No creatives available")
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
-                                } else {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        ForEach(allCreatives) { creative in
-                                            CreativeFilterRow(
-                                                creative: creative,
-                                                isSelected: selectedCreativeIds.contains(creative.id),
-                                                action: { toggleCreative(creative) }
-                                            )
-                                        }
+                            if isFilterActive {
+                                Button("Clear") {
+                                    withAnimation(.easeInOut(duration: 0.15)) {
+                                        clearFilters()
                                     }
                                 }
+                                .font(.system(size: 14, weight: .semibold))
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.bottom, 4)
-                            Divider()
 
-                            if availableTagGroups.isEmpty {
-                                Text("No tags available")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                            } else {
-                                ForEach(availableTagGroups) { group in
-                                    VStack(alignment: .leading, spacing: 10) {
-                                        Text(group.name)
+    //                        Button {
+    //                            withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) {
+    //                                isShowingFilters = false
+    //                            }
+    //                        } label: {
+    //                            Image(systemName: "xmark")
+    //                                .font(.system(size: 14, weight: .bold))
+    //                                .padding(8)
+    //                                .background(Color(.systemGray5), in: Circle())
+    //                        }
+                        }
+
+                        Divider()
+
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 16) {
+                                VStack(alignment: .leading, spacing: 10) {
+                                    Text("Creatives")
+                                        .font(.subheadline)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(.secondary)
+
+                                    if allCreatives.isEmpty {
+                                        Text("No creatives available")
                                             .font(.subheadline)
-                                            .fontWeight(.semibold)
                                             .foregroundColor(.secondary)
-
-                                        VStack(alignment: .leading, spacing: 8) {
-                                            ForEach(group.tags) { tag in
-                                                FilterToggleRow(
-                                                    tag: tag,
-                                                    isSelected: selectedTagIds.contains(tagIdentifier(tag)),
-                                                    action: { toggleTag(tag) }
+                                    } else {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            ForEach(allCreatives) { creative in
+                                                CreativeFilterRow(
+                                                    creative: creative,
+                                                    isSelected: selectedCreativeIds.contains(creative.id),
+                                                    action: { toggleCreative(creative) }
                                                 )
                                             }
                                         }
                                     }
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.bottom, 4)
-                                    Divider()
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.bottom, 4)
+                                //Divider()
+
+                                if availableTagGroups.isEmpty {
+                                    Text("No tags available")
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                } else {
+                                    ForEach(availableTagGroups) { group in
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(group.name)
+                                                .font(.subheadline)
+                                                .fontWeight(.semibold)
+                                                .foregroundColor(.secondary)
+
+                                            VStack(alignment: .leading, spacing: 8) {
+                                                ForEach(group.tags) { tag in
+                                                    FilterToggleRow(
+                                                        tag: tag,
+                                                        isSelected: selectedTagIds.contains(tagIdentifier(tag)),
+                                                        action: { toggleTag(tag) }
+                                                    )
+                                                }
+                                            }
+                                        }
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(.bottom, 4)
+                                        //Divider()
+                                    }
                                 }
                             }
+                            .padding(.vertical, 4)
                         }
-                        .padding(.vertical, 4)
                     }
+                    .padding(.top, contentTopPadding)
+                    .padding(.horizontal)
+                    .padding(.bottom)
+                    .ignoresSafeArea()
+                    .frame(width: 340, alignment: .leading)
+                    .frame(height: panelHeight, alignment: .top)
+                    .background(Color.filterBackground, in: panelShape)
+                    .clipShape(panelShape)
+                    .padding(.leading, leadingInset)
+                    .transition(.move(edge: .leading))
                 }
-                .padding()
-                .frame(width: 320, alignment: .leading)
-                .frame(maxHeight: .infinity, alignment: .top)
-                .background(.ultraThickMaterial)
-                .transition(.asymmetric(
-                    insertion: .move(edge: .leading).combined(with: .opacity),
-                    removal: .move(edge: .leading).combined(with: .opacity)
-                ))
             }
-            .animation(.spring(response: 0.3, dampingFraction: 0.88), value: isShowingFilters)
         }
+        .animation(.spring(response: 0.3, dampingFraction: 0.88), value: isShowingFilters)
+        .allowsHitTesting(isShowingFilters)
+        .accessibilityHidden(!isShowingFilters)
+        .ignoresSafeArea()
     }
 }
 
@@ -3315,9 +3592,9 @@ private struct CreativeFilterRow: View {
     var body: some View {
         Button(action: action) {
             HStack {
-                Image(systemName: isSelected ? "checkmark.square.fill" : "square")
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .foregroundColor(isSelected ? .accentColor : .secondary)
-                    .imageScale(.medium)
+                    .imageScale(.large)
 
                 Text(creative.title)
                     .font(.body)
@@ -3325,10 +3602,10 @@ private struct CreativeFilterRow: View {
 
                 Spacer()
             }
-            .padding(.vertical, 6)
+            .padding(.vertical, 10)
             .padding(.horizontal, 10)
             .background(
-                RoundedRectangle(cornerRadius: 8)
+                Capsule()
                     .fill(isSelected ? Color.accentColor.opacity(0.12) : Color.clear)
             )
         }
@@ -3345,9 +3622,9 @@ private struct FilterToggleRow: View {
     var body: some View {
         Button(action: action) {
             HStack {
-                Image(systemName: isSelected ? "checkmark.square.fill" : "square")
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .foregroundColor(isSelected ? .accentColor : .secondary)
-                    .imageScale(.medium)
+                    .imageScale(.large)
 
                 Text(tag.name)
                     .font(.body)
@@ -3355,10 +3632,10 @@ private struct FilterToggleRow: View {
 
                 Spacer()
             }
-            .padding(.vertical, 6)
+            .padding(.vertical, 10)
             .padding(.horizontal, 10)
             .background(
-                RoundedRectangle(cornerRadius: 8)
+                Capsule()
                     .fill(isSelected ? Color.accentColor.opacity(0.12) : Color.clear)
             )
         }
@@ -3493,6 +3770,21 @@ struct CreativeGridSection: View {
                 gridContent
             }
             .padding(.horizontal)
+
+            if showAddFrameButton {
+                HStack {
+                    Spacer()
+                    Button(action: onAddFrame) {
+                        AddFrameRowButton(isLoading: isAddingFrame)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isAddingFrame)
+                    .accessibilityLabel("Add board")
+                    Spacer()
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 6)
+            }
         }
     }
 
@@ -3544,19 +3836,6 @@ struct CreativeGridSection: View {
                 frameCell(for: frame)
             }
 
-            if showAddFrameButton {
-                Button(action: onAddFrame) {
-                    AddFrameGridCell(
-                        aspectRatio: section.frames.first?.creativeAspectRatio,
-                        cornerRadius: cornerRadius,
-                        boardSizing: boardSizing,
-                        isLoading: isAddingFrame
-                    )
-                }
-                .buttonStyle(.plain)
-                .disabled(isAddingFrame)
-                .accessibilityLabel("Add frame")
-            }
         }
     }
 
@@ -4050,6 +4329,31 @@ struct AddFrameGridCell: View {
     }
 }
 
+struct AddFrameRowButton: View {
+    let isLoading: Bool
+
+    var body: some View {
+        HStack(spacing: 10) {
+            if isLoading {
+                MartiniLoader(color: .secondary)
+                    .scaleEffect(0.7)
+            } else {
+                Image(systemName: "plus")
+                    .font(.system(size: 16, weight: .semibold))
+            }
+            Text("Add Board")
+                .font(.system(size: 15, weight: .semibold))
+        }
+        .foregroundStyle(.primary)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.gray.opacity(0.15))
+        )
+    }
+}
+
 private struct GridTagItem: Identifiable {
     let id: String
     let tag: FrameTag
@@ -4178,6 +4482,13 @@ private struct SectionHeaderAnchorKey: PreferenceKey {
     static var defaultValue: [String: CGFloat] = [:]
     static func reduce(value: inout [String: CGFloat], nextValue: () -> [String: CGFloat]) {
         value.merge(nextValue(), uniquingKeysWith: { $1 })
+    }
+}
+
+private struct ViewHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }
 
@@ -4856,6 +5167,44 @@ struct BoardSizingView: View {
             .pickerStyle(.segmented)
         }
         .padding(.vertical, 4)
+    }
+}
+
+private struct AnimatedLinearProgressBar: View {
+    let progress: Double
+    let color: Color
+    let height: CGFloat
+    let animation: Animation
+
+    @State private var animatedProgress: Double = 0
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color.secondary.opacity(0.2))
+                Capsule()
+                    .fill(color)
+                    .frame(width: geo.size.width * CGFloat(clampedProgress))
+            }
+        }
+        .frame(height: height)
+        .onAppear {
+            animatedProgress = clamp(progress)
+        }
+        .onChange(of: progress) { newValue in
+            withAnimation(animation) {
+                animatedProgress = clamp(newValue)
+            }
+        }
+    }
+
+    private var clampedProgress: Double {
+        clamp(animatedProgress)
+    }
+
+    private func clamp(_ value: Double) -> Double {
+        min(max(value, 0), 1)
     }
 }
 

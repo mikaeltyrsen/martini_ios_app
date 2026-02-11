@@ -126,7 +126,7 @@ private struct ReviewActionButton: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: 6) {
-                
+
                 ZStack {
                     if isLoading {
                         MartiniLoader()
@@ -138,15 +138,20 @@ private struct ReviewActionButton: View {
                     }
                 }
                 .frame(width: 60, height: 60)
-                .foregroundStyle( tintIcon ? tintIconColor : .primary )
-                .glassEffect(.regular.tint(hasTint ? tintColor.opacity(hasTint ? tintOpacity : 1) : nil).interactive())
+                .foregroundStyle(tintIcon ? tintIconColor : .primary)
+                .glassEffect(
+                    .regular.tint(hasTint ? tintColor.opacity(hasTint ? tintOpacity : 1) : nil).interactive(),
+                    in: Circle()
+                )
                     
                 Text(title)
                     .font(.caption2)
                     .opacity(0.60)
             }
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .frame(minWidth: 44, minHeight: 44)
     }
 }
 

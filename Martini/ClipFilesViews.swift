@@ -29,12 +29,15 @@ struct FilesView: View {
     @State private var selectedClip: Clip?
 
     var body: some View {
-        content
-            .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.inline)
-            .task {
-                await onReload()
-            }
+        ZStack(alignment: .top) {
+            content
+            TopFadeOverlay(color: .martiniAccentColor)
+        }
+        .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline)
+        .task {
+            await onReload()
+        }
             .alert("Error", isPresented: Binding(
                 get: { errorMessage != nil },
                 set: { if !$0 { errorMessage = nil } }

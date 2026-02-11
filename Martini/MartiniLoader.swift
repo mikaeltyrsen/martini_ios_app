@@ -3,7 +3,7 @@ import SwiftUI
 struct MartiniLoader: View {
     var size: CGFloat = 25
     var lineWidth: CGFloat = 3
-    var color: Color = .martiniAccentColor
+    var color: Color = .primary
 
     @State private var isAnimating = false
 

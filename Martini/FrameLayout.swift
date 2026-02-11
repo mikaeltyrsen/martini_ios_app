@@ -118,6 +118,7 @@ struct FrameLayout: View {
     var enablesFullScreen: Bool = true
     var doneCrossLineWidthOverride: Double? = nil
     var usePinnedBoardMarkupFallback: Bool = false
+    var onPreviewImageLoaded: ((UIImage) -> Void)? = nil
 
 
     @Environment(\.horizontalSizeClass) private var hSizeClass
@@ -132,6 +133,8 @@ struct FrameLayout: View {
     @State private var doneFirstLineProgress: CGFloat = 0
     @State private var doneSecondLineProgress: CGFloat = 0
     @State private var lastAnimatedStatus: FrameStatus = .none
+    @State private var cachedPreviewImage: UIImage?
+    @State private var cachedPreviewImageURL: URL?
 
     private struct BoardAnnotationData {
         let drawing: PKDrawing
@@ -343,6 +346,7 @@ struct FrameLayout: View {
                         config: .default,
                         metadataItem: nil,
                         thumbnailURL: resolvedThumbnailURL,
+                        previewImage: resolvedPreviewImage,
                         markupConfiguration: nil,
                         startsInMarkupMode: false
                     )
@@ -814,10 +818,31 @@ struct FrameLayout: View {
 
     private var mediaHeroID: String { "frame-media-\(frame.id)" }
 
+    private func handlePreviewImageLoaded(_ image: UIImage, url: URL?) {
+        cachedPreviewImage = image
+        cachedPreviewImageURL = url
+        onPreviewImageLoaded?(image)
+    }
+
+    private var resolvedPreviewImage: UIImage? {
+        guard let cachedPreviewImage, cachedPreviewImageURL == resolvedMediaURL else {
+            if let url = resolvedMediaURL, let cached = ImageCache.cachedImageSync(for: url) {
+                return cached
+            }
+            if let thumbnailURL = resolvedThumbnailURL,
+               let cached = ImageCache.cachedImageSync(for: thumbnailURL) {
+                return cached
+            }
+            return nil
+        }
+        return cachedPreviewImage
+    }
+
     @ViewBuilder
     private func heroMedia(isFullscreen: Bool, shouldFillImage: Bool) -> some View {
+        let currentURL = resolvedMediaURL
         HeroMediaView(
-            url: resolvedMediaURL,
+            url: currentURL,
             isVideo: shouldPlayAsVideo,
             cornerRadius: isFullscreen ? 0 : cornerRadius,
             namespace: fullscreenNamespace,
@@ -828,7 +853,10 @@ struct FrameLayout: View {
             crop: resolvedMediaCrop,
             aspectRatio: aspectRatio,
             isSource: !isFullscreen,
-            useMatchedGeometry: !isFullscreen
+            useMatchedGeometry: !isFullscreen,
+            onImageLoaded: { image in
+                handlePreviewImageLoaded(image, url: currentURL)
+            }
         )
         // Prevent the image content from animating independently when the card resizes
         .transaction { transaction in
@@ -849,6 +877,7 @@ struct FrameLayout: View {
         let aspectRatio: CGFloat
         let isSource: Bool
         let useMatchedGeometry: Bool
+        let onImageLoaded: ((UIImage) -> Void)?
 
         var body: some View {
             Group {
@@ -863,10 +892,11 @@ struct FrameLayout: View {
                                 aspectRatio: aspectRatio,
                                 imageShouldFill: imageShouldFill,
                                 cornerRadius: cornerRadius,
-                                placeholder: placeholder
+                                placeholder: placeholder,
+                                onImageLoaded: onImageLoaded
                             )
                         } else {
-                            CachedAsyncImage(url: url) { phase in
+                            CachedAsyncImage(url: url, onImageLoaded: onImageLoaded) { phase in
                                 switch phase {
                                 case let .success(image):
                                     let baseImage = image.resizable()
@@ -915,6 +945,7 @@ struct FrameLayout: View {
         let imageShouldFill: Bool
         let cornerRadius: CGFloat
         let placeholder: AnyView
+        let onImageLoaded: ((UIImage) -> Void)?
 
         @State private var displayImage: UIImage?
         @State private var didFail: Bool = false
@@ -966,6 +997,7 @@ struct FrameLayout: View {
             await MainActor.run {
                 displayImage = image
                 didFail = false
+                onImageLoaded?(image)
             }
         }
     }

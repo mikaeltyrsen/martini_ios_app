@@ -287,19 +287,11 @@ struct ScheduleView: View {
                 }
             }
             .overlay {
-                MartiniAlertModal(
-                    isPresented: $showingNoConnectionModal,
-                    iconName: "wifi.exclamationmark",
-                    iconColor: .red,
-                    title: "No Connection",
-                    message: "Martini can’t reach the server at the moment. You can keep working—markings are saved locally.\nOnce connection is restored, we’ll automatically push your updates and sync across all devices.",
-                    actions: [
-                        MartiniAlertAction(title: "CONTINUE OFFLINE", style: .primary) {
-                            showingNoConnectionModal = false
-                        }
-                    ]
-                )
+                MartiniNoConnectionModal(isPresented: $showingNoConnectionModal)
             }
+        }
+        .overlay(alignment: .top) {
+            TopFadeOverlay(color: .martiniAccentColor)
         }
     }
 

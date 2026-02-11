@@ -81,12 +81,37 @@ actor ImageCache {
     }
 }
 
+extension ImageCache {
+    static func cachedImageSync(for url: URL) -> UIImage? {
+        let fileManager = FileManager.default
+        let directories = fileManager.urls(for: .cachesDirectory, in: .userDomainMask)
+        let cacheDirectory = directories.first?.appendingPathComponent("MartiniImageCache", isDirectory: true)
+            ?? URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("MartiniImageCache", isDirectory: true)
+        let hashed = SHA256.hash(data: Data(url.absoluteString.utf8))
+            .compactMap { String(format: "%02x", $0) }
+            .joined()
+        let path = cacheDirectory.appendingPathComponent(hashed)
+        guard fileManager.fileExists(atPath: path.path),
+              let data = try? Data(contentsOf: path),
+              let image = UIImage(data: data) else {
+            return nil
+        }
+        return image
+    }
+}
+
 struct CachedAsyncImage<Content: View>: View {
     let url: URL?
+    let onImageLoaded: ((UIImage) -> Void)?
     let content: (AsyncImagePhase) -> Content
 
-    init(url: URL?, @ViewBuilder content: @escaping (AsyncImagePhase) -> Content) {
+    init(
+        url: URL?,
+        onImageLoaded: ((UIImage) -> Void)? = nil,
+        @ViewBuilder content: @escaping (AsyncImagePhase) -> Content
+    ) {
         self.url = url
+        self.onImageLoaded = onImageLoaded
         self.content = content
     }
 
@@ -108,7 +133,10 @@ struct CachedAsyncImage<Content: View>: View {
         await MainActor.run { phase = .empty }
 
         if let image = await ImageCache.shared.image(for: url) {
-            await MainActor.run { phase = .success(Image(uiImage: image)) }
+            await MainActor.run {
+                onImageLoaded?(image)
+                phase = .success(Image(uiImage: image))
+            }
         } else {
             await MainActor.run { phase = .failure(ImageCacheError.decodingFailed) }
         }
