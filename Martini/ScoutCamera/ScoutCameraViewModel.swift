@@ -152,7 +152,7 @@ final class ScoutCameraViewModel: ObservableObject {
            let maxFocal = selectedLens.focalLengthMaxMm {
             let nextValue = min(maxFocal, focalLengthMm + 1)
             if nextValue != focalLengthMm {
-                focalLengthMm = nextValue
+                applyFocalLength(nextValue, preferredLens: selectedLens)
                 return
             }
         }
@@ -172,7 +172,7 @@ final class ScoutCameraViewModel: ObservableObject {
            let minFocal = selectedLens.focalLengthMinMm {
             let previousValue = max(minFocal, focalLengthMm - 1)
             if previousValue != focalLengthMm {
-                focalLengthMm = previousValue
+                applyFocalLength(previousValue, preferredLens: selectedLens)
                 return
             }
         }
@@ -201,7 +201,7 @@ final class ScoutCameraViewModel: ObservableObject {
                 selectedLens = startLens
             }
             if abs(nextFocal - focalLengthMm) > 0.01 {
-                focalLengthMm = nextFocal
+                applyFocalLength(nextFocal, preferredLens: startLens)
             }
             return
         }
@@ -624,6 +624,89 @@ final class ScoutCameraViewModel: ObservableObject {
             return focalLengthMm
         }
         return lens.focalLengthMm ?? lens.focalLengthMinMm ?? focalLengthMm
+    }
+
+    private func applyFocalLength(_ value: Double, preferredLens: DBLens?) {
+        if let preferredLens,
+           preferredLens.isZoom,
+           let lensPool = selectedLensPack?.lenses,
+           let bestLens = bestLensForFocalLength(value, preferredLens: preferredLens, lensPool: lensPool),
+           bestLens.id != selectedLens?.id {
+            selectedLens = bestLens
+        }
+        focalLengthMm = value
+    }
+
+    private func bestLensForFocalLength(
+        _ focalLength: Double,
+        preferredLens: DBLens?,
+        lensPool: [DBLens]
+    ) -> DBLens? {
+        let candidates = lensPool
+            .filter { $0.isZoom }
+            .filter { lensSupportsFocalLength($0, focalLength: focalLength) }
+        guard !candidates.isEmpty else { return nil }
+        let compatibleCandidates: [DBLens]
+        if let preferredLens {
+            let compatible = candidates.filter { lensIsCompatible($0, with: preferredLens) }
+            compatibleCandidates = compatible
+        } else {
+            compatibleCandidates = candidates
+        }
+        guard !compatibleCandidates.isEmpty else { return preferredLens }
+
+        let lensOrder = Dictionary(uniqueKeysWithValues: lensPool.enumerated().map { ($0.element.id, $0.offset) })
+        return compatibleCandidates.min { lhs, rhs in
+            let lhsRange = lensRangeWidth(lhs)
+            let rhsRange = lensRangeWidth(rhs)
+            if abs(lhsRange - rhsRange) > 0.01 {
+                return lhsRange < rhsRange
+            }
+            if let preferredLens {
+                if lhs.id == preferredLens.id {
+                    return true
+                }
+                if rhs.id == preferredLens.id {
+                    return false
+                }
+            }
+            return (lensOrder[lhs.id] ?? 0) < (lensOrder[rhs.id] ?? 0)
+        }
+    }
+
+    private func lensSupportsFocalLength(_ lens: DBLens, focalLength: Double) -> Bool {
+        guard lens.isZoom,
+              let minFocal = lens.focalLengthMinMm,
+              let maxFocal = lens.focalLengthMaxMm else {
+            return false
+        }
+        return focalLength >= minFocal && focalLength <= maxFocal
+    }
+
+    private func lensIsCompatible(_ lens: DBLens, with preferredLens: DBLens) -> Bool {
+        guard abs(lens.squeeze - preferredLens.squeeze) <= 0.01 else {
+            return false
+        }
+        if let lensFormat = lens.format,
+           let preferredFormat = preferredLens.format,
+           lensFormat != preferredFormat {
+            return false
+        }
+        if !lens.mounts.isEmpty,
+           !preferredLens.mounts.isEmpty,
+           lens.mounts.first(where: { preferredLens.mounts.contains($0) }) == nil {
+            return false
+        }
+        return true
+    }
+
+    private func lensRangeWidth(_ lens: DBLens) -> Double {
+        guard lens.isZoom,
+              let minFocal = lens.focalLengthMinMm,
+              let maxFocal = lens.focalLengthMaxMm else {
+            return 0
+        }
+        return maxFocal - minFocal
     }
 
     private func lensFocalLabel(lens: DBLens, focalLengthMm: Double) -> String {
